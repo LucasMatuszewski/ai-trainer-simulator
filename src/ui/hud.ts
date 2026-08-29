@@ -11,8 +11,9 @@ export interface HudElements {
   day: HTMLElement;
   time: HTMLElement;
   prompt: HTMLElement;
-  toast: HTMLElement;
-  toastTimer: number | null;
+  /** Container for stacked toasts. The container itself is always
+   * present; the toasts are appended/removed dynamically. */
+  toastStack: HTMLElement;
 }
 
 export function mountHud(root: HTMLElement): HudElements {
@@ -26,7 +27,7 @@ export function mountHud(root: HTMLElement): HudElements {
         <span class="key">E</span><span data-prompt-text></span>
       </div>
     </div>
-    <div class="toast" data-toast style="display:none"></div>
+    <div class="toast-stack" data-toast-stack></div>
   `;
   return {
     root,
@@ -34,8 +35,7 @@ export function mountHud(root: HTMLElement): HudElements {
     day: root.querySelector("[data-day]")!,
     time: root.querySelector("[data-day]")!, // aliased
     prompt: root.querySelector("[data-prompt]")!,
-    toast: root.querySelector("[data-toast]")!,
-    toastTimer: null,
+    toastStack: root.querySelector("[data-toast-stack]")!,
   };
 }
 
@@ -68,18 +68,24 @@ export function showPrompt(hud: HudElements, text: string | null): void {
  * disappears before the player can finish reading the line. 7.5s is
  * still short enough to not feel intrusive, and long enough to read
  * a one-sentence hint.
+ *
+ * Toasts STACK: when a new toast comes in, the previous one is not
+ * replaced. They are appended to the toast-stack container and each
+ * has its own timer. The new toast is placed ABOVE the old one (at
+ * the top of the stack). The player can read both.
  */
 const TOAST_DURATION_MS = 7500;
 
 export function showToast(hud: HudElements, message: string, type: "info" | "success" | "warning" | "error" = "info"): void {
-  hud.toast.textContent = message;
-  hud.toast.className = `toast ${type}`;
-  hud.toast.style.display = "";
-  if (hud.toastTimer !== null) {
-    clearTimeout(hud.toastTimer);
-  }
-  hud.toastTimer = window.setTimeout(() => {
-    hud.toast.style.display = "none";
-    hud.toastTimer = null;
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.textContent = message;
+  // Newest toast on top of the stack.
+  hud.toastStack.prepend(el);
+  window.setTimeout(() => {
+    // Fade-out animation handled by CSS (opacity transition + max-height).
+    el.classList.add("fade-out");
+    // After the fade transition, remove the element from the DOM.
+    window.setTimeout(() => el.remove(), 400);
   }, TOAST_DURATION_MS);
 }
