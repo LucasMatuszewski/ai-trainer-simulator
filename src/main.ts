@@ -335,6 +335,12 @@ async function playIntroCinematic(): Promise<void> {
   // we transition to 0.
   void overlay.offsetHeight;
   requestAnimationFrame(() => overlay.classList.add("fade-out"));
+  // After the fade transition (600ms in style.css), remove the
+  // overlay from the DOM entirely. Leaving it at opacity:0 with
+  // pointer-events:none still intercepts pointer events in some
+  // test runners (Playwright sees the element bounding box and
+  // reports it as "obscuring the click target"), so we clean it up.
+  setTimeout(() => overlay.remove(), 700);
 
   // Step 2: establishing shot — outside the office, looking down.
   engine.camera.position.set(0, 14, 20);
