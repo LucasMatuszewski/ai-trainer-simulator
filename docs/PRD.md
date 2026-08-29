@@ -457,17 +457,20 @@ A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
 - **Reason:** The user found the over-the-shoulder controls confusing ("the mouse rotates the camera around the character, I want to simulate that I'm moving the direction of the character"). First-person = the player IS the trainer. Wall collision is trivial. Matches standard 3D-RPG convention.
 - **Implementation:** `src/engine/controls.ts` is rewritten to use `camera.position = player.position + (0, EYE_HEIGHT, 0)` and `camera.rotation = (pitch, yaw, 0)`. Mouse delta updates yaw/pitch directly. The mouse does NOT orbit around the player; the player avatar turns to face the yaw direction.
 
-### C-02 — Mouse-look mode and navigation decision (2026-08-29)
+### C-02 — Mouse-look mode and navigation decision (2026-08-29) — REVISED 2026-08-29 (ADR-0007: Pattern D)
 
 - **Section changed:** §4.2 (Controls spec).
 - **Was:** Mouse always rotates the view. Player's mouse "got out of the screen" because the mouse was driving the view continuously.
-- **Now:** Default state is **free mouse** (OS cursor visible, mouse does not rotate the view). RMB-hold = mouse-look mode (cursor hidden, mouse moves rotate the view). Roster panel is the primary way to choose who to talk to from a distance. Click (LMB) is a raycast that hits NPCs/objects.
-- **Reason:** The user explicitly asked: "Mouse should be blocked after click on the game area maybe? To let me move without getting out of the screen? OR, well... we have these buttons, so we need mouse also to click these buttons to choose the characters in the office... we need to decide how we design navigations." After research, the best-practice for 3D RPG with economy/simulation is the Deus Ex / Skyrim model: free mouse for UI, RMB for view rotation.
-- **Rejected alternatives:**
-  - **Always-rotating mouse with pointer lock**: too aggressive, breaks the UI (player has to press Esc every time to click a button).
+- **Now (Pattern D, per ADR-0007):** Default state is **free mouse** (OS cursor visible, mouse does not rotate the view). RMB-hold = mouse-look mode (cursor hidden, mouse moves rotate the view). Space (or Tab-when-not-roster) toggles mouse-look for trackpad / MacBook users. Roster panel is the primary way to choose who to talk to from a distance. LMB in free-mouse mode is a screen-space raycast: if it hits an NPC, the player walks to face the NPC and the dialogue opens. LMB in mouse-look mode is a center-screen raycast (FPS-style crosshair). Tab = roster toggle (existing).
+- **Reason:** The user explicitly asked: "Mouse should be blocked after click on the game area maybe? To let me move without getting out of the screen? OR, well... we have these buttons, so we need mouse also to click these buttons to choose the characters in the office... we need to decide how we design navigations." And later (verbatim): "we should have the mouse all the time available and need to hold the mouse button to rotate so we always can use mouse to click objects." After research (`.agent-briefs/mouse-look-report.md`), the best-practice for a 3D RPG with economy/simulation is **Pattern D** (Deus Ex / Skyrim / WoW model): free mouse for UI, RMB for view rotation, walk-to-face for in-world interactions, plus a key toggle for trackpads.
+- **Rejected alternatives (see ADR-0007 §3.4 for full reasoning):**
+  - **Always-rotating mouse with pointer lock (Pattern A)**: too aggressive, breaks the UI (player has to press Esc every time to click a button). Verdict in research: 4/10 suitability.
   - **Always-free mouse, view rotates with arrow keys only**: feels sluggish, doesn't match the "look around" expectation.
-  - **Toggle mouse-look on a key (e.g. V)**: an extra key, more friction. RMB-hold is more discoverable.
-- **Implementation:** `src/engine/controls.ts` listens for `mousedown` with `button === 2` (right button). When held, sets `mouseLookActive = true`, hides the OS cursor (`canvas.style.cursor = 'none'`), and applies mouse-look. On `mouseup`, releases and restores the cursor. `contextmenu` is `preventDefault`-ed to suppress the right-click menu.
+  - **Cursor-on-edge pan (Pattern C)**: incompatible with first-person interior navigation. Verdict: rejected.
+  - **Free mouse + edge pan + RMB snap (Pattern E)**: unpredictable, causes rotational nausea in first-person. Verdict: rejected.
+  - **Plain Pattern B (no Space/Tab toggle)**: works on desktops with a real RMB, fails on trackpads. Pattern D adds the toggle.
+- **Implementation:** `src/engine/controls.ts` is rewritten. State machine: FREE_MOUSE (default) / MOUSE_LOOK_HOLD (RMB down) / MOUSE_LOOK_TOGGLE (Space). LMB mousedown calls `raycastNpc(x, y)` in free-mouse mode and triggers `walkToFace(npc)` + `openDialogue(npc)`. WASD works in all states. `contextmenu` is `preventDefault`-ed. `src/engine/interaction-raycaster.ts` is a new pure module for the raycast math. `src/engine/walk-to-face.ts` is a new pure function for the walk planner. `src/ui/cursor.ts` is the custom pixel-art cursor. Detail in ADR-0007 §4.
+- **Tests:** `tests/unit/controls.test.ts` extended with FPS camera state, pitch clamp, mouse-look toggle. `tests/unit/interaction-raycaster.test.ts` (new). `tests/unit/walk-to-face.test.ts` (new). TDD per PR-8.
 
 ### C-03 — Custom pixel-art cursor (2026-08-29)
 
