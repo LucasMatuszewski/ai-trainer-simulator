@@ -30,6 +30,7 @@ playwright-report/
 # Throwaway screenshots from local debugging
 office-*.png
 canvas-element.png
+screenshots/
 
 # OS temp
 Thumbs.db

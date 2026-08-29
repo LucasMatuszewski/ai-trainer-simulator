@@ -3,7 +3,7 @@
  * All game state is JSON-serializable. Save format is GameState under localStorage key `aitrainer:save:v1`.
  */
 
-export type NpcId = "bartek" | "klaudia" | "marek" | "zosia" | "pawel";
+export type NpcId = "bartek" | "klaudia" | "marek" | "zosia" | "pawel" | "kasia" | "tomek" | "ania" | "janusz" | "burek" | "grazyna" | "maciek" | "przemek";
 
 export type SpecializationId = "frontend" | "backend" | "devops" | "ai" | "generalist";
 export type TraitId = "coffee-fueled" | "linkedin-influencer" | "debugger" | "wing-it";
