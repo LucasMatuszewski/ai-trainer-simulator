@@ -441,6 +441,14 @@ This is a 30+ day project, not a 1-week MVP. The phased plan in `.claude/plans/g
 
 This section is the authoritative list of corrections Lucas has given. New corrections are appended with the date and a unique ID. Each correction IDs the section it changes.
 
+### 2026-08-29 (corrections-log entry) — C-16 conflict resolved
+
+A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
+
+- **Conflict:** C-16 was first revised to "10 real minutes per period, uniform, 30 min/day" in response to Lucas's earlier "10 min/period should be enough, let's test it" message. But Lucas's later answer to the explicit question "5/10/5 (20 min/day) + speed controls — take it?" was "ok, let's test it. we can always change it after tests." The earlier override and the later acceptance of the opencode recommendation were in tension.
+- **Resolution:** Adopt the opencode 5/10/5 + speed controls recommendation. The user's later explicit confirmation supersedes the earlier override. C-16 has been re-revised to "5/10/5 asymmetric = 20 min/day + speed controls (0.5x / 1x / 2x / Skip / End-day-early / Pause)." Constants: `PERIOD_SECONDS = { morning: 300, afternoon: 600, evening: 300 }` = 1200s total. The rollout per phase (Phase 0 uniform 300s → Phase 1 auto-pause + HUD countdown → Phase 3 5/10/5 + speed controls) is preserved.
+- **HR-2 / HR-4 lesson:** when a later user message contradicts an earlier one, surface the conflict and ask; do not silently pick one. The orchestrator did surface it. The later explicit confirmation wins.
+
 ### C-01 — First-person instead of over-the-shoulder (2026-08-29)
 
 - **Section changed:** §4.2 (Walk and explore), §6 AC-Movement, §11 (NPC life).
@@ -593,6 +601,15 @@ This section is the authoritative list of corrections Lucas has given. New corre
 - **Reason:** Lucas is fed up with the agent ignoring his messages. This is a hard rule.
 - **Implementation:** Recorded in `~/AGENTS.md` under "Hard rules — never break these." Every agent on this machine reads AGENTS.md.
 
+### C-12a — NPC portraits: prefer simple vector / programmatic pixel art over heavy raster images (2026-08-29)
+
+- **Section changed:** §9 (UI), `src/ui/office-roster.ts`, `src/ui/dialogue.ts`.
+- **Was:** The agy npc-portraits report (`.agent-briefs/npc-portraits-report.md`) specifies 13 full pixel-art portraits with hex palettes and color-by-character guidance. This implied hiring a pixel artist or using a heavy raster pipeline.
+- **Now (Lucas 2026-08-29):** "simple vector images/portraits close to what we have now as faces but a little more variant, more options, not all clones." Prefer programmatic / vector approaches: SVG portraits generated at boot, three.js sprite text-or-primitive portraits, or small base64 PNGs (a few KB each) drawn in a consistent pixel-art style. The roster's 13 NPCs should look different but share a visual family. Heavy raster images (Qwen, Gemini, midjourney) are out for v1; the cost (file size, visual inconsistency, license) outweighs the benefit.
+- **Implementation:** New `src/ui/npc-portraits.ts` with a `getPortraitSvg(npcId, mood)` function returning an inline `<svg>` string. Each NPC has: skin tone, hair color, hair style, eye color, accessory (glasses, beard, hat, etc.) — drawn from a curated palette per `npc-portraits-report.md`. The dialogue UI swaps portraits on mood change. Total file size: < 50 KB.
+- **Visual variety target:** no two NPCs should look the same. Each NPC has 2-3 unique traits. The 13 NPCs cover: bald, short hair, long hair, ponytail, beard, mustache, glasses, hat, headphones, headband, freckles, mole, scar. Skin tones: a curated 5-color palette (avoids uncanny-valley extremes).
+- **Reason:** Lucas: "images will be much bigger and heavier. probably for pixel game we can have simple vector images/portraits close to what we have now as faces but a little more variant, more options, not all clones."
+
 ### C-13 — Two-company branding: DevPowers + Edukey (2026-08-29)
 
 - **Section changed:** §1, §9 (UI), and adds a new §16 (Branding).
@@ -633,23 +650,26 @@ This section is the authoritative list of corrections Lucas has given. New corre
   - Birthday profile: each NPC's profile gains `birthdayDayOfYear`, `favoriteCake` (e.g. "chocolate" for Klaudia, "lemon" for Janusz, "carrot" for Burek). The birthday event chains into a quest: "find a gift for Klaudia's birthday."
 - **Reuses the agy report's recommendation:** Option D (4-tier priority stack) is the right architecture for the per-day stochastic layer. The event calendar is a separate, higher-priority layer (Tier 0 — above the quest hard-pins) that overrides even quest-pinned NPCs.
 
-### C-16 — Time scaling: 10 real minutes per period (uniform, 30 min/day) (2026-08-29) — REVISED 2026-08-29 (Lucas: "10 min/period should be enough, let's test it")
+### C-16 — Time scaling: 5/10/5 asymmetric = 20 min/day + speed controls (2026-08-29) — REVISED 2026-08-29 (Lucas: "ok, let's test it. we can always change it after tests")
 
 - **Section changed:** §4.5 (End of day) and the time constants in `src/main.ts`.
 - **Was:** 60 real seconds = 1 in-game period; 3 periods per day = 180s/day. The user reported: "days go way too fast, I did not even manage to understand anything what I should do there and the day passed and I was back outside the building (looking on the roof...)"
 - **Was (initial revision C-16):** 5 real minutes per period, 3 periods per day = 15 min/day.
+- **Was (second revision C-16):** 10 real minutes per period, 3 periods per day = 30 min/day.
 - **Was (opencode report recommendation):** 5/10/5 asymmetric (morning/afternoon/evening) = 20 min/day + speed controls.
-- **Now (Lucas 2026-08-29):** **10 real minutes per period, 3 periods per day = 30 real minutes per in-game day.** Lucas: "ok, 15m per day seams ok, but never interupt in the middle of the dialogue, we should pause the time or at least prevent the tday change." and "10 min/period should be enough. lets test it."
-- **Constants:** `SECONDS_PER_PERIOD = 600`. Three periods (morning, afternoon, evening) per in-game day. One in-game day = 30 real minutes.
-- **Tunable:** the constant is exported (`SECONDS_PER_PERIOD = 600`) so a future "speed run" mode can drop it back to 60s. The default for the public demo is 600.
+- **Now (Lucas 2026-08-29, final):** **5/10/5 asymmetric = 20 real minutes per in-game day** + player speed controls. Lucas: "ok, let's test it. we can always change it after tests." This adopts the opencode report recommendation and ADDS the speed controls.
+- **Constants:** `PERIOD_SECONDS = { morning: 300, afternoon: 600, evening: 300 }`. Total 1200s = 20 min/day. Period rates are: morning 0.8 game-min/real-s, afternoon 0.5 game-min/real-s, evening 0.6 game-min/real-s. The HUD derives time-of-day from period progress so the varying rate is invisible to the player.
+- **Player speed controls (default ON):** 0.5x / 1x (default) / 2x / Skip-to-next-event / End-day-early / Pause. Hotkeys: `1` / `2` / `3` / `N` / `H` / `Space`. Auto-pause on scheduled events ("Standup is starting — Join / Catch up later (morale −)"). A HUD line shows "Next event in mm:ss".
+- **Tunable:** constants are exported so a future "speed run" mode can drop them back. The default for the public demo is 300/600/300 with speed controls enabled.
 - **HARD RULE — time NEVER advances while a dialogue is open.** Lucas was explicit: "never interupt in the middle of the dialogue, we should pause the time or at least prevent the tday change." This is a stronger statement than the original Phase 0 "pause during dialogue" — it means:
   - Dialogue is open → period-advance loop is paused, period NEVER rolls over, day NEVER ends.
   - Multi-NPC modes (standup, meeting, classroom, client call) are part of "dialogue" and pause time too.
   - If the player reads 8 lines of dialogue, 8 lines of dialogue is all the time that passes.
   - The period-rollover toast ("Period 2 of 3 — Afternoon, 6:00 PM") does NOT fire while a dialogue is open.
-- **Implementation note:** the day-advance loop already wraps in `if (!dialogue?.isOpen())` (Phase 0 fix). C-16 reinforces that this is a hard rule, not a soft one. If a future change makes the period advance during dialogue, the change is rejected at code review.
-- **Phase 3+ may add player speed controls (0.5x / 1x / 2x / skip-to-next-event / end-day-early)** as an additive feature, not a default. The opencode pacing report's recommendation is good — speed controls are orthogonal to the day length and let power users speed-run a quest. Default for the public demo: 1x, no skip.
-- **Why I am NOT adopting the opencode 5/10/5 asymmetric recommendation:** Lucas was explicit: "10 min/period should be enough, let's test it." The agent's 5/10/5 recommendation (5 min morning, 10 min afternoon, 5 min evening = 20 min/day) is overruled by Lucas's direct choice of "10 min/period" = 30 min/day. The asymmetric recommendation is logged in `.agent-briefs/time-pacing-report.md` for future iteration (e.g. if 30 min/day feels too slow on playtest, the asymmetric version is a fall-back). Lucas's direct decision wins.
+  - The speed controls cannot bypass this — even at 2x, time does not advance during dialogue.
+- **Implementation note:** the day-advance loop already wraps in `if (!dialogue?.isOpen())` (Phase 0 fix). C-16 reinforces that this is a hard rule, not a soft one. If a future change makes the period advance during dialogue, the change is rejected at code review. The speed controls (Phase 3) gate the period-advance differently: speed-multiplier scales the `dt` value going into the period-advance check, but the dialogue-pause still wins.
+- **Why I am adopting the opencode 5/10/5 + speed controls recommendation:** Lucas's third message explicitly answered "ok, let's test it" to the question of whether to take the opencode 5/10/5 (20 min/day) + speed controls recommendation. That supersedes the earlier "10 min/period should be enough" message. The agent surfaces the change in the corrections log so the earlier override is not silently lost.
+- **Rollout per phase (per opencode report):** Phase 0 ships the C-16-revised-1 uniform 300s (15 min/day) and the dialogue-pause hard rule. Phase 1 adds auto-pause on period change + HUD countdown. Phase 3 ships the 5/10/5 (20 min/day) + speed controls together — the longer clock and the controls must land together. Phase 5+ reassesses via playtest; if there's dead time, add ambient content (bubbles, side errands) rather than lengthening the clock.
 
 ### C-17 — Stuck-dialogue bug: state must reset on screen transition (2026-08-29)
 
