@@ -536,6 +536,7 @@ declare global {
       getCamera: () => { x: number; y: number; z: number };
       getFocus: () => string | null;
       getScreen: () => string;
+      getSceneObjects: () => { keys: string[]; hasPlayerGroup: boolean } | null;
     };
   }
 }
