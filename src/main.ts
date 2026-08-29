@@ -3,11 +3,14 @@
  *
  * Wires the engine, game state, UI, dialogue, and mini-games into a single game loop.
  *
- * The 3D office is a backdrop, NOT an action space. The player does not walk
- * around. They click a name in the roster, the camera pans to that NPC, and
- * the dialogue opens. This is a dialogue-driven economic sim, not a 3D action
- * game, and the previous WASD+pointer-lock design got in the way of playing
- * it. See the office-roster UI for the clickable roster that drives the scene.
+ * Phase 2 (current): first-person camera (C-01) + Pattern D mouse-look
+ * (ADR-0007). The player walks around the office with WASD, looks with
+ * RMB-hold or Space-toggle, and clicks NPCs with LMB to start a
+ * conversation. The roster remains a parallel input — clicking a
+ * roster card also walks to the NPC and opens the dialogue.
+ *
+ * See docs/ADR/0007-mouse-look-pattern-d.md for the full design and
+ * the pattern's rationale.
  */
 
 import "./style.css";
@@ -35,6 +38,7 @@ import { resolveUrl, type Manifest, loadManifest } from "./audio/manifest";
 import { SECONDS_PER_PERIOD } from "./game/pacing";
 import { mountQuestLog, type QuestLogHandle } from "./ui/quest-log";
 import { mountHelpModal, type HelpModalHandle } from "./ui/help-modal";
+import { ndcFromMouse, pickFromCamera } from "./engine/interaction-raycaster";
 
 type Screen = "title" | "create" | "office" | "summary" | "minigame" | "gameover";
 
@@ -45,6 +49,7 @@ let engine: Engine | null = null;
 let cameraDirector: CameraDirector | null = null;
 let sceneObjects: ReturnType<typeof buildOfficeScene> | null = null;
 let controls: Controls | null = null;
+let raycaster: THREE.Raycaster | null = null;
 let screen: Screen = "title";
 let hud: HudElements | null = null;
 let dialogue: DialogueController | null = null;
@@ -55,6 +60,13 @@ let helpModal: HelpModalHandle | null = null;
 let focusedNpcId: NpcId | null = null;
 let officeStartedAt = 0;
 let lastTime = performance.now();
+/**
+ * True while the day-1 intro cinematic is animating the camera. While
+ * set, the controls do not write to the camera (their default would
+ * snap the camera back to the player each frame). Cleared once the
+ * cinematic resolves.
+ */
+let cinematicPlaying = false;
 
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
@@ -153,27 +165,20 @@ function focusNpc(id: NpcId | null): void {
   focusedNpcId = id;
   if (!cameraDirector || !engine || !sceneObjects) return;
   if (id === null) {
-    // Default framing: player stands at the office door (south wall, z=+9),
-    // eye level (~1.7m), looking at the central row of desks (z=-2). The
-    // lookAt y=1.1 (NPC head height for a seated person) puts the NPCs in
-    // the middle of the frame instead of the back wall (z=-9) dominating.
-    // Bypassing the director avoids its default (0, 2.5, 5.5) offset which
-    // used to put the camera 3.7m up — the original "looking at the roof"
-    // bug. See also the over-shoulder follow camera Phase 2 will introduce.
-    engine.camera.position.set(0, 1.7, 7.5);
-    engine.camera.lookAt(0, 1.1, -2);
+    // Phase 2 (C-01, ADR-0007): the controls own the camera every
+    // frame in the office. focusNpc(null) only has to cancel any
+    // in-flight camera animation (so it doesn't fight the controls
+    // for the camera) and clear the focused NPC. The next
+    // controls.update() call will set the camera to the player at
+    // eye height, looking down -Z (the default rotation).
     cameraDirector.cancel();
-    // Tighten FOV to 40° so the NPCs read as actual figures rather than
-    // tiny dots in a sea of floor/wall. 55° (the renderer default) frames
-    // the whole 20×20m office but the desks shrink to nothing.
-    engine.camera.fov = 40;
-    engine.camera.updateProjectionMatrix();
     return;
   }
   const npc = NPCS.find((n) => n.id === id);
   if (!npc) return;
-  // Frame the NPC at their desk. Offset puts the camera in front of and above them
-  // so the player can see both the NPC and the dialogue overlay.
+  // Roster-driven NPC focus: still pan the camera to frame the NPC.
+  // The controls will continue to update the player position from
+  // WASD, so the player can still walk during the pan.
   const target = new THREE.Vector3(npc.position.x, npc.position.y + 0.6, npc.position.z);
   const offset = new THREE.Vector3(0, 1.6, 3.2);
   cameraDirector.panTo(target, offset);
@@ -197,6 +202,36 @@ function startOffice(playIntro = false): void {
       canvas,
       camera: engine.camera,
       initialPlayer: sceneObjects.playerStart,
+    });
+    raycaster = new THREE.Raycaster();
+    // LMB click-to-talk in free-mouse mode (Pattern D). The handler
+    // is a closure over sceneObjects and the dialogue state so it
+    // always sees the latest references. We add it once on the
+    // canvas — re-adding on every startOffice() would duplicate the
+    // handler. The `controls?.isMouseLookActive()` check skips the
+    // raycast when we're in mouse-look (the LMB should be the
+    // "interact with crosshair target" action there, not the free
+    // raycast — that comes in a later commit).
+    canvas.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return; // LMB only
+      if (!controls || !sceneObjects || !engine) return;
+      if (controls.isMouseLookActive()) return;
+      if (dialogue?.isOpen()) return;
+      const rect = canvas.getBoundingClientRect();
+      const ndc = ndcFromMouse(e.clientX, e.clientY, rect);
+      raycaster!.setFromCamera(new THREE.Vector2(ndc.x, ndc.y), engine.camera);
+      const hit = pickFromCamera({
+        raycaster: raycaster!,
+        npcMeshes: sceneObjects.npcMeshes,
+        interactableMeshes: sceneObjects.interactableMeshes,
+        maxDistance: 12,
+      });
+      if (hit.kind === "npc") {
+        const npc = NPCS.find((n) => n.id === hit.npcId);
+        if (npc) openDialogueWith(npc);
+      }
+      // hit.kind === "object" -> activate it (Phase 4)
+      // hit.kind === "none"   -> no-op
     });
     focusNpc(null);
   }
@@ -288,6 +323,7 @@ let prevCredibility = 0;
 async function playIntroCinematic(): Promise<void> {
   if (!engine) return;
   // Pause time during the cinematic; the day timer starts AFTER.
+  cinematicPlaying = true;
   const cinematicStartMs = performance.now();
   const CINEMATIC_DURATION_MS = 3500;
 
@@ -314,33 +350,40 @@ async function playIntroCinematic(): Promise<void> {
   const toPos = new THREE.Vector3(0, 1.7, 7.5);
   const toFov = 40;
 
-  await new Promise<void>((resolve) => {
-    function step(): void {
-      const elapsed = performance.now() - cinematicStartMs;
-      const t = Math.min(1, elapsed / CINEMATIC_DURATION_MS);
-      // 0..0.15s = fade in + establishing shot holds; 0.15..1.0 = dolly
-      // + fov tighten.
-      const u = Math.max(0, (elapsed - 400) / (CINEMATIC_DURATION_MS - 400));
-      const ease = u < 0 ? 0 : 1 - Math.pow(1 - Math.min(1, u), 3); // ease-out cubic
-      cam.position.set(
-        fromPos.x + (toPos.x - fromPos.x) * ease,
-        fromPos.y + (toPos.y - fromPos.y) * ease,
-        fromPos.z + (toPos.z - fromPos.z) * ease,
-      );
-      cam.fov = fromFov + (toFov - fromFov) * ease;
-      cam.updateProjectionMatrix();
-      // Look at NPC head height as we approach the final frame.
-      const lookY = 1.1 * ease + 0 * (1 - ease);
-      const lookZ = -2 * ease + -5 * (1 - ease);
-      cam.lookAt(0, lookY, lookZ);
-      if (t < 1) {
-        requestAnimationFrame(step);
-      } else {
-        resolve();
+  try {
+    await new Promise<void>((resolve) => {
+      function step(): void {
+        const elapsed = performance.now() - cinematicStartMs;
+        const t = Math.min(1, elapsed / CINEMATIC_DURATION_MS);
+        // 0..0.15s = fade in + establishing shot holds; 0.15..1.0 = dolly
+        // + fov tighten.
+        const u = Math.max(0, (elapsed - 400) / (CINEMATIC_DURATION_MS - 400));
+        const ease = u < 0 ? 0 : 1 - Math.pow(1 - Math.min(1, u), 3); // ease-out cubic
+        cam.position.set(
+          fromPos.x + (toPos.x - fromPos.x) * ease,
+          fromPos.y + (toPos.y - fromPos.y) * ease,
+          fromPos.z + (toPos.z - fromPos.z) * ease,
+        );
+        cam.fov = fromFov + (toFov - fromFov) * ease;
+        cam.updateProjectionMatrix();
+        // Look at NPC head height as we approach the final frame.
+        const lookY = 1.1 * ease + 0 * (1 - ease);
+        const lookZ = -2 * ease + -5 * (1 - ease);
+        cam.lookAt(0, lookY, lookZ);
+        if (t < 1) {
+          requestAnimationFrame(step);
+        } else {
+          resolve();
+        }
       }
-    }
-    requestAnimationFrame(step);
-  });
+      requestAnimationFrame(step);
+    });
+  } finally {
+    // Always hand the camera back to the controls, even if the
+    // cinematic errors. Otherwise the camera would be stuck wherever
+    // the tween last left it and the player would see a frozen frame.
+    cinematicPlaying = false;
+  }
 
   // Step 4: reveal the quest log so the player sees the first quest.
   // Mark the intro as seen so the orchestrator advances past q-intro-1
@@ -517,9 +560,15 @@ function frame(): void {
   // Phase 2: WASD + mouse-look (C-01, ADR-0007). Run after the
   // camera director so the controls overwrite any in-flight camera
   // animation once the player is on the office screen. Skip while
-  // the dialogue is open so the camera does not drift during a
-  // long read.
-  if (controls && screen === "office" && !dialogue?.isOpen()) {
+  // the dialogue is open (so the camera does not drift during a
+  // long read) and while the intro cinematic is animating the
+  // camera (the cinematic's tween is the camera at this moment).
+  if (
+    controls &&
+    screen === "office" &&
+    !dialogue?.isOpen() &&
+    !cinematicPlaying
+  ) {
     controls.update(dt);
   }
 
