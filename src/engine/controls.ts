@@ -8,10 +8,14 @@
  * - The camera follows the player.
  *
  * Movement uses simple AABB collision against office walls and obstacles.
+ * The collision math lives in ./collision as a pure function so the
+ * edge cases (wall sliding, bounds clamping, obstacle reverts) can be
+ * unit-tested without booting three.js.
  */
 
 import * as THREE from "three";
 import { OFFICE_BOUNDS, OBSTACLES } from "../content/npcs";
+import { applyWithCollision } from "./collision";
 
 const WALK_SPEED = 3; // units per second
 const SPRINT_MULT = 1.6;
@@ -156,8 +160,12 @@ export function createControls(opts: ControlsOptions): Controls {
     move.multiplyScalar(WALK_SPEED * sprint * dt);
 
     // Apply collision separately on each axis to allow wall sliding.
-    applyWithCollision(player, "x", move.x);
-    applyWithCollision(player, "z", move.z);
+    const ax = applyWithCollision({ x: player.x, z: player.z }, PLAYER_RADIUS, move.x, 0, OFFICE_BOUNDS, OBSTACLES);
+    player.x = ax.x;
+    player.z = ax.z;
+    const az = applyWithCollision({ x: player.x, z: player.z }, PLAYER_RADIUS, 0, move.z, OFFICE_BOUNDS, OBSTACLES);
+    player.x = az.x;
+    player.z = az.z;
 
     // Camera follows the player.
     const camTarget = new THREE.Vector3(
@@ -172,34 +180,6 @@ export function createControls(opts: ControlsOptions): Controls {
     );
     camera.position.copy(camTarget.clone().add(camOffset));
     camera.lookAt(camTarget);
-  }
-
-  function applyWithCollision(p: THREE.Vector3, axis: "x" | "z", delta: number): void {
-    if (delta === 0) return;
-    const oldVal = p[axis];
-    p[axis] = oldVal + delta;
-
-    // Wall bounds.
-    if (axis === "x") {
-      if (p.x - PLAYER_RADIUS < OFFICE_BOUNDS.minX) p.x = OFFICE_BOUNDS.minX + PLAYER_RADIUS;
-      if (p.x + PLAYER_RADIUS > OFFICE_BOUNDS.maxX) p.x = OFFICE_BOUNDS.maxX - PLAYER_RADIUS;
-    } else {
-      if (p.z - PLAYER_RADIUS < OFFICE_BOUNDS.minZ) p.z = OFFICE_BOUNDS.minZ + PLAYER_RADIUS;
-      if (p.z + PLAYER_RADIUS > OFFICE_BOUNDS.maxZ) p.z = OFFICE_BOUNDS.maxZ - PLAYER_RADIUS;
-    }
-
-    // Obstacles.
-    for (const o of OBSTACLES) {
-      if (
-        p.x + PLAYER_RADIUS > o.minX &&
-        p.x - PLAYER_RADIUS < o.maxX &&
-        p.z + PLAYER_RADIUS > o.minZ &&
-        p.z - PLAYER_RADIUS < o.maxZ
-      ) {
-        p[axis] = oldVal;
-        return;
-      }
-    }
   }
 
   return {
