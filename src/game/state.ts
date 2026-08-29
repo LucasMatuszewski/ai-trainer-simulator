@@ -84,7 +84,7 @@ class GameStore {
   }
 }
 
-function reduce(state: GameState, action: Action): GameState {
+export function reduce(state: GameState, action: Action): GameState {
   switch (action.type) {
     case "add-cash": {
       const cash = state.cash + action.amount;

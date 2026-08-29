@@ -40,6 +40,10 @@ src/**/*.js
 src/**/*.js.map
 !src/**/*.config.js
 
+# Compiled test JS next to TS (vitest type-checks .ts directly)
+tests/**/*.js
+tests/**/*.js.map
+
 # Env
 .env
 .env.local

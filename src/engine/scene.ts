@@ -1049,6 +1049,12 @@ function makeNpcMarker(npc: NPC, index: number): THREE.Group {
     g.add(leg);
   }
   g.position.set(npc.position.x, 0, npc.position.z);
+  // Desks have their monitor on the -Z side and the keyboard on the +Z side,
+  // so the NPC should look toward -Z to see their own screen. The marker was
+  // authored with eyes on +Z (facing the camera) which made every NPC look
+  // "outward" toward the player with the screen behind their back. Rotate 180°
+  // so the eyes point at the monitor.
+  g.rotation.y = Math.PI;
   g.userData.npcId = npc.id;
   return g;
 }

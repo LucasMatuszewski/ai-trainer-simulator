@@ -27,6 +27,7 @@ import { createDialogue, type DialogueController } from "./ui/dialogue";
 import { mountDebugScript, type DebugScriptHandle } from "./minigames/debug-script";
 import { audio, type MusicId } from "./audio/AudioManager";
 import { resolveUrl, type Manifest, loadManifest } from "./audio/manifest";
+import { SECONDS_PER_PERIOD } from "./game/pacing";
 
 type Screen = "title" | "create" | "office" | "summary" | "minigame" | "gameover";
 
@@ -135,8 +136,21 @@ function focusNpc(id: NpcId | null): void {
   focusedNpcId = id;
   if (!cameraDirector || !engine || !sceneObjects) return;
   if (id === null) {
-    // Default framing: a wide shot of the whole office.
-    cameraDirector.snapTo(new THREE.Vector3(0, 0.5, 6), new THREE.Vector3(0, 4.5, 9));
+    // Default framing: player stands at the office door (south wall, z=+9),
+    // eye level (~1.7m), looking at the central row of desks (z=-2). The
+    // lookAt y=1.1 (NPC head height for a seated person) puts the NPCs in
+    // the middle of the frame instead of the back wall (z=-9) dominating.
+    // Bypassing the director avoids its default (0, 2.5, 5.5) offset which
+    // used to put the camera 3.7m up — the original "looking at the roof"
+    // bug. See also the over-shoulder follow camera Phase 2 will introduce.
+    engine.camera.position.set(0, 1.7, 7.5);
+    engine.camera.lookAt(0, 1.1, -2);
+    cameraDirector.cancel();
+    // Tighten FOV to 40° so the NPCs read as actual figures rather than
+    // tiny dots in a sea of floor/wall. 55° (the renderer default) frames
+    // the whole 20×20m office but the desks shrink to nothing.
+    engine.camera.fov = 40;
+    engine.camera.updateProjectionMatrix();
     return;
   }
   const npc = NPCS.find((n) => n.id === id);
@@ -227,6 +241,13 @@ function refreshRoster(): void {
 
 function endDay(): void {
   if (screen !== "office") return;
+  // Close any open dialogue first. showDailySummary will clear uiRoot.innerHTML
+  // which would otherwise orphan the dialogue DOM but leave the controller's
+  // `state` set, and the next openDialogueWith() call would early-return as
+  // "already open" — the "dialog never appears again" bug.
+  if (dialogue?.isOpen()) {
+    dialogue.close();
+  }
   const result = runDailyTick();
   setScreen("summary");
   showDailySummary(uiRoot, {
@@ -368,11 +389,14 @@ function frame(): void {
   if (engine) engine.render();
 
   // Time tick: each real second is some fraction of an in-game period.
-  if (screen === "office") {
+  // Time pauses while a dialogue is open (no one likes reading a punchline
+  // and then the day ending under them) and while we're in any other screen.
+  if (screen === "office" && !dialogue?.isOpen()) {
     if (officeStartedAt === 0) officeStartedAt = now;
     const elapsed = (now - officeStartedAt) / 1000;
-    // ~60 real seconds = 1 period. 3 periods per day = 180s per day.
-    const periodsElapsed = Math.floor(elapsed / 60);
+    // SECONDS_PER_PERIOD = 180 by default; see top of file. 3 periods/day =
+    // ~9 real minutes per in-game day.
+    const periodsElapsed = Math.floor(elapsed / SECONDS_PER_PERIOD);
     if (periodsElapsed > 0) {
       const prevDay = game.get().day;
       for (let i = 0; i < periodsElapsed; i++) {

@@ -17,7 +17,11 @@ export default defineConfig({
     sourcemap: true,
   },
   test: {
+    // Pure-logic unit tests live in tests/unit and don't need a DOM. The
+    // jsdom environment was previously configured but the package isn't
+    // installed; running with the default `node` env avoids the missing
+    // dependency and is correct for our reducer/constant tests.
     include: ["tests/unit/**/*.test.ts"],
-    environment: "jsdom",
+    environment: "node",
   },
 });
