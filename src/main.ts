@@ -23,7 +23,11 @@ import type { GameState, NPC, NpcId } from "./types";
 import { mountHud, renderHud, showToast, type HudElements } from "./ui/hud";
 import { mountTitleScreen, mountCharacterCreate, showDailySummary, showGameOver } from "./ui/title";
 import { mountOfficeRoster, type OfficeRosterHandle } from "./ui/office-roster";
-import { createDialogue, type DialogueController } from "./ui/dialogue";
+import {
+  closeDialogueForScreenTransition,
+  createDialogue,
+  type DialogueController,
+} from "./ui/dialogue";
 import { mountDebugScript, type DebugScriptHandle } from "./minigames/debug-script";
 import { audio, type MusicId } from "./audio/AudioManager";
 import { resolveUrl, type Manifest, loadManifest } from "./audio/manifest";
@@ -57,6 +61,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 function setScreen(next: Screen): void {
+  closeDialogueForScreenTransition(dialogue);
   const prevScreen = screen;
   screen = next;
   if (next !== "minigame" && next !== "summary" && next !== "gameover") {

@@ -13,6 +13,12 @@ export interface DialogueController {
   onNodeShown: (cb: (npc: NPC, nodeId: string) => void) => void;
 }
 
+export function closeDialogueForScreenTransition(
+  controller: DialogueController | null,
+): void {
+  if (controller?.isOpen()) controller.close();
+}
+
 interface DialogueState {
   npc: NPC;
   tree: DialogueTree;
