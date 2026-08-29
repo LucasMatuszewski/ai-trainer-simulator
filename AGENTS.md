@@ -118,6 +118,27 @@ Lucas flagged: "not sure how to test 3D game in three.js - you should research t
 
 This is the new TDD process. It is added to the project's Definition of Done and to the orchestrator's per-phase checklist.
 
+### PR-9: Lucas's "do not ignore" rules (2026-08-29)
+
+Lucas has been emphatic that the agent must not ignore his messages. These rules are non-negotiable, on top of HR-1 / HR-2 / HR-3 from `~/AGENTS.md`:
+
+1. **Every message from Lucas is read, parsed, and acknowledged.** No message is dropped. If a message contains multiple decisions (e.g. "ad.1... ad.2... ad.3..."), each decision is handled. (HR-1 supersedes; this rule is the operational version.)
+2. **Decisions from the message go into the PRD/ADR/Plan BEFORE any code work.** Same as HR-2 but restated: "do not ignore this message again" means do not start coding on a new instruction without first updating the docs.
+3. **When research contradicts a direct user decision, the user decision wins UNLESS the agent has a strong argument.** If the agent overrides, the override must be explicit ("I am overriding X because Y from research report Z") and defensible.
+4. **"Make your own decisions when needed."** If Lucas is silent on a question, the agent picks a reasonable default, documents it in the PRD/ADR, and proceeds. The default is reversible.
+5. **"We can do both" / "Mix both" — no either/or interpretations.** When Lucas says "mix both" (e.g. C-15 stochastic), the agent mixes all the layers Lucas mentioned, not just one.
+6. **The agent never declares a phase "done" unilaterally.** The phase is "done" only when: typecheck ✓, tests ✓, screenshot ✓, agy description ✓, codex/agy QA verdict ✓, Lucas has acked the screenshot.
+
+These rules apply to every phase, every commit, every interaction with Lucas.
+
+### PR-10: Lucas's overall mandate — "the best simulator business retro game in the history" (2026-08-29)
+
+Lucas's verbatim mandate: "make this the best simulator business retro game in the history, a real game, not just simple demo, make it huge and ambitious! Do not stop untill you have detailed graphics, funny storyline, high engagement, working mechanics, and not bugs at all."
+
+This is the project's north star. Every phase is checked against this mandate before declaring it "done." A phase that does not move the game toward "the best simulator business retro game in the history" is the wrong phase.
+
+The mandate is captured in PRD §13 C-26 and the plan's Endgame additions (C-26). The agent reviews C-26 at the start of every phase and reports progress against it.
+
 ## Current design direction (post-2026-08-29 corrections)
 
 The user's corrections on 2026-08-29 changed the design direction. The corrected PRD is in `docs/PRD.md` §13. Summary:
@@ -126,13 +147,21 @@ The user's corrections on 2026-08-29 changed the design direction. The corrected
 - **Default state is free mouse.** RMB-hold = mouse-look mode. Click (LMB) = raycast interaction. Roster panel is the primary way to choose an NPC from a distance.
 - **Custom pixel-art cursor** (Amiga style). 4 states: default, hover NPC, hover object, busy.
 - **Walk-to-face** before every dialogue. The player walks to 1.5m in front of the NPC; the NPC turns to face the player; dialogue opens.
-- **Multi-turn dialogues** (4-8 turns minimum per conversation). NPCs remember past conversations. Greetings vary by "how many times talked today."
+- **Multi-turn dialogues** (4-8 turns minimum per conversation, no hard cap — Lucas: "I just need this game to be real game, not a demo, so we need enough options, branching, decisions trees etc to make this a real simulation, with simulation of relations, previous actions influencing future actions and dialogues and answer options. Like in real RPG!"). NPCs remember past conversations. Greetings vary by "how many times talked today." 5-layer structure: greetings + topic threads + follow-up branches + memory callbacks + gated options. ~2,300 authored strings across ~730 tree nodes (13x today's volume, ~100x perceived variety).
 - **NPCs sit AT desks, face their monitors, have idle animations.** Procedural variation: each desk has a random wood tint, each NPC has random items (mug color, sticky notes, plant).
 - **NPC schedule per period** (morning/afternoon/evening). NPCs move between their schedule targets. The CTO is gone by afternoon. The janitor arrives late.
 - **Inter-NPC speech bubbles** when 2 NPCs are within 2.5m of each other. 50+ curated lines.
-- **Day-1 intro cinematic** with sky, trees, birds, neighboring buildings, road with cars. Exterior meshes disposed after the cinematic.
+- **Day-1 intro cinematic** with sky, trees, birds, neighboring buildings, road with cars. Establishing shot from a distance (~50-80m), not a wall closeup. Exterior meshes disposed after the cinematic.
 - **Roster panel and trigger prompts are larger** (16-18px font, generous padding).
 - **Camera is NEVER through walls** — first-person by construction.
+- **NPC life = deterministic schedule + per-day random seed + named events (birthdays, team lunches, firedrills, hackathons).** Lucas: "mix both your ideas... BOTH!!!" Per the agy report, the architecture is the 4-tier priority stack (Option D): quest hard-pins + daily quirk + bounded micro-events + base routine. The event calendar is a separate higher-priority layer (Tier 0) that overrides even quest-pinned NPCs.
+- **Time = 10 real minutes per period, 3 periods per day = 30 min/in-game day.** Lucas: "10 min/period should be enough. lets test it." Time NEVER advances while a dialogue is open — this is a hard rule, not a soft check. Period-rollover toast does not fire during dialogue.
+- **Onboarding = cinematic + first quest + in-dialogue introductions + help modal + quest log, all mixed.** Lucas: "longer and more clear what we are doing here, who we are, what is a goal, and more like simulations, we should have dialogs explaining who we are like in a game!!!" Each of the 13 NPCs gets an in-character introduction in Bartek's onboarding conversation.
+- **Multi-room world.** Main office (existing 20x20) + Training Room + Kitchen + Meeting Room + CTO Office. Open doorways, no real doors. The CTO office has a huge window onto the main office and a huge Batman sign on the wall. Glass wall (transmission material or fallback opacity). The existing office MUST NOT BE BROKEN.
+- **DevPowers + Edukey two-brand identity.** Wall poster, CEO office logo, classroom title, day-end KPIs. Soft rebrand (add assets, don't sweep dialogue).
+- **WebMCP layer (C-14) for AI agents.** External agents can play the game via a standardized tool API. OpenAI WebMCP challenge entry.
+- **MMORPG endgame (C-25) — vision only.** Players + AI agents + NPCs in a shared world. Post-Phase 6.
+- **The mandate (C-26).** "The best simulator business retro game in the history." Every phase is checked against this.
 
 A new agent on this project should READ the corrections log in `docs/PRD.md` §13 BEFORE making any design decision. The "obvious" choice (over-the-shoulder camera, always-rotating mouse, single-turn dialogue) was already tried and rejected.
 

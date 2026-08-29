@@ -493,13 +493,20 @@ This section is the authoritative list of corrections Lucas has given. New corre
 - **Reason:** The user: "position next to person name is too small, hard to read."
 - **Implementation:** `src/ui/office-roster.ts` is updated with larger fonts and padding. The trigger prompt is a new component `src/ui/interaction-prompt.ts` that shows the current hover target's name and role in 14-16px pixel font, bottom-center.
 
-### C-07 — Day-1 intro is a real cinematic, not a roof shot (2026-08-29)
+### C-07 — Day-1 intro is a real cinematic, not a roof shot (2026-08-29) — REVISED 2026-08-29 (Lucas)
 
 - **Section changed:** §4.1 (First-launch), §11.4.
-- **Was:** The intro showed the building from the outside, focusing on the roof, with no sky, no trees, no people. The user called this "nothing interesting."
-- **Now:** A full multi-stage cinematic (see §11.4) with exterior shot (sky, trees, birds, neighboring buildings, road with cars), approach to the door, walk through, fade in inside the office, first-message, quest log, roster slide-in.
+- **Was (initial):** The intro showed the building from the outside, focusing on the roof, with no sky, no trees, no people. The user called this "nothing interesting."
+- **Was (revised complaint 2026-08-29):** "we can show building from outside for intro but it should be from the distance, now we see like the closeup of the wall, not nice animated intro or cut-scene." The first attempt at an exterior shot was a wall closeup, not a distance shot. The user wants the building seen from far away, as a real establishing shot, not as a wall texture.
+- **Now:** A full multi-stage cinematic (see §11.4) with:
+  1. **Establishing shot from a distance.** Camera at ~50-80m, looking at the building. Sky, trees, birds, neighboring buildings, road with cars — all visible. The building's exterior signage shows "DevPowers Group — DevPowers + Edukey." Hold for 2-3 seconds, slow dolly forward.
+  2. **Approach the door.** Camera dollies down to shoulder height, walks toward the entrance.
+  3. **Walk through.** The player takes control at the doorway.
+  4. **Lunch in the kitchen.** On subsequent days, after the morning standup, the player walks to the kitchen for lunch (no cinematic — just normal walking). The kitchen is a real place inside the building.
+  5. **Fade in inside the office, first-message, quest log, roster slide-in.**
+- **The building from the outside is shown ONCE, on day 1.** The distance is important — the user is explicit: "from the distance, now we see like the closeup of the wall." A closeup is the wrong move; a wide establishing shot is the right move.
 - **Reason:** "GAMES NEED INTRO, some animation, introduction. Both on the start of the game and in the start of a day." The intro must set the tone, the world, and the stakes.
-- **Implementation:** `src/engine/cinematic.ts` (new) handles the intro. The exterior is a separate scene loaded only during the intro and disposed after.
+- **Implementation:** `src/engine/cinematic.ts` (new) handles the intro. The exterior is a separate scene loaded only during the intro and disposed after. The exterior camera is at `(0, 28, 80)` looking at `(0, 12, 0)`, NOT `(0, 28, 4)` — the difference between "wall closeup" and "establishing distance shot" is the z coordinate.
 
 ### C-08 — NPCs sit AT desks (not in the middle), face their monitors, animate (2026-08-29)
 
@@ -517,13 +524,23 @@ This section is the authoritative list of corrections Lucas has given. New corre
 - **Reason:** "When we talk to somebody we should simulate that we walk to this person and this person should move also in our direction, like it would look on us when we talk. now I talk to the back..."
 - **Implementation:** A new `src/engine/walk-to-face.ts` module. Pure function `planWalkToFace(player, npc): {target, npcTargetYaw}` returns a target position and the NPC's target yaw. The dialogue system calls `walkToFace` before opening. If the player cancels (Esc), the walk aborts.
 
-### C-10 — Multi-turn dialogues (4-8 turns minimum per conversation) (2026-08-29)
+### C-10 — Multi-turn dialogues (4-8 turns minimum per conversation) (2026-08-29) — REVISED 2026-08-29 (Lucas: "no hard number, just RPG-style")
 
 - **Section changed:** §4.3.
 - **Was:** Dialogue was single Q-and-A. Pick an option, dialogue ends. "Only one question and one answer? thats it? Is it how it looks like in any real office?"
-- **Now:** Each NPC conversation is 4-8 player turns minimum. Each option leads to a different NPC follow-up. NPCs remember past conversations. NPCs have multi-NPC conversations (meetings, classroom mode). NPCs have varied greetings based on "how many times talked today" and "last topic."
-- **Reason:** "Not only simulation of the in-work life, but also meetings with clients, daily standups, courses where we are a trainer and we are in a class and people are listening (or not... ;) we can have funny situations with challenges"
-- **Implementation:** `src/ui/dialogue.ts` is rewritten to support multi-turn trees, gated options, NPC reactions per option, and conversation memory. The dialogue data model in `src/content/dialogues.ts` is upgraded to support 50+ nodes per important NPC with conditional branches.
+- **Was (initial 4-8 turn target):** Each NPC conversation is 4-8 player turns minimum.
+- **Now (revised per Lucas 2026-08-29):** **No hard turn count.** Lucas: "I don't have one number in my head as a goal. I just need this game to be real game, not a demo, so we need enough options, branching, decisions trees etc to make this a real simulation, with simulation of relations, previous actions influencing future actions and dialogues and answer options. Like in real RPG!"
+- **What this means in practice (from the opencode dialogue-count report):**
+  - **5 layers per NPC:** greeting pool + topic threads + follow-up branches + memory callbacks + gated options.
+  - **Per Tier-A NPC (Bartek, Zosia, Maciek):** 220-300 authored lines, 50+ nodes, 5-6 threads.
+  - **Per Tier-B NPC:** 130-150 lines, 3-4 threads.
+  - **Per Tier-C NPC (Pawel, Janusz, Burek):** 50-110 lines, 1-2 threads.
+  - **Total:** ~2,300 authored strings across ~730 tree nodes (13x today's volume, ~100x perceived variety).
+  - **Hard cap on a single conversation: 14 turns** (the dialogue walker enforces it; deeper arcs are split across multiple conversations, not single ultra-long ones).
+  - **RPG-style branching:** previous decisions change future options, gate new threads, shift NPC memory. The dialogue tree is not a single path; it is a graph of options that depend on `state.relationships[npcId]`, `state.flags`, `state.day`, `state.lastTopic[npcId]`.
+  - **Memory callbacks:** NPCs reference past conversations, e.g. "you said yesterday you hated standups" — this is what makes the simulation feel real.
+- **Reason:** "Not only simulation of the in-work life, but also meetings with clients, daily standups, courses where we are a trainer and we are in a class and people are listening (or not... ;) we can have funny situations with challenges" AND "Like in real RPG" with branching and decision influence.
+- **Implementation:** `src/ui/dialogue.ts` is rewritten to support multi-turn trees, gated options, NPC reactions per option, and conversation memory. The dialogue data model in `src/content/dialogues.ts` is upgraded to support 50+ nodes per important NPC with conditional branches. The 5-layer structure (greetings/threads/branches/callbacks/gated) is the canonical pattern.
 
 ### C-12 — Multi-room world: training room, kitchen, meeting room, CTO office with view (2026-08-29)
 
@@ -592,27 +609,47 @@ This section is the authoritative list of corrections Lucas has given. New corre
 - **Reason:** The user wants to enter the **OpenAI WebMCP challenge** (https://openai.com/webmcp-challenge/, https://github.com/webmachinelearning/webmcp, https://developer.chrome.com/docs/ai/webmcp). The challenge's goal: enable AI agents to control web apps via a standardized tool API. This game is a good fit because the simulation depth (NPC schedules, dialogue trees, quests) makes it a benchmark for "can an LLM play a real game."
 - **Status:** Plan only. Implementation starts after Phase 6, or in parallel with Phase 5 if there is bandwidth. The WebMCP layer is additive (no impact on the user-facing UX).
 
-### C-15 — NPC life: deterministic schedule + per-day stochastic variation (2026-08-29)
+### C-15 — NPC life: deterministic schedule + per-day stochastic variation + random events like birthdays (2026-08-29) — REVISED 2026-08-29 (Lucas: "MIX BOTH, do not ignore my message again")
 
 - **Section changed:** §11.1 (NPC schedule).
 - **Was:** NPCs are static 3D markers at desks. No movement, no variation between days.
-- **Now:** Each NPC has a **deterministic per-period schedule** (the backbone) PLUS a **per-day random seed** that varies: who arrives late, who stays late, who goes to lunch, who plays video games in the kitchen after hours, who's sick, who apologises on arrival. The seed is the day number, so replays of the same day are deterministic (good for tests) but different days look different. The stochastic events are limited (max 2-3 per day) so the player isn't overwhelmed.
+- **Was (initial revision):** Each NPC has a deterministic per-period schedule (the backbone) PLUS a per-day random seed. Bounded stochastic (2-3 events/day).
+- **Now (Lucas's explicit "MIX BOTH"):** **All three layers are required, not one or two:**
+  1. **Deterministic backbone.** Each NPC has a per-period schedule (morning/afternoon/evening) that the player can learn. The schedule handles the "expected" office life.
+  2. **Per-day random seed.** A `murmur3("aitrainer:day:" + dayNumber + ":" + saveSlotId)` seed controls the stochastic layer: who arrives late, who stays late, who goes to the kitchen for coffee, who plays video games, who's sick, who apologises on arrival. Same day = same stochastic decisions (testable). Different days = different stochastic decisions (lively).
+  3. **Random events like birthdays.** On top of the per-day stochastic layer, there is a separate **event calendar** that draws from a pool of named, hand-written events: **birthdays** (with cake in the kitchen, an NPC's "favorite" cake flavor is part of their profile), **team lunches**, **client visits**, **firedrills**, **all-hands**, **hackathons**, **sick days** (a named NPC is sick and absent). These events chain into quests, change the dialogue for the day, and override the per-period schedule.
+- **Mix both/all, not one or the other:** Lucas was explicit: "you should mix both your ideas, so some random numbers of people in different situations/places/times + Events like birthdays etc. BOTH!!! Not one of them only." This means: deterministic schedule is in, per-day random is in, event calendar is in. The agy report's "Option D" (4-tier priority stack) is the right architecture, but the "events" tier needs to be much richer than the report's 15 quirks.
 - **Concrete examples from the user:**
   - "some may be late and appology sometimes, but not always the same" — every day, 1-2 NPCs are late. The "late" set is deterministic-per-day. The apology line is varied.
-  - "some may stay longer, they have more work" — every day, 0-1 NPCs stay late (after the player's day ends). They show up in the kitchen or the meeting room.
+  - "some may stay longer, they have mor work" — every day, 0-1 NPCs stay late (after the player's day ends). They show up in the kitchen or the meeting room.
   - "may stay to play video games on the TV and console" — 1-2 NPCs occasionally do this in the kitchen in the evening. It's random per day.
   - "make it random, every day should be different" — covered by the per-day seed.
-- **Reason:** "People should walk, should go to lead the training/course, should have a meeting, should go eat something, should enter the office in the morning (some may be late and appology sometimes, but not always the same), and leave office in the evening (some may stay longer, they have mor work, or may stay to play video games on the TV and console - make it random, every day should be different)"
+  - **NEW: Events** — birthdays, team lunches, client visits, firedrills, hackathons, all-hands, sick days. These are higher-impact than the per-day stochastic events and chain into quests.
+- **Reason:** "People should walk, should go to lead the training/course, should have a meeting, should go eat something, should enter the office in the morning (some may be late and appology sometimes, but not always the same), and leave office in the evening (some may stay longer, they have mor work, or may stay to play video games on the TV and console - make it random, every day should be different)" AND "NPC should life, but with some level of randomnes... mix both your ideas, so some random numbers of people in different situations/places/times + Events like birthdays etc. BOTH!!!"
+- **Implementation:**
+  - Deterministic: `src/content/npc-schedule.ts` (already planned for Phase 3).
+  - Per-day random: `src/engine/npc-stochastic.ts` (Phase 3, new).
+  - Event calendar: `src/content/events.ts` (already exists from Phase 3.5) — needs expansion to include birthdays, team lunches, etc. The current 41 random events are good but they're mostly micro-events. The expansion adds 12-20 named "calendar" events.
+  - Birthday profile: each NPC's profile gains `birthdayDayOfYear`, `favoriteCake` (e.g. "chocolate" for Klaudia, "lemon" for Janusz, "carrot" for Burek). The birthday event chains into a quest: "find a gift for Klaudia's birthday."
+- **Reuses the agy report's recommendation:** Option D (4-tier priority stack) is the right architecture for the per-day stochastic layer. The event calendar is a separate, higher-priority layer (Tier 0 — above the quest hard-pins) that overrides even quest-pinned NPCs.
 
-### C-16 — Time scaling: 5 real minutes per period (slower, from Phase 1) (2026-08-29)
+### C-16 — Time scaling: 10 real minutes per period (uniform, 30 min/day) (2026-08-29) — REVISED 2026-08-29 (Lucas: "10 min/period should be enough, let's test it")
 
 - **Section changed:** §4.5 (End of day) and the time constants in `src/main.ts`.
 - **Was:** 60 real seconds = 1 in-game period; 3 periods per day = 180s/day. The user reported: "days go way too fast, I did not even manage to understand anything what I should do there and the day passed and I was back outside the building (looking on the roof...)"
-- **Now:** **5 real minutes per period** (300 seconds = 1 in-game period; 3 periods = 15 real minutes per in-game day). Bump `SECONDS_PER_PERIOD` from 60 to 300. This makes a single in-game day a 15-minute real-time experience, which gives the player time to walk around, talk to 5-10 NPCs, attend a meeting, and still have the day end feeling earned.
-- **Reason:** The user explicitly asked for slower time. "time should go much slower" is unambiguous.
-- **Tunable:** the constant is exported (`SECONDS_PER_PERIOD = 300`) so a future "speed run" mode can drop it back to 60s. The default for the public demo is 300.
-- **Phase 5 may bump it further** to 600s (10 real minutes per period, 30 min per in-game day) for a more "I am at work" pace. Phase 5 is where the user can choose; Phase 1's 300s is the default for now.
-- **Note on dialogue pause:** "Time pause during dialogues" was already added in Phase 0 (the day-advance loop wraps in `if (!dialogue?.isOpen())`). C-16 reinforces that this is a hard rule: **time NEVER advances while a dialogue is open.** If the player reads 8 lines of dialogue, 8 lines of dialogue is all the time that passes.
+- **Was (initial revision C-16):** 5 real minutes per period, 3 periods per day = 15 min/day.
+- **Was (opencode report recommendation):** 5/10/5 asymmetric (morning/afternoon/evening) = 20 min/day + speed controls.
+- **Now (Lucas 2026-08-29):** **10 real minutes per period, 3 periods per day = 30 real minutes per in-game day.** Lucas: "ok, 15m per day seams ok, but never interupt in the middle of the dialogue, we should pause the time or at least prevent the tday change." and "10 min/period should be enough. lets test it."
+- **Constants:** `SECONDS_PER_PERIOD = 600`. Three periods (morning, afternoon, evening) per in-game day. One in-game day = 30 real minutes.
+- **Tunable:** the constant is exported (`SECONDS_PER_PERIOD = 600`) so a future "speed run" mode can drop it back to 60s. The default for the public demo is 600.
+- **HARD RULE — time NEVER advances while a dialogue is open.** Lucas was explicit: "never interupt in the middle of the dialogue, we should pause the time or at least prevent the tday change." This is a stronger statement than the original Phase 0 "pause during dialogue" — it means:
+  - Dialogue is open → period-advance loop is paused, period NEVER rolls over, day NEVER ends.
+  - Multi-NPC modes (standup, meeting, classroom, client call) are part of "dialogue" and pause time too.
+  - If the player reads 8 lines of dialogue, 8 lines of dialogue is all the time that passes.
+  - The period-rollover toast ("Period 2 of 3 — Afternoon, 6:00 PM") does NOT fire while a dialogue is open.
+- **Implementation note:** the day-advance loop already wraps in `if (!dialogue?.isOpen())` (Phase 0 fix). C-16 reinforces that this is a hard rule, not a soft one. If a future change makes the period advance during dialogue, the change is rejected at code review.
+- **Phase 3+ may add player speed controls (0.5x / 1x / 2x / skip-to-next-event / end-day-early)** as an additive feature, not a default. The opencode pacing report's recommendation is good — speed controls are orthogonal to the day length and let power users speed-run a quest. Default for the public demo: 1x, no skip.
+- **Why I am NOT adopting the opencode 5/10/5 asymmetric recommendation:** Lucas was explicit: "10 min/period should be enough, let's test it." The agent's 5/10/5 recommendation (5 min morning, 10 min afternoon, 5 min evening = 20 min/day) is overruled by Lucas's direct choice of "10 min/period" = 30 min/day. The asymmetric recommendation is logged in `.agent-briefs/time-pacing-report.md` for future iteration (e.g. if 30 min/day feels too slow on playtest, the asymmetric version is a fall-back). Lucas's direct decision wins.
 
 ### C-17 — Stuck-dialogue bug: state must reset on screen transition (2026-08-29)
 
@@ -623,13 +660,23 @@ This section is the authoritative list of corrections Lucas has given. New corre
   2. `setScreen()` calls `dialogue?.close()` before transitioning to `summary` / `minigame` / `gameover`, so the dialogue state is always clean.
 - **Already done in Phase 0; logged here for traceability.** A regression test in `tests/unit/dialogue-state.test.ts` (new) covers: open, close, open again; open, setScreen('summary'), open again. The test fails if the bug returns.
 
-### C-18 — Onboarding, help icon, quest log (Phase 1 deliverables) (2026-08-29)
+### C-18 — Onboarding, help icon, quest log (Phase 1 deliverables) (2026-08-29) — REVISED 2026-08-29 (Lucas: "longer, more clear, like a game")
 
 - **Section changed:** §4.1 (First-launch), §9.2 (Character creation), §9.3 (Office).
 - **Was:** The user has no idea what to do, no first-day guidance, no in-game help.
-- **Now:** A **first-day quest chain** auto-starts on day 1. The first quest is "Talk to Bartek — your team lead." Subsequent quests chain off Bartek's dialogue (e.g. "Accept the training assignment" after `tutorial-yes`). A **quest log panel** in the bottom-right shows the current quest, its title, its objective, and a chain-arrow icon. A **help button** in the top-right opens a modal listing: WASD to move, click NPC or roster to talk, [E] for proximity-interact, [Esc] to close dialog, [End Day] button location, stat explanations, game goal. A **? icon** is the entry point to the help modal. The "?" key (Shift+/) also opens it.
-- **Reason:** "I have no idea what I'm doing here, what is my goal, where I should start, who I should talk to... Am I on the first day in work? Or maybe I'm already on some project? Do I need to take assignment? We need some onboarding, tutorial, more GUI HUD elements, some [?] help icon, etc."
-- **Status:** Phase 1 in the plan. Already in scope; logged here so it's part of the corrections record.
+- **Was (initial revision):** A first-day quest chain (start with "Talk to Bartek"), a quest log panel, a help button, a ? key.
+- **Now (Lucas 2026-08-29):** "Onboarding should be mixed with help and intro, longer and more clear what we are doing here, who we are, what is a goal, and more like simulations, we should have dialogs explaining who we are like in a game!!!"
+- **The five elements of onboarding, mixed together:**
+  1. **Intro cinematic.** Tells the player who they are (a new IT trainer at DevPowers + Edukey, day 1), where they are (a small open-plan office in a multi-room building), and what the world is (a 30-day career arc with quests, meetings, courses).
+  2. **First quest ("Talk to Bartek").** Walks the player to their first conversation, which is itself an onboarding conversation: "Welcome, this is your desk, this is your team, this is your first assignment." Bartek explains the company, the team, the project, the goals, in-character.
+  3. **In-dialogue explanations.** When Bartek introduces you to the team (Klaudia, Marek, Zosia, Tomek, Ania, Janusz, Burek, Grazyna, Maciek, Przemek, Kasia, Pawel), each introduction is a 2-3 line dialogue that explains WHO this person is and WHY they matter. The player is not reading a wiki page — they are being introduced by their team lead, in-character, with humor.
+  4. **Help modal (?).** A static reference: WASD to move, click NPC or roster to talk, [E] for proximity-interact, [Esc] to close dialog, [End Day] button location, stat explanations, game goal. Opens on `?` key (Shift+/) or by clicking the ? icon. Always available, not just on day 1.
+  5. **Quest log.** A persistent bottom-right panel showing the current quest, its title, its objective, and a chain-arrow icon. Click on the quest title to expand a body text describing what to do.
+- **Why the mix matters:** "Onboarding should be mixed with help and intro" — the player should not experience onboarding as a separate tutorial phase. The cinematic sets the scene, the first quest walks the player, the in-dialogue explanations teach the world, the help modal is the always-available reference, the quest log is the persistent goal tracker. They are not separate features; they are one continuous experience.
+- **Longer is the explicit goal:** Lucas said "longer and more clear what we are doing here, who we are, what is a goal." The intro cinematic is 60+ seconds, the first quest chain is 5+ steps, the in-dialogue explanations cover all 13 NPCs, the help modal is 10+ entries, the quest log body text is 2-3 sentences per quest.
+- **Like a game:** "more like simulations, we should have dialogs explaining who we are like in a game." The onboarding is IN-CHARACTER, not a UI tutorial. The player is not "learning the controls" — they are meeting the team and starting a job.
+- **Reason:** "I have no idea what I'm doing here, what is my goal, where I should start, who I should talk to... Am I on the first day in work? Or maybe I'm already on some project? Do I need to take assignment? We need some onboarding, tutorial, more GUI HUD elements, some [?] help icon, etc." AND "Onboarding should be mixed with help and intro, longer and more clear what we are doing here, who we are, what is a goal, and more like simulations, we should have dialogs explaining who we are like in a game!!!"
+- **Status:** Phase 1 in the plan. The Phase 1 scope is now bigger than originally scoped: 5 elements mixed together, not 3 separate features.
 
 ### C-19 — NPCs at desks (NOT in the middle), with idle animations, with variation (C-08 enhancement) (2026-08-29)
 
@@ -695,6 +742,41 @@ This section is the authoritative list of corrections Lucas has given. New corre
   - **Comedy reviewer** (opencode / GLM): review all dialogue for humor, in-group accuracy, and "would an IT person laugh at this?"
   - **QA reviewer** (Codex or agy): per-phase review of the diff for regressions, debug logs, console errors.
   - **Visual QA** (agy): describe every Playwright screenshot; flag "this looks like a roof" / "no NPCs visible" regressions.
+
+### C-25 — MMORPG office sim: players + AI agents in the same world (2026-08-29) — ENDGAME GOAL (post-Phase 6)
+
+- **Section changed:** adds a new §18 (Multiplayer vision) and a new endgame phase in the plan.
+- **Was:** The game is single-player. NPCs are the only other actors.
+- **Now (Lucas's vision):** "Later we can add WebMCP and let players play with eachother or rather agents to play with each other, so we can make it MMORPG office simulator in IT/AI/Training space :D But this is something to add as a final goal when we have all basic mechanics working, so players can play with NPC and also cooperate, talk and compete with other players, either people or agents controling via WebMCP"
+- **The vision:** an MMORPG-style office simulator where:
+  - **Players** (humans) join a shared office and can talk to each other, cooperate on quests, compete for promotions, attend meetings together.
+  - **AI agents** (external LLM-controlled players via WebMCP, C-14 / D-21) join the same world as NPCs — indistinguishable from human players to other players. They can be played by external AI services, by Lucas, or by a friend.
+  - **NPCs** stay the same (the 13 office characters with their schedules, dialogue, and quests).
+  - **Cooperation and competition:** the office is one shared world. Multiple "junior trainers" can compete for the same "lead trainer" promotion slot. Multiple "managers" can hold standups that the player attends. Multiple "interns" can collaborate on a project.
+- **Scope (Lucas's explicit phasing):** "this is something to add as a final goal when we have all basic mechanics working." The MMORPG layer is post-Phase 6, after:
+  1. The single-player career arc is shippable (Phase 6: 30-day arc with quests, dialogue, NPC life, multi-room world).
+  2. The WebMCP layer is in (C-14 / D-21): external agents can control a player.
+  3. The networking layer is added (a server that hosts the shared world, syncs game state, handles player connections, anti-cheat).
+- **Relationship to C-14 (WebMCP):** the MMORPG layer is built ON TOP of WebMCP. WebMCP is the per-player API; the MMORPG layer is the multi-player world that uses WebMCP. WebMCP without the MMORPG is a single-player game controllable by AI agents. WebMCP with the MMORPG is a shared world where humans and AI agents coexist.
+- **The "IT/AI/Training space" angle:** the game is set in the IT/AI training industry. Players are trainers, consultants, junior devs, managers, etc. The "training" mode is the heart of the game — players can run classes, attend standups, deliver code reviews, and respond to client calls, with the same NPC roster and quest structure.
+- **Reason:** Lucas's literal request: "we can make it MMORPG office simulator in IT/AI/Training space." This is the long-term vision for the game. The single-player version is the foundation; the MMORPG version is the future.
+- **Status:** vision only. Not a phase. The plan includes this as the final endgame, after Phase 6 ships. No implementation work yet.
+
+### C-26 — Lucas's overall mandate: "the best simulator business retro game in the history" (2026-08-29)
+
+- **Section changed:** cross-cutting. This is the project's north star, captured in the PRD so it can never be lost between sessions.
+- **Lucas's mandate (verbatim):** "make this the best simulator business retro game in the history, a real game, not just simple demo, make it huge and ambitious! Do not stop untill you have detailed graphics, funny storyline, high engagement, working mechanics, and not bugs at all. confirm this all with other AI agents as judges and in QA / Code Reviews. Do not stop untill you all agree that this game is perfect and you can't make it better. Do not make it just a simple ugly demo! Make it a full game with long story and a lot of simulations and dialogues and with beautiful graphics!"
+- **What this means in practice:**
+  1. **Not a demo.** The MVP is the full game, not a prototype. Every phase ships a polished feature, not a stub.
+  2. **Detailed graphics.** The pixel-art style is the aesthetic. No ugly placeholder meshes. Each NPC is recognizable. Each room has visible detail (desks, plants, posters, items). Lighting is intentional.
+  3. **Funny storyline.** Tone is IT Crowd + Silicon Valley. Comedy is the differentiator. The 30-day arc is a long story with character development, recurring jokes, callbacks.
+  4. **High engagement.** The player should want to play the next day. Quest chains, NPC relationships, stochastic events, the day-end summary with fun facts — all contribute to engagement.
+  5. **Working mechanics.** No half-wired features. Every button, every shortcut, every quest step works. The Definition of Done (PRD §14) is enforced.
+  6. **No bugs.** The Phase 0 typecheck + tests + Playwright + agy description + codex QA pipeline catches bugs before they ship. Reverts are always available.
+  7. **Multi-agent QA.** Every phase gets an independent QA pass (Codex, agy, or both). The agent does not declare a phase "done" until QA passes.
+  8. **Iterate until perfect.** "Do not stop untill you all agree that this game is perfect." This is the long-term commitment. Each phase is an iteration toward the perfect game; the agent reports progress, shows screenshots, and waits for Lucas's review before the next phase.
+- **Reason:** Lucas said this verbatim. It is the project definition. Every decision in this PRD, ADR, plan, and AGENTS.md serves this mandate.
+- **Status:** always-on rule. The agent checks every phase against this mandate before declaring it "done."
 
 ---
 
