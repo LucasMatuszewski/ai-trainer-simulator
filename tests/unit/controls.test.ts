@@ -1,26 +1,25 @@
 /**
- * Smoke tests for createControls.
+ * Tests for createControls + the pure stepControls state machine.
  *
- * The controls module is browser-coupled (addEventListener, document,
- * window). We stub those globals in beforeEach so the module can load
- * under node. Anything that genuinely needs the DOM (pointer lock,
- * pointermove) returns gracefully when those globals are stubs.
+ * Most of the new behavior (Pattern D mouse-look, FPS camera math,
+ * pitch clamp, mouse-delta consumption) is testable via the pure
+ * `stepControls(state, dt, keys, consumeMouseDelta)` function. The
+ * runtime module (`createControls`) is browser-coupled; we test it
+ * for the things that don't need real DOM events (initial state,
+ * movement math, collision clamp).
  *
- * These tests cover the pure-data side of the controls surface:
- * - initial state (player position from initialPlayer)
- * - movement math (forward = -Z when yaw is 0)
- * - collision clamp (player cannot exit OFFICE_BOUNDS)
- *
- * Camera math (per-frame position / lookAt) and FOV are NOT tested
- * here. They require a real three.js renderer and are verified
- * visually via Playwright (see threejs-visual-qa skill). Phase 2 will
- * convert the camera mode to FPS (C-01) and add `getYaw` + FOV
- * setters; this test will be extended then.
+ * Camera transforms (position + rotation) require a real three.js
+ * renderer and are verified visually via Playwright (see the
+ * threejs-visual-qa skill).
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
-import { createControls } from "../../src/engine/controls";
+import {
+  createControls,
+  stepControls,
+  type ControlsState,
+} from "../../src/engine/controls";
 
 function makeCanvas(): HTMLCanvasElement {
   return {
@@ -108,5 +107,134 @@ describe("createControls", () => {
     const p = c.getPlayerPosition();
     // Should be clamped to bounds.maxZ - PLAYER_RADIUS = 9 - 0.3 = 8.7
     expect(p.z).toBeLessThanOrEqual(8.7);
+  });
+});
+
+/**
+ * Pure-state tests for the stepControls state machine. These do not
+ * touch the DOM and run in any vitest environment.
+ *
+ * Pattern D mouse-look (see docs/ADR/0007-mouse-look-pattern-d.md):
+ *  - mouseLook = "free"   : mouse delta is DRAINED but not consumed
+ *  - mouseLook = "hold"   : mouse delta rotates yaw + pitch
+ *  - mouseLook = "toggle" : same as hold, stays on until released
+ */
+describe("stepControls (pure state machine)", () => {
+  function baseState(overrides: Partial<ControlsState> = {}): ControlsState {
+    return {
+      player: { x: 0, y: 0, z: 0 },
+      yaw: 0,
+      pitch: 0,
+      mouseLook: "free",
+      mouseDelta: { x: 0, y: 0 },
+      ...overrides,
+    };
+  }
+
+  it("does not consume mouse delta when mouseLook is 'free'", () => {
+    let pending = { x: 100, y: 50 };
+    const consume = () => {
+      const d = pending;
+      pending = { x: 0, y: 0 };
+      return d;
+    };
+    const next = stepControls(baseState({ mouseLook: "free" }), 0.016, new Set(), consume);
+    // yaw + pitch must be unchanged.
+    expect(next.yaw).toBe(0);
+    expect(next.pitch).toBe(0);
+  });
+
+  it("applies mouse delta to yaw + pitch when mouseLook is 'hold'", () => {
+    const consume = () => ({ x: 100, y: 50 });
+    const next = stepControls(baseState({ mouseLook: "hold" }), 0.016, new Set(), consume);
+    // 100 * 0.0025 = 0.25 rad yaw decrease (mouse-right rotates camera-left)
+    expect(next.yaw).toBeCloseTo(-0.25, 5);
+    expect(next.pitch).toBeCloseTo(-0.125, 5);
+  });
+
+  it("applies mouse delta when mouseLook is 'toggle' (same as hold)", () => {
+    const consume = () => ({ x: 100, y: 50 });
+    const next = stepControls(baseState({ mouseLook: "toggle" }), 0.016, new Set(), consume);
+    expect(next.yaw).toBeCloseTo(-0.25, 5);
+    expect(next.pitch).toBeCloseTo(-0.125, 5);
+  });
+
+  it("clamps pitch to [PITCH_MIN, PITCH_MAX] = [-0.6, 0.4]", () => {
+    // Big negative dy should clamp to PITCH_MIN = -0.6.
+    const bigDy = () => ({ x: 0, y: 1_000_000 });
+    const low = stepControls(baseState({ mouseLook: "hold" }), 0.016, new Set(), bigDy);
+    expect(low.pitch).toBeCloseTo(-0.6, 5);
+    // Big positive dy should clamp to PITCH_MAX = 0.4.
+    const bigUpDy = () => ({ x: 0, y: -1_000_000 });
+    const high = stepControls(baseState({ mouseLook: "hold" }), 0.016, new Set(), bigUpDy);
+    expect(high.pitch).toBeCloseTo(0.4, 5);
+  });
+
+  it("drains pending delta in free-mouse so it does not accumulate", () => {
+    // In free-mouse, a pending delta must be consumed (drained) so
+    // that the next time we enter mouse-look, the buffer is empty.
+    const drained: Array<{ x: number; y: number } | null> = [];
+    const consume = () => {
+      const d = { x: 5, y: 5 };
+      drained.push(d);
+      return d;
+    };
+    stepControls(baseState({ mouseLook: "free" }), 0.016, new Set(), consume);
+    // The function called consume at least once, so the pending delta
+    // was drained.
+    expect(drained.length).toBeGreaterThan(0);
+  });
+
+  it("walks forward in -Z when yaw is 0 and W is pressed", () => {
+    const next = stepControls(
+      baseState(),
+      0.5,
+      new Set(["w"]),
+      () => null,
+    );
+    // WALK_SPEED = 3, dt = 0.5, no sprint, so motion = 1.5 in -Z.
+    expect(next.player.z).toBeCloseTo(-1.5, 5);
+    expect(next.player.x).toBeCloseTo(0, 5);
+  });
+
+  it("rotates motion with yaw", () => {
+    // Yaw = +pi/2 means the player faces -X. W should move in -X.
+    // Start outside any obstacle (meeting table covers -2..2 in x, -1..1 in z).
+    const next = stepControls(
+      baseState({ player: { x: 0, y: 0, z: 5 }, yaw: Math.PI / 2 }),
+      0.5,
+      new Set(["w"]),
+      () => null,
+    );
+    expect(next.player.x).toBeCloseTo(-1.5, 5);
+    expect(next.player.z).toBeCloseTo(5, 5);
+  });
+
+  it("sprint multiplies motion by 1.6 when shift is held", () => {
+    // Start outside the meeting table (which covers 0,0,0).
+    const startZ = 5;
+    const walk = stepControls(
+      baseState({ player: { x: 0, y: 0, z: startZ } }),
+      0.5,
+      new Set(["w"]),
+      () => null,
+    );
+    const sprint = stepControls(
+      baseState({ player: { x: 0, y: 0, z: startZ } }),
+      0.5,
+      new Set(["w", "shift"]),
+      () => null,
+    );
+    // Sprint delta from start should be 1.6x walk delta from start.
+    const walkDelta = Math.abs(startZ - walk.player.z);
+    const sprintDelta = Math.abs(startZ - sprint.player.z);
+    expect(sprintDelta).toBeCloseTo(walkDelta * 1.6, 5);
+  });
+
+  it("returns a new state object (immutability)", () => {
+    const before = baseState();
+    const after = stepControls(before, 0.016, new Set(), () => null);
+    expect(after).not.toBe(before);
+    expect(before.yaw).toBe(0); // before is not mutated
   });
 });

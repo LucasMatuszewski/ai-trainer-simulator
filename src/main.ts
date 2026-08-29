@@ -15,6 +15,7 @@ import * as THREE from "three";
 import { createEngine, type Engine } from "./engine/renderer";
 import { buildOfficeScene } from "./engine/scene";
 import { createCameraDirector, type CameraDirector } from "./engine/camera-director";
+import { createControls, type Controls } from "./engine/controls";
 import { game } from "./game/state";
 import { runDailyTick } from "./game/economy";
 import { runPeriodEvent } from "./game/events";
@@ -43,6 +44,7 @@ const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
 let engine: Engine | null = null;
 let cameraDirector: CameraDirector | null = null;
 let sceneObjects: ReturnType<typeof buildOfficeScene> | null = null;
+let controls: Controls | null = null;
 let screen: Screen = "title";
 let hud: HudElements | null = null;
 let dialogue: DialogueController | null = null;
@@ -184,6 +186,18 @@ function startOffice(playIntro = false): void {
     const built = buildOfficeScene(engine.scene);
     sceneObjects = built;
     cameraDirector = createCameraDirector(engine.camera);
+    // Phase 2: WASD walk + first-person camera (C-01) + Pattern D
+    // mouse-look (ADR-0007). The player starts at the office door
+    // (z=6, looking into the office at -Z). The controls own the
+    // camera position and rotation from this point on; the camera
+    // director is still used for the intro cinematic and any
+    // future scripted camera moves (but is cancelled by the first
+    // controls.update() call).
+    controls = createControls({
+      canvas,
+      camera: engine.camera,
+      initialPlayer: sceneObjects.playerStart,
+    });
     focusNpc(null);
   }
   // Always re-frame to the wide office shot when entering office screen.
@@ -500,6 +514,14 @@ function frame(): void {
     }
   }
   if (cameraDirector) cameraDirector.update(dt);
+  // Phase 2: WASD + mouse-look (C-01, ADR-0007). Run after the
+  // camera director so the controls overwrite any in-flight camera
+  // animation once the player is on the office screen. Skip while
+  // the dialogue is open so the camera does not drift during a
+  // long read.
+  if (controls && screen === "office" && !dialogue?.isOpen()) {
+    controls.update(dt);
+  }
 
   if (engine) engine.render();
 
