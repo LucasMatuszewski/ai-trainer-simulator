@@ -14,12 +14,17 @@ import type { NPC } from "../types";
 import { DIALOGUES } from "./dialogues";
 
 export const NPCS: NPC[] = [
+  // Each NPC sits in a chair at the FRONT of the desk (the +Z side,
+  // where the keyboard is). The monitor is on the -Z side; the chair is
+  // about 0.5m past the keyboard for legroom. See the desk AABB in
+  // OBSTACLES below: desks are 2m wide × 1m deep, so the chair is at
+  // maxZ + 0.5 along the Z axis.
   {
     id: "bartek",
     name: "Bartek",
     role: "Senior Consultant",
     emoji: "B",
-    position: { x: -4, y: 0, z: -3 },
+    position: { x: -4, y: 0, z: -2.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.bartek!.default!,
@@ -32,7 +37,7 @@ export const NPCS: NPC[] = [
     name: "Klaudia",
     role: "The LinkedIn Influencer",
     emoji: "K",
-    position: { x: 4, y: 0, z: -3 },
+    position: { x: 4, y: 0, z: -2.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.klaudia!.default!,
@@ -43,7 +48,7 @@ export const NPCS: NPC[] = [
     name: "Marek",
     role: "DevOps / 10x Engineer",
     emoji: "M",
-    position: { x: -4, y: 0, z: 3 },
+    position: { x: -4, y: 0, z: 4.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.marek!.default!,
@@ -54,7 +59,7 @@ export const NPCS: NPC[] = [
     name: "Zosia",
     role: "The Manager",
     emoji: "Z",
-    position: { x: 4, y: 0, z: 3 },
+    position: { x: 4, y: 0, z: 4.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.zosia!.default!,
@@ -65,7 +70,7 @@ export const NPCS: NPC[] = [
     name: "Pawel",
     role: "The Intern",
     emoji: "P",
-    position: { x: 0, y: 0, z: -6 },
+    position: { x: 0, y: 0, z: -5.0 },
     triggerRadius: 1.6,
     dialogues: {
       default: DIALOGUES.pawel!.default!,
@@ -76,7 +81,7 @@ export const NPCS: NPC[] = [
     name: "Kasia",
     role: "The Recruiter",
     emoji: "📱",
-    position: { x: 7, y: 0, z: -3 },
+    position: { x: 7, y: 0, z: -2.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.kasia!.default!,
@@ -87,7 +92,7 @@ export const NPCS: NPC[] = [
     name: "Tomek",
     role: "Junior Developer",
     emoji: "🐛",
-    position: { x: -7, y: 0, z: -3 },
+    position: { x: -7, y: 0, z: -2.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.tomek!.default!,
@@ -98,7 +103,7 @@ export const NPCS: NPC[] = [
     name: "Ania",
     role: "Marketing & Synergy",
     emoji: "📣",
-    position: { x: 7, y: 0, z: 0 },
+    position: { x: 7, y: 0, z: 1.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.ania!.default!,
@@ -109,7 +114,7 @@ export const NPCS: NPC[] = [
     name: "Janusz",
     role: "The Janitor",
     emoji: "🧹",
-    position: { x: -7, y: 0, z: 0 },
+    position: { x: -7, y: 0, z: 1.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.janusz!.default!,
@@ -120,7 +125,7 @@ export const NPCS: NPC[] = [
     name: "Burek",
     role: "Office Dog",
     emoji: "🐶",
-    position: { x: -7, y: 0, z: 3 },
+    position: { x: -7, y: 0, z: 4.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.burek!.default!,
@@ -131,7 +136,7 @@ export const NPCS: NPC[] = [
     name: "Grazyna",
     role: "The Accountant",
     emoji: "💰",
-    position: { x: 7, y: 0, z: 3 },
+    position: { x: 7, y: 0, z: 4.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.grazyna!.default!,
@@ -142,7 +147,7 @@ export const NPCS: NPC[] = [
     name: "Maciek",
     role: "The CTO",
     emoji: "🚀",
-    position: { x: -3, y: 0, z: -7 },
+    position: { x: -3, y: 0, z: -6.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.maciek!.default!,
@@ -153,7 +158,7 @@ export const NPCS: NPC[] = [
     name: "Przemek",
     role: "Sales",
     emoji: "🤝",
-    position: { x: 3, y: 0, z: -7 },
+    position: { x: 3, y: 0, z: -6.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.przemek!.default!,
@@ -175,21 +180,24 @@ export interface Obstacle {
 }
 
 export const OBSTACLES: Obstacle[] = [
-  // Desks
-  { id: "desk-bartek", minX: -5, maxX: -3, minZ: -4, maxZ: -2, label: "Desk (Bartek)" },
-  { id: "desk-klaudia", minX: 3, maxX: 5, minZ: -4, maxZ: -2, label: "Desk (Klaudia)" },
-  { id: "desk-marek", minX: -5, maxX: -3, minZ: 2, maxZ: 4, label: "Desk (Marek)" },
-  { id: "desk-zosia", minX: 3, maxX: 5, minZ: 2, maxZ: 4, label: "Desk (Zosia)" },
-  { id: "desk-pawel", minX: -1, maxX: 1, minZ: -7, maxZ: -5, label: "Desk (Pawel)" },
-  { id: "desk-kasia", minX: 6, maxX: 8, minZ: -4, maxZ: -2, label: "Desk (Kasia)" },
-  { id: "desk-tomek", minX: -8, maxX: -6, minZ: -4, maxZ: -2, label: "Desk (Tomek)" },
-  { id: "desk-ania", minX: 6, maxX: 8, minZ: -1, maxZ: 1, label: "Desk (Ania)" },
-  { id: "desk-janusz", minX: -8, maxX: -6, minZ: -1, maxZ: 1, label: "Desk (Janusz)" },
-  { id: "desk-burek", minX: -8, maxX: -6, minZ: 2, maxZ: 4, label: "Dog bed (Burek)" },
-  { id: "desk-grazyna", minX: 6, maxX: 8, minZ: 2, maxZ: 4, label: "Desk (Grazyna)" },
-  { id: "desk-maciek", minX: -4, maxX: -2, minZ: -8, maxZ: -6, label: "Desk (Maciek)" },
-  { id: "desk-przemek", minX: 2, maxX: 4, minZ: -8, maxZ: -6, label: "Desk (Przemek)" },
-  // Center meeting table
+  // Desks — width 2m, depth 1m (was 2m × 2m). Each NPC now sits at the
+  // FRONT (+Z) edge of the desk in their chair, not at the center. The
+  // monitor is on the -Z side; the keyboard is on the +Z side; the chair
+  // is just past the keyboard.
+  { id: "desk-bartek", minX: -5, maxX: -3, minZ: -3.5, maxZ: -2.5, label: "Desk (Bartek)" },
+  { id: "desk-klaudia", minX: 3, maxX: 5, minZ: -3.5, maxZ: -2.5, label: "Desk (Klaudia)" },
+  { id: "desk-marek", minX: -5, maxX: -3, minZ: 2.5, maxZ: 3.5, label: "Desk (Marek)" },
+  { id: "desk-zosia", minX: 3, maxX: 5, minZ: 2.5, maxZ: 3.5, label: "Desk (Zosia)" },
+  { id: "desk-pawel", minX: -1, maxX: 1, minZ: -6.5, maxZ: -5.5, label: "Desk (Pawel)" },
+  { id: "desk-kasia", minX: 6, maxX: 8, minZ: -3.5, maxZ: -2.5, label: "Desk (Kasia)" },
+  { id: "desk-tomek", minX: -8, maxX: -6, minZ: -3.5, maxZ: -2.5, label: "Desk (Tomek)" },
+  { id: "desk-ania", minX: 6, maxX: 8, minZ: -0.5, maxZ: 0.5, label: "Desk (Ania)" },
+  { id: "desk-janusz", minX: -8, maxX: -6, minZ: -0.5, maxZ: 0.5, label: "Desk (Janusz)" },
+  { id: "desk-burek", minX: -8, maxX: -6, minZ: 2.5, maxZ: 3.5, label: "Dog bed (Burek)" },
+  { id: "desk-grazyna", minX: 6, maxX: 8, minZ: 2.5, maxZ: 3.5, label: "Desk (Grazyna)" },
+  { id: "desk-maciek", minX: -4, maxX: -2, minZ: -7.5, maxZ: -6.5, label: "Desk (Maciek)" },
+  { id: "desk-przemek", minX: 2, maxX: 4, minZ: -7.5, maxZ: -6.5, label: "Desk (Przemek)" },
+  // Center meeting table — unchanged. The user only mentioned desks.
   { id: "meeting-table", minX: -2, maxX: 2, minZ: -1, maxZ: 1, label: "Meeting table" },
   // Server rack
   { id: "server-rack", minX: -8, maxX: -7, minZ: 7, maxZ: 9, label: "Server rack" },
