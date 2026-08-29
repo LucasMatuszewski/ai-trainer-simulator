@@ -537,3 +537,240 @@ html, body {
   color: #000;
   border-color: var(--accent);
 }
+
+/* ============================================================================
+ * Office roster: clickable list of NPCs. This is the main game-screen UI.
+ * The 3D scene is a backdrop; the player drives the game by clicking here.
+ * ============================================================================ */
+.office-roster {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 380px;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-dark) 100%);
+  border-left: 4px solid var(--panel-border);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  font-family: var(--font-pixel);
+  image-rendering: pixelated;
+}
+
+.roster-header {
+  padding: 18px 20px 12px;
+  border-bottom: 2px solid var(--panel-border);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.roster-title {
+  font-family: var(--font-pixel-bold);
+  font-size: 18px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.roster-sub {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.roster-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.roster-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--fg);
+  font-family: var(--font-pixel);
+  transition: background 80ms steps(2), border-color 80ms steps(2), transform 80ms steps(2);
+  position: relative;
+}
+
+.roster-card:hover {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  transform: translateX(-2px);
+}
+
+.roster-card:hover .roster-rel {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.roster-card.focused {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light) inset;
+}
+
+.roster-card.focused .roster-rel {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.roster-card.away {
+  opacity: 0.55;
+}
+
+.roster-portrait {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  border: 2px solid var(--panel-border);
+  border-radius: 4px;
+  font-family: var(--font-pixel-bold);
+  font-size: 28px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.roster-card:hover .roster-portrait,
+.roster-card.focused .roster-portrait {
+  border-color: rgba(0, 0, 0, 0.5);
+}
+
+.roster-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.roster-name {
+  font-family: var(--font-pixel-bold);
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.roster-role {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 1px;
+  line-height: 1.2;
+}
+
+.roster-card:hover .roster-role,
+.roster-card.focused .roster-role {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.roster-rel {
+  font-size: 11px;
+  margin-top: 4px;
+  color: var(--text-dim);
+}
+
+.roster-rel[data-mood="good"] {
+  color: #5cd05c;
+}
+
+.roster-rel[data-mood="bad"] {
+  color: #ff7777;
+}
+
+.roster-card:hover .roster-rel[data-mood],
+.roster-card.focused .roster-rel[data-mood] {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.roster-status {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+.roster-status[data-state="talking"] {
+  color: var(--accent);
+}
+
+.roster-card:hover .roster-status,
+.roster-card.focused .roster-status {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.roster-actions {
+  border-top: 2px solid var(--panel-border);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.roster-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  color: var(--fg);
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 80ms steps(2);
+}
+
+.roster-action:hover:not(:disabled) {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.roster-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.roster-action.primary {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  font-family: var(--font-pixel-bold);
+}
+
+.roster-action.primary:hover {
+  background: var(--accent-light);
+  border-color: var(--accent-light);
+}
+
+.roster-action-glyph {
+  font-family: var(--font-pixel-bold);
+  font-size: 18px;
+  color: var(--accent);
+  width: 22px;
+  text-align: center;
+}
+
+.roster-action.primary .roster-action-glyph,
+.roster-action:hover .roster-action-glyph {
+  color: inherit;
+}
+
+.roster-action-label {
+  flex: 1;
+}
+
