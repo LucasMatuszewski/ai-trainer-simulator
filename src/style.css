@@ -593,7 +593,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 14px 16px;
   background: var(--panel);
   border: 2px solid var(--panel-border);
   border-radius: 4px;
@@ -603,6 +603,7 @@ html, body {
   font-family: var(--font-pixel);
   transition: background 80ms steps(2), border-color 80ms steps(2), transform 80ms steps(2);
   position: relative;
+  min-height: 64px;
 }
 
 .roster-card:hover {
@@ -658,12 +659,12 @@ html, body {
 
 .roster-name {
   font-family: var(--font-pixel-bold);
-  font-size: 15px;
+  font-size: 18px;
   line-height: 1.2;
 }
 
 .roster-role {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-dim);
   margin-top: 1px;
   line-height: 1.2;
@@ -675,7 +676,7 @@ html, body {
 }
 
 .roster-rel {
-  font-size: 11px;
+  font-size: 13px;
   margin-top: 4px;
   color: var(--text-dim);
 }

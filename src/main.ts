@@ -610,6 +610,9 @@ declare global {
     __aitrainer?: {
       getPlayer: () => { x: number; y: number; z: number };
       getCamera: () => { x: number; y: number; z: number };
+      getYaw: () => number;
+      getPitch: () => number;
+      isMouseLook: () => boolean;
       getFocus: () => string | null;
       getScreen: () => string;
       getSceneObjects: () => { keys: string[]; hasPlayerGroup: boolean } | null;
@@ -617,11 +620,18 @@ declare global {
   }
 }
 window.__aitrainer = {
-  getPlayer: () => ({ x: 0, y: 0, z: 0 }),
+  getPlayer: () => {
+    if (!controls) return { x: 0, y: 0, z: 0 };
+    const p = controls.getPlayerPosition();
+    return { x: p.x, y: p.y, z: p.z };
+  },
   getCamera: () => {
     if (!engine) return { x: 0, y: 0, z: 0 };
     return { x: engine.camera.position.x, y: engine.camera.position.y, z: engine.camera.position.z };
   },
+  getYaw: () => controls?.getYaw() ?? 0,
+  getPitch: () => controls?.getPitch() ?? 0,
+  isMouseLook: () => controls?.isMouseLookActive() ?? false,
   getFocus: () => focusedNpcId,
   getSceneObjects: () => {
     if (!sceneObjects) return null;
