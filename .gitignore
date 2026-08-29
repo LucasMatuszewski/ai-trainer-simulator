@@ -21,3 +21,24 @@ pnpm-debug.log*
 # Agent work (kept in repo for history but gitignored from commits; can be reviewed locally)
 .agent-briefs/*.output
 .agent-briefs/*.stderr
+
+# Playwright / debug
+.playwright-mcp/
+test-results/
+playwright-report/
+
+# Throwaway screenshots from local debugging
+office-*.png
+canvas-element.png
+
+# OS temp
+Thumbs.db
+
+# Compiled JS next to TS (we ship TS only; Vite compiles at build)
+src/**/*.js
+src/**/*.js.map
+!src/**/*.config.js
+
+# Env
+.env
+.env.local

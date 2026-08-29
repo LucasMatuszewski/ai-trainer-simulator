@@ -1,0 +1,172 @@
+{
+  "generated": {
+    "bartek_greeting": {
+      "path": "src/assets/audio/speech/bartek_greeting.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "bartek",
+        "node": "greeting"
+      },
+      "bytes": 207025,
+      "ms": 176633
+    },
+    "bartek_tutorial_yes": {
+      "path": "src/assets/audio/speech/bartek_tutorial_yes.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "bartek",
+        "node": "tutorial-yes"
+      },
+      "bytes": 281403,
+      "ms": 54457
+    },
+    "bartek_tutorial_maybe": {
+      "path": "src/assets/audio/speech/bartek_tutorial_maybe.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "bartek",
+        "node": "tutorial-maybe"
+      },
+      "bytes": 160899,
+      "ms": 23035
+    },
+    "sfx_footstep_1": {
+      "path": "public/assets/audio/sfx/sfx_footstep_1.mp3",
+      "kind": "sfx-tts",
+      "meta": {
+        "use": "footstep"
+      },
+      "bytes": 9260,
+      "ms": 13223
+    },
+    "sfx_footstep_2": {
+      "path": "public/assets/audio/sfx/sfx_footstep_2.mp3",
+      "kind": "sfx-tts",
+      "meta": {
+        "use": "footstep"
+      },
+      "bytes": 10989,
+      "ms": 12770
+    },
+    "sfx_hover": {
+      "path": "public/assets/audio/sfx/sfx_hover.mp3",
+      "kind": "sfx-tts",
+      "meta": {
+        "use": "ui-hover"
+      },
+      "bytes": 9836,
+      "ms": 103222
+    },
+    "sfx_cash_register": {
+      "path": "public/assets/audio/sfx/sfx_cash_register.mp3",
+      "kind": "sfx-tts",
+      "meta": {
+        "use": "cash"
+      },
+      "bytes": 59040,
+      "ms": 22765
+    },
+    "sfx_error_buzzer": {
+      "path": "public/assets/audio/sfx/sfx_error_buzzer.mp3",
+      "kind": "sfx-tts",
+      "meta": {
+        "use": "error"
+      },
+      "bytes": 44640,
+      "ms": 63888
+    },
+    "sfx_dialogue_open": {
+      "path": "public/assets/audio/sfx/sfx_dialogue_open.mp3",
+      "kind": "sfx-tts",
+      "meta": {
+        "use": "dialogue-open"
+      },
+      "bytes": 12142,
+      "ms": 73676
+    },
+    "sfx_dialogue_close": {
+      "path": "public/assets/audio/sfx/sfx_dialogue_close.mp3",
+      "kind": "sfx-tts",
+      "meta": {
+        "use": "dialogue-close"
+      },
+      "bytes": 12142,
+      "ms": 54043
+    },
+    "sfx_alarm": {
+      "path": "public/assets/audio/sfx/sfx_alarm.mp3",
+      "kind": "sfx-tts",
+      "meta": {
+        "use": "alarm"
+      },
+      "bytes": 61920,
+      "ms": 174195
+    },
+    "sfx_printer_jam": {
+      "path": "public/assets/audio/sfx/sfx_printer_jam.mp3",
+      "kind": "sfx-tts",
+      "meta": {
+        "use": "printer"
+      },
+      "bytes": 43200,
+      "ms": 42475
+    },
+    "sfx_glitch_long": {
+      "path": "public/assets/audio/sfx/sfx_glitch_long.mp3",
+      "kind": "sfx-tts",
+      "meta": {
+        "use": "glitch-long"
+      },
+      "bytes": 69120,
+      "ms": 23054
+    },
+    "sfx_suspense": {
+      "path": "public/assets/audio/sfx/sfx_suspense.mp3",
+      "kind": "sfx-tts",
+      "meta": {
+        "use": "suspense"
+      },
+      "bytes": 443520,
+      "ms": 145174
+    },
+    "sfx_quest_done": {
+      "path": "public/assets/audio/sfx/sfx_quest_done.mp3",
+      "kind": "sfx-tts",
+      "meta": {
+        "use": "quest"
+      },
+      "bytes": 57600,
+      "ms": 34367
+    }
+  },
+  "failed": {
+    "bartek_tutorial": {
+      "error": "poll timeout after 180000ms",
+      "ts": 1787973297351
+    },
+    "sfx_click": {
+      "error": "poll timeout after 180000ms",
+      "ts": 1787973755117
+    },
+    "sfx_glitch": {
+      "error": "job failed: {\"request_id\":\"9d64e4bb-8556-4f7d-9de8-fdb021e4c7d3\",\"org_id\":\"09008d14-6b12-49c7-a384-c35a16846843\",\"user_id\":\"462dde8f-4b79-4b80-b0b5-8b353e45677b\",\"model\":\"minimax-tts-speech-2.8-hd\",\"status\":\"failed\",\"is_public\":false,\"payload\":{\"audio_sample_rate\":\"32000\",\"bitrate\":\"128000\",\"channel\":\"2\",\"emotion\":\"fearful\",\"format\":\"mp3\",\"language_boost\":\"auto\",\"pitch\":-8,\"sound_effects\":\"lofi_telephone\",\"sp",
+      "ts": 1787973948312
+    },
+    "sfx_easter_chime": {
+      "error": "poll timeout after 180000ms",
+      "ts": 1787974130526
+    },
+    "sfx_typing_burst": {
+      "error": "job failed: {\"request_id\":\"dfb1e1bc-9aa4-49d9-86dc-5ad4066c7e23\",\"org_id\":\"09008d14-6b12-49c7-a384-c35a16846843\",\"user_id\":\"462dde8f-4b79-4b80-b0b5-8b353e45677b\",\"model\":\"minimax-tts-speech-2.8-hd\",\"status\":\"failed\",\"is_public\":false,\"payload\":{\"audio_sample_rate\":\"32000\",\"bitrate\":\"128000\",\"channel\":\"2\",\"emotion\":\"calm\",\"format\":\"mp3\",\"language_boost\":\"auto\",\"pitch\":0,\"sound_effects\":\"\",\"speed\":2.5,\"text\":\"t",
+      "ts": 1787974435757
+    },
+    "sfx_coffee_pour": {
+      "error": "poll timeout after 180000ms",
+      "ts": 1787974617935
+    },
+    "sfx_server_beep": {
+      "error": "poll timeout after 180000ms",
+      "ts": 1787974843341
+    }
+  }
+}

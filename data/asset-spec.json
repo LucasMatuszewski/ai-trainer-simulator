@@ -1,0 +1,119 @@
+{
+  "_doc": "Asset generation spec. Each top-level array is a list of [id, job] tuples. 'kind' is 'tts' (speech), 'music' (song), or 'sfx-tts' (TTS with sound_effects for sfx). English first; other languages only if quota remains.",
+
+  "_voice_map": {
+    "bartek":  { "voice_id": "English_expressive_narrator", "emotion": "calm",   "speed": 0.95, "pitch": -1 },
+    "klaudia": { "voice_id": "English_Graceful_Lady",       "emotion": "happy",  "speed": 1.15, "pitch": 4 },
+    "marek":   { "voice_id": "English_expressive_narrator", "emotion": "angry",  "speed": 1.10, "pitch": -3 },
+    "zosia":   { "voice_id": "English_Graceful_Lady",       "emotion": "calm",   "speed": 1.0,  "pitch": 1 },
+    "pawel":   { "voice_id": "English_expressive_narrator", "emotion": "fearful","speed": 1.25, "pitch": 3 }
+  },
+
+  "music": [
+    ["music_title", {
+      "kind": "music",
+      "lyrics": "[intro]\n(Title screen - dramatic pixel-art opening)\n\n[verse]\nWelcome to the office, take a seat\nThe printer is broken, the coffee is cold\nYour keyboard is sticky, your chair has a wheel\nThe wifi is down, and the client is on hold\n\n[chorus]\nStack Underflow - learn it or burn it\nStack Underflow - you signed the NDA didn't you\nStack Underflow - if you can read this\nStack Underflow - it's already too late\n\n[outro]\n(8-bit game over sting)",
+      "prompt": "chiptune, retro 8-bit game over screen, mock dramatic bossa nova piano, 110 bpm, NES synth lead, slightly comedic",
+      "meta": { "loop": false, "use": "title" }
+    }],
+    ["music_office_ambient", {
+      "kind": "music",
+      "lyrics": "[intro]\n(soft synth pad and distant keyboard clatter)\n\n[verse]\nMonday morning coffee's on the boil\nAnother ticket another problem to resolve\nMarquee scrolling, slack notifications chime\nDreams of promotion in another lifetime\n\n[instrumental]\n(looping lo-fi office hum - low key arpeggios)\n\n[outro]\n(gentle fade)",
+      "prompt": "lo-fi chillhop, mellow, late 90s office, low energy synth pad, distant keyboard typing, light percussion, 85 bpm, 4 minutes",
+      "meta": { "loop": true, "use": "office" }
+    }],
+    ["music_minigame_debug", {
+      "kind": "music",
+      "lyrics": "[intro]\n(rapid synth arpeggio and snare build)\n\n[verse]\nStaring at the screen at half past three\nTrace the bug from line to line to line\nConsole says 'undefined' and so do we\nStack trace pouring out like cheap red wine\n\n[chorus]\nDebug the script before the client wakes up\nDebug the script or you're the next to be cut\n\n[outro]\n(Triumphant 8-bit chord)",
+      "prompt": "synthwave 8-bit urgent chiptune, fast tempo 160 bpm, NES drums, energetic, debugging pressure, deadline panic",
+      "meta": { "loop": false, "use": "minigame-debug" }
+    }],
+    ["music_day_end_calm", {
+      "kind": "music",
+      "lyrics": "[intro]\n(slow piano over a soft 4/4 beat)\n\n[verse]\nSun is gone, the office is dim\nThe last commit ships, I update the brim\nTaxi home, earbuds in, the city hums\nTomorrow is Monday and everything comes\n\n[chorus]\nTomorrow we do this all again\nTomorrow we do this all again\n\n[outro]\n(soft piano fade)",
+      "prompt": "indie folk, gentle, lo-fi piano, vinyl crackle, melancholic but warm, 70 bpm",
+      "meta": { "loop": false, "use": "summary" }
+    }],
+    ["music_minigame_win", {
+      "kind": "music",
+      "lyrics": "[intro]\n(Triumphant NES fanfare)\n\n[verse]\nI did it. I actually did it.\nA working build, a clean diff\nThe reviewer said it, the client paid it\nStack Overflow - I never went there\n\n[chorus]\nShip it! Ship it! Hit deploy!\nA thousand users and not one will enjoy\n\n[outro]\n(big retro chord)",
+      "prompt": "8-bit victory fanfare, triumphant, NES, fast celebratory, 130 bpm, 15 seconds",
+      "meta": { "loop": false, "use": "minigame-win" }
+    }],
+    ["music_minigame_lose", {
+      "kind": "music",
+      "lyrics": "[intro]\n(sad trombone 8-bit)\n\n[verse]\nIt crashed in production\nThe pager won't stop buzzing\nThe CTO is on his way up\n\n[outro]\n(silence)",
+      "prompt": "8-bit game over sad trombone, NES, slow, 12 seconds",
+      "meta": { "loop": false, "use": "minigame-lose" }
+    }],
+    ["music_title_alt_jingle", {
+      "kind": "music",
+      "lyrics": "[intro]\n(loud 8-bit opening)\n\n[verse]\nSTACK UNDERFLOW\nSTACK OVER IT\nTHE PRINTING IS BROKEN\nAND SO IS THE WIFI\n\n[outro]\n(Synth crash)",
+      "prompt": "chiptune punk, 150 bpm, aggressive NES, funny punk vocals, ad jingle parody",
+      "meta": { "loop": false, "use": "title-jingle" }
+    }],
+    ["music_easter_egg", {
+      "kind": "music",
+      "lyrics": "[intro]\n(bass drop then chiptune)\n\n[verse]\nYou found the secret room\nBehind the firewall\nThe duck is on the shelf\nAnd the server's not really there\n\n[outro]\n(laugh track)",
+      "prompt": "chiptune mystery, 8-bit detective theme, 120 bpm, comedic, NES, Mario Kart victory lap vibes",
+      "meta": { "loop": false, "use": "easter" }
+    }]
+  ],
+
+  "sfx": [
+    ["sfx_footstep_1", { "kind": "sfx-tts", "text": "tuk",       "opts": { "voice_id": "English_expressive_narrator", "speed": 1.4, "pitch": -2, "emotion": "calm", "format": "mp3", "sound_effects": "" }, "meta": { "use": "footstep" } }],
+    ["sfx_footstep_2", { "kind": "sfx-tts", "text": "tuk",       "opts": { "voice_id": "English_expressive_narrator", "speed": 1.5, "pitch": 1,  "emotion": "calm", "format": "mp3", "sound_effects": "" }, "meta": { "use": "footstep" } }],
+    ["sfx_click",       { "kind": "sfx-tts", "text": "tick",      "opts": { "voice_id": "English_expressive_narrator", "speed": 2.0, "pitch": 2,  "emotion": "happy","format": "mp3", "sound_effects": "" }, "meta": { "use": "ui-click" } }],
+    ["sfx_hover",       { "kind": "sfx-tts", "text": "blip",      "opts": { "voice_id": "English_expressive_narrator", "speed": 2.0, "pitch": 6,  "emotion": "happy","format": "mp3", "sound_effects": "" }, "meta": { "use": "ui-hover" } }],
+    ["sfx_cash_register", { "kind": "sfx-tts", "text": "ka-ching", "opts": { "voice_id": "English_expressive_narrator", "speed": 1.0, "pitch": 4,  "emotion": "happy","format": "mp3", "sound_effects": "spacious_echo" }, "meta": { "use": "cash" } }],
+    ["sfx_error_buzzer",  { "kind": "sfx-tts", "text": "buzzz",   "opts": { "voice_id": "English_expressive_narrator", "speed": 1.0, "pitch": -6, "emotion": "angry","format": "mp3", "sound_effects": "robotic" }, "meta": { "use": "error" } }],
+    ["sfx_glitch",        { "kind": "sfx-tts", "text": "zrt",     "opts": { "voice_id": "English_expressive_narrator", "speed": 2.5, "pitch": -8, "emotion": "fearful","format": "mp3", "sound_effects": "lofi_telephone" }, "meta": { "use": "glitch" } }],
+    ["sfx_easter_chime",  { "kind": "sfx-tts", "text": "ding",    "opts": { "voice_id": "English_expressive_narrator", "speed": 1.0, "pitch": 8,  "emotion": "happy","format": "mp3", "sound_effects": "spacious_echo" }, "meta": { "use": "easter" } }],
+    ["sfx_dialogue_open", { "kind": "sfx-tts", "text": "pop",     "opts": { "voice_id": "English_expressive_narrator", "speed": 1.4, "pitch": 2,  "emotion": "happy","format": "mp3", "sound_effects": "" }, "meta": { "use": "dialogue-open" } }],
+    ["sfx_dialogue_close",{ "kind": "sfx-tts", "text": "fwip",    "opts": { "voice_id": "English_expressive_narrator", "speed": 1.6, "pitch": 0,  "emotion": "calm", "format": "mp3", "sound_effects": "" }, "meta": { "use": "dialogue-close" } }],
+    ["sfx_alarm",         { "kind": "sfx-tts", "text": "wawawawawaw", "opts": { "voice_id": "English_expressive_narrator", "speed": 1.3, "pitch": -4, "emotion": "angry","format": "mp3", "sound_effects": "auditorium_echo" }, "meta": { "use": "alarm" } }],
+    ["sfx_typing_burst",  { "kind": "sfx-tts", "text": "tk tk tk tk", "opts": { "voice_id": "English_expressive_narrator", "speed": 2.5, "pitch": 0,  "emotion": "calm", "format": "mp3", "sound_effects": "" }, "meta": { "use": "typing" } }],
+    ["sfx_coffee_pour",   { "kind": "sfx-tts", "text": "glllrp",  "opts": { "voice_id": "English_expressive_narrator", "speed": 1.0, "pitch": 1,  "emotion": "calm", "format": "mp3", "sound_effects": "" }, "meta": { "use": "coffee" } }],
+    ["sfx_printer_jam",   { "kind": "sfx-tts", "text": "errrk",   "opts": { "voice_id": "English_expressive_narrator", "speed": 0.9, "pitch": -4, "emotion": "angry","format": "mp3", "sound_effects": "robotic" }, "meta": { "use": "printer" } }],
+    ["sfx_server_beep",   { "kind": "sfx-tts", "text": "beep",    "opts": { "voice_id": "English_expressive_narrator", "speed": 1.2, "pitch": 0,  "emotion": "calm", "format": "mp3", "sound_effects": "" }, "meta": { "use": "server" } }],
+    ["sfx_glitch_long",   { "kind": "sfx-tts", "text": "krrrrzzzt bzzzt zrt", "opts": { "voice_id": "English_expressive_narrator", "speed": 2.0, "pitch": -10, "emotion": "fearful","format": "mp3", "sound_effects": "lofi_telephone" }, "meta": { "use": "glitch-long" } }],
+    ["sfx_suspense",      { "kind": "sfx-tts", "text": "mmmm",    "opts": { "voice_id": "English_expressive_narrator", "speed": 0.7, "pitch": -2, "emotion": "calm", "format": "mp3", "sound_effects": "spacious_echo" }, "meta": { "use": "suspense" } }],
+    ["sfx_quest_done",    { "kind": "sfx-tts", "text": "ding ding ding", "opts": { "voice_id": "English_expressive_narrator", "speed": 1.0, "pitch": 4,  "emotion": "happy","format": "mp3", "sound_effects": "spacious_echo" }, "meta": { "use": "quest" } }]
+  ],
+
+  "speech": {
+    "_doc": "NPC dialogue speech. id = {npc}_{node_id}_{lang}. Speech uses the voice_id from _voice_map above; emotion is read from each line's `text` semantics.",
+
+    "en": [
+      ["bartek_greeting",   { "kind": "tts", "text": "Oh, fresh meat. I am Bartek, Senior Consultant. Welcome to Stack Underflow, where every ticket is a feature. Have you signed the NDA yet? It says you cannot remember the password we never told you.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "calm", "speed": 0.95, "pitch": -1 }, "meta": { "npc": "bartek", "node": "greeting" }}],
+      ["bartek_tutorial",   { "kind": "tts", "text": "Ha. We have a junior here who once spilled ramen on the server rack and called it load testing. I have a job for you. A client wants a one-day crash course on AI for managers. Pay is four hundred zloty. You in?", "opts": { "voice_id": "English_expressive_narrator", "emotion": "happy", "speed": 0.95, "pitch": -1 }, "meta": { "npc": "bartek", "node": "tutorial" }}],
+      ["bartek_tutorial_yes", { "kind": "tts", "text": "Excellent. Four hundred zloty wired, client is happy, you have survived week one. Do not let it go to your head. I once knew a contractor who thought being good at their job was enough. They are now a project manager. Avoid that.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "calm", "speed": 0.95, "pitch": -1 }, "meta": { "npc": "bartek", "node": "tutorial-yes" }}],
+      ["bartek_tutorial_maybe", { "kind": "tts", "text": "Sure, take your time. The client will hire Pawel. He does not know what he is doing, but he has a fresh LinkedIn profile, so technically more senior than you.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "calm", "speed": 0.95, "pitch": -1 }, "meta": { "npc": "bartek", "node": "tutorial-maybe" }}],
+      ["bartek_printer",    { "kind": "tts", "text": "The printer has been broken since two thousand nineteen. We call it Marek's coffee maker. Nobody touches it. If you fix it, you become the most popular person in the building. If you break it worse, you become the most popular person in a different way.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "calm", "speed": 0.95, "pitch": -1 }, "meta": { "npc": "bartek", "node": "printer" }}],
+      ["bartek_after_tut_greeting", { "kind": "tts", "text": "Hey, glad you came back. I have another client. Same company actually. They liked the first course so much they want a two-day advanced version. Pay is eight hundred zloty. The catch: the manager who attends is the kind of person who thinks the cloud is a thing Microsoft owns.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "calm", "speed": 0.95, "pitch": -1 }, "meta": { "npc": "bartek", "node": "after-tutorial-greeting" }}],
+      ["bartek_after_contract", { "kind": "tts", "text": "You know, you might actually survive this industry. Do not quote me on that. I have a reputation for being wrong, and I would like to keep it.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "calm", "speed": 0.95, "pitch": -1 }, "meta": { "npc": "bartek", "node": "after-contract" }}],
+
+      ["klaudia_greeting",  { "kind": "tts", "text": "Oh em gee, hi! I am Klaudia, your friendly neighborhood thought leader. I just posted a thread on why AI will replace you. It has two hundred likes and zero substance. Want to collab?", "opts": { "voice_id": "English_Graceful_Lady", "emotion": "happy", "speed": 1.15, "pitch": 4 }, "meta": { "npc": "klaudia", "node": "greeting" }}],
+      ["klaudia_collab_yes",{ "kind": "tts", "text": "Amazing! I will tag you in a tweet about ten x developer energy. It will mean nothing and reach five thousand people. You will get three recruiter DMs and a request to speak at a conference in Lisbon you cannot afford to fly to.", "opts": { "voice_id": "English_Graceful_Lady", "emotion": "happy", "speed": 1.15, "pitch": 4 }, "meta": { "npc": "klaudia", "node": "collab-yes" }}],
+      ["klaudia_collab_no", { "kind": "tts", "text": "Wow, OK. I see how it is. I will just keep posting. The algorithm loves me. The algorithm is the only one.", "opts": { "voice_id": "English_Graceful_Lady", "emotion": "sad", "speed": 1.15, "pitch": 4 }, "meta": { "npc": "klaudia", "node": "collab-no" }}],
+      ["klaudia_collab_q",  { "kind": "tts", "text": "I am a Senior Innovation Catalyst. I cannot tell you what that means. Nobody can. My manager has never asked. The job was invented during a meeting in twenty twenty one and has refused to die since.", "opts": { "voice_id": "English_Graceful_Lady", "emotion": "calm", "speed": 1.15, "pitch": 4 }, "meta": { "npc": "klaudia", "node": "collab-question" }}],
+
+      ["marek_greeting",    { "kind": "tts", "text": "I am Marek. I am a ten x engineer. I do not have time to onboard you. I have six monitors and one of them is just a clock. The coffee machine is in the corner. Do not touch my keyboard. Do not breathe near my keyboard.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "angry", "speed": 1.10, "pitch": -3 }, "meta": { "npc": "marek", "node": "greeting" }}],
+      ["marek_10x",         { "kind": "tts", "text": "It means I produce ten times the output of a regular engineer. Nobody has ever measured this. Including me. It is a vibe.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "angry", "speed": 1.10, "pitch": -3 }, "meta": { "npc": "marek", "node": "what-is-10x" }}],
+      ["marek_fellow",      { "kind": "tts", "text": "I knew it. I can smell my own kind. Quick question: do you also refuse to write documentation? I have not written a doc in seven years. I have not been asked. I have not been promoted. The cycle continues.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "happy", "speed": 1.10, "pitch": -3 }, "meta": { "npc": "marek", "node": "fellow-10x" }}],
+      ["marek_leave",       { "kind": "tts", "text": "Thank you. Most people do not. They bring me small questions. There are no small questions. There are only small minds.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "angry", "speed": 1.10, "pitch": -3 }, "meta": { "npc": "marek", "node": "leave" }}],
+
+      ["zosia_greeting",    { "kind": "tts", "text": "Hi! I am Zosia, the manager. Quick question: can you work weekends? That is not a question, it is a lifestyle. Welcome to the team. Your one-on-one is scheduled for every day at five pm. It will be twenty five minutes long. It will say nothing.", "opts": { "voice_id": "English_Graceful_Lady", "emotion": "calm", "speed": 1.0, "pitch": 1 }, "meta": { "npc": "zosia", "node": "greeting" }}],
+      ["zosia_roadmap",     { "kind": "tts", "text": "The roadmap is a Google Doc I update before every meeting. It is the same document every time. It says agile, synergy, and move fast. Nobody reads it. Including me.", "opts": { "voice_id": "English_Graceful_Lady", "emotion": "calm", "speed": 1.0, "pitch": 1 }, "meta": { "npc": "zosia", "node": "roadmap" }}],
+
+      ["pawel_greeting",    { "kind": "tts", "text": "Hi! I am Pawel, I am the intern. I have been an intern for two years. I run a backup script every Friday. I do not know what it backs up. I do not know where. I do not know why. I have not been fired. I have not been promoted. I am Schrodinger's employee.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "fearful", "speed": 1.25, "pitch": 3 }, "meta": { "npc": "pawel", "node": "greeting" }}],
+      ["pawel_pair",        { "kind": "tts", "text": "Really? Nobody has ever asked. Here is what I know: npm install fixes ninety percent of my problems. The other ten percent I solve by turning my laptop off and on again. I have a meeting with the principal engineer in three hours. I am going to ask him what agile means. I will report back.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "happy", "speed": 1.25, "pitch": 3 }, "meta": { "npc": "pawel", "node": "pair-yes" }}],
+      ["pawel_delete",      { "kind": "tts", "text": "What. No. Do not touch it. That script is the only reason I have a job. Without it I am just a person with a chair and a laptop. I cannot go back to that.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "fearful", "speed": 1.25, "pitch": 3 }, "meta": { "npc": "pawel", "node": "delete-script" }}],
+      ["pawel_readme",      { "kind": "tts", "text": "There is no readme. The previous intern left and took the readme with him. He is now a senior engineer somewhere. I think about him every day.", "opts": { "voice_id": "English_expressive_narrator", "emotion": "sad", "speed": 1.25, "pitch": 3 }, "meta": { "npc": "pawel", "node": "readme" }}]
+    ],
+    "es": [],
+    "pt": [],
+    "zh": [],
+    "pl": []
+  }
+}

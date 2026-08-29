@@ -37,8 +37,17 @@ export interface Engine {
 export function createEngine(canvas: HTMLCanvasElement): Engine {
   const renderer = new THREE.WebGLRenderer({
     canvas,
-    antialias: false,
+    // Antialias ON. The 480x270 buffer is still tiny so the GPU MSAA cost
+    // is negligible, and the jagged edges look horrible at any zoom. The
+    // CSS `image-rendering: pixelated` upscale on the canvas element is
+    // what gives us the pixel-art look, not per-fragment disabling of MSAA.
+    antialias: true,
     powerPreference: "high-performance",
+    // preserveDrawingBuffer lets the browser's screenshot / toDataURL pick up
+    // the most recent frame. Without it WebGL clears the back buffer after
+    // each composite, and Playwright (and copy-paste) see a blank canvas.
+    // Tiny perf cost in exchange for a much smoother dev experience.
+    preserveDrawingBuffer: true,
   });
   renderer.setPixelRatio(1);
   renderer.outputColorSpace = THREE.SRGBColorSpace;

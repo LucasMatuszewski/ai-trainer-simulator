@@ -1,0 +1,204 @@
+{
+  "generated": {
+    "bartek_greeting": {
+      "path": "src/assets/audio/speech/bartek_greeting.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "bartek",
+        "node": "greeting"
+      },
+      "bytes": 207025,
+      "ms": 176633
+    },
+    "bartek_tutorial_yes": {
+      "path": "src/assets/audio/speech/bartek_tutorial_yes.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "bartek",
+        "node": "tutorial-yes"
+      },
+      "bytes": 281403,
+      "ms": 54457
+    },
+    "bartek_tutorial_maybe": {
+      "path": "src/assets/audio/speech/bartek_tutorial_maybe.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "bartek",
+        "node": "tutorial-maybe"
+      },
+      "bytes": 160899,
+      "ms": 23035
+    },
+    "bartek_printer": {
+      "path": "src/assets/audio/speech/bartek_printer.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "bartek",
+        "node": "printer"
+      },
+      "bytes": 242773,
+      "ms": 103717
+    },
+    "bartek_after_tut_greeting": {
+      "path": "src/assets/audio/speech/bartek_after_tut_greeting.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "bartek",
+        "node": "after-tutorial-greeting"
+      },
+      "bytes": 307349,
+      "ms": 95186
+    },
+    "bartek_after_contract": {
+      "path": "src/assets/audio/speech/bartek_after_contract.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "bartek",
+        "node": "after-contract"
+      },
+      "bytes": 128611,
+      "ms": 32882
+    },
+    "klaudia_greeting": {
+      "path": "src/assets/audio/speech/klaudia_greeting.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "klaudia",
+        "node": "greeting"
+      },
+      "bytes": 222016,
+      "ms": 164865
+    },
+    "klaudia_collab_yes": {
+      "path": "src/assets/audio/speech/klaudia_collab_yes.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "klaudia",
+        "node": "collab-yes"
+      },
+      "bytes": 281403,
+      "ms": 74622
+    },
+    "klaudia_collab_no": {
+      "path": "src/assets/audio/speech/klaudia_collab_no.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "klaudia",
+        "node": "collab-no"
+      },
+      "bytes": 175890,
+      "ms": 32898
+    },
+    "klaudia_collab_q": {
+      "path": "src/assets/audio/speech/klaudia_collab_q.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "klaudia",
+        "node": "collab-question"
+      },
+      "bytes": 256034,
+      "ms": 54463
+    },
+    "marek_greeting": {
+      "path": "src/assets/audio/speech/marek_greeting.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "marek",
+        "node": "greeting"
+      },
+      "bytes": 211061,
+      "ms": 64201
+    },
+    "marek_10x": {
+      "path": "src/assets/audio/speech/marek_10x.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "marek",
+        "node": "what-is-10x"
+      },
+      "bytes": 125728,
+      "ms": 93747
+    },
+    "marek_leave": {
+      "path": "src/assets/audio/speech/marek_leave.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "marek",
+        "node": "leave"
+      },
+      "bytes": 138989,
+      "ms": 32844
+    },
+    "zosia_greeting": {
+      "path": "src/assets/audio/speech/zosia_greeting.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "zosia",
+        "node": "greeting"
+      },
+      "bytes": 370773,
+      "ms": 33011
+    },
+    "zosia_roadmap": {
+      "path": "src/assets/audio/speech/zosia_roadmap.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "zosia",
+        "node": "roadmap"
+      },
+      "bytes": 197800,
+      "ms": 54350
+    },
+    "pawel_greeting": {
+      "path": "src/assets/audio/speech/pawel_greeting.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "pawel",
+        "node": "greeting"
+      },
+      "bytes": 220286,
+      "ms": 32975
+    },
+    "pawel_pair": {
+      "path": "src/assets/audio/speech/pawel_pair.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "pawel",
+        "node": "pair-yes"
+      },
+      "bytes": 251998,
+      "ms": 23268
+    },
+    "pawel_delete": {
+      "path": "src/assets/audio/speech/pawel_delete.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "pawel",
+        "node": "delete-script"
+      },
+      "bytes": 129764,
+      "ms": 84949
+    },
+    "pawel_readme": {
+      "path": "src/assets/audio/speech/pawel_readme.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "pawel",
+        "node": "readme"
+      },
+      "bytes": 121115,
+      "ms": 85862
+    }
+  },
+  "failed": {
+    "bartek_tutorial": {
+      "error": "poll timeout after 180000ms",
+      "ts": 1787973297351
+    },
+    "marek_fellow": {
+      "error": "poll timeout after 180000ms",
+      "ts": 1787974276306
+    }
+  }
+}

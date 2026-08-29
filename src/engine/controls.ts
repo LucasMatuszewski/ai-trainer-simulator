@@ -46,26 +46,85 @@ export function createControls(opts: ControlsOptions): Controls {
   let keys: Set<string> = new Set();
   let mouseDelta = { x: 0, y: 0 };
   let pointerLocked = false;
+  // Last known mouse position in viewport coords, so we can compute deltas
+  // when the pointer is NOT locked. When pointer IS locked, the browser gives
+  // us movementX/Y directly, but in regular hover state those are 0 — we
+  // have to compute them from clientX deltas ourselves.
+  let lastClient = { x: 0, y: 0, valid: false };
 
   // Pointer lock
   canvas.addEventListener("click", () => {
     if (!pointerLocked) {
-      canvas.requestPointerLock?.();
+      try {
+        canvas.requestPointerLock?.();
+      } catch {
+        // Some headless / sandboxed browsers throw on requestPointerLock.
+        // Fall back to "hover-to-look" — the mousemove handler below still
+        // applies mouse-look when the cursor is over the canvas, so the
+        // game is still playable.
+      }
     }
   });
   document.addEventListener("pointerlockchange", () => {
     pointerLocked = document.pointerLockElement === canvas;
+    // When the lock state changes, reset the client tracker so the first
+    // move after (un)lock doesn't generate a giant spike from wherever the
+    // cursor was.
+    lastClient.valid = false;
   });
   document.addEventListener("mousemove", (e) => {
-    // Allow mouse-look whenever the canvas is hovered, not just when pointer
-    // is locked. Without this, the only way to look around is to click (which
-    // engages pointer lock), and pointer lock fails in headless test
-    // environments. The trade-off is tiny: a passive mouse won't generate
-    // movementX/Y, so it only rotates while the user actually moves it.
-    if (pointerLocked || e.target === canvas) {
+    // Apply mouse-look both during pointer lock AND when the cursor is over
+    // the canvas. This is the only way it works in headless / Playwright
+    // environments where requestPointerLock is denied.
+    if (!(pointerLocked || e.target === canvas)) return;
+    if (pointerLocked) {
+      // movementX/Y are valid only when pointer-locked.
       mouseDelta.x += e.movementX;
       mouseDelta.y += e.movementY;
+    } else {
+      // Fallback for the no-pointer-lock path: compute our own delta from
+      // clientX/Y. We track the last seen client position; the very first
+      // event primes the tracker instead of applying a fake 0,0 delta.
+      if (!lastClient.valid) {
+        lastClient.x = e.clientX;
+        lastClient.y = e.clientY;
+        lastClient.valid = true;
+      } else {
+        mouseDelta.x += e.clientX - lastClient.x;
+        mouseDelta.y += e.clientY - lastClient.y;
+        lastClient.x = e.clientX;
+        lastClient.y = e.clientY;
+      }
     }
+  });
+  // If the cursor leaves the canvas mid-drag, reset the tracker so re-entry
+  // doesn't cause a single huge rotation step.
+  canvas.addEventListener("mouseleave", () => {
+    lastClient.valid = false;
+  });
+
+  // Keyboard: listen on the canvas itself too, so that even if the global
+  // window listener in main.ts is somehow shadowed (e.g. when a focused
+  // button intercepts), we still get the keys. preventDefault on the
+  // movement keys so the browser can't try to scroll/find-on-page.
+  const moveKeys = new Set(["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift"]);
+  canvas.addEventListener("keydown", (e) => {
+    const k = e.key.toLowerCase();
+    keys.add(k);
+    if (moveKeys.has(k)) e.preventDefault();
+  });
+  canvas.addEventListener("keyup", (e) => {
+    keys.delete(e.key.toLowerCase());
+  });
+  // Keys arriving while the document has focus (e.g. before the canvas
+  // has been clicked) also need to land in the Set.
+  window.addEventListener("keydown", (e) => {
+    const k = e.key.toLowerCase();
+    keys.add(k);
+    if (moveKeys.has(k)) e.preventDefault();
+  });
+  window.addEventListener("keyup", (e) => {
+    keys.delete(e.key.toLowerCase());
   });
 
   function update(dt: number): void {

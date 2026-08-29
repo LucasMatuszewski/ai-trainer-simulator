@@ -1,0 +1,539 @@
+/* AI Trainer Simulator - global styles
+ * Pixel-art retro aesthetic. No antialiasing on text. Heavy use of VT323 and Press Start 2P fonts.
+ */
+
+:root {
+  --bg: #0a0a0a;
+  --fg: #e8e8e8;
+  --accent: #00ff7f;
+  --accent-warm: #ffaa00;
+  --danger: #ff3333;
+  --panel: #1a1a1a;
+  --panel-border: #3a3a3a;
+  --text-dim: #888;
+  --font-pixel: "VT323", monospace;
+  --font-pixel-bold: "Press Start 2P", monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  overflow: hidden;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#game-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+#ui-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--font-pixel);
+}
+
+#ui-root > * {
+  pointer-events: auto;
+}
+
+/* --- HUD --- */
+.hud {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+  font-size: 26px;
+  text-shadow: 2px 2px 0 #000;
+  pointer-events: none;
+}
+
+.hud > * {
+  pointer-events: none;
+}
+
+
+.hud .cash {
+  color: var(--accent);
+}
+
+.hud .cash.negative {
+  color: var(--danger);
+}
+
+.hud .day {
+  color: var(--accent-warm);
+}
+
+.hud .prompt {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  padding: 8px 16px;
+  font-size: 22px;
+  text-shadow: 1px 1px 0 #000;
+  white-space: nowrap;
+}
+
+.hud .prompt .key {
+  display: inline-block;
+  background: var(--accent);
+  color: #000;
+  padding: 2px 8px;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+/* --- Title screen --- */
+.title-screen {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+}
+
+.title-screen h1 {
+  font-family: var(--font-pixel-bold);
+  font-size: 56px;
+  color: var(--accent);
+  text-shadow: 4px 4px 0 #000, 8px 8px 0 var(--accent-warm);
+  text-align: center;
+  line-height: 1.4;
+  letter-spacing: 2px;
+}
+
+.title-screen .subtitle {
+  color: var(--text-dim);
+  font-size: 22px;
+  text-align: center;
+  max-width: 600px;
+}
+
+.title-screen .menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.title-screen button {
+  font-family: var(--font-pixel-bold);
+  font-size: 20px;
+  padding: 14px 32px;
+  background: var(--panel);
+  color: var(--fg);
+  border: 2px solid var(--panel-border);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  min-width: 280px;
+}
+
+.title-screen button:hover:not(:disabled) {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.title-screen button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.title-screen .version {
+  position: absolute;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 16px;
+}
+
+/* --- Character creation --- */
+.character-create {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.character-create .panel {
+  background: var(--panel);
+  border: 3px solid var(--panel-border);
+  padding: 32px;
+  max-width: 900px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 220px;
+  gap: 24px;
+}
+
+.character-create h2 {
+  font-family: var(--font-pixel-bold);
+  font-size: 22px;
+  color: var(--accent-warm);
+  margin-bottom: 12px;
+  grid-column: 1 / -1;
+}
+
+.character-create label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-dim);
+  font-size: 18px;
+}
+
+.character-create input[type=text] {
+  width: 100%;
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  padding: 8px 12px;
+  background: #000;
+  color: var(--fg);
+  border: 2px solid var(--panel-border);
+}
+
+.character-create .options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.character-create .option {
+  padding: 10px 12px;
+  background: #000;
+  border: 2px solid var(--panel-border);
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.character-create .option.selected {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.character-create .preview {
+  background: #000;
+  border: 2px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  font-size: 18px;
+  text-align: center;
+  padding: 16px;
+}
+
+.character-create .actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.character-create .actions button {
+  font-family: var(--font-pixel-bold);
+  font-size: 18px;
+  padding: 12px 24px;
+  background: var(--panel);
+  color: var(--fg);
+  border: 2px solid var(--panel-border);
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.character-create .actions button.primary {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.character-create .actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --- Dialogue overlay --- */
+.dialogue {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  bottom: 80px;
+  background: var(--panel);
+  border: 3px solid var(--panel-border);
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  box-shadow: 0 0 0 4px #000;
+}
+
+.dialogue .portrait {
+  width: 96px;
+  height: 96px;
+  background: #000;
+  border: 2px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+}
+
+.dialogue .portrait img {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.dialogue .content .name {
+  font-family: var(--font-pixel-bold);
+  font-size: 16px;
+  color: var(--accent-warm);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.dialogue .content .role {
+  color: var(--text-dim);
+  font-size: 16px;
+  margin-left: 12px;
+}
+
+.dialogue .content .text {
+  margin-top: 12px;
+  font-size: 22px;
+  line-height: 1.3;
+  min-height: 60px;
+}
+
+.dialogue .options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.dialogue .options button {
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  text-align: left;
+  padding: 8px 16px;
+  background: #000;
+  color: var(--fg);
+  border: 2px solid var(--panel-border);
+  cursor: pointer;
+}
+
+.dialogue .options button:hover {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.dialogue .skip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 16px;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--panel-border);
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+/* --- Toast / one-shot messages --- */
+.toast {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: 2px solid var(--accent);
+  padding: 8px 16px;
+  font-size: 20px;
+  pointer-events: none;
+  animation: toast-pop 0.2s ease-out;
+}
+
+.toast.warning { border-color: var(--accent-warm); }
+.toast.error { border-color: var(--danger); }
+.toast.success { border-color: var(--accent); }
+
+@keyframes toast-pop {
+  from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* --- Daily summary --- */
+.daily-summary {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.daily-summary .panel {
+  background: var(--panel);
+  border: 3px solid var(--panel-border);
+  padding: 32px;
+  max-width: 600px;
+  width: 100%;
+}
+
+.daily-summary h2 {
+  font-family: var(--font-pixel-bold);
+  font-size: 22px;
+  color: var(--accent-warm);
+  margin-bottom: 16px;
+}
+
+.daily-summary .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 22px;
+  border-bottom: 1px dashed var(--panel-border);
+}
+
+.daily-summary .row.total {
+  border-top: 2px solid var(--accent);
+  border-bottom: none;
+  margin-top: 8px;
+  padding-top: 12px;
+  font-weight: bold;
+}
+
+.daily-summary .row .pos { color: var(--accent); }
+.daily-summary .row .neg { color: var(--danger); }
+.daily-summary .row .meme {
+  margin-top: 16px;
+  padding: 12px;
+  background: #000;
+  font-style: italic;
+  color: var(--text-dim);
+  font-size: 18px;
+  text-align: center;
+  border: 1px solid var(--panel-border);
+}
+
+.daily-summary .actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.daily-summary .actions button {
+  font-family: var(--font-pixel-bold);
+  font-size: 16px;
+  padding: 10px 24px;
+  background: var(--accent);
+  color: #000;
+  border: 2px solid var(--accent);
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+/* --- Game over --- */
+.game-over {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+}
+
+.game-over h1 {
+  font-family: var(--font-pixel-bold);
+  font-size: 48px;
+  color: var(--danger);
+  text-shadow: 4px 4px 0 #600;
+  margin-bottom: 32px;
+}
+
+.game-over .stats {
+  color: var(--text-dim);
+  font-size: 22px;
+  margin-bottom: 32px;
+}
+
+.game-over .stats .stat {
+  margin: 6px 0;
+}
+
+.game-over .final-line {
+  color: var(--accent-warm);
+  font-size: 24px;
+  margin-bottom: 32px;
+  font-style: italic;
+}
+
+.game-over button {
+  font-family: var(--font-pixel-bold);
+  font-size: 18px;
+  padding: 14px 32px;
+  background: var(--panel);
+  color: var(--fg);
+  border: 2px solid var(--panel-border);
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.game-over button:hover {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
