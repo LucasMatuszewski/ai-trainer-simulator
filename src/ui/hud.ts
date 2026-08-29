@@ -62,6 +62,15 @@ export function showPrompt(hud: HudElements, text: string | null): void {
   hud.prompt.querySelector("[data-prompt-text]")!.textContent = text;
 }
 
+/**
+ * Toast duration in milliseconds. Default 7.5s (3x the previous 2.5s).
+ * Lucas reported that 1-2s was too short to read; the toast
+ * disappears before the player can finish reading the line. 7.5s is
+ * still short enough to not feel intrusive, and long enough to read
+ * a one-sentence hint.
+ */
+const TOAST_DURATION_MS = 7500;
+
 export function showToast(hud: HudElements, message: string, type: "info" | "success" | "warning" | "error" = "info"): void {
   hud.toast.textContent = message;
   hud.toast.className = `toast ${type}`;
@@ -72,5 +81,5 @@ export function showToast(hud: HudElements, message: string, type: "info" | "suc
   hud.toastTimer = window.setTimeout(() => {
     hud.toast.style.display = "none";
     hud.toastTimer = null;
-  }, 2500);
+  }, TOAST_DURATION_MS);
 }
