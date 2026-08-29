@@ -253,6 +253,8 @@ export function createControls(opts: ControlsOptions): Controls {
   };
   const onKeyDown = (e: KeyboardEvent): void => {
     const moveKey = physicalToMoveKey(e);
+    // eslint-disable-next-line no-console
+    console.log("[controls] keydown", { key: e.key, code: e.code, moveKey, target: (e.target as HTMLElement | null)?.tagName });
     if (moveKey === null) return;
     // Don't capture movement when the user is typing into a text
     // input (the character-creation name field, a future text
@@ -260,12 +262,18 @@ export function createControls(opts: ControlsOptions): Controls {
     // Escape and F1, growing the Set unnecessarily.
     if (isTextEntryTarget(e.target)) return;
     keys.add(moveKey);
+    // eslint-disable-next-line no-console
+    console.log("[controls] keys Set after add", Array.from(keys));
     e.preventDefault();
   };
   const onKeyUp = (e: KeyboardEvent): void => {
     const moveKey = physicalToMoveKey(e);
+    // eslint-disable-next-line no-console
+    console.log("[controls] keyup", { key: e.key, code: e.code, moveKey, target: (e.target as HTMLElement | null)?.tagName });
     if (moveKey === null) return;
     keys.delete(moveKey);
+    // eslint-disable-next-line no-console
+    console.log("[controls] keys Set after delete", Array.from(keys));
     if (!isTextEntryTarget(e.target)) e.preventDefault();
   };
   window.addEventListener("keydown", onKeyDown);

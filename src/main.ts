@@ -647,4 +647,27 @@ window.__aitrainer = {
 };
 
 frame();
+
+// ---------------------------------------------------------------
+// Build version banner
+//
+// Every commit-worthy change must bump BUILD_VERSION below. The
+// banner prints to the browser console at startup so the user (or
+// the agent) can confirm the browser is running the latest code.
+// Lucas asked for this on 2026-08-29 after the WASD stuck-key fix
+// did not appear to take effect — turned out the issue was a stale
+// browser tab. A console banner makes the staleness obvious.
+//
+// Format: "AI Trainer Simulator vYYYY.MM.DD-NN" where NN is the
+// commit ordinal in the day. The dev server is the only build that
+// matters here; the prod build embeds the same string via
+// `vite build`'s `define` (TODO if/when we add a CI pipeline).
+// ---------------------------------------------------------------
+const BUILD_VERSION = "v2026.08.29-05";
+// eslint-disable-next-line no-console
+console.info(
+  "%cAI Trainer Simulator %c" + BUILD_VERSION,
+  "color:#00ff7f;font-weight:bold",
+  "color:#888",
+);
 showTitle();
