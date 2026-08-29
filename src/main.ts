@@ -17,6 +17,7 @@ import { buildOfficeScene } from "./engine/scene";
 import { createCameraDirector, type CameraDirector } from "./engine/camera-director";
 import { game } from "./game/state";
 import { runDailyTick } from "./game/economy";
+import { runPeriodEvent } from "./game/events";
 import { NPCS } from "./content/npcs";
 import type { GameState, NPC, NpcId } from "./types";
 import { mountHud, renderHud, showToast, type HudElements } from "./ui/hud";
@@ -195,6 +196,15 @@ function startOffice(): void {
       if (hud) showToast(hud, "Click a coworker to talk. Use the computer once you have a contract. End day when you are done.", "info");
     }, 400);
   }
+
+  // Fire a morning random event a moment after the office loads, so the
+  // player sees the simulation humming right away. Skip on the very first
+  // entry to avoid stacking with the intro toast.
+  if (game.get().flags["_seen-intro-toast"]) {
+    setTimeout(() => {
+      runPeriodEvent(hud, "morning");
+    }, 1200);
+  }
 }
 
 let prevCash = 0;
@@ -367,6 +377,12 @@ function frame(): void {
       const prevDay = game.get().day;
       for (let i = 0; i < periodsElapsed; i++) {
         game.dispatch({ type: "advance-time" });
+        // After advancing, the player's *new* period is the one we should
+        // flavor with a random event. Skip if a day wrapped (endDay handles
+        // the new-day opening event).
+        if (game.get().day === prevDay) {
+          runPeriodEvent(hud, game.get().timeOfDay);
+        }
       }
       const afterDay = game.get().day;
       if (afterDay !== prevDay) {
