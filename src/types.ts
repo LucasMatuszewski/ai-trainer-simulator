@@ -62,6 +62,13 @@ export interface NPC {
   emoji: string; // used for the portrait placeholder until real PNG art is added
   position: { x: number; y: number; z: number };
   triggerRadius: number;
+  /**
+   * Visual gender. Drives the silhouette in the 3D scene (a future
+   * task will add a real gendered mesh; for now, the placeholder box
+   * is the same for both, but this field is here so the mesh can
+   * read it). "dog" is a separate marker, not a humanoid.
+   */
+  gender: "male" | "female" | "dog";
   /** Map of state predicate name to dialogue tree id. The first matching tree wins. */
   dialogues: Record<string, DialogueTree>;
 }

@@ -39,6 +39,7 @@ import { SECONDS_PER_PERIOD } from "./game/pacing";
 import { mountQuestLog, type QuestLogHandle } from "./ui/quest-log";
 import { mountHelpModal, type HelpModalHandle } from "./ui/help-modal";
 import { ndcFromMouse, pickFromCamera } from "./engine/interaction-raycaster";
+import { yawToFace } from "./engine/npc-face";
 
 type Screen = "title" | "create" | "office" | "summary" | "minigame" | "gameover";
 
@@ -67,6 +68,14 @@ let lastTime = performance.now();
  * cinematic resolves.
  */
 let cinematicPlaying = false;
+
+// NPC face-toward-player animation. When the player starts a
+// conversation, the NPC smoothly rotates to face the player. When
+// the dialogue closes, the NPC returns to its schedule-driven yaw.
+// Each map holds the data needed to drive the interpolation: the
+// current target yaw, and the schedule yaw to restore on close.
+const npcFaceAnimations = new Map<string, number>(); // npcId -> target yaw
+const npcScheduleYaws = new Map<string, number>();    // npcId -> schedule yaw
 
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
@@ -477,6 +486,10 @@ function openDialogueWith(npc: NPC): void {
       audio().sfx.play("sfx_dialogue_close");
       // Return focus to the roster, not the wide office shot, so the
       // player sees the NPC they were just talking to.
+      // Restore the NPC's yaw to its schedule face (no longer looking
+      // at the player — the conversation is over).
+      const restoredYaw = npcScheduleYaws.get(npc.id) ?? null;
+      if (restoredYaw !== null) npcFaceAnimations.set(npc.id, restoredYaw);
       focusNpc(focusedNpcId);
     });
     dialogue.onNodeShown((npc, nodeId) => {
@@ -492,6 +505,22 @@ function openDialogueWith(npc: NPC): void {
         await audio().tts.play(ttsId);
       })();
     });
+  }
+  // Smoothly rotate the NPC to face the player. Saves the current
+  // (schedule-driven) yaw so we can restore it when the dialogue closes.
+  const mesh = sceneObjects?.npcMeshes.get(npc.id);
+  if (mesh) {
+    const playerPos = controls?.getPlayerPosition();
+    if (playerPos) {
+      const targetYaw = yawToFace(
+        { x: npc.position.x, z: npc.position.z },
+        { x: playerPos.x, z: playerPos.z },
+      );
+      if (!npcScheduleYaws.has(npc.id)) {
+        npcScheduleYaws.set(npc.id, mesh.rotation.y);
+      }
+      npcFaceAnimations.set(npc.id, targetYaw);
+    }
   }
   const state = game.get();
   let treeKey = "default";
@@ -560,6 +589,32 @@ function frame(): void {
     engine.update(dt);
     if (sceneObjects) {
       for (const u of sceneObjects.updatables) u(dt);
+      // Phase 3.5: smooth NPC face-toward-player animation. When a
+      // player starts a conversation with an NPC, the NPC's body
+      // rotates to face the player. When the conversation closes, it
+      // rotates back to the schedule-driven yaw. The interpolation
+      // runs at NPC_ANIM_RATE per second (1 / 0.25 s = 4) for a
+      // 250 ms ease-in feel.
+      const NPC_ANIM_RATE = 4;
+      if (npcFaceAnimations.size > 0 && sceneObjects) {
+        const t = Math.min(1, dt * NPC_ANIM_RATE);
+        for (const [npcId, targetYaw] of npcFaceAnimations) {
+          const mesh = sceneObjects.npcMeshes.get(npcId);
+          if (!mesh) continue;
+          // Shortest-path lerp on the unit circle: avoid jumping
+          // across the ±π wrap point.
+          let delta = targetYaw - mesh.rotation.y;
+          if (delta > Math.PI) delta -= 2 * Math.PI;
+          if (delta < -Math.PI) delta += 2 * Math.PI;
+          mesh.rotation.y += delta * t;
+          if (Math.abs(delta) < 0.01) {
+            // Snapped: clear the animation target so we don't keep
+            // running the interpolation for an already-converged
+            // rotation. The schedule yaw (if any) is preserved.
+            npcFaceAnimations.delete(npcId);
+          }
+        }
+      }
     }
   }
   if (cameraDirector) cameraDirector.update(dt);
@@ -663,7 +718,7 @@ frame();
 // matters here; the prod build embeds the same string via
 // `vite build`'s `define` (TODO if/when we add a CI pipeline).
 // ---------------------------------------------------------------
-const BUILD_VERSION = "v2026.08.29-06";
+const BUILD_VERSION = "v2026.08.29-07";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,

@@ -24,6 +24,7 @@ export const NPCS: NPC[] = [
     name: "Bartek",
     role: "Senior Consultant",
     emoji: "B",
+    gender: "male",
     position: { x: -4, y: 0, z: -2.0 },
     triggerRadius: 1.8,
     dialogues: {
@@ -37,6 +38,7 @@ export const NPCS: NPC[] = [
     name: "Klaudia",
     role: "The LinkedIn Influencer",
     emoji: "K",
+    gender: "female",
     position: { x: 4, y: 0, z: -2.0 },
     triggerRadius: 1.8,
     dialogues: {
@@ -48,6 +50,7 @@ export const NPCS: NPC[] = [
     name: "Marek",
     role: "DevOps / 10x Engineer",
     emoji: "M",
+    gender: "male",
     position: { x: -4, y: 0, z: 4.0 },
     triggerRadius: 1.8,
     dialogues: {
@@ -59,6 +62,7 @@ export const NPCS: NPC[] = [
     name: "Zosia",
     role: "The Manager",
     emoji: "Z",
+    gender: "female",
     position: { x: 4, y: 0, z: 4.0 },
     triggerRadius: 1.8,
     dialogues: {
@@ -70,6 +74,7 @@ export const NPCS: NPC[] = [
     name: "Pawel",
     role: "The Intern",
     emoji: "P",
+    gender: "male",
     position: { x: 0, y: 0, z: -5.0 },
     triggerRadius: 1.6,
     dialogues: {
@@ -81,6 +86,7 @@ export const NPCS: NPC[] = [
     name: "Kasia",
     role: "The Recruiter",
     emoji: "📱",
+    gender: "female",
     position: { x: 7, y: 0, z: -2.0 },
     triggerRadius: 1.8,
     dialogues: {
@@ -92,6 +98,7 @@ export const NPCS: NPC[] = [
     name: "Tomek",
     role: "Junior Developer",
     emoji: "🐛",
+    gender: "male",
     position: { x: -7, y: 0, z: -2.0 },
     triggerRadius: 1.8,
     dialogues: {
@@ -103,6 +110,7 @@ export const NPCS: NPC[] = [
     name: "Ania",
     role: "Marketing & Synergy",
     emoji: "📣",
+    gender: "female",
     position: { x: 7, y: 0, z: 1.0 },
     triggerRadius: 1.8,
     dialogues: {
@@ -114,6 +122,7 @@ export const NPCS: NPC[] = [
     name: "Janusz",
     role: "The Janitor",
     emoji: "🧹",
+    gender: "male",
     position: { x: -7, y: 0, z: 1.0 },
     triggerRadius: 1.8,
     dialogues: {
@@ -125,6 +134,7 @@ export const NPCS: NPC[] = [
     name: "Burek",
     role: "Office Dog",
     emoji: "🐶",
+    gender: "dog",
     position: { x: -7, y: 0, z: 4.0 },
     triggerRadius: 1.8,
     dialogues: {
@@ -136,6 +146,7 @@ export const NPCS: NPC[] = [
     name: "Grazyna",
     role: "The Accountant",
     emoji: "💰",
+    gender: "female",
     position: { x: 7, y: 0, z: 4.0 },
     triggerRadius: 1.8,
     dialogues: {
@@ -147,6 +158,7 @@ export const NPCS: NPC[] = [
     name: "Maciek",
     role: "The CTO",
     emoji: "🚀",
+    gender: "male",
     position: { x: -3, y: 0, z: -6.0 },
     triggerRadius: 1.8,
     dialogues: {
@@ -158,6 +170,7 @@ export const NPCS: NPC[] = [
     name: "Przemek",
     role: "Sales",
     emoji: "🤝",
+    gender: "male",
     position: { x: 3, y: 0, z: -6.0 },
     triggerRadius: 1.8,
     dialogues: {

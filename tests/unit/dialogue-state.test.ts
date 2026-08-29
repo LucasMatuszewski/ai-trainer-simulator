@@ -42,6 +42,7 @@ const npc: NPC = {
   emoji: "B",
   position: { x: 0, y: 0, z: 0 },
   triggerRadius: 1.5,
+  gender: "male",
   dialogues: {},
 };
 

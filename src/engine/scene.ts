@@ -14,8 +14,10 @@
  */
 
 import * as THREE from "three";
+import type { Period } from "../content/npc-schedule";
 import { NPCS, OBSTACLES, OFFICE_BOUNDS } from "../content/npcs";
-import type { NPC } from "../types";
+import { createNpcController } from "./npc-controller";
+import type { NPC, NpcId } from "../types";
 
 const COLORS = {
   // Surfaces
@@ -107,12 +109,16 @@ const SCREEN_COLORS = [
 
 export interface SceneObjects {
   npcMeshes: Map<string, THREE.Mesh>;
+  npcObjects: Record<NpcId, THREE.Object3D>;
   interactableMeshes: Map<string, THREE.Mesh>;
   playerStart: THREE.Vector3;
   updatables: Array<(dt: number) => void>;
 }
 
-export function buildOfficeScene(scene: THREE.Scene): SceneObjects {
+export function buildOfficeScene(
+  scene: THREE.Scene,
+  getCurrentPeriod: () => Period = () => "morning",
+): SceneObjects {
   const updatables: Array<(dt: number) => void> = [];
 
   // ---- Floor: 18x18 checkered wood pattern, drawn as a single repeating
@@ -235,14 +241,20 @@ export function buildOfficeScene(scene: THREE.Scene): SceneObjects {
 
   // ---- NPC markers (chunky characters with bodies, heads, hair, eyes).
   const npcMeshes = new Map<string, THREE.Mesh>();
+  const npcObjects = {} as Record<NpcId, THREE.Object3D>;
   NPCS.forEach((npc, i) => {
     const m = makeNpcMarker(npc, i);
     scene.add(m);
     npcMeshes.set(npc.id, m as unknown as THREE.Mesh);
+    npcObjects[npc.id] = m;
   });
+
+  const npcController = createNpcController(NPCS, npcObjects, getCurrentPeriod);
+  updatables.push(npcController.update);
 
   return {
     npcMeshes,
+    npcObjects,
     interactableMeshes: new Map(),
     playerStart: new THREE.Vector3(0, 0.5, 6),
     updatables,

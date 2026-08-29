@@ -170,8 +170,19 @@ A new agent on this project should READ the corrections log in `docs/PRD.md` §1
 - `pnpm typecheck` — TypeScript only, fast.
 - `pnpm test` — vitest, unit tests.
 - `pnpm test:e2e` — Playwright e2e smoke.
-- `pnpm dev` — Vite dev server. Already running on `http://localhost:5173/` (don't restart it).
-- `pnpm build` — Vite production build. Don't run unless asked.
+- `pnpm dev` — Vite dev server on `http://localhost:5173/` with HMR (hot module replacement). **Use this for live preview.** Already running; don't restart.
+- `pnpm build` — Vite production build to `dist/`. The 4173 static preview serves this folder.
+- `pnpm build:watch` — Vite build in watch mode. Rebuilds `dist/` on every file save. Use together with `pnpm preview` if you want a live preview at 4173.
+- `pnpm preview` — Static file server for `dist/` on `http://localhost:4173/`. **This does NOT watch for source changes.** 4173 only updates after `pnpm build` runs.
+
+### Which port to use (READ THIS, AGENTS + Lucas)
+
+- **5173 = live preview (HMR).** Every time you save a `.ts` / `.css` / `.tsx` file, the page reloads automatically. **This is the port you should use during development.**
+- **4173 = static preview.** The file is served as-is from the `dist/` folder. To see changes on 4173, you must run `pnpm build` (or `pnpm build:watch`) first.
+
+**Lucas's rule (2026-08-29):** "remember to provide some kind of Live preview, Live Dev Server with live preview, HRM or something similar. I need a way to always see what you are working on." The live preview is **5173, not 4173.** If you have only ever tested on 4173, you have been seeing a stale build.
+
+**On 2026-08-29 Lucas was on 4173 and the WASD / mouse-look fixes were not visible** because `pnpm build` had not been re-run after the code changes. The agent had to re-run `pnpm build` to refresh 4173. Going forward: **use 5173 for live preview, never 4173 unless you specifically need the production build.**
 
 The dev server is on WSL2 at `http://localhost:5173/`. Use Playwright MCP (`mcp__plugin_playwright_playwright__*`) to drive it.
 
