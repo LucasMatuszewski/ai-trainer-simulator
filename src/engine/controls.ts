@@ -224,6 +224,27 @@ export function createControls(opts: ControlsOptions): Controls {
   window.addEventListener("keyup", (e) => {
     keys.delete(e.key.toLowerCase());
   });
+  // If the window loses focus (alt-tab, click on the address bar,
+  // dev tools, OS dialog, ...) the browser drops any in-flight keyup
+  // events. The movement key stays in our `keys` Set forever and the
+  // player keeps walking in that direction. Clear the set on blur so
+  // the player stops immediately when focus is lost. This is the
+  // classic "stuck WASD" bug in browser games.
+  window.addEventListener("blur", () => {
+    keys.clear();
+  });
+  // Same for the canvas — the page can blur without the window
+  // blurring (e.g. when a modal opens and the focus moves inside it).
+  canvas.addEventListener("blur", () => {
+    keys.clear();
+  });
+  // Also clear on `visibilitychange` — when the user switches tabs,
+  // keyup events may not fire. This is belt-and-braces with `blur`
+  // but covers the cases where `blur` doesn't fire (some browsers
+  // when the tab is hidden by the OS).
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) keys.clear();
+  });
 
   // Mouse delta: the browser provides movementX/Y when pointer-locked,
   // but we are not using pointer lock (Pattern D uses a free OS cursor
