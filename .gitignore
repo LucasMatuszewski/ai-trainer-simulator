@@ -1,0 +1,23 @@
+# Node
+node_modules/
+dist/
+.pnpm-store/
+
+# Build / cache
+.vite/
+.turbo/
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Agent work (kept in repo for history but gitignored from commits; can be reviewed locally)
+.agent-briefs/*.output
+.agent-briefs/*.stderr
