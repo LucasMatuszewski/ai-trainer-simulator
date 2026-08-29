@@ -552,6 +552,10 @@ window.__aitrainer = {
     return { x: engine.camera.position.x, y: engine.camera.position.y, z: engine.camera.position.z };
   },
   getFocus: () => focusedNpcId,
+  getSceneObjects: () => {
+    if (!sceneObjects) return null;
+    return { keys: Object.keys(sceneObjects), hasPlayerGroup: false };
+  },
   getScreen: () => screen,
 };
 
