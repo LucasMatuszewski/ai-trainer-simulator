@@ -130,6 +130,7 @@ export interface Controls {
   getYaw: () => number;
   getPitch: () => number;
   getPlayerPosition: () => THREE.Vector3;
+  destroy: () => void;
 }
 
 export interface ControlsOptions {
@@ -156,42 +157,49 @@ export function createControls(opts: ControlsOptions): Controls {
   let pendingMouseDelta = { x: 0, y: 0 };
 
   // Suppress the right-click context menu (RMB is for mouse-look).
-  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+  const onContextMenu = (e: MouseEvent): void => e.preventDefault();
+  canvas.addEventListener("contextmenu", onContextMenu);
 
   // RMB hold: engage mouse-look. RMB release: return to free.
   // We use mousedown/mouseup with button === 2 on the canvas.
   // The OS contextmenu is preventDefault-ed above.
-  canvas.addEventListener("mousedown", (e) => {
+  const onMouseDown = (e: MouseEvent): void => {
     if (e.button === 2) {
       state = { ...state, mouseLook: "hold" };
       canvas.style.cursor = "none";
     }
-  });
-  canvas.addEventListener("mouseup", (e) => {
+  };
+  const onMouseUp = (e: MouseEvent): void => {
     if (e.button === 2) {
       if (state.mouseLook === "hold") {
         state = { ...state, mouseLook: "free" };
         canvas.style.cursor = "";
       }
     }
-  });
+  };
   // If the cursor leaves the canvas mid-RMB-hold, release the hold so
   // the player is not stuck in mouse-look when the cursor goes to the
   // HUD.
-  canvas.addEventListener("mouseleave", () => {
+  const onMouseLeave = (): void => {
     if (state.mouseLook === "hold") {
       state = { ...state, mouseLook: "free" };
       canvas.style.cursor = "";
     }
-  });
+  };
+  canvas.addEventListener("mousedown", onMouseDown);
+  canvas.addEventListener("mouseup", onMouseUp);
+  canvas.addEventListener("mouseleave", onMouseLeave);
 
   // Space toggles mouse-look. Esc releases the toggle.
-  window.addEventListener("keydown", (e) => {
+  const isTextEntryTarget = (target: EventTarget | null): boolean => {
+    if (!(target instanceof HTMLElement)) return false;
+    return target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+  };
+  const onMouseLookKeyDown = (e: KeyboardEvent): void => {
     const k = e.key.toLowerCase();
     if (k === " " || e.code === "Space") {
       // Only toggle if the event target is not a text input.
-      const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      if (isTextEntryTarget(e.target)) return;
       e.preventDefault();
       if (state.mouseLook === "free") {
         state = { ...state, mouseLook: "toggle" };
@@ -206,45 +214,83 @@ export function createControls(opts: ControlsOptions): Controls {
         canvas.style.cursor = "";
       }
     }
-  });
+  };
+  window.addEventListener("keydown", onMouseLookKeyDown);
 
   // Keyboard movement. Listen on window so the canvas does not need
   // to be focusable. preventDefault on movement keys to keep the
   // browser from scrolling / find-on-page.
-  const moveKeys = new Set([
-    "w", "a", "s", "d",
-    "arrowup", "arrowdown", "arrowleft", "arrowright",
-    "shift",
-  ]);
-  window.addEventListener("keydown", (e) => {
-    const k = e.key.toLowerCase();
-    keys.add(k);
-    if (moveKeys.has(k)) e.preventDefault();
-  });
-  window.addEventListener("keyup", (e) => {
-    keys.delete(e.key.toLowerCase());
-  });
+  //
+  // CRITICAL: we identify movement keys by their PHYSICAL `e.code`
+  // (e.g. "KeyW"), not by `e.key` ("w" or "W" depending on Shift /
+  // layout). `e.key` can differ between keydown and keyup (Caps
+  // Lock, Shift released before the letter, IME composition, AZERTY
+  // layout where the physical W key produces "z"), which would leave
+  // the movement key stuck in our Set forever. `e.code` is
+  // keyboard-layout-independent and matches between press and release.
+  // The pure stepControls() still reads the lowercase "w"/"a"/"s"/"d"
+  // names, so we map the physical code to the logical key here.
+  const codeToMoveKey: Readonly<Record<string, string>> = {
+    KeyW: "w", KeyA: "a", KeyS: "s", KeyD: "d",
+    ArrowUp: "arrowup", ArrowDown: "arrowdown",
+    ArrowLeft: "arrowleft", ArrowRight: "arrowright",
+    ShiftLeft: "shift", ShiftRight: "shift",
+  };
+  const keyToMoveKey: Readonly<Record<string, string>> = {
+    w: "w", a: "a", s: "s", d: "d",
+    arrowup: "arrowup", arrowdown: "arrowdown",
+    arrowleft: "arrowleft", arrowright: "arrowright",
+    shift: "shift",
+  };
+  const physicalToMoveKey = (e: KeyboardEvent): string | null => {
+    const byCode = codeToMoveKey[e.code];
+    if (byCode !== undefined) return byCode;
+
+    // Some embedded/remote browser paths and synthetic KeyboardEvents do
+    // not populate `code`. Keep physical codes as the primary identity,
+    // but fall back to `key` so a missing code cannot disable WASD.
+    return keyToMoveKey[e.key.toLowerCase()] ?? null;
+  };
+  const onKeyDown = (e: KeyboardEvent): void => {
+    const moveKey = physicalToMoveKey(e);
+    if (moveKey === null) return;
+    // Don't capture movement when the user is typing into a text
+    // input (the character-creation name field, a future text
+    // input). Sol found that the old code added every key including
+    // Escape and F1, growing the Set unnecessarily.
+    if (isTextEntryTarget(e.target)) return;
+    keys.add(moveKey);
+    e.preventDefault();
+  };
+  const onKeyUp = (e: KeyboardEvent): void => {
+    const moveKey = physicalToMoveKey(e);
+    if (moveKey === null) return;
+    keys.delete(moveKey);
+    if (!isTextEntryTarget(e.target)) e.preventDefault();
+  };
+  window.addEventListener("keydown", onKeyDown);
+  window.addEventListener("keyup", onKeyUp);
   // If the window loses focus (alt-tab, click on the address bar,
   // dev tools, OS dialog, ...) the browser drops any in-flight keyup
   // events. The movement key stays in our `keys` Set forever and the
   // player keeps walking in that direction. Clear the set on blur so
   // the player stops immediately when focus is lost. This is the
   // classic "stuck WASD" bug in browser games.
-  window.addEventListener("blur", () => {
-    keys.clear();
-  });
+  const onClearInput = (): void => keys.clear();
+  window.addEventListener("blur", onClearInput);
   // Same for the canvas — the page can blur without the window
   // blurring (e.g. when a modal opens and the focus moves inside it).
-  canvas.addEventListener("blur", () => {
-    keys.clear();
-  });
-  // Also clear on `visibilitychange` — when the user switches tabs,
-  // keyup events may not fire. This is belt-and-braces with `blur`
-  // but covers the cases where `blur` doesn't fire (some browsers
-  // when the tab is hidden by the OS).
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) keys.clear();
-  });
+  canvas.addEventListener("blur", onClearInput);
+  // Also clear on `visibilitychange` and `pagehide` — when the user
+  // switches tabs or the OS hides the window, keyup events may not
+  // fire. This is belt-and-braces with `blur` but covers the cases
+  // where `blur` doesn't fire (some browsers when the tab is hidden
+  // by the OS).
+  const onVisibilityChange = (): void => {
+    if (document.hidden) onClearInput();
+  };
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  window.addEventListener("pagehide", onClearInput);
 
   // Mouse delta: the browser provides movementX/Y when pointer-locked,
   // but we are not using pointer lock (Pattern D uses a free OS cursor
@@ -254,7 +300,7 @@ export function createControls(opts: ControlsOptions): Controls {
   // lastClient is only updated when in mouse-look, so free-mouse
   // movement does not accumulate spurious deltas.
   let lastClient = { x: 0, y: 0, valid: false };
-  document.addEventListener("mousemove", (e) => {
+  const onMouseMove = (e: MouseEvent): void => {
     if (state.mouseLook === "free") {
       // Prime / re-prime the tracker so the first frame after
       // entering mouse-look does not jump.
@@ -273,7 +319,8 @@ export function createControls(opts: ControlsOptions): Controls {
     pendingMouseDelta.y += e.clientY - lastClient.y;
     lastClient.x = e.clientX;
     lastClient.y = e.clientY;
-  });
+  };
+  document.addEventListener("mousemove", onMouseMove);
 
   function consumeMouseDelta(): { x: number; y: number } | null {
     if (pendingMouseDelta.x === 0 && pendingMouseDelta.y === 0) return null;
@@ -324,5 +371,27 @@ export function createControls(opts: ControlsOptions): Controls {
     getYaw: () => state.yaw,
     getPitch: () => state.pitch,
     getPlayerPosition: () => player.clone(),
+    /**
+     * Remove every event listener this Controls instance registered.
+     * Without this, the listeners stay installed for the lifetime of
+     * the page, so integration tests that call createControls()
+     * multiple times leak listeners into each other (and HMR reloads
+     * leave the old listeners behind). Test code MUST call destroy()
+     * in afterEach().
+     */
+    destroy: () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keydown", onMouseLookKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onClearInput);
+      window.removeEventListener("pagehide", onClearInput);
+      canvas.removeEventListener("blur", onClearInput);
+      canvas.removeEventListener("contextmenu", onContextMenu);
+      canvas.removeEventListener("mousedown", onMouseDown);
+      canvas.removeEventListener("mouseup", onMouseUp);
+      canvas.removeEventListener("mouseleave", onMouseLeave);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      document.removeEventListener("mousemove", onMouseMove);
+    },
   };
 }
