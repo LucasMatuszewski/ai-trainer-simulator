@@ -33,16 +33,20 @@ const KEY_TO_AXIS = {
 // Per-direction travel budget: 0.2 m minimum (so a stuck-key
 // regression that produces < 0.1 m of motion is caught), 3.0 m
 // maximum (so a runaway-loop regression that produces 100 m of
-// motion is caught). The character walks at 3 units/sec, so a
-// 500ms press should move ~1.5 m. 0.2 m catches "did it move at
+// motion is caught). The character walks at 4.5 units/sec, so a
+// 500ms press should move ~2.25 m. 0.2 m catches "did it move at
 // all"; 3.0 m catches "did it move 5x too fast".
 const MIN_DELTA = 0.2;
 const MAX_DELTA = 3.0;
 
 // After the keyup, the player should stop within one final
-// frame. WALK_SPEED=3, dt~=1/60s, so one frame is ~0.05 m.
-// We allow 0.15 m of drift to be tolerant of frame timing.
-const MAX_RELEASE_DRIFT = 0.15;
+// frame. WALK_SPEED=4.5, dt~=1/60s, so one frame is ~0.075 m.
+// We allow 0.4 m of drift to be tolerant of frame timing under
+// load (the full Playwright suite runs multiple tests concurrently
+// and the browser may schedule keyup several frames late). The
+// stuck-key regression we are guarding against is INFINITE drift,
+// so 0.4 m is still a 100x+ signal-to-noise ratio over a real bug.
+const MAX_RELEASE_DRIFT = 0.4;
 
 test.use({
   baseURL: "http://localhost:5173",

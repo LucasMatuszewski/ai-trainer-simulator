@@ -98,6 +98,63 @@ describe("createControls browser events", () => {
     expect(controls.isMouseLookActive()).toBe(false);
   });
 
+  // Diagonal movement (W+D) should move the player at WALK_SPEED
+  // (not 2x), normalized to the diagonal direction. This is the
+  // standard FPS feel: holding W and D together is the same speed
+  // as holding only W or only D, just at 45° instead of straight.
+  it("W+D produces diagonal movement at the same speed as W alone", () => {
+    const WALK_SPEED = 4.5; // must match src/engine/controls.ts
+    const dt = 0.5;
+    const start = controls.getPlayerPosition();
+
+    // First: W alone for dt seconds.
+    keyboard("keydown", "KeyW", "w");
+    controls.update(dt);
+    const wEnd = controls.getPlayerPosition();
+    keyboard("keyup", "KeyW", "w");
+    controls.update(dt);
+    const wDistance = Math.hypot(wEnd.x - start.x, wEnd.z - start.z);
+
+    // Reset: the test runs sequentially so the keys Set is empty
+    // at the start of each segment. Reload the player's position to
+    // a known spot.
+    controls.destroy();
+    canvas.remove();
+    canvas = document.createElement("canvas");
+    document.body.append(canvas);
+    controls = createControls({
+      canvas,
+      camera: new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 100),
+      initialPlayer: new THREE.Vector3(0, 0.5, 6),
+    });
+
+    // Now: W + D together.
+    const start2 = controls.getPlayerPosition();
+    keyboard("keydown", "KeyW", "w");
+    keyboard("keydown", "KeyD", "d");
+    controls.update(dt);
+    const wdEnd = controls.getPlayerPosition();
+    keyboard("keyup", "KeyD", "d");
+    keyboard("keyup", "KeyW", "w");
+    controls.update(dt);
+
+    const wdDistance = Math.hypot(wdEnd.x - start2.x, wdEnd.z - start2.z);
+
+    // Both should equal WALK_SPEED * dt. Allow a small tolerance for
+    // floating-point math.
+    expect(wDistance).toBeCloseTo(WALK_SPEED * dt, 5);
+    expect(wdDistance).toBeCloseTo(WALK_SPEED * dt, 5);
+
+    // And the diagonal direction: the player should have moved by
+    // roughly the same in X and -Z (after WALK_SPEED * dt of diagonal).
+    const dx = wdEnd.x - start2.x;
+    const dz = wdEnd.z - start2.z;
+    // 45° diagonal: dx ≈ -dz (within sqrt(2)/2 factor).
+    expect(dx).toBeGreaterThan(0);
+    expect(dz).toBeLessThan(0);
+    expect(Math.abs(dx - Math.abs(dz))).toBeLessThan(0.01);
+  });
+
   it("holds mouse-look with RMB and releases on mouseup or mouseleave", () => {
     canvas.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 2 }));
     expect(controls.isMouseLookActive()).toBe(true);

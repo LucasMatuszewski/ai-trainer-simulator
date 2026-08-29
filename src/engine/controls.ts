@@ -27,8 +27,8 @@ import * as THREE from "three";
 import { OFFICE_BOUNDS, OBSTACLES } from "../content/npcs";
 import { applyWithCollision } from "./collision";
 
-const WALK_SPEED = 3; // units per second
-const SPRINT_MULT = 1.6;
+const WALK_SPEED = 4.5; // units per second
+const SPRINT_MULT = 1.8;
 const PLAYER_RADIUS = 0.3; // half-width for AABB collision
 const MOUSE_SENSITIVITY = 0.0025;
 const PITCH_MIN = -0.6; // can look slightly down at the floor
@@ -154,6 +154,13 @@ export function createControls(opts: ControlsOptions): Controls {
   };
 
   let keys: Set<string> = new Set();
+  // When the runtime supplies code-less events whose reported `key` is
+  // unreliable, the keyup handler queues a "last" release here
+  // instead of deleting `key` directly (which would leave the actual
+  // pressed key held forever). The `update` method flushes the queue
+  // AFTER moving, so the held key is observed by the frame loop
+  // for at least one frame before being released.
+  let pendingReleases: string[] = [];
   let pendingMouseDelta = { x: 0, y: 0 };
 
   // Suppress the right-click context menu (RMB is for mouse-look).
@@ -253,8 +260,6 @@ export function createControls(opts: ControlsOptions): Controls {
   };
   const onKeyDown = (e: KeyboardEvent): void => {
     const moveKey = physicalToMoveKey(e);
-    // eslint-disable-next-line no-console
-    console.log("[controls] keydown", { key: e.key, code: e.code, moveKey, target: (e.target as HTMLElement | null)?.tagName });
     if (moveKey === null) return;
     // Don't capture movement when the user is typing into a text
     // input (the character-creation name field, a future text
@@ -262,14 +267,10 @@ export function createControls(opts: ControlsOptions): Controls {
     // Escape and F1, growing the Set unnecessarily.
     if (isTextEntryTarget(e.target)) return;
     keys.add(moveKey);
-    // eslint-disable-next-line no-console
-    console.log("[controls] keys Set after add", Array.from(keys));
     e.preventDefault();
   };
   const onKeyUp = (e: KeyboardEvent): void => {
     const moveKey = physicalToMoveKey(e);
-    // eslint-disable-next-line no-console
-    console.log("[controls] keyup", { key: e.key, code: e.code, moveKey, target: (e.target as HTMLElement | null)?.tagName });
     if (moveKey === null) return;
     // Two failure modes in Lucas's runtime:
     //
@@ -284,35 +285,21 @@ export function createControls(opts: ControlsOptions): Controls {
     //      loop never observes the key in the Set, so the player
     //      does not move.
     //
-    // Fix: when `e.code` is empty (Lucas's runtime), schedule the
-    // release one frame later. This:
-    //   (a) gives the frame loop at least one frame to apply the
-    //       input (mode 2);
-    //   (b) only removes the *most recently added* key, by re-
-    //       ordering the Set's iteration to remove that one. Since
-    //       Lucas's runtime fires the keyup immediately after the
-    //       keydown, the "most recently added" key is the one the
-    //       user just released (mode 1).
+    // Fix: when `e.code` is empty (Lucas's runtime), queue a release
+    // of the most-recently-added key. The `update` method flushes
+    // the queue AFTER moving, so the player observes the key in
+    // the Set for the frame between the press and the release. This
+    // gives the frame loop at least one frame to apply the input
+    // (fixes failure mode 2) AND removes the actual pressed key
+    // (the mislabeled 'w' in the event does not match any held key,
+    // so it cannot be deleted directly; the Set preserves insertion
+    // order and the most-recently-added entry is the one the user
+    // actually pressed — fix for failure mode 1).
     if (e.code === "") {
-      // Defer: the Set is observed for one frame with the key in it,
-      // then the key is removed.
-      requestAnimationFrame(() => {
-        // Find the key that was added most recently. The Set in
-        // JavaScript preserves insertion order. The last element is
-        // the one we just pressed. Remove that one.
-        if (keys.size > 0) {
-          let lastKey: string | undefined;
-          for (const k of keys) lastKey = k;
-          if (lastKey !== undefined) keys.delete(lastKey);
-        }
-        // eslint-disable-next-line no-console
-        console.log("[controls] keys Set after deferred delete", Array.from(keys));
-      });
+      pendingReleases.push("last");
     } else {
       keys.delete(moveKey);
     }
-    // eslint-disable-next-line no-console
-    console.log("[controls] keys Set after delete (sync)", Array.from(keys));
     if (!isTextEntryTarget(e.target)) e.preventDefault();
   };
   window.addEventListener("keydown", onKeyDown);
@@ -390,6 +377,23 @@ export function createControls(opts: ControlsOptions): Controls {
     // YXZ Euler order: yaw first, then pitch, no roll. Standard FPS.
     camera.position.set(player.x, player.y + EYE_HEIGHT, player.z);
     camera.rotation.set(state.pitch, state.yaw, 0, "YXZ");
+
+    // Flush deferred releases from code-less keyup events. The
+    // `stepControls` call above has already read the `keys` Set, so
+    // applying the releases now does not affect this frame's
+    // movement. The next frame starts with the released Set.
+    if (pendingReleases.length > 0) {
+      for (const _ of pendingReleases) {
+        if (keys.size > 0) {
+          let lastKey: string | undefined;
+          for (const k of keys) lastKey = k;
+          if (lastKey !== undefined) keys.delete(lastKey);
+        }
+      }
+      pendingReleases = [];
+      // eslint-disable-next-line no-console
+      console.log("[controls] keys Set after deferred flush", Array.from(keys));
+    }
   }
 
   return {

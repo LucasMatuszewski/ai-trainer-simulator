@@ -81,7 +81,7 @@ describe("createControls", () => {
 
   it("moves the player in the forward direction when W is held", () => {
     // yaw=0 means the camera (and player) face -Z, so W moves the
-    // player in -Z. WALK_SPEED = 3, dt = 0.5, so motion = 1.5.
+    // player in -Z. WALK_SPEED = 4.5, dt = 0.5, so motion = 2.25.
     const c = createControls({
       canvas: makeCanvas(),
       camera: makeCamera(),
@@ -90,12 +90,12 @@ describe("createControls", () => {
     c.setKeys(new Set(["w"]));
     c.update(0.5);
     const p = c.getPlayerPosition();
-    expect(p.z).toBeCloseTo(-1.5, 1);
+    expect(p.z).toBeCloseTo(-2.25, 1);
   });
 
   it("clamps the player to the office bounds", () => {
     // OFFICE_BOUNDS in npcs.ts is -9..9 on both axes; from (0, 0, 0),
-    // 1 second of W at sprint is 3 * 1.6 = 4.8 units, so 4.8 < 9, no
+    // 1 second of W at sprint is 4.5 * 1.8 = 8.1 units, so 8.1 < 9, no
     // clamp. Try a 10-second step instead.
     const c = createControls({
       canvas: makeCanvas(),
@@ -192,8 +192,8 @@ describe("stepControls (pure state machine)", () => {
       new Set(["w"]),
       () => null,
     );
-    // WALK_SPEED = 3, dt = 0.5, no sprint, so motion = 1.5 in -Z.
-    expect(next.player.z).toBeCloseTo(-1.5, 5);
+    // WALK_SPEED = 4.5, dt = 0.5, no sprint, so motion = 2.25 in -Z.
+    expect(next.player.z).toBeCloseTo(-2.25, 5);
     expect(next.player.x).toBeCloseTo(0, 5);
   });
 
@@ -206,13 +206,17 @@ describe("stepControls (pure state machine)", () => {
       new Set(["w"]),
       () => null,
     );
-    expect(next.player.x).toBeCloseTo(-1.5, 5);
+    expect(next.player.x).toBeCloseTo(-2.25, 5);
     expect(next.player.z).toBeCloseTo(5, 5);
   });
 
-  it("sprint multiplies motion by 1.6 when shift is held", () => {
-    // Start outside the meeting table (which covers 0,0,0).
-    const startZ = 5;
+  it("sprint multiplies motion by 1.8 when shift is held", () => {
+    // Start at z=8 (out of the way of the meeting table and the desks
+    // at z=2.5..3.5). Sprint 4.5*1.8*0.5=4.05m forward would take the
+    // player from z=8 to z=3.95, which is in the no-obstacle corridor
+    // (the meeting table ends at z=1; the back-row desks are at
+    // z=2.5..3.5 but only on the sides; the player at x=0 is clear).
+    const startZ = 8;
     const walk = stepControls(
       baseState({ player: { x: 0, y: 0, z: startZ } }),
       0.5,
@@ -225,10 +229,10 @@ describe("stepControls (pure state machine)", () => {
       new Set(["w", "shift"]),
       () => null,
     );
-    // Sprint delta from start should be 1.6x walk delta from start.
+    // Sprint delta from start should be 1.8x walk delta from start.
     const walkDelta = Math.abs(startZ - walk.player.z);
     const sprintDelta = Math.abs(startZ - sprint.player.z);
-    expect(sprintDelta).toBeCloseTo(walkDelta * 1.6, 5);
+    expect(sprintDelta).toBeCloseTo(walkDelta * 1.8, 5);
   });
 
   it("returns a new state object (immutability)", () => {
