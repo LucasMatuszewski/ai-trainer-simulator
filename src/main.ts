@@ -28,6 +28,8 @@ import { mountDebugScript, type DebugScriptHandle } from "./minigames/debug-scri
 import { audio, type MusicId } from "./audio/AudioManager";
 import { resolveUrl, type Manifest, loadManifest } from "./audio/manifest";
 import { SECONDS_PER_PERIOD } from "./game/pacing";
+import { mountQuestLog, type QuestLogHandle } from "./ui/quest-log";
+import { mountHelpModal, type HelpModalHandle } from "./ui/help-modal";
 
 type Screen = "title" | "create" | "office" | "summary" | "minigame" | "gameover";
 
@@ -42,6 +44,8 @@ let hud: HudElements | null = null;
 let dialogue: DialogueController | null = null;
 let debugGame: DebugScriptHandle | null = null;
 let roster: OfficeRosterHandle | null = null;
+let questLog: QuestLogHandle | null = null;
+let helpModal: HelpModalHandle | null = null;
 let focusedNpcId: NpcId | null = null;
 let officeStartedAt = 0;
 let lastTime = performance.now();
@@ -107,7 +111,13 @@ function showCharacterCreate(): void {
     (data) => {
       game.dispatch({ type: "reset" });
       game.dispatch({ type: "load", state: { ...game.get(), character: { ...data }, stats: applyTrait(data.trait, game.get().stats) } });
-      startOffice();
+      // First time the player reaches the office: play the day-1 intro
+      // cinematic. On Continue (returning save), skip it.
+      const isFirstRun = !game.get().flags["_intro-played"];
+      if (isFirstRun) {
+        game.dispatch({ type: "set-flag", flag: "_intro-played", value: true });
+      }
+      startOffice(isFirstRun);
     },
     () => showTitle(),
   );
@@ -162,7 +172,7 @@ function focusNpc(id: NpcId | null): void {
   cameraDirector.panTo(target, offset);
 }
 
-function startOffice(): void {
+function startOffice(playIntro = false): void {
   setScreen("office");
   if (!engine) {
     engine = createEngine(canvas);
@@ -185,10 +195,25 @@ function startOffice(): void {
     () => openDebugMinigame(),
     game.get().flags["got-acme-contract"] === true,
   );
+  questLog = mountQuestLog(uiRoot);
+  helpModal = mountHelpModal(uiRoot);
+  // Wire the "?" button in the quest log to open the help modal.
+  // The handle exposes the button directly to avoid a circular import
+  // between quest-log and help-modal.
+  (questLog as unknown as { helpButton: HTMLButtonElement }).helpButton
+    .addEventListener("click", () => helpModal?.open());
   refreshRoster();
+
+  if (playIntro) {
+    void playIntroCinematic();
+  } else {
+    // Show the active quest in the quest log right away for returning players.
+    questLog.refresh(game.get());
+  }
 
   game.subscribe(() => {
     if (hud) renderHud(hud, game.get());
+    if (questLog) questLog.refresh(game.get());
     refreshRoster();
     // Cash register SFX when cash goes up.
     const cur = game.get();
@@ -224,6 +249,91 @@ function startOffice(): void {
 let prevCash = 0;
 let prevPatience = 0;
 let prevCredibility = 0;
+
+/**
+ * Day-1 intro cinematic. Placed in main.ts because it touches the engine
+ * + UI directly and the timing is tied to other state changes. Kept small
+ * and self-contained so the Quest Log can be its own file.
+ *
+ * The cinematic does 4 things in 3.5s:
+ *   1. Fade from black (0.4s)
+ *   2. Establishing shot from outside (camera at +y=14, looking at the
+ *      building). 1.0s.
+ *   3. Dolly down through the front wall (no clipping yet — the office
+ *      ceiling is opaque; once we're inside it doesn't matter). 1.5s.
+ *   4. Land on the default over-shoulder framing. 0.6s.
+ *
+ * During the cinematic, the quest log fades in at step 4 so the player
+ * sees "Talk to Bartek" the moment the world becomes interactive.
+ */
+async function playIntroCinematic(): Promise<void> {
+  if (!engine) return;
+  // Pause time during the cinematic; the day timer starts AFTER.
+  const cinematicStartMs = performance.now();
+  const CINEMATIC_DURATION_MS = 3500;
+
+  // Step 1: fade from black via a CSS overlay.
+  const overlay = document.createElement("div");
+  overlay.className = "intro-fade";
+  uiRoot.appendChild(overlay);
+  // Force a layout pass so the initial opacity:1 actually paints before
+  // we transition to 0.
+  void overlay.offsetHeight;
+  requestAnimationFrame(() => overlay.classList.add("fade-out"));
+
+  // Step 2: establishing shot — outside the office, looking down.
+  engine.camera.position.set(0, 14, 20);
+  engine.camera.lookAt(0, 0, -5);
+  engine.camera.fov = 55;
+  engine.camera.updateProjectionMatrix();
+
+  const cam = engine.camera;
+  const fromPos = cam.position.clone();
+  const fromFov = cam.fov;
+  // Final framing matches focusNpc(null) so the cinematic lands exactly
+  // where the player will start interacting.
+  const toPos = new THREE.Vector3(0, 1.7, 7.5);
+  const toFov = 40;
+
+  await new Promise<void>((resolve) => {
+    function step(): void {
+      const elapsed = performance.now() - cinematicStartMs;
+      const t = Math.min(1, elapsed / CINEMATIC_DURATION_MS);
+      // 0..0.15s = fade in + establishing shot holds; 0.15..1.0 = dolly
+      // + fov tighten.
+      const u = Math.max(0, (elapsed - 400) / (CINEMATIC_DURATION_MS - 400));
+      const ease = u < 0 ? 0 : 1 - Math.pow(1 - Math.min(1, u), 3); // ease-out cubic
+      cam.position.set(
+        fromPos.x + (toPos.x - fromPos.x) * ease,
+        fromPos.y + (toPos.y - fromPos.y) * ease,
+        fromPos.z + (toPos.z - fromPos.z) * ease,
+      );
+      cam.fov = fromFov + (toFov - fromFov) * ease;
+      cam.updateProjectionMatrix();
+      // Look at NPC head height as we approach the final frame.
+      const lookY = 1.1 * ease + 0 * (1 - ease);
+      const lookZ = -2 * ease + -5 * (1 - ease);
+      cam.lookAt(0, lookY, lookZ);
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        resolve();
+      }
+    }
+    requestAnimationFrame(step);
+  });
+
+  // Step 4: reveal the quest log so the player sees the first quest.
+  // Mark the intro as seen so the orchestrator advances past q-intro-1
+  // to "Talk to Bartek" on the next refresh.
+  game.dispatch({ type: "set-flag", flag: "intro-seen", value: true });
+  if (questLog) questLog.refresh(game.get());
+  // After 600ms, also show the intro toast. This is intentionally after
+  // the cinematic so the toast doesn't fight the camera for attention.
+  setTimeout(() => {
+    if (hud) showToast(hud, "Welcome to DevPowers. Click Bartek's card to start.", "info");
+  }, 600);
+}
 
 function refreshRoster(): void {
   if (!roster) return;
