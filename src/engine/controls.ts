@@ -271,9 +271,48 @@ export function createControls(opts: ControlsOptions): Controls {
     // eslint-disable-next-line no-console
     console.log("[controls] keyup", { key: e.key, code: e.code, moveKey, target: (e.target as HTMLElement | null)?.tagName });
     if (moveKey === null) return;
-    keys.delete(moveKey);
+    // Two failure modes in Lucas's runtime:
+    //
+    //   1. The keyup event's reported `key` does not match the
+    //      previously-pressed key (every keyup arrives with `key: 'w'`,
+    //      regardless of which key the user released). Trusting the
+    //      fallback `key` on the release path leaves the held key in
+    //      the Set forever.
+    //
+    //   2. The keyup arrives in the same browser tick as the keydown.
+    //      Even if the release identity were correct, the frame
+    //      loop never observes the key in the Set, so the player
+    //      does not move.
+    //
+    // Fix: when `e.code` is empty (Lucas's runtime), schedule the
+    // release one frame later. This:
+    //   (a) gives the frame loop at least one frame to apply the
+    //       input (mode 2);
+    //   (b) only removes the *most recently added* key, by re-
+    //       ordering the Set's iteration to remove that one. Since
+    //       Lucas's runtime fires the keyup immediately after the
+    //       keydown, the "most recently added" key is the one the
+    //       user just released (mode 1).
+    if (e.code === "") {
+      // Defer: the Set is observed for one frame with the key in it,
+      // then the key is removed.
+      requestAnimationFrame(() => {
+        // Find the key that was added most recently. The Set in
+        // JavaScript preserves insertion order. The last element is
+        // the one we just pressed. Remove that one.
+        if (keys.size > 0) {
+          let lastKey: string | undefined;
+          for (const k of keys) lastKey = k;
+          if (lastKey !== undefined) keys.delete(lastKey);
+        }
+        // eslint-disable-next-line no-console
+        console.log("[controls] keys Set after deferred delete", Array.from(keys));
+      });
+    } else {
+      keys.delete(moveKey);
+    }
     // eslint-disable-next-line no-console
-    console.log("[controls] keys Set after delete", Array.from(keys));
+    console.log("[controls] keys Set after delete (sync)", Array.from(keys));
     if (!isTextEntryTarget(e.target)) e.preventDefault();
   };
   window.addEventListener("keydown", onKeyDown);
