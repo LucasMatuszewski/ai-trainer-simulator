@@ -40,6 +40,7 @@ import { mountQuestLog, type QuestLogHandle } from "./ui/quest-log";
 import { mountHelpModal, type HelpModalHandle } from "./ui/help-modal";
 import { ndcFromMouse, pickFromCamera } from "./engine/interaction-raycaster";
 import { yawToFace } from "./engine/npc-face";
+import { createBubbleSystem } from "./engine/bubbles";
 
 type Screen = "title" | "create" | "office" | "summary" | "minigame" | "gameover";
 
@@ -51,6 +52,7 @@ let cameraDirector: CameraDirector | null = null;
 let sceneObjects: ReturnType<typeof buildOfficeScene> | null = null;
 let controls: Controls | null = null;
 let raycaster: THREE.Raycaster | null = null;
+let bubbles: import("./engine/bubbles").BubbleHandle | null = null;
 let screen: Screen = "title";
 let hud: HudElements | null = null;
 let dialogue: DialogueController | null = null;
@@ -213,6 +215,11 @@ function startOffice(playIntro = false): void {
       initialPlayer: sceneObjects.playerStart,
     });
     raycaster = new THREE.Raycaster();
+    // Phase 3.3: inter-NPC speech bubbles. The system is parented
+    // to the office scene; its update is driven by the NPC controller
+    // (which is also an updatable). We just construct it here so
+    // `openDialogueWith` can call `clear()` when a dialogue opens.
+    bubbles = createBubbleSystem(engine.scene);
     // LMB click-to-talk in free-mouse mode (Pattern D). The handler
     // is a closure over sceneObjects and the dialogue state so it
     // always sees the latest references. We add it once on the
@@ -480,6 +487,11 @@ function pickFinalLine(state: GameState): string {
 }
 
 function openDialogueWith(npc: NPC): void {
+  // Phase 3.3: when the player starts a conversation, clear any
+  // active inter-NPC speech bubble so the player is not visually
+  // overloaded with overlapping text. The bubble system is created
+  // in startOffice() (see below).
+  bubbles?.clear();
   if (!dialogue) {
     dialogue = createDialogue(uiRoot, () => {
       audio().tts.stop();
@@ -718,7 +730,7 @@ frame();
 // matters here; the prod build embeds the same string via
 // `vite build`'s `define` (TODO if/when we add a CI pipeline).
 // ---------------------------------------------------------------
-const BUILD_VERSION = "v2026.08.29-07";
+const BUILD_VERSION = "v2026.08.29-08";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,

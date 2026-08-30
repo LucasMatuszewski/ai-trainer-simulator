@@ -17,6 +17,7 @@ import * as THREE from "three";
 import type { Period } from "../content/npc-schedule";
 import { NPCS, OBSTACLES, OFFICE_BOUNDS } from "../content/npcs";
 import { createNpcController } from "./npc-controller";
+import { createNpcMesh } from "./npc-mesh";
 import type { NPC, NpcId } from "../types";
 
 const COLORS = {
@@ -90,15 +91,6 @@ const COLORS = {
   npcHair2: 0xccaa22,
   npcHair3: 0x222222,
 };
-
-const FACE_COLORS = [
-  COLORS.npcBody1,
-  COLORS.npcBody2,
-  COLORS.npcBody3,
-  COLORS.npcBody4,
-  COLORS.npcBody5,
-];
-const HAIR_COLORS = [COLORS.npcHair1, COLORS.npcHair2, COLORS.npcHair3];
 
 const SCREEN_COLORS = [
   COLORS.monitorScreen1,
@@ -1007,66 +999,14 @@ function makeFloorLamp(x: number, z: number): THREE.Group {
 // -------- NPCs --------
 
 function makeNpcMarker(npc: NPC, index: number): THREE.Group {
-  const g = new THREE.Group();
-  // Body
-  const bodyColor: number = FACE_COLORS[index % FACE_COLORS.length]!;
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(0.6, 1, 0.4),
-    new THREE.MeshLambertMaterial({ color: bodyColor }),
-  );
-  body.position.y = 0.5;
-  g.add(body);
-  // Belt (a darker band)
-  const belt = new THREE.Mesh(
-    new THREE.BoxGeometry(0.62, 0.08, 0.42),
-    new THREE.MeshLambertMaterial({ color: 0x222222 }),
-  );
-  belt.position.y = 0.45;
-  g.add(belt);
-  // Head
-  const head = new THREE.Mesh(
-    new THREE.BoxGeometry(0.5, 0.5, 0.5),
-    new THREE.MeshLambertMaterial({ color: COLORS.npcHead }),
-  );
-  head.position.y = 1.25;
-  g.add(head);
-  // Hair on top of head
-  const hairColor: number = HAIR_COLORS[index % HAIR_COLORS.length]!;
-  const hair = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, 0.18, 0.52),
-    new THREE.MeshLambertMaterial({ color: hairColor }),
-  );
-  hair.position.y = 1.55;
-  g.add(hair);
-  // Eyes (two small dark squares on the front face of the head)
-  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-  const eye1 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.01), eyeMat);
-  eye1.position.set(-0.1, 1.3, 0.255);
-  g.add(eye1);
-  const eye2 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.01), eyeMat);
-  eye2.position.set(0.1, 1.3, 0.255);
-  g.add(eye2);
-  // Name tag (small white block) on the chest
-  const tag = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.3, 0.08),
-    new THREE.MeshBasicMaterial({ color: 0xffffff }),
-  );
-  tag.position.set(0, 0.7, 0.21);
-  g.add(tag);
-  // Legs
-  const legMat = new THREE.MeshLambertMaterial({ color: 0x222244 });
-  for (const [lx] of [[-0.15], [0.15]] as Array<[number]>) {
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.3, 0.3), legMat);
-    leg.position.set(lx, 0.15, 0);
-    g.add(leg);
-  }
+  const g = createNpcMesh(npc.gender, index);
   g.position.set(npc.position.x, 0, npc.position.z);
   // Desks have their monitor on the -Z side and the keyboard on the +Z side,
   // so the NPC should look toward -Z to see their own screen. The marker was
   // authored with eyes on +Z (facing the camera) which made every NPC look
   // "outward" toward the player with the screen behind their back. Rotate 180°
   // so the eyes point at the monitor.
-  g.rotation.y = Math.PI;
+  g.rotation.y = npc.gender === "dog" ? 0 : Math.PI;
   g.userData.npcId = npc.id;
   return g;
 }
