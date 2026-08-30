@@ -155,6 +155,35 @@ describe("createControls browser events", () => {
     expect(Math.abs(dx - Math.abs(dz))).toBeLessThan(0.01);
   });
 
+  it("press W then D then release W: D stays held, player keeps strafing right (Lucas 2026-08-30)", () => {
+    // L-2026-08-30: "I still can't move combining WSAD keys". The
+    // previous 'last' deferred-flush implementation used the
+    // Set's iteration order, which is INSERTION order. Pressing
+    // W then D gave Set={w, d}. Releasing W flushed the 'last'
+    // entry, which was d. So D was incorrectly released and the
+    // player stopped strafe-right. The fix: track press order
+    // in a separate `keyOrder` LIFO stack and pop the top.
+
+    keyboard("keydown", "KeyW", "w");
+    keyboard("keydown", "KeyD", "d");
+    controls.update(0.1);
+
+    // Release W. D must still be held.
+    keyboard("keyup", "KeyW", "w");
+    controls.update(0.1);
+
+    // Move for one second. Player should strafe RIGHT (D pressed
+    // alone, no forward). Yaw is 0, so right is +X.
+    const before = controls.getPlayerPosition();
+    controls.update(1.0);
+    const after = controls.getPlayerPosition();
+
+    // The player should still be strafing right; if D was
+    // incorrectly released the player would not have moved on the
+    // X axis.
+    expect(after.x - before.x).toBeGreaterThan(0.5);
+  });
+
   it("holds mouse-look with RMB and releases on mouseup or mouseleave", () => {
     canvas.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 2 }));
     expect(controls.isMouseLookActive()).toBe(true);

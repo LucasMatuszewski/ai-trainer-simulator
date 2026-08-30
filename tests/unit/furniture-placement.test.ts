@@ -14,7 +14,7 @@ function furniture(id: string) {
 }
 
 describe("main-office furniture placement", () => {
-  it.each(["filing-cabinet-north", "filing-cabinet-south"])(
+  it.each(["filing-cabinet-south"])(
     "places %s against a wall",
     (id) => {
       const cabinet = furniture(id);

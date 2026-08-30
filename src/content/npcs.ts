@@ -206,7 +206,11 @@ export const MAIN_OFFICE_PLANTS: readonly FloorDecorationPlacement[] = [
 ];
 
 export const MAIN_OFFICE_FILE_CABINETS = [
-  { id: "filing-cabinet-north", x: 8.7, z: -5, rotationY: -Math.PI / 2 },
+  // L-2026-08-30 (Lucas): "some whiteboard in the middle of the
+  // window" (the north cabinet) AND "dark-blue machine in the
+  // office corner facing the wall" (the south cabinet, whose
+  // drawers faced the wall instead of the room). The north one
+  // was removed; the south one is kept.
   { id: "filing-cabinet-south", x: 8.7, z: 2, rotationY: -Math.PI / 2 },
 ] as const;
 
@@ -235,12 +239,17 @@ export const OBSTACLES: Obstacle[] = [
   { id: "meeting-table", minX: -2, maxX: 2, minZ: -1, maxZ: 1, label: "Meeting table" },
   // Server rack
   { id: "server-rack", minX: -8.5, maxX: -7.5, minZ: 7.5, maxZ: 8.5, label: "Server rack" },
-  // Coffee machine
-  { id: "coffee-machine", minX: 7.5, maxX: 8.5, minZ: -8.5, maxZ: -7.5, label: "Coffee machine" },
+  // Coffee machine — moved flush against the east wall (was
+  // 0.5m from the wall, which Lucas said was "too far from the
+  // wall" 2026-08-30). The collision AABB is 0.5m deep to match
+  // the visible mesh; the visual mesh is placed at the wall
+  // by the make* function in scene.ts.
+  { id: "coffee-machine", minX: 8.0, maxX: 8.5, minZ: -8.5, maxZ: -7.5, label: "Coffee machine" },
   // Vending machine
   { id: "vending", minX: 7.5, maxX: 8.5, minZ: 7.5, maxZ: 8.5, label: "Vending machine" },
-  // Filing cabinets, flush with the east wall rather than free-standing.
-  { id: "filing-cabinet-north", minX: 8.45, maxX: 8.95, minZ: -5.2, maxZ: -4.8, label: "Filing cabinet" },
+  // Filing cabinet — only the south one stays. The north
+  // one (z=-5) was the gray box in front of the east-window
+  // (Lucas 2026-08-30: "whiteboard in the middle of the window").
   { id: "filing-cabinet-south", minX: 8.45, maxX: 8.95, minZ: 1.8, maxZ: 2.2, label: "Filing cabinet" },
 ];
 

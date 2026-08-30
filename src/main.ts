@@ -731,6 +731,7 @@ declare global {
       getScreen: () => string;
       getSceneObjects: () => { keys: string[]; hasPlayerGroup: boolean } | null;
       inspectNpcs: () => Array<{ npcId: string; position: { x: number; z: number }; childNames: string[] }> | null;
+      inspectFurniture: () => Array<{ name: string; position: { x: number; y: number; z: number }; size?: readonly [number, number, number] }> | null;
     };
   }
 }
@@ -768,6 +769,23 @@ window.__aitrainer = {
     }
     return out;
   },
+  inspectFurniture: () => {
+    if (!engine) return null;
+    const out: Array<{ name: string; position: { x: number; y: number; z: number }; color?: number; rotationY?: number }> = [];
+    engine.scene.traverse((c: { name?: string; isMesh?: boolean; position: { x: number; y: number; z: number }; rotation: { y: number }; material?: { color?: { getHex: () => number } } }) => {
+      if (c.isMesh && c.name) {
+        const entry: { name: string; position: { x: number; y: number; z: number }; color?: number; rotationY?: number } = {
+          name: c.name,
+          position: { x: c.position.x, y: c.position.y, z: c.position.z },
+          rotationY: c.rotation.y,
+        };
+        const color = c.material?.color?.getHex?.();
+        if (typeof color === "number") entry.color = color;
+        out.push(entry);
+      }
+    });
+    return out;
+  },
 };
 
 frame();
@@ -790,7 +808,7 @@ frame();
 // Bump after every commit so the console line in the browser
 // confirms the user is on the right build. See AGENTS.md
 // "Verify the build you are testing" section.
-const BUILD_VERSION = "v2026.08.30-19";
+const BUILD_VERSION = "v2026.08.30-25";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,

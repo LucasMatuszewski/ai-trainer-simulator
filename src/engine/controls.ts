@@ -155,6 +155,14 @@ export function createControls(opts: ControlsOptions): Controls {
   };
 
   let keys: Set<string> = new Set();
+  // Press order. When a key is pressed we append to this list;
+  // when the keyup arrives we remove the corresponding entry. The
+  // Set preserves insertion order, so iterating `keys` gives the
+  // same order, but a separate list is clearer and lets us pop
+  // the most-recently-pressed key for the deferred-release flush.
+  // L-2026-08-30: the previous "last" implementation broke
+  // diagonal movement (press W then D, release W deletes D).
+  let keyOrder: string[] = [];
   // When the runtime supplies code-less events whose reported `key` is
   // unreliable, the keyup handler queues a "last" release here
   // instead of deleting `key` directly (which would leave the actual
@@ -267,6 +275,9 @@ export function createControls(opts: ControlsOptions): Controls {
     // input). Sol found that the old code added every key including
     // Escape and F1, growing the Set unnecessarily.
     if (isTextEntryTarget(e.target)) return;
+    if (!keys.has(moveKey)) {
+      keyOrder.push(moveKey);
+    }
     keys.add(moveKey);
     e.preventDefault();
   };
@@ -296,10 +307,20 @@ export function createControls(opts: ControlsOptions): Controls {
     // so it cannot be deleted directly; the Set preserves insertion
     // order and the most-recently-added entry is the one the user
     // actually pressed — fix for failure mode 1).
+    //
+    // L-2026-08-30 (Lucas): "I still can't move combining WSAD
+    // keys". The earlier 'last' approach used the last entry of
+    // the Set, which BREAKS diagonal movement: press W then D,
+    // release W. Set is {w, d}; last = d. Deferred flush deletes
+    // d, leaving w. So pressing D did not stick. The fix: track
+    // the press order (a stack of keys), and use the TOP of the
+    // stack (last-pressed) as the deferred-release target.
     if (e.code === "") {
       pendingReleases.push("last");
     } else {
       keys.delete(moveKey);
+      const i = keyOrder.indexOf(moveKey);
+      if (i >= 0) keyOrder.splice(i, 1);
     }
     if (!isTextEntryTarget(e.target)) e.preventDefault();
   };
@@ -311,7 +332,10 @@ export function createControls(opts: ControlsOptions): Controls {
   // player keeps walking in that direction. Clear the set on blur so
   // the player stops immediately when focus is lost. This is the
   // classic "stuck WASD" bug in browser games.
-  const onClearInput = (): void => keys.clear();
+  const onClearInput = (): void => {
+    keys.clear();
+    keyOrder = [];
+  };
   window.addEventListener("blur", onClearInput);
   // Same for the canvas — the page can blur without the window
   // blurring (e.g. when a modal opens and the focus moves inside it).
@@ -383,12 +407,20 @@ export function createControls(opts: ControlsOptions): Controls {
     // `stepControls` call above has already read the `keys` Set, so
     // applying the releases now does not affect this frame's
     // movement. The next frame starts with the released Set.
+    //
+    // L-2026-08-30 (Lucas): the previous "delete the last key in
+    // the Set" implementation broke diagonal movement because the
+    // Set's iteration order is insertion order, not LIFO press
+    // order. Pressing W then D gave Set={w, d}; releasing W deleted
+    // d (the "last" iterated value). The fix: use `keyOrder`, the
+    // LIFO press stack. The most-recently-pressed key is the top.
     if (pendingReleases.length > 0) {
       for (const _ of pendingReleases) {
-        if (keys.size > 0) {
-          let lastKey: string | undefined;
-          for (const k of keys) lastKey = k;
-          if (lastKey !== undefined) keys.delete(lastKey);
+        if (keyOrder.length > 0) {
+          const top = keyOrder.pop();
+          if (top !== undefined) {
+            keys.delete(top);
+          }
         }
       }
       pendingReleases = [];
@@ -401,6 +433,12 @@ export function createControls(opts: ControlsOptions): Controls {
     update,
     setKeys: (k) => {
       keys = k;
+      // Re-derive the press order from the new Set so the deferred
+      // flush (which pops from `keyOrder`) keeps working after a
+      // synthetic setKeys call. We use Set iteration order, which
+      // for an externally-supplied Set is undefined per the spec, so
+      // we copy the keys out and trust the caller's insertion order.
+      keyOrder = Array.from(k);
     },
     setMouseDelta: (dx, dy) => {
       pendingMouseDelta.x += dx;
