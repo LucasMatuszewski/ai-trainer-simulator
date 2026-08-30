@@ -99,6 +99,14 @@ describe("WebMCP tools", () => {
     expect(game.get().npcRelationships.bartek).toBe(57);
   });
 
+  it("rejects relationship changes for an unknown NPC", () => {
+    expect(callTool({
+      name: "add_relationship",
+      parameters: { npcId: "not-an-npc", delta: 7 },
+    })).toEqual({ ok: false, error: "npc not found" });
+    expect(game.get().npcRelationships["not-an-npc"]).toBeUndefined();
+  });
+
   it("advances time", () => {
     expect(callTool({ name: "advance_time", parameters: {} })).toEqual({
       ok: true,

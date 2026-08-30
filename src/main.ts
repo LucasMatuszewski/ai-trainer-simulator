@@ -60,6 +60,7 @@ let debugGame: DebugScriptHandle | null = null;
 let roster: OfficeRosterHandle | null = null;
 let questLog: QuestLogHandle | null = null;
 let helpModal: HelpModalHandle | null = null;
+let unsubscribeGame: (() => void) | null = null;
 let focusedNpcId: NpcId | null = null;
 let officeStartedAt = 0;
 let lastTime = performance.now();
@@ -270,8 +271,7 @@ function startOffice(playIntro = false): void {
   // Wire the "?" button in the quest log to open the help modal.
   // The handle exposes the button directly to avoid a circular import
   // between quest-log and help-modal.
-  (questLog as unknown as { helpButton: HTMLButtonElement }).helpButton
-    .addEventListener("click", () => helpModal?.open());
+  questLog.helpButton.addEventListener("click", () => helpModal?.open());
   refreshRoster();
 
   if (playIntro) {
@@ -281,7 +281,10 @@ function startOffice(playIntro = false): void {
     questLog.refresh(game.get());
   }
 
-  game.subscribe(() => {
+  // Re-entering the office after each day remounts the UI. Replace the prior
+  // subscription so stale closures do not accumulate and refresh detached UI.
+  unsubscribeGame?.();
+  unsubscribeGame = game.subscribe(() => {
     if (hud) renderHud(hud, game.get());
     if (questLog) questLog.refresh(game.get());
     refreshRoster();
@@ -730,7 +733,7 @@ frame();
 // matters here; the prod build embeds the same string via
 // `vite build`'s `define` (TODO if/when we add a CI pipeline).
 // ---------------------------------------------------------------
-const BUILD_VERSION = "v2026.08.29-12";
+const BUILD_VERSION = "v2026.08.29-15";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,

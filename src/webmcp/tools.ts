@@ -159,7 +159,12 @@ const implementations: ToolImplementation[] = [
         },
       },
     },
-    validate: (call) => requiredString(call, "npcId") ?? requiredNumber(call, "delta"),
+    validate: (call) => {
+      const npcIdError = requiredString(call, "npcId");
+      if (npcIdError) return npcIdError;
+      if (!NPCS.some((npc) => npc.id === call.parameters.npcId)) return "npc not found";
+      return requiredNumber(call, "delta");
+    },
     execute: (call) => {
       const npcId = call.parameters.npcId as string;
       const delta = call.parameters.delta as number;

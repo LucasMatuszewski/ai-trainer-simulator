@@ -43,11 +43,12 @@ async function walkUntil(
   key: "w" | "a" | "s" | "d",
   reached: (position: { x: number; z: number }) => boolean,
   label: string,
+  pressMs = 120,
 ) {
   for (let index = 0; index < 150; index += 1) {
     const position = await page.evaluate(() => window.__aitrainer!.getPlayer());
     if (reached(position)) return;
-    await page.keyboard.press(key, { delay: 120 });
+    await page.keyboard.press(key, { delay: pressMs });
     await page.waitForTimeout(30);
   }
   const finalPosition = await page.evaluate(() => window.__aitrainer!.getPlayer());
@@ -82,7 +83,7 @@ test("visual check: office, new rooms, help, and dialogue", async ({ page }) => 
 
   // Route around the center table and desk rows, then line up with
   // the narrow north doorway at x=0.
-  await walkUntil(page, "a", ({ x }) => x <= -5.4, "main west aisle");
+  await walkUntil(page, "a", ({ x }) => x <= -8.6, "main west perimeter aisle");
   await walkUntil(page, "w", ({ z }) => z <= -8, "north wall approach");
   await walkUntil(page, "d", ({ x }) => x >= 0, "training doorway alignment");
   await capture(page, screenshots[2]);
@@ -92,13 +93,17 @@ test("visual check: office, new rooms, help, and dialogue", async ({ page }) => 
 
   // Back through the main office's west aisle, across its clear south
   // corridor, through the kitchen, then through the CTO doorway.
-  await walkUntil(page, "s", ({ z }) => z >= -8, "return from training");
-  await walkUntil(page, "d", ({ x }) => x >= 1.6, "clear Pawel desk east side");
-  await walkUntil(page, "s", ({ z }) => z >= -4.2, "clear north desk row");
-  await walkUntil(page, "a", ({ x }) => x <= -5.4, "main west aisle return");
+  // Stay north of the inflated desk AABBs (north edge z=-7.8) while
+  // crossing east. Stopping at z=-8 could land on the collision boundary
+  // due to frame timing and make the path depend on the current desk mix.
+  await walkUntil(page, "s", ({ z }) => z >= -8.5, "return from training", 40);
+  await walkUntil(page, "d", ({ x }) => x >= 4.7, "clear north desks east side");
+  await walkUntil(page, "s", ({ z }) => z >= -4.6, "clear north desk row");
+  await walkUntil(page, "a", ({ x }) => x <= -8.6, "main west perimeter aisle return");
   await walkUntil(page, "s", ({ z }) => z >= 5, "main south corridor");
-  await walkUntil(page, "d", ({ x }) => x >= 8.5, "kitchen doorway approach");
-  await walkUntil(page, "w", ({ z }) => z <= 0, "kitchen doorway alignment");
+  await walkUntil(page, "w", ({ z }) => z <= -1.5, "clear meeting table north side");
+  await walkUntil(page, "d", ({ x }) => x >= 8.5, "east wall lane approach");
+  await walkUntil(page, "s", ({ z }) => z >= 0, "kitchen doorway alignment", 20);
   await walkUntil(page, "d", ({ x }) => x >= 18, "kitchen interior");
   await walkUntil(page, "w", ({ z }) => z <= -4, "CTO doorway alignment");
   await walkUntil(page, "d", ({ x }) => x >= 22, "CTO office interior");

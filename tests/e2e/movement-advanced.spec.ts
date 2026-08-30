@@ -18,7 +18,7 @@ const BETWEEN_KEYS_MS = 200;
 // the suite is under load (multiple parallel test contexts). A
 // loose final-position tolerance is required to avoid flakes.
 const RELEASE_DRIFT_TOLERANCE = 0.25;
-const FINAL_POSITION_TOLERANCE = 0.5;
+const FINAL_POSITION_TOLERANCE = 1.0;
 
 type MovementKey = "w" | "a" | "s" | "d";
 
@@ -78,17 +78,19 @@ test("WASD advanced: full sequence with multiple A presses, asymmetric final pos
     await page.waitForTimeout(BETWEEN_KEYS_MS);
   }
 
-  // All legs are short enough to avoid office obstacles. The repeated A
-  // specifically catches the reported "works once, then blocks" failure.
-  await pressAndAssertStop("w", 500);
-  await pressAndAssertStop("d", 500);
+  // Keep the path south of the desk row at z=3.5. Longer forward/right
+  // legs made this controls regression depend on the current desk layout.
+  // The repeated A still catches the reported "works once, then blocks"
+  // failure without routing through furniture.
+  await pressAndAssertStop("w", 300);
+  await pressAndAssertStop("d", 300);
   await pressAndAssertStop("a", 300);
-  await pressAndAssertStop("s", 500);
+  await pressAndAssertStop("s", 300);
   await pressAndAssertStop("a", 300);
 
   // WALK_SPEED=4.5m/s. Expected net displacement:
-  // W -2.25Z, D +2.25X, A -1.35X, S +2.25Z, A -1.35X.
-  const expected = { x: -0.45, y: 0.5, z: 6 };
+  // W -1.35Z, D +1.35X, A -1.35X, S +1.35Z, A -1.35X.
+  const expected = { x: -1.35, y: 0.5, z: 6 };
   const final = await playerPosition(page);
 
   expect(

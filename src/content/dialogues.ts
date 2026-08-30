@@ -51,7 +51,6 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
                 { type: "add-stat", target: "credibility", delta: 5 },
                 { type: "add-relationship", target: "bartek", delta: 10 },
                 { type: "set-flag", target: "got-acme-contract", delta: 1 },
-                { type: "increment-total", target: "dialoguesFinished", delta: 1 },
               ],
             },
             {
@@ -633,7 +632,6 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
                 { type: "add-stat", target: "credibility", delta: 5 },
                 { type: "add-relationship", target: "maciek", delta: 10 },
                 { type: "set-flag", target: "maciek-ai-first-deal", delta: 1 },
-                { type: "increment-total", target: "dialoguesFinished", delta: 1 },
               ],
             },
             {
@@ -689,7 +687,6 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
                 { type: "add-relationship", target: "przemek", delta: 10 },
                 { type: "add-stat", target: "patience", delta: -15 },
                 { type: "set-flag", target: "przemek-bootcamp-sold", delta: 1 },
-                { type: "increment-total", target: "dialoguesFinished", delta: 1 },
               ],
             },
           ],

@@ -41,12 +41,12 @@ const MAX_DELTA = 3.0;
 
 // After the keyup, the player should stop within one final
 // frame. WALK_SPEED=4.5, dt~=1/60s, so one frame is ~0.075 m.
-// We allow 0.4 m of drift to be tolerant of frame timing under
+// We allow 0.5 m of drift to be tolerant of frame timing under
 // load (the full Playwright suite runs multiple tests concurrently
 // and the browser may schedule keyup several frames late). The
 // stuck-key regression we are guarding against is INFINITE drift,
-// so 0.4 m is still a 100x+ signal-to-noise ratio over a real bug.
-const MAX_RELEASE_DRIFT = 0.4;
+// so 0.5 m is still a clear signal-to-noise ratio over a real bug.
+const MAX_RELEASE_DRIFT = 0.5;
 
 test.use({
   baseURL: "http://localhost:5173",

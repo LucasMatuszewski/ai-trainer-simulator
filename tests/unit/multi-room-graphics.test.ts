@@ -1,10 +1,14 @@
 /** @vitest-environment jsdom */
 
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
 import { WORLD_ROOMS } from "../../src/content/world-layout";
 import { buildMultiRoomMeshes } from "../../src/engine/multi-room";
 import { configureRendererQuality } from "../../src/engine/renderer";
+
+beforeAll(() => {
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+});
 
 describe("multi-room graphics", () => {
   it("gives every room a ceiling and a local point light", () => {

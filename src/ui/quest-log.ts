@@ -15,6 +15,7 @@ import { getActiveQuest, type Quest } from "../content/quests";
 
 export interface QuestLogHandle {
   root: HTMLElement;
+  helpButton: HTMLButtonElement;
   /** Re-render based on the current game state. */
   refresh: (state: Readonly<GameState>) => void;
 }
@@ -71,6 +72,7 @@ export function mountQuestLog(root: HTMLElement): QuestLogHandle {
 
   return {
     root: wrap,
+    helpButton: helpBtn,
     refresh(state) {
       const quest = getActiveQuest(state);
       if (quest?.id !== currentQuestId) {
@@ -78,11 +80,7 @@ export function mountQuestLog(root: HTMLElement): QuestLogHandle {
         render(quest);
       }
     },
-    // Expose the help button so the parent can attach the modal handler
-    // without us importing the modal here (avoids a circular dep).
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...({ helpButton: helpBtn } as any),
-  } as QuestLogHandle;
+  };
 }
 
 function capitalize(s: string): string {

@@ -94,10 +94,11 @@ export function createNpcController(
   let timeSinceLastBubble = 0;
   let idleElapsed = 0;
   const idleStates = new Map<NpcId, IdleState>();
-  const firstNpcObject = npcObjects[npcs[0]?.id ?? "bartek"];
-  let root: THREE.Object3D = firstNpcObject;
-  while (root.parent !== null) root = root.parent;
-  const bubbleSystem = root instanceof THREE.Scene ? createBubbleSystem(root) : null;
+  const firstNpc = npcs[0];
+  let root: THREE.Object3D | null = firstNpc === undefined ? null : npcObjects[firstNpc.id];
+  while (root?.parent) root = root.parent;
+  const sceneRoot = root instanceof THREE.Scene ? root : null;
+  const bubbleSystem = sceneRoot === null ? null : createBubbleSystem(sceneRoot);
   const fallbackCamera = new THREE.PerspectiveCamera();
 
   const applyEntry = (id: NpcId, entry: InterpolatedNpc, walking: boolean): void => {
@@ -120,8 +121,8 @@ export function createNpcController(
     idleElapsed += safeDt;
     dtBubbleCheck += safeDt;
     timeSinceLastBubble += safeDt;
-    if (bubbleSystem !== null) {
-      const camera = root.getObjectByProperty("isCamera", true) as THREE.Camera | undefined;
+    if (bubbleSystem !== null && sceneRoot !== null) {
+      const camera = sceneRoot.getObjectByProperty("isCamera", true) as THREE.Camera | undefined;
       bubbleSystem.update(safeDt, camera ?? fallbackCamera);
     }
 

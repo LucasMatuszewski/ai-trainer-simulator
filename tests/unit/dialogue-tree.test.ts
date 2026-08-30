@@ -94,6 +94,20 @@ describe("multi-turn dialogue trees", () => {
     }
   });
 
+  it("does not count completion in content before the controller closes", () => {
+    for (const [, , tree] of allTrees()) {
+      for (const node of Object.values(tree.nodes)) {
+        const effects = [
+          ...(node.effects ?? []),
+          ...(node.options ?? []).flatMap((option) => option.effects ?? []),
+        ];
+        expect(effects.some(
+          (effect) => effect.type === "increment-total" && effect.target === "dialoguesFinished",
+        ), `dialogue ${node.id} counts completion twice`).toBe(false);
+      }
+    }
+  });
+
   it("records visits and the greeting when a conversation opens", () => {
     const root = document.createElement("div");
     const controller = createDialogue(root, vi.fn());

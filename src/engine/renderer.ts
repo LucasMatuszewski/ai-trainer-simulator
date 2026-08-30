@@ -42,7 +42,7 @@ export function configureRendererQuality(renderer: THREE.WebGLRenderer): void {
 export function createEngine(canvas: HTMLCanvasElement): Engine {
   const renderer = new THREE.WebGLRenderer({
     canvas,
-    // Antialias ON. The 480x270 buffer is still tiny so the GPU MSAA cost
+    // Antialias ON. The 640x360 buffer is still small so the GPU MSAA cost
     // is negligible, and the jagged edges look horrible at any zoom. The
     // CSS `image-rendering: pixelated` upscale on the canvas element is
     // what gives us the pixel-art look, not per-fragment disabling of MSAA.
@@ -64,9 +64,8 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x2a3340); // moody but visibly blue-grey
 
-  // Camera: over-the-shoulder follow. Controls will overwrite this every
-  // frame; the initial value just prevents a flicker before controls.update()
-  // runs.
+  // Controls overwrite this with the first-person pose every frame; this
+  // initial value only prevents a flicker before controls.update() runs.
   const aspect = RENDER_PIXEL_WIDTH / RENDER_PIXEL_HEIGHT;
   const camera = new THREE.PerspectiveCamera(55, aspect, 0.1, 100);
   camera.position.set(0, 2.5, 8);
@@ -98,7 +97,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
   }
 
   function resize(): void {
-    // The render buffer stays at 480x270 so we get the pixel-art look. The
+    // The render buffer stays at 640x360 so we get the pixel-art look. The
     // canvas element itself is sized to fill the viewport (CSS handles the
     // upscale).
     const w = window.innerWidth;
@@ -117,6 +116,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
   }
 
   function dispose(): void {
+    window.removeEventListener("resize", resize);
     renderer.dispose();
   }
 

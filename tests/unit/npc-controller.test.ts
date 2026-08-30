@@ -1,10 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { NPC_SCHEDULES } from "../../src/content/npc-schedule";
 import {
+  createNpcController,
   interpPosition,
   interpolate,
   shortestPathYaw,
 } from "../../src/engine/npc-controller";
+
+describe("createNpcController", () => {
+  it("supports an empty NPC list without inventing a fallback object", () => {
+    const controller = createNpcController([], {} as never, () => "morning");
+
+    expect(() => controller.update(1 / 60)).not.toThrow();
+    expect(() => controller.destroy()).not.toThrow();
+  });
+});
 
 describe("shortestPathYaw", () => {
   it("interpolates a half turn", () => {
