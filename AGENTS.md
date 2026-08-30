@@ -139,6 +139,28 @@ This is the project's north star. Every phase is checked against this mandate be
 
 The mandate is captured in PRD §13 C-26 and the plan's Endgame additions (C-26). The agent reviews C-26 at the start of every phase and reports progress against it.
 
+### PR-11: TDD methodology for every feature (2026-08-30)
+
+The TDD rule in PR-8 covers pure functions. It does not cover data files, event-loop handlers, or the "did the test actually catch the bug?" verification step. This rule extends PR-8 to cover all of those.
+
+1. **Every new feature has at least one test that fails before the implementation.** This applies to:
+   - Pure functions (already covered by PR-8).
+   - Data files: every new typed data export (an NPC schedule, a dialogue tree, a world layout, an action list) must have at least one unit test that imports the data, asserts its shape (correct types, correct values for the specific "interesting" cases the data was designed to model), and would FAIL if the data were corrupted.
+   - Event-loop handlers: every new `window.addEventListener` or `document.addEventListener` in the controls / input layer must have an integration test in jsdom (or equivalent) that dispatches the real event and asserts the resulting state.
+   - Renderable entities: every new THREE.Object3D factory (NPCs, room walls, furniture, signs) must have a unit test that constructs the mesh and asserts its child count, position, and material. See the existing `npc-mesh.test.ts` for the pattern.
+
+2. **Mutation test before commit.** Before committing a feature, revert the implementation, run the test, confirm it FAILS, then restore the implementation, run the test, confirm it PASSES. If the test does not fail when the implementation is broken, the test is not actually testing the feature - rewrite it. This step is mandatory and applies to every commit. A test that does not fail when the code is broken is worse than no test at all (it gives false confidence).
+
+3. **The framework the test must use depends on the layer:**
+   - Pure functions and data files: vitest (node env).
+   - Event-loop handlers: vitest with `@vitest-environment jsdom`.
+   - 3D rendering: do not unit-test (visual regression is verified via Playwright screenshots + agy descriptions).
+   - End-to-end browser behavior: Playwright.
+
+4. **Test naming.** The test file mirrors the source file: `src/foo/bar.ts` is tested by `tests/unit/foo/bar.test.ts` (or `tests/foo/bar.spec.ts` for E2E). The test cases describe the expected behavior in plain English, e.g. "stops after one keyup following repeated W keydowns" not "test 1".
+
+5. **Tests run before the commit is created.** A commit that adds a feature without a passing test for it is reversed and rewritten. Agents verify by running `pnpm test` (and `pnpm test:e2e` for end-to-end) and pasting the test results into the commit body.
+
 ## Current design direction (post-2026-08-29 corrections)
 
 The user's corrections on 2026-08-29 changed the design direction. The corrected PRD is in `docs/PRD.md` §13. Summary:
