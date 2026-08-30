@@ -22,6 +22,7 @@ import { createControls, type Controls } from "./engine/controls";
 import { game } from "./game/state";
 import { runDailyTick, publishCashflow } from "./game/economy";
 import { runPeriodEvent, registerNpcController } from "./game/events";
+import { registerPlayerActions } from "./webmcp/tools";
 import { NPCS } from "./content/npcs";
 import type { GameState, NPC, NpcId } from "./types";
 import { mountHud, renderHud, showToast, type HudElements } from "./ui/hud";
@@ -209,6 +210,34 @@ function startOffice(playIntro = false): void {
     registerNpcController({
       setOverride: (id, entry) => built.npcController.setOverride(id, entry),
       getNpcIds: () => NPCS.map((n) => n.id),
+    });
+    // L-2026-08-30-01: wire the WebMCP player-action hooks so an
+    // external agent can play the game the same way the user does
+    // (talk to NPCs, pick dialogue options, end the day, run the
+    // minigame). See webmcp/tools.ts for the player-side tool set.
+    registerPlayerActions({
+      isDialogueOpen: () => dialogue?.isOpen() ?? false,
+      openDialogue: (npcId) => {
+        const npc = NPCS.find((n) => n.id === npcId);
+        if (!npc) return false;
+        openDialogueWith(npc);
+        return dialogue?.isOpen() ?? false;
+      },
+      pickDialogueOption: (optionId) => dialogue?.pickOption(optionId) ?? false,
+      closeDialogue: () => {
+        if (!dialogue?.isOpen()) return false;
+        dialogue.close();
+        return true;
+      },
+      endDay: () => {
+        endDay();
+        return true;
+      },
+      openMinigame: () => {
+        openDebugMinigame();
+        return true;
+      },
+      getDialogueSnapshot: () => dialogue?.snapshot() ?? null,
     });
     cameraDirector = createCameraDirector(engine.camera);
     // Phase 2: WASD walk + first-person camera (C-01) + Pattern D
@@ -745,7 +774,7 @@ frame();
 // Bump after every commit so the console line in the browser
 // confirms the user is on the right build. See AGENTS.md
 // "Verify the build you are testing" section.
-const BUILD_VERSION = "v2026.08.30-12";
+const BUILD_VERSION = "v2026.08.30-14";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,
