@@ -20,7 +20,7 @@ import { buildOfficeScene } from "./engine/scene";
 import { createCameraDirector, type CameraDirector } from "./engine/camera-director";
 import { createControls, type Controls } from "./engine/controls";
 import { game } from "./game/state";
-import { runDailyTick } from "./game/economy";
+import { runDailyTick, publishCashflow } from "./game/economy";
 import { runPeriodEvent } from "./game/events";
 import { NPCS } from "./content/npcs";
 import type { GameState, NPC, NpcId } from "./types";
@@ -446,6 +446,7 @@ function endDay(): void {
     dialogue.close();
   }
   const result = runDailyTick();
+  if (hud) publishCashflow(hud);
   setScreen("summary");
   showDailySummary(uiRoot, {
     day: game.get().day - 1,

@@ -12,6 +12,7 @@
  */
 
 import { game } from "./state";
+import { setCashflow, type HudElements } from "../ui/hud";
 import type { GameState } from "../types";
 
 export interface DailyTickResult {
@@ -88,6 +89,25 @@ export function runDailyTick(): DailyTickResult {
     meme: pickDailyMeme(state.day),
     wentBankrupt,
   };
+}
+
+/** Call after `runDailyTick` so the HUD can show the last completed
+ * day's net. The snapshot day is "state.day - 1" (i.e. the day the
+ * tick fired for) because by the time the next morning starts the
+ * game has already advanced to a new in-game day. */
+export function publishCashflow(hud: HudElements): void {
+  const state = game.get();
+  const passiveIncome = state.flags["got-acme-contract"] ? 200 : 0;
+  const totalExpenses = RENT + COFFEE + RAMEN + LINKEDIN_PREMIUM;
+  setCashflow(hud, {
+    income: passiveIncome,
+    expenses: totalExpenses,
+    net: passiveIncome - totalExpenses,
+    // The tick fires for the just-ended day. After the tick the state
+    // is already on the next morning, so the snapshot belongs to
+    // day - 1.
+    day: Math.max(1, state.day - 1),
+  });
 }
 
 function pickDailyMeme(seed: number): string {
