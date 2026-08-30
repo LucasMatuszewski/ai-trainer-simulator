@@ -47,3 +47,4 @@ tests/**/*.js.map
 # Env
 .env
 .env.local
+.normalized/
