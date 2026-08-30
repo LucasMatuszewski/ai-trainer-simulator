@@ -14,6 +14,7 @@ vi.hoisted(() => {
 });
 
 import { game } from "../../src/game/state";
+import { DIALOGUES } from "../../src/content/dialogues";
 import { callTool, TOOLS } from "../../src/webmcp/tools";
 
 describe("WebMCP tools", () => {
@@ -135,5 +136,21 @@ describe("WebMCP tools", () => {
       ok: false,
       error: "npc not found",
     });
+  });
+});
+
+describe("DIALOGUES merge (GLM 5.3 enrichment, L-2026-08-30-02)", () => {
+  it("exposes at least one 'more' tree per NPC from dialogues-more", async () => {
+    const { MORE_DIALOGUES } = await import("../../src/content/dialogues-more");
+    for (const npcId of Object.keys(MORE_DIALOGUES)) {
+      const moreKeys = Object.keys(MORE_DIALOGUES[npcId] ?? {});
+      expect(moreKeys.length, `${npcId} should have at least one tree in MORE_DIALOGUES`).toBeGreaterThan(0);
+      for (const treeKey of moreKeys) {
+        expect(
+          DIALOGUES[npcId]?.[treeKey],
+          `DIALOGUES.${npcId}.${treeKey} should be present after the merge`,
+        ).toBeDefined();
+      }
+    }
   });
 });

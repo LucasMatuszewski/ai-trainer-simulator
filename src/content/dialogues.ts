@@ -711,3 +711,16 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
     },
   },
 };
+
+// Phase 7: more dialogue trees for branching + memory (L-2026-08-30-02).
+// Imported from dialogues-more.ts and merged into the DIALOGUES export
+// so every consumer of DIALOGUES automatically sees the new trees.
+import { MORE_DIALOGUES } from "./dialogues-more";
+
+for (const [npcId, trees] of Object.entries(MORE_DIALOGUES)) {
+  const existing = (DIALOGUES as Record<string, Record<string, DialogueTree>>)[npcId] ?? {};
+  (DIALOGUES as Record<string, Record<string, DialogueTree>>)[npcId] = {
+    ...existing,
+    ...trees,
+  };
+}
