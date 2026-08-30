@@ -26,6 +26,35 @@ describe("WebMCP tools", () => {
     expect(TOOLS.length).toBeGreaterThanOrEqual(6);
   });
 
+  it("exposes a player-action set: talk_to_npc, pick_dialogue_option, close_dialogue, end_day, open_minigame (L-2026-08-30-01)", () => {
+    const names = new Set(TOOLS.map((t) => t.name));
+    for (const required of [
+      "talk_to_npc",
+      "pick_dialogue_option",
+      "close_dialogue",
+      "end_day",
+      "open_minigame",
+      "get_dialogue",
+    ]) {
+      expect(names.has(required), `missing tool: ${required}`).toBe(true);
+    }
+  });
+
+  it("returns a clear 'not wired' error when the player-action registry is empty (test env)", () => {
+    expect(callTool({ name: "talk_to_npc", parameters: { npcId: "bartek" } })).toEqual({
+      ok: false,
+      error: "Player actions are not wired in this environment (test mode)",
+    });
+    expect(callTool({ name: "pick_dialogue_option", parameters: { optionId: "x" } })).toEqual({
+      ok: false,
+      error: "Player actions are not wired in this environment (test mode)",
+    });
+    expect(callTool({ name: "end_day", parameters: {} })).toEqual({
+      ok: false,
+      error: "Player actions are not wired in this environment (test mode)",
+    });
+  });
+
   it("gives every tool a non-empty description", () => {
     expect(TOOLS.every((tool) => tool.description.trim().length > 0)).toBe(true);
   });

@@ -3,6 +3,39 @@ import { DIALOGUES } from "../content/dialogues";
 import { NPCS } from "../content/npcs";
 import { game } from "../game/state";
 import type { NpcId } from "../types";
+import type { DialogueController } from "../ui/dialogue";
+
+/**
+ * Player-action registry. main.ts wires these callbacks so the
+ * WebMCP tools can drive the actual game UI (open a dialogue,
+ * pick an option, end the day, start the minigame). The registry
+ * stays null in the test environment; tools that need it return
+ * a clear "not wired" error so tests do not have to mock the
+ * whole game.
+ */
+export interface PlayerActionHooks {
+  isDialogueOpen: () => boolean;
+  openDialogue: (npcId: NpcId) => boolean;
+  pickDialogueOption: (optionId: string) => boolean;
+  closeDialogue: () => boolean;
+  endDay: () => boolean;
+  openMinigame: () => boolean;
+  /** Snapshot the currently-open dialogue (text + available options). */
+  getDialogueSnapshot: () => ReturnType<DialogueController["snapshot"]>;
+}
+
+let playerActions: PlayerActionHooks | null = null;
+
+export function registerPlayerActions(hooks: PlayerActionHooks): void {
+  playerActions = hooks;
+}
+
+function requireActions(): PlayerActionHooks | { error: string } {
+  if (playerActions === null) {
+    return { error: "Player actions are not wired in this environment (test mode)" };
+  }
+  return playerActions;
+}
 
 export interface ToolDefinition {
   name: string;
@@ -216,13 +249,29 @@ const implementations: ToolImplementation[] = [
       const npc = NPCS.find((n) => n.id === npcId)!;
       const trees = DIALOGUES[npcId];
       if (!trees) return { ok: false, error: "no dialogues for this npc" };
-      // Pick the first available tree. Mirrors main.ts' tree selection.
-      const treeKey = "default";
-      const tree = trees[treeKey] ?? Object.values(trees)[0];
+      // Pick the first matching tree for the current state. Mirrors
+      // main.ts' tree selection so an agent that calls get_dialogue
+      // before talking to the NPC sees exactly what the player will
+      // see when they click the NPC's card.
+      const state = game.get();
+      let treeKey: string = "default";
+      if (npc.id === "bartek") {
+        if (state.flags["got-acme-contract"] && state.flags["bartek-advanced-contract"]) treeKey = "afterContract";
+        else if (state.flags["got-acme-contract"]) treeKey = "after-tutorial";
+      }
+      // The "more" / "after-*" trees added by GLM 5.3 (Phase 7) are
+      // picked by the per-NPC `available` predicate; the default
+      // tree is the fallback.
+      const matched = Object.entries(trees).find(([key, tree]) => {
+        if (key === treeKey) return true;
+        return tree.available?.(state) ?? false;
+      });
+      const activeTreeKey = matched?.[0] ?? treeKey;
+      const tree = trees[activeTreeKey] ?? trees[treeKey] ?? Object.values(trees)[0];
       if (!tree) return { ok: false, error: "no dialogue tree" };
       const greeting = tree.nodes["greeting"];
       if (!greeting) return { ok: false, error: "no greeting node" };
-      const picked = pickedOptionsFor(npcId, treeKey);
+      const picked = pickedOptionsFor(npcId, activeTreeKey);
       const options = (greeting.options ?? [])
         .filter((o) => !picked.has(o.id ?? o.nextNodeId))
         .map((o) => ({
@@ -235,12 +284,103 @@ const implementations: ToolImplementation[] = [
         data: {
           npcId: npc.id,
           npcName: npc.name,
-          treeId: treeKey,
+          treeId: activeTreeKey,
           nodeId: greeting.id,
           text: greeting.text,
           availableOptions: options,
         },
       };
+    },
+  },
+  {
+    // L-2026-08-30-01: actually open a dialogue with an NPC. The
+    // player-action registry must be wired (main.ts does this at
+    // startup); in test mode this returns a clear "not wired" error.
+    definition: {
+      name: "talk_to_npc",
+      description: "Open a dialogue with an NPC. Equivalent to clicking the NPC's roster card.",
+      parameters: {
+        npcId: {
+          type: "string",
+          description: "The NPC identifier (e.g. bartek, klaudia).",
+          required: true,
+        },
+      },
+    },
+    validate: (call) => {
+      const idError = requiredString(call, "npcId");
+      if (idError) return idError;
+      if (!NPCS.some((n) => n.id === (call.parameters.npcId as string))) {
+        return "npc not found";
+      }
+      return null;
+    },
+    execute: (call) => {
+      const actions = requireActions();
+      if ("error" in actions) return { ok: false, error: actions.error };
+      const ok = actions.openDialogue(call.parameters.npcId as NpcId);
+      if (!ok) return { ok: false, error: "could not open dialogue" };
+      return { ok: true, data: actions.getDialogueSnapshot() };
+    },
+  },
+  {
+    definition: {
+      name: "pick_dialogue_option",
+      description: "Pick a dialogue option by id (the id you got from get_dialogue / talk_to_npc).",
+      parameters: {
+        optionId: {
+          type: "string",
+          description: "The option id returned by get_dialogue or talk_to_npc.",
+          required: true,
+        },
+      },
+    },
+    validate: (call) => requiredString(call, "optionId"),
+    execute: (call) => {
+      const actions = requireActions();
+      if ("error" in actions) return { ok: false, error: actions.error };
+      const ok = actions.pickDialogueOption(call.parameters.optionId as string);
+      if (!ok) return { ok: false, error: "option not available" };
+      return { ok: true, data: actions.getDialogueSnapshot() };
+    },
+  },
+  {
+    definition: {
+      name: "close_dialogue",
+      description: "Close the currently-open dialogue (if any).",
+      parameters: {},
+    },
+    validate: validateNoParameters,
+    execute: () => {
+      const actions = requireActions();
+      if ("error" in actions) return { ok: false, error: actions.error };
+      return { ok: true, data: { closed: actions.closeDialogue() } };
+    },
+  },
+  {
+    definition: {
+      name: "end_day",
+      description: "End the current in-game day. Triggers the daily-tick economy and the next morning's events.",
+      parameters: {},
+    },
+    validate: validateNoParameters,
+    execute: () => {
+      const actions = requireActions();
+      if ("error" in actions) return { ok: false, error: actions.error };
+      return { ok: true, data: { ended: actions.endDay() } };
+    },
+  },
+  {
+    definition: {
+      name: "open_minigame",
+      description: "Open the debug minigame (must have the 'got-acme-contract' flag set first).",
+      parameters: {},
+    },
+    validate: validateNoParameters,
+    execute: () => {
+      const actions = requireActions();
+      if ("error" in actions) return { ok: false, error: actions.error };
+      return { ok: true, data: { opened: actions.openMinigame() } };
     },
   },
 ];

@@ -10,8 +10,41 @@ export interface DialogueController {
   open: (npc: NPC, tree: DialogueTree, treeId?: string) => void;
   close: () => void;
   isOpen: () => boolean;
+  /**
+   * Pick an option by id (L-2026-08-30-01: WebMCP is a PLAYER surface).
+   * Returns true if the option was found and clicked. The dialogue
+   * closes itself if the option's nextNodeId is "_end", or stays
+   * open on the next node.
+   */
+  pickOption: (optionId: string) => boolean;
+  /**
+   * Snapshot of the dialogue's current node (for WebMCP tools that
+   * need to know the current text + available options without
+   * scraping the DOM). Null when no dialogue is open.
+   */
+  snapshot: () => DialogueSnapshot | null;
   /** Subscribe to node changes (initial open + every option pick). */
   onNodeShown: (cb: (npc: NPC, nodeId: string) => void) => void;
+  /** Subscribe to close events. */
+  onClose: (cb: () => void) => void;
+}
+
+export interface DialogueSnapshot {
+  npcId: string;
+  npcName: string;
+  treeId: string;
+  nodeId: string;
+  text: string;
+  /** Options the player has not yet picked (filtered by the
+   * per-NPC option memory). */
+  availableOptions: Array<{
+    id: string;
+    text: string;
+    nextNodeId: string;
+  }>;
+  /** True when this is the last node and the dialogue will close
+   *  on the next action. */
+  isTerminal: boolean;
 }
 
 export function closeDialogueForScreenTransition(
@@ -34,6 +67,11 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
   let state: DialogueState | null = null;
   let container: HTMLElement | null = null;
   let nodeListener: ((npc: NPC, nodeId: string) => void) | null = null;
+  let closeListener: (() => void) | null = null;
+  // The current node's full info (rebuilt on every render so
+  // pickOption / snapshot can read it without scraping the DOM).
+  let currentNode: DialogueNode | null = null;
+  let currentAvailableOptions: DialogueSnapshot["availableOptions"] = [];
 
   function open(npc: NPC, tree: DialogueTree, treeId: string = "default"): void {
     if (state) return; // already open
@@ -51,11 +89,14 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
   function close(): void {
     if (!state) return;
     state = null;
+    currentNode = null;
+    currentAvailableOptions = [];
     if (container) {
       container.remove();
       container = null;
     }
     onClose();
+    closeListener?.();
   }
 
   function isOpen(): boolean {
@@ -70,6 +111,7 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
       close();
       return;
     }
+    currentNode = node;
 
     // Apply node-entry effects.
     if (node.effects) {
@@ -88,6 +130,10 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
         return;
       }
 
+      // Terminal node (no options, no auto-next). The "Continue" button
+      // is the only thing the player can press, so we record an empty
+      // option list and `isTerminal` will be derived from it.
+      currentAvailableOptions = [];
       ensureContainer();
       container!.innerHTML = `
         <div class="portrait">${escapeHtml(npc.emoji)}</div>
@@ -112,6 +158,11 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
     const availableOptions = node.options.filter(
       (o) => !picked.has(optionId(o)),
     );
+    currentAvailableOptions = availableOptions.map((o) => ({
+      id: optionId(o),
+      text: o.text,
+      nextNodeId: o.nextNodeId,
+    }));
 
     ensureContainer();
 
@@ -196,12 +247,63 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
     }
   }
 
+  function pickOption(optionIdValue: string): boolean {
+    if (!state || !currentNode) return false;
+    const opt = currentNode.options?.find((o) => optionId(o) === optionIdValue);
+    if (!opt) return false;
+    const npc = state.npc;
+    const treeId = state.treeId;
+    markOptionPicked(npc.id, treeId, optionIdValue);
+    if (opt.effects) {
+      for (const eff of opt.effects) {
+        applyEffect(npc, eff);
+      }
+    }
+    if (opt.nextNodeId === "_end") {
+      game.dispatch({ type: "increment-total", key: "dialoguesFinished" });
+      close();
+      return true;
+    }
+    showNodePublic(opt.nextNodeId);
+    render();
+    return true;
+  }
+
+  function snapshot(): DialogueSnapshot | null {
+    if (!state || !currentNode) return null;
+    return {
+      npcId: state.npc.id,
+      npcName: state.npc.name,
+      treeId: state.treeId,
+      nodeId: state.currentNodeId,
+      text: currentNode.text,
+      availableOptions: currentAvailableOptions,
+      isTerminal: currentAvailableOptions.length === 0 && !currentNode.next,
+    };
+  }
+
+  function showNodePublic(nodeId: string): void {
+    if (!state) return;
+    state.currentNodeId = nodeId;
+    const memory = getMemory(state.npc.id);
+    setMemory(state.npc.id, {
+      lastTopic: nodeId,
+      seenNodes: new Set([...memory.seenNodes, nodeId]),
+    });
+    nodeListener?.(state.npc, nodeId);
+  }
+
   return {
     open,
     close,
     isOpen,
+    pickOption,
+    snapshot,
     onNodeShown(cb) {
       nodeListener = cb;
+    },
+    onClose(cb) {
+      closeListener = cb;
     },
   };
 }
