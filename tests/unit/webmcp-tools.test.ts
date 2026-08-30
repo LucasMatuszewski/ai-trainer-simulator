@@ -113,4 +113,27 @@ describe("WebMCP tools", () => {
       data: { day: 1, timeOfDay: "afternoon" },
     });
   });
+
+  it("exposes the dialogue greeting and remaining options for a player agent (L-2026-08-30-01)", () => {
+    const result = callTool({ name: "get_dialogue", parameters: { npcId: "bartek" } });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as { npcId: string; text: string; availableOptions: Array<{ id: string; text: string }> };
+    expect(data.npcId).toBe("bartek");
+    expect(typeof data.text).toBe("string");
+    // Bartek's greeting has 3 options initially (README, SO, printer).
+    expect(data.availableOptions.length).toBe(3);
+    expect(data.availableOptions.map((o) => o.id)).toEqual([
+      "tutorial-0",
+      "tutorial-1",
+      "printer",
+    ]);
+  });
+
+  it("rejects get_dialogue for unknown NPCs", () => {
+    expect(callTool({ name: "get_dialogue", parameters: { npcId: "ghost" } })).toEqual({
+      ok: false,
+      error: "npc not found",
+    });
+  });
 });
