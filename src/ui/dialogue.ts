@@ -4,10 +4,10 @@
 
 import type { DialogueNode, DialogueTree, NPC } from "../types";
 import { game } from "../game/state";
-import { getMemory, setMemory } from "../content/dialogue-memory";
+import { getMemory, setMemory, pickedOptionsFor, markOptionPicked } from "../content/dialogue-memory";
 
 export interface DialogueController {
-  open: (npc: NPC, tree: DialogueTree) => void;
+  open: (npc: NPC, tree: DialogueTree, treeId?: string) => void;
   close: () => void;
   isOpen: () => boolean;
   /** Subscribe to node changes (initial open + every option pick). */
@@ -23,6 +23,10 @@ export function closeDialogueForScreenTransition(
 interface DialogueState {
   npc: NPC;
   tree: DialogueTree;
+  /** Stable id of this tree within the NPC's dialogues map. Used to
+   * scope the per-NPC option memory (so the same option text in two
+   * different trees is tracked independently). */
+  treeId: string;
   currentNodeId: string;
 }
 
@@ -31,9 +35,9 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
   let container: HTMLElement | null = null;
   let nodeListener: ((npc: NPC, nodeId: string) => void) | null = null;
 
-  function open(npc: NPC, tree: DialogueTree): void {
+  function open(npc: NPC, tree: DialogueTree, treeId: string = "default"): void {
     if (state) return; // already open
-    state = { npc, tree, currentNodeId: "greeting" };
+    state = { npc, tree, treeId, currentNodeId: "greeting" };
     const memory = getMemory(npc.id);
     setMemory(npc.id, {
       lastTopic: "greeting",
@@ -60,7 +64,7 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
 
   function render(): void {
     if (!state) return;
-    const { npc, tree, currentNodeId } = state;
+    const { npc, tree, treeId, currentNodeId } = state;
     const node = tree.nodes[currentNodeId];
     if (!node) {
       close();
@@ -99,7 +103,35 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
       return;
     }
 
+    // Filter out options the player has already picked in this tree
+    // (L-2026-08-30-02: "The NPC must NEVER repeat a dialogue the player
+    // has already answered — only re-show un-answered ones"). If every
+    // option has been picked we show a "You have heard this story" line
+    // so the dialogue is still closeable.
+    const picked = pickedOptionsFor(npc.id, treeId);
+    const availableOptions = node.options.filter(
+      (o) => !picked.has(optionId(o)),
+    );
+
     ensureContainer();
+
+    if (availableOptions.length === 0) {
+      // All options already answered. Show a closing line so the
+      // dialogue is still closeable.
+      container!.innerHTML = `
+        <div class="portrait">${escapeHtml(npc.emoji)}</div>
+        <div class="content">
+          <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
+          <div class="text">${escapeHtml(node.text)}</div>
+          <div class="text memory-note">You have already heard this story.</div>
+          <div class="options"><button data-continue>OK</button></div>
+        </div>
+        <button class="skip" data-skip>Skip</button>
+      `;
+      container!.querySelector<HTMLButtonElement>("[data-continue]")!.addEventListener("click", finish);
+      container!.querySelector<HTMLButtonElement>("[data-skip]")!.addEventListener("click", finish);
+      return;
+    }
 
     container!.innerHTML = `
       <div class="portrait">${escapeHtml(npc.emoji)}</div>
@@ -107,10 +139,10 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
         <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
         <div class="text">${escapeHtml(node.text)}</div>
         <div class="options">
-          ${node.options
+          ${availableOptions
             .map(
-              (o, i) =>
-                `<button data-opt="${i}">${escapeHtml(o.text)}</button>`,
+              (o) =>
+                `<button data-opt="${escapeHtml(optionId(o))}">${escapeHtml(o.text)}</button>`,
             )
             .join("")}
         </div>
@@ -120,9 +152,10 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
 
     container!.querySelectorAll<HTMLButtonElement>("[data-opt]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const idx = parseInt(btn.dataset.opt ?? "0", 10);
-        const opt = node.options?.[idx];
+        const optId = btn.dataset.opt ?? "";
+        const opt = availableOptions.find((o) => optionId(o) === optId);
         if (!opt) return;
+        markOptionPicked(npc.id, treeId, optId);
         if (opt.effects) {
           for (const eff of opt.effects) {
             applyEffect(npc, eff);
@@ -202,6 +235,15 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+/** Stable identifier for a dialogue option. Prefers the explicit `id`
+ * field; falls back to `nextNodeId` so existing trees without
+ * `id` still work (two options in the same node that point to the
+ * same next node will collapse into one, which is the current
+ * behavior). */
+function optionId(o: { id?: string; nextNodeId: string }): string {
+  return o.id ?? o.nextNodeId;
 }
 
 export type { DialogueNode };

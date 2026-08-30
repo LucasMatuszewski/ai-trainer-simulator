@@ -550,7 +550,7 @@ function openDialogueWith(npc: NPC): void {
   audio().sfx.play("sfx_dialogue_open");
   focusNpc(npc.id);
   roster?.setFocus(npc.id);
-  dialogue.open(npc, tree);
+  dialogue.open(npc, tree, treeKey);
 }
 
 function openDebugMinigame(): void {

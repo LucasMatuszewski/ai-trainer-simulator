@@ -24,12 +24,12 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
           options: [
             {
               text: "I read the README. It said 'figure it out'.",
-              nextNodeId: "tutorial",
+              id: "tutorial-0", nextNodeId: "tutorial",
               effects: [{ type: "add-relationship", target: "bartek", delta: 5 }],
             },
             {
               text: "I have a Stack Overflow account. I am basically qualified.",
-              nextNodeId: "tutorial",
+              id: "tutorial-1", nextNodeId: "tutorial",
               effects: [{ type: "add-relationship", target: "bartek", delta: -5 }],
             },
             {
@@ -241,7 +241,7 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
           options: [
             {
               text: "Yes, I can work weekends. (You cannot.)",
-              nextNodeId: "_end",
+              id: "_end-0", nextNodeId: "_end",
               effects: [
                 { type: "add-relationship", target: "zosia", delta: 10 },
                 { type: "add-stat", target: "patience", delta: -10 },
@@ -249,7 +249,7 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
             },
             {
               text: "I have a hard boundary on weekends. (You do not, but nice try.)",
-              nextNodeId: "_end",
+              id: "_end-1", nextNodeId: "_end",
               effects: [
                 { type: "add-relationship", target: "zosia", delta: -10 },
                 { type: "add-stat", target: "credibility", delta: 5 },

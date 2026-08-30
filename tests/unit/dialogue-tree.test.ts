@@ -44,6 +44,7 @@ describe("multi-turn dialogue trees", () => {
         lastTopic: null,
         visitCount: 0,
         seenNodes: new Set<string>(),
+        pickedOptions: {},
       });
     }
     document.body.innerHTML = "";
@@ -121,9 +122,13 @@ describe("multi-turn dialogue trees", () => {
   it("updates lastTopic and seen nodes after choosing an effectful option", () => {
     const root = document.createElement("div");
     const controller = createDialogue(root, vi.fn());
-    controller.open(npc, DIALOGUES.bartek!.default!);
+    controller.open(npc, DIALOGUES.bartek!.default!, "default");
 
-    root.querySelector<HTMLButtonElement>('[data-opt="0"]')!.click();
+    // The first option in bartek.default.greeting now has a stable id
+    // (added by the dialogue-id fixer because two options shared
+    // nextNodeId "tutorial"). We pick the first option by index.
+    const firstOpt = root.querySelector<HTMLButtonElement>("[data-opt]")!;
+    firstOpt.click();
 
     expect(getMemory("bartek").lastTopic).toBe("tutorial");
     expect(getMemory("bartek").seenNodes.has("tutorial")).toBe(true);
@@ -132,9 +137,10 @@ describe("multi-turn dialogue trees", () => {
   it("dispatches every effect attached to the selected option", () => {
     const root = document.createElement("div");
     const controller = createDialogue(root, vi.fn());
-    controller.open(npc, DIALOGUES.bartek!.default!);
+    controller.open(npc, DIALOGUES.bartek!.default!, "default");
 
-    root.querySelector<HTMLButtonElement>('[data-opt="0"]')!.click();
+    const firstOpt = root.querySelector<HTMLButtonElement>("[data-opt]")!;
+    firstOpt.click();
 
     expect(game.dispatch).toHaveBeenCalledWith({
       type: "add-relationship",
@@ -147,14 +153,40 @@ describe("multi-turn dialogue trees", () => {
     const root = document.createElement("div");
     const onClose = vi.fn();
     const controller = createDialogue(root, onClose);
-    controller.open(npc, DIALOGUES.bartek!.afterContract!);
+    controller.open(npc, DIALOGUES.bartek!.afterContract!, "afterContract");
 
-    root.querySelector<HTMLButtonElement>('[data-opt="0"]')!.click();
+    const firstOpt = root.querySelector<HTMLButtonElement>("[data-opt]")!;
+    firstOpt.click();
     expect(controller.isOpen()).toBe(true);
     expect(root.querySelector("[data-continue]")).not.toBeNull();
 
     root.querySelector<HTMLButtonElement>("[data-continue]")!.click();
     expect(controller.isOpen()).toBe(false);
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("suppresses options the player has already picked (L-2026-08-30-02)", () => {
+    const root = document.createElement("div");
+    const controller = createDialogue(root, vi.fn());
+
+    // First visit: open, pick the README option (id "tutorial-0").
+    controller.open(npc, DIALOGUES.bartek!.default!, "default");
+    const firstOpt = root.querySelector<HTMLButtonElement>("[data-opt]")!;
+    const firstOptId = firstOpt.dataset.opt!;
+    firstOpt.click();
+
+    // Close the dialogue by clicking continue at the terminal.
+    while (controller.isOpen()) {
+      const btn = root.querySelector<HTMLButtonElement>("[data-continue]") ?? root.querySelector<HTMLButtonElement>("[data-opt]");
+      if (!btn) break;
+      btn.click();
+    }
+
+    // Second visit: the README option should NOT be shown again.
+    controller.open(npc, DIALOGUES.bartek!.default!, "default");
+    const optIds = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-opt]")).map(
+      (b) => b.dataset.opt,
+    );
+    expect(optIds).not.toContain(firstOptId);
   });
 });

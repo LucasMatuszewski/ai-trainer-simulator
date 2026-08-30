@@ -35,6 +35,16 @@ export interface DialogueOption {
   text: string;
   nextNodeId: string;
   effects?: Effect[];
+  /**
+   * Stable identifier for the option. Used by the dialogue renderer
+   * (with the per-NPC memory in `dialogue-memory.ts`) to suppress
+   * options the player has already answered (L-2026-08-30-02: "NPC
+   * must NEVER repeat a dialogue the player has already answered").
+   * If omitted, the renderer falls back to `nextNodeId` as the
+   * identifier — but that collides if two options in the same node
+   * point to the same next node, so it is best to always set this.
+   */
+  id?: string;
 }
 
 export interface DialogueNode {
