@@ -730,6 +730,7 @@ declare global {
       getFocus: () => string | null;
       getScreen: () => string;
       getSceneObjects: () => { keys: string[]; hasPlayerGroup: boolean } | null;
+      inspectNpcs: () => Array<{ npcId: string; position: { x: number; z: number }; childNames: string[] }> | null;
     };
   }
 }
@@ -752,6 +753,21 @@ window.__aitrainer = {
     return { keys: Object.keys(sceneObjects), hasPlayerGroup: false };
   },
   getScreen: () => screen,
+  // Debug helper: returns the gender + child-mesh kinds of every
+  // NPC group in the scene. Used by the gender-bug triage script
+  // (see `.agent-briefs/agy-gender-qa-brief.md`).
+  inspectNpcs: () => {
+    if (!sceneObjects) return null;
+    const out = [];
+    for (const [npcId, obj] of Object.entries(sceneObjects.npcObjects)) {
+      const childNames: string[] = [];
+      obj.traverse((c: { name: string }) => {
+        if (c.name) childNames.push(c.name);
+      });
+      out.push({ npcId, position: { x: obj.position.x, z: obj.position.z }, childNames });
+    }
+    return out;
+  },
 };
 
 frame();

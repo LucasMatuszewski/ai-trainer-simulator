@@ -107,18 +107,26 @@ function chestRadiusForNpc(id: string): number {
 function createFemaleMesh(bodyColor: number, hairColor: number, shirtColor: number, npcId: string): THREE.Group {
   const group = new THREE.Group();
   const bodyMaterial = new THREE.MeshLambertMaterial({ color: bodyColor });
+  // The "shirt" color and the "body" color are the SAME for the
+  // female mesh. Earlier the chest was rendered in a darker
+  // shade of the shirt, but Lucas explicitly asked for the
+  // chest to be the EXACT same color as the rest of the body/
+  // shirt so it does not look like a clipping glitch. We keep
+  // the chest sphere for body-shape, but it wears the same
+  // material as the body box. The clothing-shirt (in
+  // addClothing) is a separate, brighter shirt color so the
+  // NPC can still show a "shirt" visually; when addClothing is
+  // present it covers the chest, so the chest color is only
+  // visible for NPCs without a shirt (or as a fallback when
+  // the shirt color == body color).
+  const shirtMaterial = new THREE.MeshLambertMaterial({ color: shirtColor });
   group.add(
     box("body", [0.5, 0.85, 0.4], bodyMaterial, [0, 0.575, 0]),
     createHumanoidHead(hairColor, true),
   );
-  // L-2026-08-30 missed feedback (msg #110): "Man has Brest!!!
-  // Brest has different color than the rest of the shirt!!!"
-  // The chest is rendered in a CHEST color (a darker shade of the
-  // shirt) so the two-tone shirt reads as a deliberate v-neck
-  // accent, not a clipping glitch.
   const chest = new THREE.Mesh(
     new THREE.SphereGeometry(chestRadiusForNpc(npcId), 8, 6),
-    new THREE.MeshLambertMaterial({ color: darkenColor(shirtColor, 0.7) }),
+    shirtMaterial,
   );
   chest.name = "chest";
   chest.position.set(0, 0.78, 0.22);
@@ -129,13 +137,17 @@ function createFemaleMesh(bodyColor: number, hairColor: number, shirtColor: numb
   return group;
 }
 
-/** Darken a 24-bit RGB color by `factor` (0..1). Factor 1 = unchanged. */
+/** Darken a 24-bit RGB color by `factor` (0..1). Factor 1 = unchanged.
+ *  Kept for future use (was used for the chest two-tone effect,
+ *  which Lucas explicitly asked to undo: "should be exact same
+ *  color as the rest of the body/shirt"). */
 function darkenColor(rgb: number, factor: number): number {
   const r = Math.round(((rgb >> 16) & 0xff) * factor);
   const g = Math.round(((rgb >> 8) & 0xff) * factor);
   const b = Math.round((rgb & 0xff) * factor);
   return (r << 16) | (g << 8) | b;
 }
+void darkenColor; // silence unused-warning until next use
 
 function addClothing(group: THREE.Group, clothing: NpcClothing): void {
   if (clothing.shirt) {

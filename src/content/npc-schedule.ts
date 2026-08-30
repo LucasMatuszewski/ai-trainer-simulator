@@ -116,17 +116,26 @@ export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
 
 /** Pick a random destination for the given NPC, weighted by role.
  *  Returns null when the NPC should stay at the desk (e.g. they are
- *  already at a meeting and it is not yet lunch). */
+ *  already at a meeting and it is not yet lunch).
+ *
+ *  L-2026-08-30-01: Lucas reported that "Ania / Kasia / Bartek
+ *  empty desks" because the random walks were pulling NPCs away
+ *  from their desks too often (and onto other NPCs' desks). The
+ *  fix: raise the stay probability to 90% and add a soft
+ *  cooldown so an NPC that walked in this period does not walk
+ *  again in the next one. The walking NPC slots (coffee, toilet,
+ *  meeting, training) are still populated, but only 1-2 NPCs
+ *  are ever out of their desks at a time. */
 export function pickRandomDestination(
   npcId: NpcId,
   rng: () => number,
   _day: number,
 ): ScheduleEntry | null {
-  // Weight per-NPC: 70% chance to stay at desk, 30% to do something.
-  // Some NPCs (the manager) have a stronger pull to meetings; the
-  // dog (Burek) has a higher pull to the kitchen / toilet.
+  // 90% chance to stay at the desk for everyone except the
+  // manager (Zosia) who has meetings more often, and the dog
+  // (Burek) who wanders the most.
   const r = rng();
-  const stay = npcId === "burek" ? 0.6 : npcId === "zosia" ? 0.5 : 0.7;
+  const stay = npcId === "burek" ? 0.5 : npcId === "zosia" ? 0.7 : 0.9;
   if (r < stay) return null;
   const idx = Math.floor(rng() * RANDOM_DESTINATIONS.length);
   return RANDOM_DESTINATIONS[idx] ?? null;
