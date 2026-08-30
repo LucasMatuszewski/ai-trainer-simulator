@@ -782,14 +782,21 @@ window.__aitrainer = {
   },
   inspectFurniture: () => {
     if (!engine) return null;
-    const out: Array<{ name: string; position: { x: number; y: number; z: number }; color?: number; rotationY?: number }> = [];
-    engine.scene.traverse((c: { name?: string; isMesh?: boolean; position: { x: number; y: number; z: number }; rotation: { y: number }; material?: { color?: { getHex: () => number } } }) => {
-      if (c.isMesh && c.name) {
-        const entry: { name: string; position: { x: number; y: number; z: number }; color?: number; rotationY?: number } = {
-          name: c.name,
+    const out: Array<{ name: string; position: { x: number; y: number; z: number }; color?: number; rotationY?: number; npcId?: string }> = [];
+    engine.scene.traverse((c: { name?: string; isMesh?: boolean; userData?: { npcId?: string }; position: { x: number; y: number; z: number }; rotation: { y?: number }; material?: { color?: { getHex: () => number } } }) => {
+      // Include meshes with a name OR NPC groups (no name but
+      // userData.npcId is set).
+      const isNpcGroup = !c.isMesh && c.userData?.npcId !== undefined;
+      if ((c.isMesh && c.name) || isNpcGroup) {
+        const entry: { name: string; position: { x: number; y: number; z: number }; color?: number; rotationY?: number; npcId?: string } = {
+          name: c.name ?? "(npc-group)",
           position: { x: c.position.x, y: c.position.y, z: c.position.z },
-          rotationY: c.rotation.y,
         };
+        if (isNpcGroup && c.userData?.npcId) entry.npcId = c.userData.npcId;
+        const rot = c.rotation;
+        if (rot && typeof (rot as { y?: number }).y === "number") {
+          entry.rotationY = (rot as { y: number }).y;
+        }
         const color = c.material?.color?.getHex?.();
         if (typeof color === "number") entry.color = color;
         out.push(entry);
@@ -819,7 +826,7 @@ frame();
 // Bump after every commit so the console line in the browser
 // confirms the user is on the right build. See AGENTS.md
 // "Verify the build you are testing" section.
-const BUILD_VERSION = "v2026.08.30-26";
+const BUILD_VERSION = "v2026.08.30-30";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,

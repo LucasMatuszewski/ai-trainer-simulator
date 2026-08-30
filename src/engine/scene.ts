@@ -298,7 +298,15 @@ export function buildOfficeScene(
     npcMeshes,
     npcObjects,
     interactableMeshes: new Map(),
-    playerStart: new THREE.Vector3(0, 0.5, 6),
+    // L-2026-08-30 (Lucas): "Person get spawned inside the
+    // speaker booth in conference room". The player was at z=6,
+    // close to the south wall and in line with the meeting-room
+    // door. With the FPS camera at eye height looking down -Z,
+    // the player looked like they were inside the meeting room.
+    // Move to the east side of the south wall, well clear of
+    // the meeting-room door (which is at x=0), and face them
+    // NORTH so the first thing they see is the office interior.
+    playerStart: new THREE.Vector3(6, 0.5, 7),
     updatables,
     multiRoom,
     npcController,

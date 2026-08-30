@@ -43,7 +43,17 @@ function clamp01(value: number): number {
 }
 
 function normalizeYaw(angle: number): number {
-  const wrapped = ((angle + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+  // Normalize to (-PI, PI]. The `+ 2*PI` before `% 2*PI` makes
+  // sure JavaScript's % (which can return negatives) gives a
+  // non-negative intermediate. Then subtract PI to shift to the
+  // (-PI, PI] range. Note: PI itself should normalize to PI (not
+  // -PI), so we use (-PI, PI] and the test `wrapped === -PI` is
+  // a guard against the exact-PI case.
+  const TWO_PI = Math.PI * 2;
+  let wrapped = ((angle % TWO_PI) + TWO_PI) % TWO_PI;
+  if (wrapped === 0) return 0;
+  if (wrapped > Math.PI) wrapped -= TWO_PI;
+  if (wrapped === -Math.PI) return Math.PI;
   return Object.is(wrapped, -0) ? 0 : wrapped;
 }
 
@@ -209,6 +219,25 @@ export function createNpcController(
         if (shouldShowBubble(distance, timeSinceLastBubble, rng)) {
           bubbleSystem?.show(first.position, pickLine(INTER_NPC_LINES, rng));
           timeSinceLastBubble = 0;
+        }
+        // L-2026-08-30 (Lucas): "NPCs who are working stay next to
+        // the desk but with monitor behind their back, so they do
+        // not really work". When two NPCs are within the bubble
+        // range, make them face each other briefly so the player
+        // sees a 'cooperation' beat. The facing override is held
+        // for ~3 seconds after the NPCs separate, so the player
+        // catches the eye-contact moment.
+        if (distance < 2.5) {
+          const dx = second.position.x - first.position.x;
+          const dz = second.position.z - first.position.z;
+          const yawA = Math.atan2(dx, dz);
+          const yawB = Math.atan2(-dx, -dz);
+          if (Math.abs(yawA - first.rotation.y) > 0.1) {
+            first.rotation.y = yawA;
+          }
+          if (Math.abs(yawB - second.rotation.y) > 0.1) {
+            second.rotation.y = yawB;
+          }
         }
       }
     }

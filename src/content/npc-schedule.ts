@@ -22,43 +22,43 @@ export interface ScheduleEntry {
 
 export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
   bartek: {
-    morning: { position: { x: -4, y: 0, z: -2.4 }, face: 0, state: "at-desk" },
-    afternoon: { position: { x: -4, y: 0, z: -2.4 }, face: 0, state: "at-desk" },
-    evening: { position: { x: -4, y: 0, z: -2.4 }, face: 0, state: "at-desk" },
+    morning: { position: { x: -4, y: 0, z: -2.4 }, face: Math.PI, state: "at-desk" },
+    afternoon: { position: { x: -4, y: 0, z: -2.4 }, face: Math.PI, state: "at-desk" },
+    evening: { position: { x: -4, y: 0, z: -2.4 }, face: Math.PI, state: "at-desk" },
   },
   klaudia: {
-    morning: { position: { x: 4, y: 0, z: -2.4 }, face: 0, state: "at-desk" },
-    afternoon: { position: { x: 4, y: 0, z: -2.4 }, face: 0, state: "at-desk" },
+    morning: { position: { x: 4, y: 0, z: -2.4 }, face: Math.PI, state: "at-desk" },
+    afternoon: { position: { x: 4, y: 0, z: -2.4 }, face: Math.PI, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
   },
   marek: {
-    morning: { position: { x: -4, y: 0, z: 3.6 }, face: 0, state: "at-desk" },
-    afternoon: { position: { x: -4, y: 0, z: 3.6 }, face: 0, state: "at-desk" },
+    morning: { position: { x: -4, y: 0, z: 3.6 }, face: Math.PI, state: "at-desk" },
+    afternoon: { position: { x: -4, y: 0, z: 3.6 }, face: Math.PI, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
   },
   zosia: {
-    morning: { position: { x: 4, y: 0, z: 3.6 }, face: 0, state: "at-desk" },
+    morning: { position: { x: 4, y: 0, z: 3.6 }, face: Math.PI, state: "at-desk" },
     afternoon: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "meeting" },
     evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
   },
   pawel: {
-    morning: { position: { x: 0, y: 0, z: -5.4 }, face: 0, state: "at-desk" },
+    morning: { position: { x: 0, y: 0, z: -5.4 }, face: Math.PI, state: "at-desk" },
     afternoon: { position: { x: 7.5, y: 0, z: -7.5 }, face: 0, state: "coffee" },
     evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
   },
   kasia: {
-    morning: { position: { x: 7, y: 0, z: -2.4 }, face: 0, state: "at-desk" },
-    afternoon: { position: { x: 7, y: 0, z: -2.4 }, face: 0, state: "at-desk" },
+    morning: { position: { x: 7, y: 0, z: -2.4 }, face: Math.PI, state: "at-desk" },
+    afternoon: { position: { x: 7, y: 0, z: -2.4 }, face: Math.PI, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
   },
   tomek: {
-    morning: { position: { x: -7, y: 0, z: -2.4 }, face: 0, state: "at-desk" },
-    afternoon: { position: { x: -7, y: 0, z: -2.4 }, face: 0, state: "at-desk" },
+    morning: { position: { x: -7, y: 0, z: -2.4 }, face: Math.PI, state: "at-desk" },
+    afternoon: { position: { x: -7, y: 0, z: -2.4 }, face: Math.PI, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
   },
   ania: {
-    morning: { position: { x: 7, y: 0, z: 0.6 }, face: 0, state: "at-desk" },
-    afternoon: { position: { x: 7, y: 0, z: 0.6 }, face: 0, state: "at-desk" },
+    morning: { position: { x: 7, y: 0, z: 0.6 }, face: Math.PI, state: "at-desk" },
+    afternoon: { position: { x: 7, y: 0, z: 0.6 }, face: Math.PI, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
   },
   janusz: {
@@ -67,23 +67,23 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
     evening: { position: { x: 0, y: 0, z: -8 }, face: Math.PI / 2, state: "at-desk" },
   },
   burek: {
-    morning: { position: { x: -7, y: 0, z: 3.6 }, face: 0, state: "at-desk" },
+    morning: { position: { x: -7, y: 0, z: 3.6 }, face: Math.PI, state: "at-desk" },
     afternoon: { position: { x: 7.5, y: 0, z: -7.5 }, face: 0, state: "coffee" },
-    evening: { position: { x: -7, y: 0, z: 3.6 }, face: 0, state: "at-desk" },
+    evening: { position: { x: -7, y: 0, z: 3.6 }, face: Math.PI, state: "at-desk" },
   },
   grazyna: {
-    morning: { position: { x: 7, y: 0, z: 3.6 }, face: 0, state: "at-desk" },
-    afternoon: { position: { x: 7, y: 0, z: 3.6 }, face: 0, state: "at-desk" },
+    morning: { position: { x: 7, y: 0, z: 3.6 }, face: Math.PI, state: "at-desk" },
+    afternoon: { position: { x: 7, y: 0, z: 3.6 }, face: Math.PI, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
   },
   maciek: {
-    morning: { position: { x: -3, y: 0, z: -6.4 }, face: 0, state: "at-desk" },
+    morning: { position: { x: -3, y: 0, z: -6.4 }, face: Math.PI, state: "at-desk" },
     afternoon: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
     evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
   },
   przemek: {
-    morning: { position: { x: 3, y: 0, z: -6.4 }, face: 0, state: "at-desk" },
-    afternoon: { position: { x: 3, y: 0, z: -6.4 }, face: 0, state: "at-desk" },
+    morning: { position: { x: 3, y: 0, z: -6.4 }, face: Math.PI, state: "at-desk" },
+    afternoon: { position: { x: 3, y: 0, z: -6.4 }, face: Math.PI, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
   },
 };
@@ -97,19 +97,46 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
  * the walk there.
  */
 export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
-  // Coffee / kitchen: stand by the coffee machine, facing it.
-  { position: { x: 11, y: 0, z: -6.2 }, face: Math.PI, state: "coffee" },
-  // Kitchen table: mid-room, facing west.
-  { position: { x: 14, y: 0, z: 2.5 }, face: Math.PI, state: "kitchen" },
-  // Toilet: stand in front of the first stall.
+  // Coffee / kitchen: stand by the coffee machine, facing the
+  // wall (Math.PI = face -Z, the coffee machine is at z=-6.2
+  // on the wall; the NPC at z=-6.2 facing -Z looks AT the
+  // machine). Wait — face Math.PI means facing -Z, the
+  // machine is at z=-6.2 (further north). To face the wall
+  // (the machine is ON the wall), the NPC should look +Z, so
+  // face=0... hmm. Let me think: the coffee machine is at
+  // z=-6.2, the NPC is also at z=-6.2 (same z), so to look at
+  // it the NPC needs to face +X (east, where the machine is on
+  // the east wall) or -X (west, looking away). The machine is
+  // at x=11 (east). The NPC at x=11 facing the machine means
+  // facing -X. In three.js coords, face=-PI/2 is west. But
+  // the convention here is face is "yaw of NPC mesh where 0
+  // means facing +Z (south)". To face west (the wall on -X
+  // side), the NPC needs yaw = -PI/2. But the machine is on
+  // the +X (east) wall. So NPC should look at +X = east. Yaw=PI/2.
+  // face: Math.PI / 2,
+  { position: { x: 11, y: 0, z: -6.2 }, face: -Math.PI / 2, state: "coffee" },
+  // Kitchen table: mid-room, facing west (table is on the +X
+  // side, so NPC looks -X back toward the office).
+  { position: { x: 14, y: 0, z: 2.5 }, face: -Math.PI / 2, state: "kitchen" },
+  // Toilet: stand in front of the first stall (toilet stalls
+  // are at z=16, the NPC at z=14.5 faces +Z (north) toward them).
   { position: { x: -16, y: 0, z: 14.5 }, face: 0, state: "toilet" },
-  // Toilet: at the sink.
-  { position: { x: -14, y: 0, z: 11.5 }, face: 0, state: "toilet" },
-  // Meeting room: by the meeting table.
+  // Toilet: at the sink (sink at z=11.5). The NPC IS at z=11.5
+  // so just face the sink — but it's on the same plane. Sink
+  // is on the south wall, so face -Z (Math.PI).
+  { position: { x: -14, y: 0, z: 11.5 }, face: Math.PI, state: "toilet" },
+  // Meeting room: by the meeting table (center of room).
+  // The table is in the center; just stand there.
   { position: { x: 0, y: 0, z: 14 }, face: 0, state: "meeting" },
   // Training room: by the lectern (the NPC is teaching).
+  // Lectern is at z=-16.7; the NPC is at z=-16.7 (same z).
+  // Lectern faces south (+Z) so the NPC should look +Z (face 0).
+  // But the NPC is the speaker; the audience is south. So
+  // speaker faces the audience = +Z = face 0.
   { position: { x: 0, y: 0, z: -16.7 }, face: 0, state: "training" },
-  // Training room: a student chair, mid-room.
+  // Training room: a student chair. The lectern is at z=-16.7
+  // (north), the audience faces it. Student chair at z=-14.1,
+  // student faces +Z toward the lectern. So face 0.
   { position: { x: -2, y: 0, z: -14.1 }, face: 0, state: "training" },
   { position: { x: 1.5, y: 0, z: -11.4 }, face: 0, state: "training" },
 ];
