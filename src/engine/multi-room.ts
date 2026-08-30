@@ -51,19 +51,42 @@ export function buildMultiRoomMeshes(
     floor.userData.kind = "floor";
     floor.rotation.x = -Math.PI / 2;
     floor.position.set(centerX, 0.001, centerZ);
+    floor.receiveShadow = true;
     group.add(floor);
+
+    const ceilingColor = new THREE.Color(room.wallColor).multiplyScalar(0.72);
+    const ceiling = new THREE.Mesh(
+      new THREE.BoxGeometry(width, 0.1, depth),
+      new THREE.MeshLambertMaterial({ color: ceilingColor }),
+    );
+    ceiling.name = `${room.id}-ceiling`;
+    ceiling.userData.kind = "ceiling";
+    ceiling.position.set(centerX, WALL_HEIGHT, centerZ);
+    ceiling.receiveShadow = true;
+    group.add(ceiling);
 
     for (const wall of room.walls) {
       const isGlass = wall.id === "glass";
+      const wallWidth = wall.maxX - wall.minX;
+      const wallDepth = wall.maxZ - wall.minZ;
+      const wallTexture = isGlass ? undefined : makeWallTexture(room.wallColor, Math.max(wallWidth, wallDepth));
+      const wallMaterial = isGlass
+        ? new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.25, color: 0xaaccff })
+        : new THREE.MeshLambertMaterial({
+            map: wallTexture,
+            polygonOffset: true,
+            polygonOffsetFactor: 1,
+            polygonOffsetUnits: 1,
+          });
       const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(wall.maxX - wall.minX, WALL_HEIGHT, wall.maxZ - wall.minZ),
-        isGlass
-          ? new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.25, color: 0xaaccff })
-          : new THREE.MeshLambertMaterial({ color: 0xc4a87a }),
+        new THREE.BoxGeometry(wallWidth, WALL_HEIGHT, wallDepth),
+        wallMaterial,
       );
       mesh.name = `${room.id}-wall-${wall.id}`;
       mesh.userData.kind = isGlass ? "glass" : "wall";
       mesh.position.set((wall.minX + wall.maxX) / 2, WALL_HEIGHT / 2, (wall.minZ + wall.maxZ) / 2);
+      mesh.castShadow = !isGlass;
+      mesh.receiveShadow = true;
       group.add(mesh);
     }
 
@@ -76,14 +99,18 @@ export function buildMultiRoomMeshes(
       if (context) {
         context.fillStyle = "#171717";
         context.fillRect(0, 0, canvas.width, canvas.height);
-        context.strokeStyle = `#${sign.color.toString(16).padStart(6, "0")}`;
-        context.lineWidth = 18;
-        context.strokeRect(9, 9, canvas.width - 18, canvas.height - 18);
-        context.fillStyle = `#${sign.color.toString(16).padStart(6, "0")}`;
-        context.font = `bold ${sign.text === "BATMAN" ? 104 : 54}px monospace`;
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.fillText(sign.text, canvas.width / 2, canvas.height / 2);
+        if (sign.text === "BATMAN") {
+          drawBatmanEmblem(context, canvas.width, canvas.height);
+        } else {
+          context.strokeStyle = `#${sign.color.toString(16).padStart(6, "0")}`;
+          context.lineWidth = 18;
+          context.strokeRect(9, 9, canvas.width - 18, canvas.height - 18);
+          context.fillStyle = `#${sign.color.toString(16).padStart(6, "0")}`;
+          context.font = "bold 54px monospace";
+          context.textAlign = "center";
+          context.textBaseline = "middle";
+          context.fillText(sign.text, canvas.width / 2, canvas.height / 2);
+        }
       }
       const texture = new THREE.CanvasTexture(canvas);
       texture.magFilter = THREE.NearestFilter;
@@ -93,14 +120,38 @@ export function buildMultiRoomMeshes(
       );
       signMesh.name = `${room.id}-sign`;
       signMesh.userData.kind = "sign";
+      signMesh.userData.signType = sign.text === "BATMAN" ? "batman" : "room-label";
       signMesh.position.set(...sign.position);
       signMesh.rotation.y = sign.face;
       group.add(signMesh);
     }
 
+    const light = new THREE.PointLight(0xfff4cc, 0.6, 8);
+    light.name = `${room.id}-light`;
+    light.position.set(centerX, WALL_HEIGHT - 0.35, centerZ);
+    group.add(light);
+
     layout.add(group);
     return group;
   });
+}
+
+export function makeWallTexture(color: number, wallLength: number): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 16;
+  canvas.height = 16;
+  const context = canvas.getContext("2d");
+  if (context) {
+    context.fillStyle = `#${color.toString(16).padStart(6, "0")}`;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(Math.max(1, wallLength / 2), WALL_HEIGHT / 2);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestFilter;
+  return texture;
 }
 
 function makeFurniture(item: WorldFurniture): THREE.Mesh {
@@ -113,5 +164,40 @@ function makeFurniture(item: WorldFurniture): THREE.Mesh {
   mesh.userData.kind = "furniture";
   mesh.userData.furnitureType = item.type;
   mesh.position.set(...item.position);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
   return mesh;
+}
+
+function drawBatmanEmblem(context: CanvasRenderingContext2D, width: number, height: number): void {
+  context.fillStyle = "#080808";
+  context.fillRect(0, 0, width, height);
+  if (
+    typeof context.beginPath !== "function" ||
+    typeof context.ellipse !== "function" ||
+    typeof context.fill !== "function"
+  ) return;
+  context.fillStyle = "#ffdd22";
+  context.beginPath();
+  context.ellipse(width / 2, height / 2, width * 0.42, height * 0.35, 0, 0, Math.PI * 2);
+  context.fill();
+
+  context.fillStyle = "#080808";
+  context.beginPath();
+  context.moveTo(width * 0.18, height * 0.5);
+  context.lineTo(width * 0.3, height * 0.39);
+  context.lineTo(width * 0.38, height * 0.27);
+  context.lineTo(width * 0.44, height * 0.4);
+  context.lineTo(width * 0.5, height * 0.25);
+  context.lineTo(width * 0.56, height * 0.4);
+  context.lineTo(width * 0.62, height * 0.27);
+  context.lineTo(width * 0.7, height * 0.39);
+  context.lineTo(width * 0.82, height * 0.5);
+  context.lineTo(width * 0.68, height * 0.55);
+  context.lineTo(width * 0.6, height * 0.72);
+  context.lineTo(width * 0.5, height * 0.61);
+  context.lineTo(width * 0.4, height * 0.72);
+  context.lineTo(width * 0.32, height * 0.55);
+  context.closePath();
+  context.fill();
 }

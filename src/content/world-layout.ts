@@ -38,6 +38,7 @@ export interface WorldRoom {
   furniture: WorldFurniture[];
   signs: WorldSign[];
   floorColor: number;
+  wallColor: number;
 }
 
 const wall = (id: string, minX: number, maxX: number, minZ: number, maxZ: number): WorldWall => ({
@@ -93,11 +94,14 @@ export const WORLD_ROOMS: WorldRoom[] = [
       wall("training-north", -8, 8, -19.5, -19),
       wall("training-west", -8.5, -8, -19, -9),
       wall("training-east", 8, 8.5, -19, -9),
-      wall("training-south-west", -8, -1.25, -9.5, -9),
-      wall("training-south-east", 1.25, 8, -9.5, -9),
+      // Keep the shared boundary inside the training room so it cannot occupy
+      // the same depth range as the main office's north wall.
+      wall("training-south-west", -8, -1.25, -9.5, -9.22),
+      wall("training-south-east", 1.25, 8, -9.5, -9.22),
     ],
     doorways: [MAIN_OFFICE_DOORWAYS[0]!],
     floorColor: 0x9b7653,
+    wallColor: 0x245c54,
     furniture: [
       { type: "projector-screen", position: [0, 1.7, -18.7], size: [5, 2.2, 0.12] },
       { type: "lectern", position: [0, 0.6, -16.7], size: [1.2, 1.2, 0.8] },
@@ -120,8 +124,9 @@ export const WORLD_ROOMS: WorldRoom[] = [
       wall("kitchen-south", 9, 19, 7, 7.5),
       wall("kitchen-east-north", 19, 19.5, -7, -5.25),
       wall("kitchen-east-south", 19, 19.5, -2.75, 7),
-      wall("kitchen-west-north", 9, 9.5, -7, -1.25),
-      wall("kitchen-west-south", 9, 9.5, 1.25, 7),
+      // Offset shared walls into the kitchen, away from the main-office shell.
+      wall("kitchen-west-north", 9.22, 9.5, -7, -1.25),
+      wall("kitchen-west-south", 9.22, 9.5, 1.25, 7),
     ],
     doorways: [
       MAIN_OFFICE_DOORWAYS[1]!,
@@ -132,6 +137,7 @@ export const WORLD_ROOMS: WorldRoom[] = [
       ),
     ],
     floorColor: 0xc7b98b,
+    wallColor: 0xb8dce8,
     furniture: [
       { type: "coffee-machine", position: [11, 0.8, -6.2], size: [1, 1.6, 0.8] },
       { type: "fridge", position: [13, 1.1, -6.2], size: [1.2, 2.2, 1] },
@@ -152,11 +158,13 @@ export const WORLD_ROOMS: WorldRoom[] = [
       wall("meeting-south", -6, 6, 19, 19.5),
       wall("meeting-west", -6.5, -6, 9, 19),
       wall("meeting-east", 6, 6.5, 9, 19),
-      wall("meeting-north-west", -6, -1.25, 9, 9.5),
-      wall("meeting-north-east", 1.25, 6, 9, 9.5),
+      // Offset shared walls into the meeting room, away from the office shell.
+      wall("meeting-north-west", -6, -1.25, 9.22, 9.5),
+      wall("meeting-north-east", 1.25, 6, 9.22, 9.5),
     ],
     doorways: [MAIN_OFFICE_DOORWAYS[2]!],
     floorColor: 0x76543d,
+    wallColor: 0x8a7968,
     furniture: [
       { type: "table", position: [0, 0.45, 14], size: [3, 0.9, 5.5] },
       ...[-2.4, 2.4].flatMap((x) => [11.8, 13.3, 14.8, 16.3].map((z) => ({
@@ -176,8 +184,10 @@ export const WORLD_ROOMS: WorldRoom[] = [
       wall("cto-south", 19, 27, -3, -2.5),
       wall("cto-east", 27, 27.5, -13, -3),
       wall("glass", 19, 19.18, -13, -8),
-      wall("cto-west-north", 19, 19.5, -8, -5.25),
-      wall("cto-west-south", 19, 19.5, -2.75, -3),
+      // The solid west segments sit inside the CTO office rather than sharing
+      // the kitchen east wall's depth volume.
+      wall("cto-west-north", 19.5, 19.8, -8, -5.25),
+      wall("cto-west-south", 19.5, 19.8, -2.75, -3),
     ],
     doorways: [
       gap(
@@ -187,6 +197,7 @@ export const WORLD_ROOMS: WorldRoom[] = [
       ),
     ],
     floorColor: 0x4d3b2b,
+    wallColor: 0x4a2f24,
     furniture: [
       { type: "executive-desk", position: [24, 0.55, -9.5], size: [3.4, 1.1, 1.4] },
       { type: "chair", position: [24, 0.35, -11] },

@@ -16,8 +16,8 @@
 
 import * as THREE from "three";
 
-const RENDER_PIXEL_WIDTH = 480;
-const RENDER_PIXEL_HEIGHT = 270;
+const RENDER_PIXEL_WIDTH = 640;
+const RENDER_PIXEL_HEIGHT = 360;
 
 export interface Engine {
   scene: THREE.Scene;
@@ -32,6 +32,11 @@ export interface Engine {
   render: () => void;
   resize: () => void;
   dispose: () => void;
+}
+
+export function configureRendererQuality(renderer: THREE.WebGLRenderer): void {
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 }
 
 export function createEngine(canvas: HTMLCanvasElement): Engine {
@@ -50,6 +55,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
     preserveDrawingBuffer: true,
   });
   renderer.setPixelRatio(1);
+  configureRendererQuality(renderer);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   // Internal buffer is small; CSS upscales with `image-rendering: pixelated`.
   renderer.setSize(RENDER_PIXEL_WIDTH, RENDER_PIXEL_HEIGHT, false);
@@ -72,6 +78,14 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
   scene.add(ambient);
   const key = new THREE.DirectionalLight(0xffffff, 1.2);
   key.position.set(5, 10, 5);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.camera.left = -30;
+  key.shadow.camera.right = 30;
+  key.shadow.camera.top = 25;
+  key.shadow.camera.bottom = -25;
+  key.shadow.camera.near = 0.5;
+  key.shadow.camera.far = 60;
   scene.add(key);
   const fill = new THREE.DirectionalLight(0xccddff, 0.6);
   fill.position.set(-5, 6, -5);

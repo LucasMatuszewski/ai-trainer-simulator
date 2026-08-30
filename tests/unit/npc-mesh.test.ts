@@ -16,8 +16,12 @@ function boxDimensions(mesh: THREE.Mesh): THREE.BoxGeometry["parameters"] {
 describe("createNpcMesh", () => {
   it("creates a male group with at least the original nine body-part meshes", () => {
     const male = createNpcMesh("male");
+    const meshes: THREE.Mesh[] = [];
+    male.traverse((child) => {
+      if (child instanceof THREE.Mesh) meshes.push(child);
+    });
     expect(male).toBeInstanceOf(THREE.Group);
-    expect(male.children.length).toBeGreaterThanOrEqual(9);
+    expect(meshes.length).toBeGreaterThanOrEqual(9);
   });
 
   it("gives the female body narrower shoulders than the male body", () => {
@@ -30,24 +34,25 @@ describe("createNpcMesh", () => {
   it("gives both humanoid silhouettes a head, body, two legs, and two eyes", () => {
     for (const gender of ["male", "female"] as const) {
       const group = createNpcMesh(gender);
-      for (const part of ["head", "body", "left-leg", "right-leg", "left-eye", "right-eye"]) {
+      expect(group.getObjectByName("head")).toBeInstanceOf(THREE.Group);
+      for (const part of ["head-mesh", "body", "left-leg", "right-leg", "left-eye", "right-eye"]) {
         expect(namedMesh(group, part)).toBeDefined();
       }
     }
   });
 
-  it("creates a wide dog body and four separate legs", () => {
+  it("creates a forward-facing dog body and four separate legs", () => {
     const dog = createNpcMesh("dog");
     const dogBody = namedMesh(dog, "body");
     const legs = dog.children.filter((child) => child.name.endsWith("-leg"));
     expect(dog).toBeInstanceOf(THREE.Group);
     expect(dog.children.length).toBeGreaterThanOrEqual(6);
-    expect(boxDimensions(dogBody).width).toBeGreaterThan(0.7);
+    expect(boxDimensions(dogBody).depth).toBeGreaterThan(boxDimensions(dogBody).width);
     expect(legs).toHaveLength(4);
   });
 
   it("uses a dog head rather than human head proportions", () => {
-    const dogHead = boxDimensions(namedMesh(createNpcMesh("dog"), "head"));
+    const dogHead = boxDimensions(namedMesh(createNpcMesh("dog"), "head-mesh"));
     expect(dogHead.width).toBeLessThan(0.6);
     expect(dogHead.height).toBeLessThan(0.6);
     expect(dogHead.depth).toBeLessThan(0.6);

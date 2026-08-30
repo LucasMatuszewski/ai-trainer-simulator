@@ -11,6 +11,16 @@ function npcMesh(): THREE.Group {
   return mesh;
 }
 
+function animatedDogMesh(): THREE.Group {
+  const mesh = npcMesh();
+  for (const name of ["body", "left-ear", "right-ear", "tail"]) {
+    const part = new THREE.Object3D();
+    part.name = name;
+    mesh.add(part);
+  }
+  return mesh;
+}
+
 function state(overrides: Partial<IdleState> = {}): IdleState {
   return { nextTypeAt: 6, nextLookAt: 7, currentLookYaw: null, lookUntil: 0, ...overrides };
 }
@@ -68,5 +78,30 @@ describe("NPC idle animations", () => {
   it("is a no-op for meshes without named body parts", () => {
     const mesh = new THREE.Group();
     expect(() => updateIdle(state({ nextTypeAt: 0, nextLookAt: 0 }), 1, position, 0, mesh, 1, () => 0.5)).not.toThrow();
+  });
+
+  it("twitches ears and bounces the body on independent timers", () => {
+    const mesh = animatedDogMesh();
+    const updated = updateIdle(
+      state({ nextEarTwitchAt: 0, nextBounceAt: 0 }),
+      0.1,
+      position,
+      0,
+      mesh,
+      0.1,
+      () => 0.5,
+    );
+
+    expect(mesh.getObjectByName("left-ear")!.rotation.z).not.toBe(0);
+    expect(mesh.getObjectByName("right-ear")!.rotation.z).toBeLessThan(0);
+    expect(mesh.getObjectByName("body")!.scale.y).toBeCloseTo(1.05);
+    expect(updated.nextEarTwitchAt).toBeGreaterThan(0);
+    expect(updated.nextBounceAt).toBeGreaterThan(0);
+  });
+
+  it("wags a dog's tail using its per-NPC animation phase", () => {
+    const mesh = animatedDogMesh();
+    updateIdle(state({ animationPhase: 1 }), 0.1, position, 0, mesh, 0.1, () => 0.5);
+    expect(mesh.getObjectByName("tail")!.rotation.y).not.toBe(0);
   });
 });

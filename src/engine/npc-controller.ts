@@ -158,7 +158,7 @@ export function createNpcController(
     for (const npc of npcs) {
       const object = npcObjects[npc.id];
       if (!object.visible || object.userData.npcState === "walking") continue;
-      const idleState = idleStates.get(npc.id) ?? createInitialIdleState(0);
+      const idleState = idleStates.get(npc.id) ?? createInitialIdleState(0, npc.id);
       idleStates.set(
         npc.id,
         updateIdle(idleState, safeDt, object.position, object.rotation.y, object, idleElapsed, rng),

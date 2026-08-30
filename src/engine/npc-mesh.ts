@@ -19,12 +19,26 @@ function box(
   return mesh;
 }
 
-function addHumanoidFace(group: THREE.Group): void {
+function createHumanoidHead(hairColor: number, female: boolean): THREE.Group {
+  const head = new THREE.Group();
+  head.name = "head";
+  head.position.set(0, 1.25, 0);
   const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-  group.add(
-    box("left-eye", [0.06, 0.06, 0.01], eyeMaterial, [-0.1, 1.3, 0.255]),
-    box("right-eye", [0.06, 0.06, 0.01], eyeMaterial, [0.1, 1.3, 0.255]),
+  const hairMaterial = new THREE.MeshLambertMaterial({ color: hairColor });
+  head.add(
+    box("head-mesh", [0.5, 0.5, 0.5], new THREE.MeshLambertMaterial({ color: SKIN_COLOR }), [0, 0, 0]),
+    box("left-eye", [0.06, 0.06, 0.01], eyeMaterial, [-0.1, 0.05, 0.255]),
+    box("right-eye", [0.06, 0.06, 0.01], eyeMaterial, [0.1, 0.05, 0.255]),
   );
+  if (female) {
+    head.add(
+      box("hair-top", [0.54, 0.2, 0.54], hairMaterial, [0, 0.3, 0]),
+      box("hair-back", [0.56, 0.7, 0.18], hairMaterial, [0, 0, -0.22]),
+    );
+  } else {
+    head.add(box("hair", [0.52, 0.18, 0.52], hairMaterial, [0, 0.3, 0]));
+  }
+  return head;
 }
 
 function addHumanoidLegs(group: THREE.Group): void {
@@ -35,17 +49,24 @@ function addHumanoidLegs(group: THREE.Group): void {
   );
 }
 
+function addHumanoidArms(group: THREE.Group, bodyColor: number): void {
+  const material = new THREE.MeshLambertMaterial({ color: bodyColor });
+  group.add(
+    box("arm-left", [0.14, 0.65, 0.16], material, [-0.38, 0.72, 0]),
+    box("arm-right", [0.14, 0.65, 0.16], material, [0.38, 0.72, 0]),
+  );
+}
+
 function createMaleMesh(bodyColor: number, hairColor: number): THREE.Group {
   const group = new THREE.Group();
   group.add(
     box("body", [0.6, 1, 0.4], new THREE.MeshLambertMaterial({ color: bodyColor }), [0, 0.5, 0]),
     box("belt", [0.62, 0.08, 0.42], new THREE.MeshLambertMaterial({ color: 0x222222 }), [0, 0.45, 0]),
-    box("head", [0.5, 0.5, 0.5], new THREE.MeshLambertMaterial({ color: SKIN_COLOR }), [0, 1.25, 0]),
-    box("hair", [0.52, 0.18, 0.52], new THREE.MeshLambertMaterial({ color: hairColor }), [0, 1.55, 0]),
     box("tie", [0.08, 0.38, 0.02], new THREE.MeshLambertMaterial({ color: 0x992222 }), [0, 0.78, 0.211]),
+    createHumanoidHead(hairColor, false),
   );
-  addHumanoidFace(group);
   addHumanoidLegs(group);
+  addHumanoidArms(group, bodyColor);
   return group;
 }
 
@@ -53,9 +74,7 @@ function createFemaleMesh(bodyColor: number, hairColor: number): THREE.Group {
   const group = new THREE.Group();
   group.add(
     box("body", [0.45, 0.85, 0.4], new THREE.MeshLambertMaterial({ color: bodyColor }), [0, 0.575, 0]),
-    box("head", [0.5, 0.5, 0.5], new THREE.MeshLambertMaterial({ color: SKIN_COLOR }), [0, 1.25, 0]),
-    box("hair-top", [0.54, 0.2, 0.54], new THREE.MeshLambertMaterial({ color: hairColor }), [0, 1.55, 0]),
-    box("hair-back", [0.56, 0.7, 0.18], new THREE.MeshLambertMaterial({ color: hairColor }), [0, 1.25, -0.22]),
+    createHumanoidHead(hairColor, true),
   );
   const skirt = new THREE.Mesh(
     new THREE.CylinderGeometry(0.38, 0.27, 0.5, 4),
@@ -65,8 +84,8 @@ function createFemaleMesh(bodyColor: number, hairColor: number): THREE.Group {
   skirt.position.y = 0.45;
   skirt.rotation.y = Math.PI / 4;
   group.add(skirt);
-  addHumanoidFace(group);
   addHumanoidLegs(group);
+  addHumanoidArms(group, bodyColor);
   return group;
 }
 
@@ -74,19 +93,26 @@ function createDogMesh(): THREE.Group {
   const group = new THREE.Group();
   const fur = new THREE.MeshLambertMaterial({ color: 0xc4a060 });
   const darkFur = new THREE.MeshLambertMaterial({ color: 0x9b7440 });
+  const head = new THREE.Group();
+  head.name = "head";
+  head.position.set(0, 0.55, 0.65);
+  const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  head.add(
+    box("head-mesh", [0.5, 0.4, 0.4], fur, [0, 0, 0]),
+    box("snout", [0.2, 0.2, 0.25], darkFur, [0, -0.1, 0.3]),
+    box("left-ear", [0.1, 0.2, 0.05], darkFur, [-0.15, 0.2, -0.08]),
+    box("right-ear", [0.1, 0.2, 0.05], darkFur, [0.15, 0.2, -0.08]),
+    box("left-eye", [0.05, 0.05, 0.01], eyeMaterial, [-0.13, 0.05, 0.205]),
+    box("right-eye", [0.05, 0.05, 0.01], eyeMaterial, [0.13, 0.05, 0.205]),
+  );
   group.add(
-    box("body", [1, 0.5, 0.4], fur, [0, 0.4, 0]),
-    box("head", [0.5, 0.4, 0.4], fur, [0, 0.55, 0.4]),
-    box("snout", [0.2, 0.2, 0.25], darkFur, [0, 0.45, 0.7]),
-    box("left-ear", [0.1, 0.2, 0.05], darkFur, [-0.15, 0.75, 0.32]),
-    box("right-ear", [0.1, 0.2, 0.05], darkFur, [0.15, 0.75, 0.32]),
-    box("left-eye", [0.05, 0.05, 0.01], new THREE.MeshBasicMaterial({ color: 0x000000 }), [-0.13, 0.6, 0.605]),
-    box("right-eye", [0.05, 0.05, 0.01], new THREE.MeshBasicMaterial({ color: 0x000000 }), [0.13, 0.6, 0.605]),
-    box("front-left-leg", [0.1, 0.4, 0.1], darkFur, [-0.35, 0.2, 0.13]),
-    box("front-right-leg", [0.1, 0.4, 0.1], darkFur, [0.35, 0.2, 0.13]),
-    box("back-left-leg", [0.1, 0.4, 0.1], darkFur, [-0.35, 0.2, -0.13]),
-    box("back-right-leg", [0.1, 0.4, 0.1], darkFur, [0.35, 0.2, -0.13]),
-    box("tail", [0.1, 0.1, 0.3], darkFur, [0, 0.55, -0.35]),
+    box("body", [0.4, 0.5, 1], fur, [0, 0.4, 0]),
+    head,
+    box("front-left-leg", [0.1, 0.4, 0.1], darkFur, [-0.15, 0.2, 0.3]),
+    box("front-right-leg", [0.1, 0.4, 0.1], darkFur, [0.15, 0.2, 0.3]),
+    box("back-left-leg", [0.1, 0.4, 0.1], darkFur, [-0.15, 0.2, -0.3]),
+    box("back-right-leg", [0.1, 0.4, 0.1], darkFur, [0.15, 0.2, -0.3]),
+    box("tail", [0.1, 0.1, 0.3], darkFur, [0, 0.55, -0.65]),
     box("collar", [0.52, 0.08, 0.08], new THREE.MeshLambertMaterial({ color: 0xcc2222 }), [0, 0.48, 0.22]),
   );
   return group;

@@ -94,6 +94,11 @@ const COLORS = {
   npcHair3: 0x222222,
 };
 
+export const SHIP_IT_SIGN_MOUNT = {
+  position: [4, 2, OFFICE_BOUNDS.maxZ - 0.16] as const,
+  face: Math.PI,
+};
+
 const SCREEN_COLORS = [
   COLORS.monitorScreen1,
   COLORS.monitorScreen2,
@@ -132,6 +137,7 @@ export function buildOfficeScene(
     new THREE.MeshLambertMaterial({ map: floorTex }),
   );
   floor.position.set(0, -0.1, 0);
+  floor.receiveShadow = true;
   scene.add(floor);
 
   // Skirting board (warm dark band where wall meets floor) for visual interest.
@@ -141,10 +147,12 @@ export function buildOfficeScene(
   addBox(scene, skirting, OFFICE_BOUNDS.minX + 0.05, 0.05, 0, 0.1, 0.1, floorDepth);
   addBox(scene, skirting, OFFICE_BOUNDS.maxX - 0.05, 0.05, 0, 0.1, 0.1, floorDepth);
 
-  // ---- Walls (4) with vertical wallpaper stripes via canvas texture.
+  // ---- Walls (4) with subtle wallpaper texture. Avoid full-height stripes:
+  // those alias into distracting wall bands at the low internal resolution.
   const wallpaperTex = makeWallpaperTexture();
   wallpaperTex.wrapS = wallpaperTex.wrapT = THREE.RepeatWrapping;
-  wallpaperTex.repeat.set(12, 4);
+  wallpaperTex.repeat.set(2.5, 1.5);
+  wallpaperTex.colorSpace = THREE.SRGBColorSpace;
   const wallMat = new THREE.MeshLambertMaterial({ map: wallpaperTex });
   const wallHeight = 3;
   for (const wall of MAIN_OFFICE_WALLS) {
@@ -166,6 +174,7 @@ export function buildOfficeScene(
     new THREE.MeshLambertMaterial({ color: COLORS.ceiling }),
   );
   ceiling.position.set(0, wallHeight + 0.1, 0);
+  ceiling.receiveShadow = true;
   scene.add(ceiling);
   const trimMat = new THREE.MeshLambertMaterial({ color: COLORS.ceilingTrim });
   addBox(scene, trimMat, 0, wallHeight - 0.1, OFFICE_BOUNDS.minZ + 0.15, floorWidth, 0.1, 0.1);
@@ -196,8 +205,9 @@ export function buildOfficeScene(
   // Whiteboard on west wall
   addWhiteboard(scene, OFFICE_BOUNDS.minX + 0.16, 1.5, -5, Math.PI / 2);
 
-  // Big motivational sign on south wall
-  addMotivationalSign(scene, 0, 2, OFFICE_BOUNDS.maxZ - 0.16, Math.PI);
+  // Keep the motivational sign on the south wall section to the right of the
+  // meeting-room doorway, rather than floating across the doorway opening.
+  addMotivationalSign(scene, ...SHIP_IT_SIGN_MOUNT.position, SHIP_IT_SIGN_MOUNT.face);
 
   // ---- Window on east wall: a blue rectangle with a "sky" gradient.
   addWindow(scene, OFFICE_BOUNDS.maxX - 0.16, 1.6, -6.5, -Math.PI / 2);
@@ -256,6 +266,14 @@ export function buildOfficeScene(
 
   const multiRoom = buildMultiRoomMeshes(scene, WORLD_ROOMS);
 
+  // Furniture, monitors and NPC bodies cast compact directional shadows;
+  // architectural surfaces receive them. Basic-material screens remain lit.
+  scene.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    if (!(object.material instanceof THREE.MeshBasicMaterial)) object.castShadow = true;
+    object.receiveShadow = true;
+  });
+
   return {
     npcMeshes,
     npcObjects,
@@ -290,6 +308,7 @@ function makeCheckerTexture(colorA: number, colorB: number, tileSize: number): T
   const t = new THREE.CanvasTexture(c);
   t.magFilter = THREE.NearestFilter;
   t.minFilter = THREE.NearestFilter;
+  t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
 
@@ -301,13 +320,9 @@ function makeWallpaperTexture(): THREE.Texture {
   // Base cream
   ctx.fillStyle = "#" + COLORS.wall.toString(16).padStart(6, "0");
   ctx.fillRect(0, 0, 64, 64);
-  // Vertical cream-on-cream stripes
-  ctx.fillStyle = "rgba(107, 79, 51, 0.18)";
-  for (let x = 0; x < 64; x += 8) {
-    ctx.fillRect(x, 0, 2, 64);
-  }
-  // Subtle flowers
-  ctx.fillStyle = "rgba(180, 100, 60, 0.25)";
+  // Subtle offset dots preserve the wallpaper character without producing
+  // long high-contrast lines when the texture is minified.
+  ctx.fillStyle = "rgba(180, 100, 60, 0.18)";
   for (let y = 12; y < 64; y += 24) {
     for (let x = 12; x < 64; x += 24) {
       ctx.beginPath();
