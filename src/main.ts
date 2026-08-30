@@ -189,10 +189,21 @@ function focusNpc(id: NpcId | null): void {
   }
   const npc = NPCS.find((n) => n.id === id);
   if (!npc) return;
+  // L-2026-08-30 (Lucas): "clicking on NPC name should move
+  // camera to the NPC model object, not to the fixed desk". The
+  // NPC may have walked away from their desk for a random
+  // meeting/coffee/toilet break. Use the LIVE position from
+  // the scene's mesh, not the static npc.position (which is
+  // the desk).
+  const liveMesh = sceneObjects.npcMeshes.get(id) ?? sceneObjects.npcObjects[id];
+  const livePos = liveMesh?.position;
+  const targetX = livePos?.x ?? npc.position.x;
+  const targetZ = livePos?.z ?? npc.position.z;
+  const targetY = (livePos?.y ?? npc.position.y) + 0.6;
   // Roster-driven NPC focus: still pan the camera to frame the NPC.
   // The controls will continue to update the player position from
   // WASD, so the player can still walk during the pan.
-  const target = new THREE.Vector3(npc.position.x, npc.position.y + 0.6, npc.position.z);
+  const target = new THREE.Vector3(targetX, targetY, targetZ);
   const offset = new THREE.Vector3(0, 1.6, 3.2);
   cameraDirector.panTo(target, offset);
 }
@@ -808,7 +819,7 @@ frame();
 // Bump after every commit so the console line in the browser
 // confirms the user is on the right build. See AGENTS.md
 // "Verify the build you are testing" section.
-const BUILD_VERSION = "v2026.08.30-25";
+const BUILD_VERSION = "v2026.08.30-26";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,
