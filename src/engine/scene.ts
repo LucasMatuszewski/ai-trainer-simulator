@@ -24,7 +24,7 @@ import {
   OFFICE_BOUNDS,
 } from "../content/npcs";
 import { MAIN_OFFICE_WALLS, WORLD_ROOMS } from "../content/world-layout";
-import { createNpcController } from "./npc-controller";
+import { createNpcController, type NpcController } from "./npc-controller";
 import { createNpcMesh } from "./npc-mesh";
 import { buildMultiRoomMeshes } from "./multi-room";
 import type { NPC, NpcId } from "../types";
@@ -120,6 +120,13 @@ export interface SceneObjects {
   playerStart: THREE.Vector3;
   updatables: Array<(dt: number) => void>;
   multiRoom: THREE.Group[];
+  /**
+   * Handle to the NPC controller. Exposed so the event dispatcher
+   * (and future systems) can install random-walk schedule overrides
+   * without going through the scene's internal `updatables` list
+   * (L-2026-08-30-01).
+   */
+  npcController: NpcController;
 }
 
 export function buildOfficeScene(
@@ -294,6 +301,7 @@ export function buildOfficeScene(
     playerStart: new THREE.Vector3(0, 0.5, 6),
     updatables,
     multiRoom,
+    npcController,
   };
 }
 

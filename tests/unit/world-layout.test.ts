@@ -32,12 +32,13 @@ beforeAll(() => {
 });
 
 describe("WORLD_ROOMS", () => {
-  it("defines the four requested rooms", () => {
+  it("defines the requested rooms (training, kitchen, meeting, CTO, toilet)", () => {
     expect(WORLD_ROOMS.map((room) => room.id)).toEqual([
       "training-room",
       "kitchen",
       "meeting-room",
       "cto-office",
+      "toilet",
     ]);
   });
 
@@ -59,11 +60,13 @@ describe("WORLD_ROOMS", () => {
     }
   });
 
-  it("places the main office doorways on its north, east, and south edges", () => {
-    expect(MAIN_OFFICE_DOORWAYS).toHaveLength(3);
+  it("places the main office doorways on its north, east, south, and south-toilet edges", () => {
+    expect(MAIN_OFFICE_DOORWAYS).toHaveLength(4);
     expect(MAIN_OFFICE_DOORWAYS[0]!.from).toEqual({ minX: -1.25, maxX: 1.25, minZ: -9.5, maxZ: -9 });
     expect(MAIN_OFFICE_DOORWAYS[1]!.from).toEqual({ minX: 9, maxX: 9.5, minZ: -1.25, maxZ: 1.25 });
     expect(MAIN_OFFICE_DOORWAYS[2]!.from).toEqual({ minX: -1.25, maxX: 1.25, minZ: 9, maxZ: 9.5 });
+    // L-2026-08-30-01: south-west corner doorway into the new toilet.
+    expect(MAIN_OFFICE_DOORWAYS[3]!.from).toEqual({ minX: -9, maxX: -8.5, minZ: 9, maxZ: 9.5 });
   });
 
   it("marks the CTO glass wall and Batman sign", () => {

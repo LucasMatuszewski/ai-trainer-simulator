@@ -21,7 +21,7 @@ import { createCameraDirector, type CameraDirector } from "./engine/camera-direc
 import { createControls, type Controls } from "./engine/controls";
 import { game } from "./game/state";
 import { runDailyTick, publishCashflow } from "./game/economy";
-import { runPeriodEvent } from "./game/events";
+import { runPeriodEvent, registerNpcController } from "./game/events";
 import { NPCS } from "./content/npcs";
 import type { GameState, NPC, NpcId } from "./types";
 import { mountHud, renderHud, showToast, type HudElements } from "./ui/hud";
@@ -202,6 +202,14 @@ function startOffice(playIntro = false): void {
     engine = createEngine(canvas);
     const built = buildOfficeScene(engine.scene);
     sceneObjects = built;
+    // L-2026-08-30-01: register the NPC controller with the events
+    // dispatcher so every period transition can roll a random
+    // destination (kitchen, toilet, meeting, training) and install
+    // it as the NPC's schedule override.
+    registerNpcController({
+      setOverride: (id, entry) => built.npcController.setOverride(id, entry),
+      getNpcIds: () => NPCS.map((n) => n.id),
+    });
     cameraDirector = createCameraDirector(engine.camera);
     // Phase 2: WASD walk + first-person camera (C-01) + Pattern D
     // mouse-look (ADR-0007). The player starts at the office door

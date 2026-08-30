@@ -9,7 +9,10 @@ export type NpcState =
   | "coffee"
   | "meeting"
   | "lunch"
-  | "gone-home";
+  | "gone-home"
+  | "toilet"
+  | "training"
+  | "kitchen";
 
 export interface ScheduleEntry {
   position: { x: number; y: number; z: number };
@@ -84,3 +87,47 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
     evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
   },
 };
+
+/**
+ * Random-walk destinations NPCs may pick during a period (L-2026-08-30-01).
+ * Used by `pickRandomDestination` to drop NPCs in the kitchen for a
+ * coffee, the toilet, a meeting, or a training without having to author
+ * a fresh schedule per day. The position is the center of the room
+ * (or a meaningful spot in it); the controller's interpolator handles
+ * the walk there.
+ */
+export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
+  // Coffee / kitchen: stand by the coffee machine, facing it.
+  { position: { x: 11, y: 0, z: -6.2 }, face: Math.PI, state: "coffee" },
+  // Kitchen table: mid-room, facing west.
+  { position: { x: 14, y: 0, z: 2.5 }, face: Math.PI, state: "kitchen" },
+  // Toilet: stand in front of the first stall.
+  { position: { x: -16, y: 0, z: 14.5 }, face: 0, state: "toilet" },
+  // Toilet: at the sink.
+  { position: { x: -14, y: 0, z: 11.5 }, face: 0, state: "toilet" },
+  // Meeting room: by the meeting table.
+  { position: { x: 0, y: 0, z: 14 }, face: 0, state: "meeting" },
+  // Training room: by the lectern (the NPC is teaching).
+  { position: { x: 0, y: 0, z: -16.7 }, face: 0, state: "training" },
+  // Training room: a student chair, mid-room.
+  { position: { x: -2, y: 0, z: -14.1 }, face: 0, state: "training" },
+  { position: { x: 1.5, y: 0, z: -11.4 }, face: 0, state: "training" },
+];
+
+/** Pick a random destination for the given NPC, weighted by role.
+ *  Returns null when the NPC should stay at the desk (e.g. they are
+ *  already at a meeting and it is not yet lunch). */
+export function pickRandomDestination(
+  npcId: NpcId,
+  rng: () => number,
+  _day: number,
+): ScheduleEntry | null {
+  // Weight per-NPC: 70% chance to stay at desk, 30% to do something.
+  // Some NPCs (the manager) have a stronger pull to meetings; the
+  // dog (Burek) has a higher pull to the kitchen / toilet.
+  const r = rng();
+  const stay = npcId === "burek" ? 0.6 : npcId === "zosia" ? 0.5 : 0.7;
+  if (r < stay) return null;
+  const idx = Math.floor(rng() * RANDOM_DESTINATIONS.length);
+  return RANDOM_DESTINATIONS[idx] ?? null;
+}

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { NPC_SCHEDULES, type Period } from "../../src/content/npc-schedule";
+import {
+  NPC_SCHEDULES,
+  pickRandomDestination,
+  RANDOM_DESTINATIONS,
+  type Period,
+} from "../../src/content/npc-schedule";
 import { NPCS, OFFICE_BOUNDS } from "../../src/content/npcs";
 import type { NpcId } from "../../src/types";
 
@@ -88,5 +93,63 @@ describe("NPC schedules", () => {
 
   it("sends Grazyna home in the evening", () => {
     expect(getScheduleFor("grazyna", "evening").state).toBe("gone-home");
+  });
+});
+
+describe("Random walk destinations (L-2026-08-30-01)", () => {
+  it("defines destinations for kitchen, toilet, meeting, and training", () => {
+    const states = new Set(RANDOM_DESTINATIONS.map((d) => d.state));
+    expect(states.has("coffee")).toBe(true);
+    expect(states.has("kitchen")).toBe(true);
+    expect(states.has("toilet")).toBe(true);
+    expect(states.has("meeting")).toBe(true);
+    expect(states.has("training")).toBe(true);
+  });
+
+  it("places the toilet destinations inside the toilet room bounds", () => {
+    // Toilet floor: x:[-19, -9], z:[9, 19].
+    for (const dest of RANDOM_DESTINATIONS) {
+      if (dest.state === "toilet") {
+        expect(dest.position.x).toBeGreaterThanOrEqual(-19);
+        expect(dest.position.x).toBeLessThanOrEqual(-9);
+        expect(dest.position.z).toBeGreaterThanOrEqual(9);
+        expect(dest.position.z).toBeLessThanOrEqual(19);
+      }
+    }
+  });
+
+  it("places the training destinations inside the training room bounds", () => {
+    for (const dest of RANDOM_DESTINATIONS) {
+      if (dest.state === "training") {
+        expect(dest.position.x).toBeGreaterThanOrEqual(-8);
+        expect(dest.position.x).toBeLessThanOrEqual(8);
+        expect(dest.position.z).toBeGreaterThanOrEqual(-19);
+        expect(dest.position.z).toBeLessThanOrEqual(-9);
+      }
+    }
+  });
+
+  it("places the kitchen destinations inside the kitchen bounds", () => {
+    for (const dest of RANDOM_DESTINATIONS) {
+      if (dest.state === "coffee" || dest.state === "kitchen") {
+        expect(dest.position.x).toBeGreaterThanOrEqual(9);
+        expect(dest.position.x).toBeLessThanOrEqual(19);
+        expect(dest.position.z).toBeGreaterThanOrEqual(-7);
+        expect(dest.position.z).toBeLessThanOrEqual(7);
+      }
+    }
+  });
+
+  it("returns null or a ScheduleEntry (never throws) for any NPC", () => {
+    for (const npc of NPCS) {
+      for (let i = 0; i < 25; i += 1) {
+        const r = pickRandomDestination(npc.id, () => (i / 25 + npc.id.length) % 1, i + 1);
+        if (r !== null) {
+          expect(r.position.x).toBeDefined();
+          expect(r.position.z).toBeDefined();
+          expect(["coffee", "kitchen", "toilet", "meeting", "training"]).toContain(r.state);
+        }
+      }
+    }
   });
 });

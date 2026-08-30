@@ -63,7 +63,12 @@ export const MAIN_OFFICE_WALLS: WorldWall[] = [
   wall("main-north-east", 1.25, 9, -9.5, -9),
   wall("main-east-north", 9, 9.5, -9, -1.25),
   wall("main-east-south", 9, 9.5, 1.25, 9),
-  wall("main-south-west", -9, -1.25, 9, 9.5),
+  // L-2026-08-30-01: south wall split to leave a doorway into the
+  // toilet room (gap from x=-9 to x=-8.5 at z=9..9.5). The toilet
+  // room's own south wall (inside the toilet) doubles as the main
+  // office's south wall for that x range, so the main office does
+  // not need a separate wall segment there.
+  wall("main-south-west", -8.5, -1.25, 9, 9.5),
   wall("main-south-east", 1.25, 9, 9, 9.5),
   wall("main-west", -9.5, -9, -9, 9),
 ];
@@ -83,6 +88,14 @@ export const MAIN_OFFICE_DOORWAYS: WorldDoorway[] = [
     "main-to-meeting",
     { minX: -1.25, maxX: 1.25, minZ: 9, maxZ: 9.5 },
     { minX: -1.25, maxX: 1.25, minZ: 8.5, maxZ: 9 },
+  ),
+  // L-2026-08-30-01: doorway to the new toilet room off the
+  // south-west corner of the main office. The main office's south
+  // wall has a gap here for the door.
+  gap(
+    "main-to-toilet",
+    { minX: -9, maxX: -8.5, minZ: 9, maxZ: 9.5 },
+    { minX: -8.5, maxX: -9, minZ: 9, maxZ: 9.5 },
   ),
 ];
 
@@ -207,9 +220,46 @@ export const WORLD_ROOMS: WorldRoom[] = [
     ],
     signs: [{ text: "BATMAN", position: [24, 1.65, -12.72], face: 0, color: 0xffdd22, size: [4.5, 2.5] }],
   },
+  {
+    // L-2026-08-30-01: "NPCs should RANDOMLY walk to: the toilet (a new
+    // room to be added)." The toilet is a small back-corner room off
+    // the main office, south-west, with two stalls, a sink, and the
+    // mandatory "OUT OF ORDER" sign (IT Crowd homage).
+    id: "toilet",
+    name: "Toilet",
+    floor: { minX: -19, maxX: -9, minZ: 9, maxZ: 19 },
+    walls: [
+      wall("toilet-west", -19.5, -19, 9, 19),
+      wall("toilet-north", -19, -9, 19, 19.5),
+      wall("toilet-east-north", -9, -8.78, 19, 17.75),
+      wall("toilet-east-south", -9, -8.78, 10.25, 9),
+      // The south wall sits inside the toilet at z=[9, 9.5]. There
+      // is a doorway gap at x=[-9, -8.5], z=[9, 9.5] so the player
+      // can pass from the main office to the toilet.
+      wall("toilet-south", -19, -8.5, 9, 9.5),
+    ],
+    doorways: [
+      gap(
+        "toilet-to-main",
+        { minX: -9, maxX: -8.5, minZ: 9, maxZ: 9.5 },
+        { minX: -9, maxX: -8.5, minZ: 9, maxZ: 9.5 },
+      ),
+    ],
+    floorColor: 0xb0b6c0,
+    wallColor: 0xd6dee5,
+    furniture: [
+      { type: "toilet-stall", position: [-16, 0.5, 16], size: [1.2, 1.6, 1.6] },
+      { type: "toilet-stall", position: [-12, 0.5, 16], size: [1.2, 1.6, 1.6] },
+      { type: "sink", position: [-14, 0.55, 11.5], size: [2, 1.1, 0.6] },
+    ],
+    signs: [
+      { text: "WC", position: [-12, 2.2, 8.86], face: 0, color: 0x4477aa },
+      { text: "OUT OF ORDER (just the one with the good vibes)", position: [-16, 1.7, 14.8], face: Math.PI, color: 0xaa3322, size: [2, 0.6] },
+    ],
+  },
 ];
 
-export const WORLD_BOUNDS: AABB = { minX: -9, maxX: 27, minZ: -19, maxZ: 19 };
+export const WORLD_BOUNDS: AABB = { minX: -19, maxX: 27, minZ: -19, maxZ: 19 };
 
 /** Static walls used by player collision. Glass is visual/raycast-only. */
 export const WORLD_COLLISION_WALLS: readonly AABB[] = [

@@ -20,6 +20,14 @@ export const NPC_INTERP_DURATION = 2;
 export interface NpcController {
   update: (dt: number) => void;
   destroy: () => void;
+  /**
+   * Override the schedule for a specific NPC for the current period.
+   * Used by the random-walk layer (L-2026-08-30-01) to drop an NPC in
+   * the kitchen / toilet / meeting / training room without authoring
+   * a fresh schedule entry. The override persists until cleared or
+   * the period changes.
+   */
+  setOverride: (npcId: NpcId, entry: ScheduleEntry | null) => void;
 }
 
 export interface InterpolatedNpc {
@@ -94,6 +102,11 @@ export function createNpcController(
   let timeSinceLastBubble = 0;
   let idleElapsed = 0;
   const idleStates = new Map<NpcId, IdleState>();
+  // Per-NPC schedule override (L-2026-08-30-01). When set, the
+  // controller interpolates from the previous period's position to
+  // the override entry instead of the schedule entry. Cleared on
+  // period change so each new period starts from a clean slate.
+  const overrides = new Map<NpcId, ScheduleEntry>();
   const firstNpc = npcs[0];
   let root: THREE.Object3D | null = firstNpc === undefined ? null : npcObjects[firstNpc.id];
   while (root?.parent) root = root.parent;
@@ -137,6 +150,10 @@ export function createNpcController(
       lastPeriod = currentPeriod;
       transitionElapsed = 0;
       animationElapsed = 0;
+      // Each new period starts from a clean schedule; previous
+      // random-walk overrides (e.g. yesterday's coffee break) are
+      // discarded.
+      overrides.clear();
     }
 
     if (!isInitialUpdate) {
@@ -147,11 +164,21 @@ export function createNpcController(
 
       for (const npc of npcs) {
         const from = NPC_SCHEDULES[npc.id][fromPeriod];
-        const to = NPC_SCHEDULES[npc.id][currentPeriod];
+        const scheduledTo = NPC_SCHEDULES[npc.id][currentPeriod];
+        const override = overrides.get(npc.id);
+        const to = override ?? scheduledTo;
         const arriving = from.state === "gone-home" && to.state !== "gone-home";
         const result = arriving
-          ? interpolate(npc.id, currentPeriod, currentPeriod, 1)
-          : interpolate(npc.id, fromPeriod, currentPeriod, progress);
+          ? {
+              position: to.position,
+              face: to.face,
+              state: to.state,
+            }
+          : {
+              position: interpPosition(from.position, to.position, progress),
+              face: shortestPathYaw(from.face, to.face, progress),
+              state: progress < 1 ? "walking" : to.state,
+            };
         applyEntry(npc.id, result, result.state === "walking");
       }
     }
@@ -192,6 +219,10 @@ export function createNpcController(
     destroy: () => {
       destroyed = true;
       bubbleSystem?.destroy();
+    },
+    setOverride: (npcId, entry) => {
+      if (entry === null) overrides.delete(npcId);
+      else overrides.set(npcId, entry);
     },
   };
 }

@@ -9,6 +9,11 @@
  *
  * This is the "simulation" feel: between NPC dialogues, the office generates
  * small slices of IT life that the player reacts to.
+ *
+ * L-2026-08-30-01 also asks that NPCs RANDOMLY walk to the kitchen,
+ * toilet, meeting, or training. We do that here: every period, we
+ * roll once per NPC and (if the controller is exposed) install the
+ * random destination as the NPC's schedule override for this period.
  */
 
 import { game } from "./state";
@@ -19,7 +24,49 @@ import {
   type RandomEvent,
   type RandomEventEffect,
 } from "../content/events";
-import type { GameState } from "../types";
+import {
+  pickRandomDestination,
+  type ScheduleEntry,
+} from "../content/npc-schedule";
+import type { GameState, NpcId } from "../types";
+
+/**
+ * The NPC controller, if mounted. When set, the dispatcher will roll
+ * a random destination per NPC every period and install the result as
+ * the NPC's schedule override. Wired up by main.ts after the scene
+ * builds.
+ */
+let npcControllerHooks: {
+  setOverride: (npcId: NpcId, entry: ScheduleEntry | null) => void;
+  getNpcIds: () => readonly NpcId[];
+} | null = null;
+
+/** Register the NPC controller so we can push random destinations. */
+export function registerNpcController(
+  controller: {
+    setOverride: (npcId: NpcId, entry: ScheduleEntry | null) => void;
+    getNpcIds: () => readonly NpcId[];
+  },
+): void {
+  npcControllerHooks = controller;
+}
+
+/** Apply a random destination to every NPC for the current period. */
+function rollRandomNpcDestinations(period: Period): void {
+  if (!npcControllerHooks) return;
+  const state = game.get();
+  // Roll per-NPC. PickRandomDestination returns null when the NPC
+  // should stay at the desk (70% of the time on average).
+  for (const npcId of npcControllerHooks.getNpcIds()) {
+    const dest = pickRandomDestination(npcId, Math.random, state.day);
+    npcControllerHooks.setOverride(npcId, dest);
+  }
+  // The `period` argument is not yet used by the destination roll
+  // (destinations are time-agnostic), but it is in the signature so
+  // future morning/evening variations can be added without a
+  // breaking change.
+  void period;
+}
 
 /** Pick a weighted random event that is eligible for the current state + period. */
 export function pickRandomEvent(state: Readonly<GameState>, period: Period): RandomEvent | null {
@@ -41,6 +88,11 @@ export function pickRandomEvent(state: Readonly<GameState>, period: Period): Ran
 
 /** Fire a single random event for the current period. Mutates state via the reducer. */
 export function runPeriodEvent(hud: HudElements | null, period: Period): RandomEvent | null {
+  // L-2026-08-30-01: roll a random destination per NPC first so the
+  // player sees NPCs walking to the kitchen / toilet / meeting /
+  // training as soon as the new period starts.
+  rollRandomNpcDestinations(period);
+
   const event = pickRandomEvent(game.get(), period);
   if (!event) return null;
   applyEffects(event.effects);
