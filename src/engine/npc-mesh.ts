@@ -111,9 +111,14 @@ function createFemaleMesh(bodyColor: number, hairColor: number, shirtColor: numb
     box("body", [0.5, 0.85, 0.4], bodyMaterial, [0, 0.575, 0]),
     createHumanoidHead(hairColor, true),
   );
+  // L-2026-08-30 missed feedback (msg #110): "Man has Brest!!!
+  // Brest has different color than the rest of the shirt!!!"
+  // The chest is rendered in a CHEST color (a darker shade of the
+  // shirt) so the two-tone shirt reads as a deliberate v-neck
+  // accent, not a clipping glitch.
   const chest = new THREE.Mesh(
     new THREE.SphereGeometry(chestRadiusForNpc(npcId), 8, 6),
-    new THREE.MeshLambertMaterial({ color: shirtColor }),
+    new THREE.MeshLambertMaterial({ color: darkenColor(shirtColor, 0.7) }),
   );
   chest.name = "chest";
   chest.position.set(0, 0.78, 0.22);
@@ -122,6 +127,14 @@ function createFemaleMesh(bodyColor: number, hairColor: number, shirtColor: numb
   addHumanoidLegs(group);
   addHumanoidArms(group, bodyColor, 0.22);
   return group;
+}
+
+/** Darken a 24-bit RGB color by `factor` (0..1). Factor 1 = unchanged. */
+function darkenColor(rgb: number, factor: number): number {
+  const r = Math.round(((rgb >> 16) & 0xff) * factor);
+  const g = Math.round(((rgb >> 8) & 0xff) * factor);
+  const b = Math.round((rgb & 0xff) * factor);
+  return (r << 16) | (g << 8) | b;
 }
 
 function addClothing(group: THREE.Group, clothing: NpcClothing): void {
