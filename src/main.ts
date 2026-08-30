@@ -742,7 +742,10 @@ frame();
 // matters here; the prod build embeds the same string via
 // `vite build`'s `define` (TODO if/when we add a CI pipeline).
 // ---------------------------------------------------------------
-const BUILD_VERSION = "v2026.08.29-15";
+// Bump after every commit so the console line in the browser
+// confirms the user is on the right build. See AGENTS.md
+// "Verify the build you are testing" section.
+const BUILD_VERSION = "v2026.08.30-12";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,

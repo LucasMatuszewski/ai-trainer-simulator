@@ -139,6 +139,24 @@ This is the project's north star. Every phase is checked against this mandate be
 
 The mandate is captured in PRD §13 C-26 and the plan's Endgame additions (C-26). The agent reviews C-26 at the start of every phase and reports progress against it.
 
+### PR-12: Lucas's feedback is captured before it gets lost (2026-08-30)
+
+Every message from Lucas may contain feedback that must not be
+forgotten between sessions. The agent MUST:
+
+1. **Write the feedback to `docs/LUCAS-FEEDBACK-INDEX.md`** before
+   doing anything else. The entry is timestamped, has a unique
+   id (`L-YYYY-MM-DD-NN`), and lists every concrete item from
+   the message.
+2. **Cross-reference** the items to be added in `docs/PRD.md`
+   (new §13 entry) and the plan file
+   (`~/.claude/plans/glistening-napping-hinton.md`).
+3. **Create new ADRs** for any technical decision that emerges
+   (e.g. ADR-0010, ADR-0011, ADR-0012).
+4. **Link the index from this file** so future agents find it.
+
+The index is a running log; never delete or compress entries.
+
 ### PR-11: TDD methodology for every feature (2026-08-30)
 
 The TDD rule in PR-8 covers pure functions. It does not cover data files, event-loop handlers, or the "did the test actually catch the bug?" verification step. This rule extends PR-8 to cover all of those.
@@ -160,6 +178,40 @@ The TDD rule in PR-8 covers pure functions. It does not cover data files, event-
 4. **Test naming.** The test file mirrors the source file: `src/foo/bar.ts` is tested by `tests/unit/foo/bar.test.ts` (or `tests/foo/bar.spec.ts` for E2E). The test cases describe the expected behavior in plain English, e.g. "stops after one keyup following repeated W keydowns" not "test 1".
 
 5. **Tests run before the commit is created.** A commit that adds a feature without a passing test for it is reversed and rewritten. Agents verify by running `pnpm test` (and `pnpm test:e2e` for end-to-end) and pasting the test results into the commit body.
+
+### PR-13: Verify the build you are testing (2026-08-30, from Lucas)
+
+Lucas has been bitten multiple times by stale preview servers
+running from previous sessions. The symptom: an agent says "I
+fixed it", Lucas reloads, and the fix is not there. Root cause:
+the dev server (`pnpm dev` on 5173) or the preview server
+(`pnpm preview` on 4173) was started by a previous session and
+serves an old bundle.
+
+The mandatory verification, every time you take a screenshot or
+hand control back to Lucas:
+
+1. **Kill any leftover vite / preview / esbuild processes before
+   starting a fresh one.** Multiple sessions leave zombie
+   processes; the right move is `pkill -f vite` (or
+   `ps aux | grep vite | awk '{print $2}' | xargs kill`) then
+   start a single fresh dev server.
+2. **Use 5173 (the dev server) by default**, not 4173. 5173 has
+   HMR so saves reload automatically. 4173 is a static preview of
+   `dist/` and only updates after `pnpm build`. PR-2 already
+   documents this; PR-13 makes it the only path.
+3. **Read the console line.** `main.ts` prints a build version
+   on startup: `AI Trainer Simulator vYYYY.MM.DD-NN`. The
+   `BUILD_VERSION` constant lives at the bottom of `src/main.ts`
+   and is bumped on every commit. The agent MUST bump it as part
+   of every commit (`vYYYY.MM.DD-NN` where NN is the next ordinal
+   for the day, counting from 1). The agent MUST read the
+   console line in the Playwright snapshot and confirm it matches
+   the latest commit before claiming "fixed" or "screenshot
+   attached".
+4. **No `pnpm dev` until the previous process is dead.** The
+   dev server is single-tenant; starting a second one binds to a
+   different port and Lucas cannot tell which one is current.
 
 ## Current design direction (post-2026-08-29 corrections)
 
