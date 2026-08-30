@@ -26,4 +26,16 @@ describe("humanoid head parenting", () => {
 
     expect(after.y - before.y).toBeCloseTo(0.1);
   });
+
+  it("does not add a chest to a male NPC", () => {
+    expect(createNpcMesh("male", 0, "bartek").getObjectByName("chest")).toBeUndefined();
+  });
+
+  it("adds exactly one chest to a female NPC", () => {
+    const chests: THREE.Object3D[] = [];
+    createNpcMesh("female", 0, "klaudia").traverse((child) => {
+      if (child.name === "chest") chests.push(child);
+    });
+    expect(chests).toHaveLength(1);
+  });
 });

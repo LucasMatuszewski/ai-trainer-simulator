@@ -39,7 +39,7 @@ export const NPCS: NPC[] = [
     role: "The LinkedIn Influencer",
     emoji: "K",
     gender: "female",
-    position: { x: 4, y: 0, z: -2.0 },
+    position: { x: -7, y: 0, z: -2.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.klaudia!.default!,
@@ -51,7 +51,7 @@ export const NPCS: NPC[] = [
     role: "DevOps / 10x Engineer",
     emoji: "M",
     gender: "male",
-    position: { x: -4, y: 0, z: 4.0 },
+    position: { x: 7, y: 0, z: -2.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.marek!.default!,
@@ -87,7 +87,7 @@ export const NPCS: NPC[] = [
     role: "The Recruiter",
     emoji: "📱",
     gender: "female",
-    position: { x: 7, y: 0, z: -2.0 },
+    position: { x: -4, y: 0, z: 4.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.kasia!.default!,
@@ -99,7 +99,7 @@ export const NPCS: NPC[] = [
     role: "Junior Developer",
     emoji: "🐛",
     gender: "male",
-    position: { x: -7, y: 0, z: -2.0 },
+    position: { x: 4, y: 0, z: -2.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.tomek!.default!,
@@ -111,7 +111,7 @@ export const NPCS: NPC[] = [
     role: "Marketing & Synergy",
     emoji: "📣",
     gender: "female",
-    position: { x: 7, y: 0, z: 1.0 },
+    position: { x: -7, y: 0, z: 1.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.ania!.default!,
@@ -123,7 +123,7 @@ export const NPCS: NPC[] = [
     role: "The Janitor",
     emoji: "🧹",
     gender: "male",
-    position: { x: -7, y: 0, z: 1.0 },
+    position: { x: 7, y: 0, z: 1.0 },
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.janusz!.default!,
@@ -192,6 +192,27 @@ export interface Obstacle {
   label?: string;
 }
 
+export interface FloorDecorationPlacement {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  radius: number;
+}
+
+export const MAIN_OFFICE_PLANTS: readonly FloorDecorationPlacement[] = [
+  { id: "plant-north-west", x: -8.5, y: 0, z: -8.5, radius: 0.35 },
+  { id: "plant-north-wall", x: -6, y: 0, z: -8.5, radius: 0.35 },
+];
+
+export const MAIN_OFFICE_FILE_CABINETS = [
+  { id: "filing-cabinet-north", x: 8.7, z: -5, rotationY: -Math.PI / 2 },
+  { id: "filing-cabinet-south", x: 8.7, z: 2, rotationY: -Math.PI / 2 },
+] as const;
+
+/** Server front is local +Z; pi turns it north from the south-west corner. */
+export const MAIN_OFFICE_SERVER_RACK_ROTATION_Y = Math.PI;
+
 export const OBSTACLES: Obstacle[] = [
   // Desks — width 2m, depth 1m (was 2m × 2m). Each NPC now sits at the
   // FRONT (+Z) edge of the desk in their chair, not at the center. The
@@ -213,11 +234,14 @@ export const OBSTACLES: Obstacle[] = [
   // Center meeting table — unchanged. The user only mentioned desks.
   { id: "meeting-table", minX: -2, maxX: 2, minZ: -1, maxZ: 1, label: "Meeting table" },
   // Server rack
-  { id: "server-rack", minX: -8, maxX: -7, minZ: 7, maxZ: 9, label: "Server rack" },
+  { id: "server-rack", minX: -8.5, maxX: -7.5, minZ: 7.5, maxZ: 8.5, label: "Server rack" },
   // Coffee machine
-  { id: "coffee-machine", minX: 7, maxX: 8, minZ: -8, maxZ: -7, label: "Coffee machine" },
+  { id: "coffee-machine", minX: 7.5, maxX: 8.5, minZ: -8.5, maxZ: -7.5, label: "Coffee machine" },
   // Vending machine
-  { id: "vending", minX: 7, maxX: 8, minZ: 7, maxZ: 9, label: "Vending machine" },
+  { id: "vending", minX: 7.5, maxX: 8.5, minZ: 7.5, maxZ: 8.5, label: "Vending machine" },
+  // Filing cabinets, flush with the east wall rather than free-standing.
+  { id: "filing-cabinet-north", minX: 8.45, maxX: 8.95, minZ: -5.2, maxZ: -4.8, label: "Filing cabinet" },
+  { id: "filing-cabinet-south", minX: 8.45, maxX: 8.95, minZ: 1.8, maxZ: 2.2, label: "Filing cabinet" },
 ];
 
 /** Player starts here. Inside the office, south side, away from walls. */

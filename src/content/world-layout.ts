@@ -17,6 +17,7 @@ export interface WorldFurniture {
   type: string;
   position: Vector3Tuple;
   size?: Vector3Tuple;
+  rotationY?: number;
   color?: number;
   label?: string;
 }
@@ -105,7 +106,8 @@ export const WORLD_ROOMS: WorldRoom[] = [
     furniture: [
       { type: "projector-screen", position: [0, 1.7, -18.7], size: [5, 2.2, 0.12] },
       { type: "lectern", position: [0, 0.6, -16.7], size: [1.2, 1.2, 0.8] },
-      { type: "whiteboard", position: [-7.75, 1.5, -14], size: [0.12, 2, 4] },
+      // The 0.12 m-deep board is flush with the west wall's inner face at x=-8.
+      { type: "whiteboard", position: [-7.94, 1.5, -14], size: [0.12, 2, 4], rotationY: 0 },
       ...[-5.8, -3.9, -2, -0.1].flatMap((z) =>
         [-4.5, -1.5, 1.5, 4.5].map((x) => ({
           type: "chair",

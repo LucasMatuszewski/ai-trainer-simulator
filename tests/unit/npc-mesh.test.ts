@@ -31,6 +31,11 @@ describe("createNpcMesh", () => {
     expect(boxDimensions(femaleBody).width).toBeLessThan(boxDimensions(maleBody).width);
   });
 
+  it("adds a chest only to female NPCs", () => {
+    expect(createNpcMesh("male", 0, "bartek").getObjectByName("chest")).toBeUndefined();
+    expect(namedMesh(createNpcMesh("female", 0, "klaudia"), "chest")).toBeDefined();
+  });
+
   it("gives both humanoid silhouettes a head, body, two legs, and two eyes", () => {
     for (const gender of ["male", "female"] as const) {
       const group = createNpcMesh(gender);

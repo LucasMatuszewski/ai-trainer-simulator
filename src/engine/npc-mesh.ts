@@ -6,6 +6,35 @@ const BODY_COLORS = [0x884422, 0x224488, 0x448822, 0x882244, 0x886622];
 const HAIR_COLORS = [0x442211, 0xccaa22, 0x222222];
 const SKIN_COLOR = 0xffd0a8;
 const DARK_CLOTHING = 0x222244;
+const SHIRT_COLORS = [0x3b82f6, 0xef4444, 0x22c55e, 0xf59e0b, 0x8b5cf6];
+
+export interface NpcClothing {
+  shirt: boolean;
+  lowerBody: "none" | "trousers" | "skirt";
+  shoes: boolean;
+  shirtColor: number;
+}
+
+function hashNpcId(id: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < id.length; index += 1) {
+    hash ^= id.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+/** Return stable clothing choices for an NPC id. */
+export function clothingForNpc(id: string, gender: Exclude<NpcMeshGender, "dog">): NpcClothing {
+  const hash = hashNpcId(id);
+  const lowerBodyIndex = (hash >>> 8) % 3;
+  return {
+    shirt: (hash & 1) === 0,
+    lowerBody: lowerBodyIndex === 0 ? "none" : lowerBodyIndex === 1 ? "trousers" : gender === "female" ? "skirt" : "none",
+    shoes: ((hash >>> 16) & 1) === 0,
+    shirtColor: SHIRT_COLORS[(hash >>> 24) % SHIRT_COLORS.length]!,
+  };
+}
 
 function box(
   name: string,
@@ -49,11 +78,11 @@ function addHumanoidLegs(group: THREE.Group): void {
   );
 }
 
-function addHumanoidArms(group: THREE.Group, bodyColor: number): void {
+function addHumanoidArms(group: THREE.Group, bodyColor: number, x = 0.38): void {
   const material = new THREE.MeshLambertMaterial({ color: bodyColor });
   group.add(
-    box("arm-left", [0.14, 0.65, 0.16], material, [-0.38, 0.72, 0]),
-    box("arm-right", [0.14, 0.65, 0.16], material, [0.38, 0.72, 0]),
+    box("arm-left", [0.14, 0.65, 0.16], material, [-x, 0.72, 0]),
+    box("arm-right", [0.14, 0.65, 0.16], material, [x, 0.72, 0]),
   );
 }
 
@@ -70,23 +99,54 @@ function createMaleMesh(bodyColor: number, hairColor: number): THREE.Group {
   return group;
 }
 
-function createFemaleMesh(bodyColor: number, hairColor: number): THREE.Group {
+function chestRadiusForNpc(id: string): number {
+  const variation = 0.7 + ((hashNpcId(id) >>> 12) & 0xff) / 255 * 0.6;
+  return 0.08 * variation;
+}
+
+function createFemaleMesh(bodyColor: number, hairColor: number, shirtColor: number, npcId: string): THREE.Group {
   const group = new THREE.Group();
+  const bodyMaterial = new THREE.MeshLambertMaterial({ color: bodyColor });
   group.add(
-    box("body", [0.45, 0.85, 0.4], new THREE.MeshLambertMaterial({ color: bodyColor }), [0, 0.575, 0]),
+    box("body", [0.5, 0.85, 0.4], bodyMaterial, [0, 0.575, 0]),
     createHumanoidHead(hairColor, true),
   );
-  const skirt = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.38, 0.27, 0.5, 4),
-    new THREE.MeshLambertMaterial({ color: bodyColor }),
+  const chest = new THREE.Mesh(
+    new THREE.SphereGeometry(chestRadiusForNpc(npcId), 8, 6),
+    new THREE.MeshLambertMaterial({ color: shirtColor }),
   );
-  skirt.name = "skirt";
-  skirt.position.y = 0.45;
-  skirt.rotation.y = Math.PI / 4;
-  group.add(skirt);
+  chest.name = "chest";
+  chest.position.set(0, 0.78, 0.22);
+  chest.scale.set(1.35, 0.7, 0.55);
+  group.add(chest);
   addHumanoidLegs(group);
-  addHumanoidArms(group, bodyColor);
+  addHumanoidArms(group, bodyColor, 0.22);
   return group;
+}
+
+function addClothing(group: THREE.Group, clothing: NpcClothing): void {
+  if (clothing.shirt) {
+    group.add(box("clothing-shirt", [0.42, 0.3, 0.3], new THREE.MeshLambertMaterial({ color: clothing.shirtColor }), [0, 0.75, 0.21]));
+  }
+  if (clothing.lowerBody === "trousers") {
+    group.add(box("clothing-trousers", [0.3, 0.4, 0.3], new THREE.MeshLambertMaterial({ color: DARK_CLOTHING }), [0, 0.28, 0]));
+  } else if (clothing.lowerBody === "skirt") {
+    const skirt = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.225, 0.175, 0.5, 4),
+      new THREE.MeshLambertMaterial({ color: DARK_CLOTHING }),
+    );
+    skirt.name = "clothing-skirt";
+    skirt.position.y = 0.4;
+    skirt.rotation.y = Math.PI / 4;
+    group.add(skirt);
+  }
+  if (clothing.shoes) {
+    const shoeMaterial = new THREE.MeshLambertMaterial({ color: 0x171717 });
+    group.add(
+      box("shoe-left", [0.2, 0.12, 0.34], shoeMaterial, [-0.15, 0.06, 0.04]),
+      box("shoe-right", [0.2, 0.12, 0.34], shoeMaterial, [0.15, 0.06, 0.04]),
+    );
+  }
 }
 
 function createDogMesh(): THREE.Group {
@@ -119,13 +179,17 @@ function createDogMesh(): THREE.Group {
 }
 
 /** Create a low-poly NPC whose local origin is at floor level. */
-export function createNpcMesh(gender: NpcMeshGender, paletteIndex = 0): THREE.Group {
+export function createNpcMesh(gender: NpcMeshGender, paletteIndex = 0, npcId = String(paletteIndex)): THREE.Group {
   if (gender === "dog") return createDogMesh();
 
   const normalizedIndex = Math.abs(Math.trunc(paletteIndex));
   const bodyColor = BODY_COLORS[normalizedIndex % BODY_COLORS.length]!;
   const hairColor = HAIR_COLORS[normalizedIndex % HAIR_COLORS.length]!;
-  return gender === "female"
-    ? createFemaleMesh(bodyColor, hairColor)
+  const clothing = clothingForNpc(npcId, gender);
+  const group = gender === "female"
+    ? createFemaleMesh(bodyColor, hairColor, clothing.shirtColor, npcId)
     : createMaleMesh(bodyColor, hairColor);
+  group.userData.clothing = clothing;
+  addClothing(group, clothing);
+  return group;
 }

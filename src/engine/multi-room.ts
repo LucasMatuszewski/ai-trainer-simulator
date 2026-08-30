@@ -164,6 +164,7 @@ function makeFurniture(item: WorldFurniture): THREE.Mesh {
   mesh.userData.kind = "furniture";
   mesh.userData.furnitureType = item.type;
   mesh.position.set(...item.position);
+  mesh.rotation.y = item.rotationY ?? 0;
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   return mesh;

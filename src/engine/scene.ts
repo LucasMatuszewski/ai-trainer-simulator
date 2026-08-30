@@ -15,7 +15,14 @@
 
 import * as THREE from "three";
 import type { Period } from "../content/npc-schedule";
-import { NPCS, OBSTACLES, OFFICE_BOUNDS } from "../content/npcs";
+import {
+  MAIN_OFFICE_FILE_CABINETS,
+  MAIN_OFFICE_PLANTS,
+  MAIN_OFFICE_SERVER_RACK_ROTATION_Y,
+  NPCS,
+  OBSTACLES,
+  OFFICE_BOUNDS,
+} from "../content/npcs";
 import { MAIN_OFFICE_WALLS, WORLD_ROOMS } from "../content/world-layout";
 import { createNpcController } from "./npc-controller";
 import { createNpcMesh } from "./npc-mesh";
@@ -226,6 +233,9 @@ export function buildOfficeScene(
       scene.add(makeMeetingTable(cx, cz, w, d));
     } else if (obs.id === "server-rack") {
       const r = makeServerRack(cx, cz, w, d);
+      // Its LED/front panel is local +Z. Turn it north into the office from
+      // the south-west corner instead of presenting its back to the room.
+      r.mesh.rotation.y = MAIN_OFFICE_SERVER_RACK_ROTATION_Y;
       scene.add(r.mesh);
       updatables.push(r.update);
     } else if (obs.id === "coffee-machine") {
@@ -237,19 +247,22 @@ export function buildOfficeScene(
     }
   }
 
-  // ---- Decoration: potted plant in the corner.
-  scene.add(makePlant(-8, -8));
-  scene.add(makePlant(8, 7.5));
+  // ---- Decoration: floor plants kept clear of furniture footprints.
+  for (const plant of MAIN_OFFICE_PLANTS) scene.add(makePlant(plant.x, plant.z));
 
   // Fire extinguisher near the kitchen
-  scene.add(makeFireExtinguisher(7.5, -6));
+  scene.add(makeFireExtinguisher(8.85, -6));
 
-  // Filing cabinet next to a desk
-  scene.add(makeFileCabinet(7, -5));
-  scene.add(makeFileCabinet(7, 2));
+  // Filing cabinets mounted along the east wall.
+  for (const cabinet of MAIN_OFFICE_FILE_CABINETS) {
+    const mesh = makeFileCabinet(cabinet.x, cabinet.z);
+    mesh.name = cabinet.id;
+    mesh.rotation.y = cabinet.rotationY;
+    scene.add(mesh);
+  }
 
   // Tall floor lamp in a corner for warm light
-  scene.add(makeFloorLamp(-8, 6));
+  scene.add(makeFloorLamp(-8.5, 6));
 
   // ---- NPC markers (chunky characters with bodies, heads, hair, eyes).
   const npcMeshes = new Map<string, THREE.Mesh>();
@@ -759,6 +772,7 @@ function makeServerRack(cx: number, cz: number, w: number, d: number): {
   update: (dt: number) => void;
 } {
   const g = new THREE.Group();
+  g.name = "server-rack";
   const body = new THREE.Mesh(
     new THREE.BoxGeometry(w, 2, d),
     new THREE.MeshLambertMaterial({ color: COLORS.serverRack }),
@@ -1027,7 +1041,7 @@ function makeFloorLamp(x: number, z: number): THREE.Group {
 // -------- NPCs --------
 
 function makeNpcMarker(npc: NPC, index: number): THREE.Group {
-  const g = createNpcMesh(npc.gender, index);
+  const g = createNpcMesh(npc.gender, index, npc.id);
   g.position.set(npc.position.x, 0, npc.position.z);
   // Desks have their monitor on the -Z side and the keyboard on the +Z side,
   // so the NPC should look toward -Z to see their own screen. The marker was
