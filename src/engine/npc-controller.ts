@@ -13,6 +13,7 @@ import {
   pickLine,
   shouldShowBubble,
 } from "./bubbles";
+import { createInitialIdleState, updateIdle, type IdleState } from "./npc-idle";
 
 export const NPC_INTERP_DURATION = 2;
 
@@ -91,6 +92,8 @@ export function createNpcController(
   let destroyed = false;
   let dtBubbleCheck = 0;
   let timeSinceLastBubble = 0;
+  let idleElapsed = 0;
+  const idleStates = new Map<NpcId, IdleState>();
   const firstNpcObject = npcObjects[npcs[0]?.id ?? "bartek"];
   let root: THREE.Object3D = firstNpcObject;
   while (root.parent !== null) root = root.parent;
@@ -114,6 +117,7 @@ export function createNpcController(
     if (destroyed) return;
 
     const safeDt = Math.max(0, dt);
+    idleElapsed += safeDt;
     dtBubbleCheck += safeDt;
     timeSinceLastBubble += safeDt;
     if (bubbleSystem !== null) {
@@ -149,6 +153,16 @@ export function createNpcController(
           : interpolate(npc.id, fromPeriod, currentPeriod, progress);
         applyEntry(npc.id, result, result.state === "walking");
       }
+    }
+
+    for (const npc of npcs) {
+      const object = npcObjects[npc.id];
+      if (!object.visible || object.userData.npcState === "walking") continue;
+      const idleState = idleStates.get(npc.id) ?? createInitialIdleState(0);
+      idleStates.set(
+        npc.id,
+        updateIdle(idleState, safeDt, object.position, object.rotation.y, object, idleElapsed, rng),
+      );
     }
 
     if (dtBubbleCheck >= 1) {

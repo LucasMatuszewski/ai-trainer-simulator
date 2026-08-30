@@ -4,6 +4,7 @@
 
 import type { DialogueNode, DialogueTree, NPC } from "../types";
 import { game } from "../game/state";
+import { getMemory, setMemory } from "../content/dialogue-memory";
 
 export interface DialogueController {
   open: (npc: NPC, tree: DialogueTree) => void;
@@ -33,6 +34,12 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
   function open(npc: NPC, tree: DialogueTree): void {
     if (state) return; // already open
     state = { npc, tree, currentNodeId: "greeting" };
+    const memory = getMemory(npc.id);
+    setMemory(npc.id, {
+      lastTopic: "greeting",
+      visitCount: memory.visitCount + 1,
+      seenNodes: new Set([...memory.seenNodes, "greeting"]),
+    });
     nodeListener?.(npc, "greeting");
     render();
   }
@@ -67,27 +74,34 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
       }
     }
 
-    // If the node has no options, auto-advance.
+    // Nodes with an explicit next auto-advance. Terminal lines stay visible
+    // until the player acknowledges them.
     if (!node.options || node.options.length === 0) {
       const next = node.next;
-      if (!next || next === "_end") {
-        game.dispatch({ type: "increment-total", key: "dialoguesFinished" });
-        close();
+      if (next && next !== "_end") {
+        showNode(next);
+        render();
         return;
       }
-      state.currentNodeId = next;
-      nodeListener?.(npc, next);
-      render();
+
+      ensureContainer();
+      container!.innerHTML = `
+        <div class="portrait">${escapeHtml(npc.emoji)}</div>
+        <div class="content">
+          <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
+          <div class="text">${escapeHtml(node.text)}</div>
+          <div class="options"><button data-continue>Continue</button></div>
+        </div>
+        <button class="skip" data-skip>Skip</button>
+      `;
+      container!.querySelector<HTMLButtonElement>("[data-continue]")!.addEventListener("click", finish);
+      container!.querySelector<HTMLButtonElement>("[data-skip]")!.addEventListener("click", finish);
       return;
     }
 
-    if (!container) {
-      container = document.createElement("div");
-      container.className = "dialogue";
-      root.appendChild(container);
-    }
+    ensureContainer();
 
-    container.innerHTML = `
+    container!.innerHTML = `
       <div class="portrait">${escapeHtml(npc.emoji)}</div>
       <div class="content">
         <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
@@ -104,7 +118,7 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
       <button class="skip" data-skip>Skip</button>
     `;
 
-    container.querySelectorAll<HTMLButtonElement>("[data-opt]").forEach((btn) => {
+    container!.querySelectorAll<HTMLButtonElement>("[data-opt]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const idx = parseInt(btn.dataset.opt ?? "0", 10);
         const opt = node.options?.[idx];
@@ -115,20 +129,38 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
           }
         }
         if (opt.nextNodeId === "_end") {
-          game.dispatch({ type: "increment-total", key: "dialoguesFinished" });
-          close();
+          finish();
           return;
         }
-        state!.currentNodeId = opt.nextNodeId;
-        nodeListener?.(npc, opt.nextNodeId);
+        showNode(opt.nextNodeId);
         render();
       });
     });
 
-    container.querySelector<HTMLButtonElement>("[data-skip]")!.addEventListener("click", () => {
+    container!.querySelector<HTMLButtonElement>("[data-skip]")!.addEventListener("click", finish);
+
+    function ensureContainer(): void {
+      if (container) return;
+      container = document.createElement("div");
+      container.className = "dialogue";
+      root.appendChild(container);
+    }
+
+    function finish(): void {
       game.dispatch({ type: "increment-total", key: "dialoguesFinished" });
       close();
-    });
+    }
+
+    function showNode(nodeId: string): void {
+      if (!state) return;
+      state.currentNodeId = nodeId;
+      const memory = getMemory(npc.id);
+      setMemory(npc.id, {
+        lastTopic: nodeId,
+        seenNodes: new Set([...memory.seenNodes, nodeId]),
+      });
+      nodeListener?.(npc, nodeId);
+    }
   }
 
   return {

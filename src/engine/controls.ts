@@ -24,7 +24,8 @@
  */
 
 import * as THREE from "three";
-import { OFFICE_BOUNDS, OBSTACLES } from "../content/npcs";
+import { OBSTACLES } from "../content/npcs";
+import { WORLD_BOUNDS, WORLD_COLLISION_WALLS } from "../content/world-layout";
 import { applyWithCollision } from "./collision";
 
 const WALK_SPEED = 4.5; // units per second
@@ -102,16 +103,16 @@ export function stepControls(
     PLAYER_RADIUS,
     moveX,
     0,
-    OFFICE_BOUNDS,
-    OBSTACLES,
+    WORLD_BOUNDS,
+    [...OBSTACLES, ...WORLD_COLLISION_WALLS],
   );
   const az = applyWithCollision(
     { x: ax.x, z: ax.z },
     PLAYER_RADIUS,
     0,
     moveZ,
-    OFFICE_BOUNDS,
-    OBSTACLES,
+    WORLD_BOUNDS,
+    [...OBSTACLES, ...WORLD_COLLISION_WALLS],
   );
 
   return {

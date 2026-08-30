@@ -86,7 +86,7 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
           options: [
             {
               text: "Fine, I will smile and nod for 800 zl.",
-              nextNodeId: "_end",
+              nextNodeId: "advanced-yes",
               effects: [
                 { type: "add-cash", target: "cash", delta: 800 },
                 { type: "add-stat", target: "patience", delta: -10 },
@@ -95,13 +95,23 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
             },
             {
               text: "Maybe I will just answer my emails for two days instead.",
-              nextNodeId: "_end",
+              nextNodeId: "advanced-no",
               effects: [
                 { type: "add-relationship", target: "bartek", delta: -10 },
                 { type: "add-stat", target: "credibility", delta: 5 },
               ],
             },
           ],
+        },
+        "advanced-yes": {
+          id: "advanced-yes",
+          text: "That is the spirit. I will put 'strategic resilience' on the invoice and you can put your phone on silent. If anyone asks a technical question, draw a triangle and label the corners people, process, and platform.",
+          options: [],
+        },
+        "advanced-no": {
+          id: "advanced-no",
+          text: "Fair. Email is the only training format where everyone can pretend they read the material. I will tell the client you are preserving async alignment. They will respect the jargon, if not the decision.",
+          options: [],
         },
         _end: { id: "_end", text: "", next: "_end" },
       },
@@ -111,7 +121,17 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
         greeting: {
           id: "greeting",
           text: "You know, you might actually survive this industry. Do not quote me on that. I have a reputation for being wrong, and I would like to keep it.",
-          next: "_end",
+          options: [
+            {
+              text: "What gave me away?",
+              nextNodeId: "survival-advice",
+            },
+          ],
+        },
+        "survival-advice": {
+          id: "survival-advice",
+          text: "You asked a useful question before opening a slide deck. Around here, that is practically a leadership competency. Keep doing it quietly or management will notice.",
+          options: [],
         },
         _end: { id: "_end", text: "", next: "_end" },
       },

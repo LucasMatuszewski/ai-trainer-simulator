@@ -16,8 +16,10 @@
 import * as THREE from "three";
 import type { Period } from "../content/npc-schedule";
 import { NPCS, OBSTACLES, OFFICE_BOUNDS } from "../content/npcs";
+import { MAIN_OFFICE_WALLS, WORLD_ROOMS } from "../content/world-layout";
 import { createNpcController } from "./npc-controller";
 import { createNpcMesh } from "./npc-mesh";
+import { buildMultiRoomMeshes } from "./multi-room";
 import type { NPC, NpcId } from "../types";
 
 const COLORS = {
@@ -105,6 +107,7 @@ export interface SceneObjects {
   interactableMeshes: Map<string, THREE.Mesh>;
   playerStart: THREE.Vector3;
   updatables: Array<(dt: number) => void>;
+  multiRoom: THREE.Group[];
 }
 
 export function buildOfficeScene(
@@ -144,11 +147,18 @@ export function buildOfficeScene(
   wallpaperTex.repeat.set(12, 4);
   const wallMat = new THREE.MeshLambertMaterial({ map: wallpaperTex });
   const wallHeight = 3;
-  const wallThickness = 0.3;
-  addBox(scene, wallMat, 0, wallHeight / 2, OFFICE_BOUNDS.minZ, floorWidth, wallHeight, wallThickness);
-  addBox(scene, wallMat, 0, wallHeight / 2, OFFICE_BOUNDS.maxZ, floorWidth, wallHeight, wallThickness);
-  addBox(scene, wallMat, OFFICE_BOUNDS.maxX, wallHeight / 2, 0, wallThickness, wallHeight, floorDepth);
-  addBox(scene, wallMat, OFFICE_BOUNDS.minX, wallHeight / 2, 0, wallThickness, wallHeight, floorDepth);
+  for (const wall of MAIN_OFFICE_WALLS) {
+    addBox(
+      scene,
+      wallMat,
+      (wall.minX + wall.maxX) / 2,
+      wallHeight / 2,
+      (wall.minZ + wall.maxZ) / 2,
+      wall.maxX - wall.minX,
+      wallHeight,
+      wall.maxZ - wall.minZ,
+    );
+  }
 
   // ---- Ceiling with bright cream + dark wood trim around the edge.
   const ceiling = new THREE.Mesh(
@@ -190,7 +200,7 @@ export function buildOfficeScene(
   addMotivationalSign(scene, 0, 2, OFFICE_BOUNDS.maxZ - 0.16, Math.PI);
 
   // ---- Window on east wall: a blue rectangle with a "sky" gradient.
-  addWindow(scene, OFFICE_BOUNDS.maxX - 0.16, 1.6, 0, -Math.PI / 2);
+  addWindow(scene, OFFICE_BOUNDS.maxX - 0.16, 1.6, -6.5, -Math.PI / 2);
 
   // ---- Furniture (per OBSTACLES)
   for (const obs of OBSTACLES) {
@@ -244,12 +254,15 @@ export function buildOfficeScene(
   const npcController = createNpcController(NPCS, npcObjects, getCurrentPeriod);
   updatables.push(npcController.update);
 
+  const multiRoom = buildMultiRoomMeshes(scene, WORLD_ROOMS);
+
   return {
     npcMeshes,
     npcObjects,
     interactableMeshes: new Map(),
     playerStart: new THREE.Vector3(0, 0.5, 6),
     updatables,
+    multiRoom,
   };
 }
 

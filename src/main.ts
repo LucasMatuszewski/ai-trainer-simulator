@@ -730,7 +730,7 @@ frame();
 // matters here; the prod build embeds the same string via
 // `vite build`'s `define` (TODO if/when we add a CI pipeline).
 // ---------------------------------------------------------------
-const BUILD_VERSION = "v2026.08.29-08";
+const BUILD_VERSION = "v2026.08.29-09";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,
