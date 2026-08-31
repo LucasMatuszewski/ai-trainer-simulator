@@ -73,23 +73,34 @@ describe("multi-turn dialogue trees", () => {
     }
   });
 
-  it("terminates the first-option path of every tree within five hops", () => {
+  it("terminates the first-option path of every tree within ten hops", () => {
+    // C-10: conversations run 4-8+ turns with no hard cap, so a
+    // first-option path may legitimately take more than five
+    // hops (the CEO first-meeting runs six). The walk mirrors
+    // the real UI (src/ui/dialogue.ts): pick the first option
+    // when present, otherwise follow the node's auto-advance
+    // `next`. The cap exists to catch non-terminating trees.
     for (const [npcId, treeId, tree] of allTrees()) {
       let nodeId = "greeting";
       let terminated = false;
-      for (let hop = 0; hop < 5; hop += 1) {
+      for (let hop = 0; hop < 10; hop += 1) {
         const node = tree.nodes[nodeId];
         expect(node, `${npcId}.${treeId}.${nodeId}`).toBeDefined();
         const option = node?.options?.[0];
-        if (!option) {
-          terminated = !node?.next || node.next === "_end";
-          break;
+        if (option !== undefined) {
+          if (option.nextNodeId === "_end") {
+            terminated = true;
+            break;
+          }
+          nodeId = option.nextNodeId;
+          continue;
         }
-        if (option.nextNodeId === "_end") {
+        // No options: auto-advance like the UI does.
+        if (!node?.next || node.next === "_end") {
           terminated = true;
           break;
         }
-        nodeId = option.nextNodeId;
+        nodeId = node.next;
       }
       expect(terminated, `${npcId}.${treeId}`).toBe(true);
     }

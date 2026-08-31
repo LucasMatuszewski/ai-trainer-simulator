@@ -1,5 +1,23 @@
 import * as THREE from "three";
 import type { WorldFurniture, WorldRoom } from "../content/world-layout";
+import { drawBatmanEmblem } from "./furniture/batman-emblem";
+import { makeExecutiveChair } from "./furniture/executive-chair";
+import { makeExecutiveDesk } from "./furniture/executive-desk";
+import { makeCeilingLight } from "./furniture/ceiling-light";
+import { makeCoffeeTable } from "./furniture/coffee-table";
+import { makeSofa } from "./furniture/sofa";
+
+/**
+ * Furniture types rendered by dedicated 3D-model factories
+ * (C-43: one .ts per object under src/engine/furniture/).
+ * Anything not listed here falls back to the simple box.
+ */
+const FURNITURE_FACTORIES: Record<string, () => THREE.Group> = {
+  "executive-desk": makeExecutiveDesk,
+  "executive-chair": makeExecutiveChair,
+  sofa: makeSofa,
+  "coffee-table": makeCoffeeTable,
+};
 
 const WALL_HEIGHT = 3;
 const DEFAULT_FURNITURE_SIZE: Record<string, readonly [number, number, number]> = {
@@ -69,7 +87,8 @@ export function buildMultiRoomMeshes(
       const isGlass = wall.id === "glass";
       const wallWidth = wall.maxX - wall.minX;
       const wallDepth = wall.maxZ - wall.minZ;
-      const wallTexture = isGlass ? undefined : makeWallTexture(room.wallColor, Math.max(wallWidth, wallDepth));
+      const wallColor = wall.accentColor ?? room.wallColor;
+      const wallTexture = isGlass ? undefined : makeWallTexture(wallColor, Math.max(wallWidth, wallDepth));
       const wallMaterial = isGlass
         ? new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.25, color: 0xaaccff })
         : new THREE.MeshLambertMaterial({
@@ -91,6 +110,25 @@ export function buildMultiRoomMeshes(
     }
 
     for (const item of room.furniture) group.add(makeFurniture(item));
+
+    // Ceiling lights (C-44 #7): when the room declares explicit
+    // lightPositions, each entry gets a visible fixture hanging
+    // just below the ceiling plus its own PointLight. Otherwise
+    // the single invisible center light (the old behavior).
+    const lightTargets: readonly (readonly [number, number])[] =
+      room.lightPositions ?? [[centerX, centerZ]];
+    for (const [lightX, lightZ] of lightTargets) {
+      if (room.lightPositions !== undefined) {
+        const fixture = makeCeilingLight();
+        fixture.name = `${room.id}-ceiling-light`;
+        fixture.position.set(lightX, WALL_HEIGHT - 0.12, lightZ);
+        group.add(fixture);
+      }
+      const light = new THREE.PointLight(0xfff4cc, 0.6, 8);
+      light.name = `${room.id}-light`;
+      light.position.set(lightX, WALL_HEIGHT - 0.35, lightZ);
+      group.add(light);
+    }
     for (const sign of room.signs) {
       const canvas = document.createElement("canvas");
       canvas.width = 512;
@@ -126,11 +164,6 @@ export function buildMultiRoomMeshes(
       group.add(signMesh);
     }
 
-    const light = new THREE.PointLight(0xfff4cc, 0.6, 8);
-    light.name = `${room.id}-light`;
-    light.position.set(centerX, WALL_HEIGHT - 0.35, centerZ);
-    group.add(light);
-
     layout.add(group);
     return group;
   });
@@ -154,7 +187,23 @@ export function makeWallTexture(color: number, wallLength: number): THREE.Canvas
   return texture;
 }
 
-function makeFurniture(item: WorldFurniture): THREE.Mesh {
+function makeFurniture(item: WorldFurniture): THREE.Object3D {
+  // Detailed 3D-model-library objects (C-43) win over the box.
+  const factory = FURNITURE_FACTORIES[item.type];
+  if (factory !== undefined) {
+    const group = factory();
+    group.name = `furniture-${item.type}`;
+    group.userData.kind = "furniture";
+    group.userData.furnitureType = item.type;
+    group.position.set(...item.position);
+    group.rotation.y = item.rotationY ?? 0;
+    group.traverse((child) => {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    });
+    return group;
+  }
+
   const size = item.size ?? DEFAULT_FURNITURE_SIZE[item.type] ?? [1, 1, 1];
   const material = new THREE.MeshLambertMaterial({
     color: item.color ?? FURNITURE_COLORS[item.type] ?? 0x777777,
@@ -170,35 +219,3 @@ function makeFurniture(item: WorldFurniture): THREE.Mesh {
   return mesh;
 }
 
-function drawBatmanEmblem(context: CanvasRenderingContext2D, width: number, height: number): void {
-  context.fillStyle = "#080808";
-  context.fillRect(0, 0, width, height);
-  if (
-    typeof context.beginPath !== "function" ||
-    typeof context.ellipse !== "function" ||
-    typeof context.fill !== "function"
-  ) return;
-  context.fillStyle = "#ffdd22";
-  context.beginPath();
-  context.ellipse(width / 2, height / 2, width * 0.42, height * 0.35, 0, 0, Math.PI * 2);
-  context.fill();
-
-  context.fillStyle = "#080808";
-  context.beginPath();
-  context.moveTo(width * 0.18, height * 0.5);
-  context.lineTo(width * 0.3, height * 0.39);
-  context.lineTo(width * 0.38, height * 0.27);
-  context.lineTo(width * 0.44, height * 0.4);
-  context.lineTo(width * 0.5, height * 0.25);
-  context.lineTo(width * 0.56, height * 0.4);
-  context.lineTo(width * 0.62, height * 0.27);
-  context.lineTo(width * 0.7, height * 0.39);
-  context.lineTo(width * 0.82, height * 0.5);
-  context.lineTo(width * 0.68, height * 0.55);
-  context.lineTo(width * 0.6, height * 0.72);
-  context.lineTo(width * 0.5, height * 0.61);
-  context.lineTo(width * 0.4, height * 0.72);
-  context.lineTo(width * 0.32, height * 0.55);
-  context.closePath();
-  context.fill();
-}

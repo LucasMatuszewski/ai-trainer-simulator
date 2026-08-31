@@ -209,6 +209,10 @@ export const NPCS: NPC[] = [
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.dawid!.default!,
+      "first-meeting": DIALOGUES.dawid!["first-meeting"]!,
+      "give-task": DIALOGUES.dawid!["give-task"]!,
+      "performance-review": DIALOGUES.dawid!["performance-review"]!,
+      fireside: DIALOGUES.dawid!.fireside!,
     },
   },
 ];

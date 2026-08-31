@@ -4,6 +4,12 @@ export type Vector3Tuple = readonly [number, number, number];
 
 export interface WorldWall extends AABB {
   id: string;
+  /**
+   * Optional accent color for this wall's inner face
+   * (L-2026-08-31-04 #6: premium accent walls). When set, the
+   * wall material uses this color instead of the room color.
+   */
+  accentColor?: number;
 }
 
 export interface WorldDoorway {
@@ -40,14 +46,29 @@ export interface WorldRoom {
   signs: WorldSign[];
   floorColor: number;
   wallColor: number;
+  /**
+   * Explicit ceiling light positions ([x, z] pairs,
+   * L-2026-08-31-04 #7). When set, one PointLight AND one
+   * visible fixture mesh is created per entry instead of the
+   * single invisible center light.
+   */
+  lightPositions?: readonly (readonly [number, number])[];
 }
 
-const wall = (id: string, minX: number, maxX: number, minZ: number, maxZ: number): WorldWall => ({
+const wall = (
+  id: string,
+  minX: number,
+  maxX: number,
+  minZ: number,
+  maxZ: number,
+  accentColor?: number,
+): WorldWall => ({
   id,
   minX,
   maxX,
   minZ,
   maxZ,
+  ...(accentColor === undefined ? {} : { accentColor }),
 });
 
 const gap = (
@@ -59,8 +80,15 @@ const gap = (
 
 /** The original office shell, split only where the three open doorways are. */
 export const MAIN_OFFICE_WALLS: WorldWall[] = [
-  wall("main-north-west", -9, -1.25, -9.5, -9),
-  wall("main-north-east", 1.25, 9, -9.5, -9),
+  // L-2026-08-31-04 #5: the old solid north-wall segments
+  // (main-north-west/east) covered the CEO office's glass wall,
+  // so the player in the office could not see through it. They
+  // are removed; the CEO office's own south glass (see
+  // WORLD_ROOMS) is now the wall on this boundary, with the
+  // doorway gap at x=[-1.25, 1.25]. Only the two corner strips
+  // beyond the CEO office's side walls remain solid.
+  wall("main-north-far-west", -9, -8, -9.5, -9),
+  wall("main-north-far-east", 8, 9, -9.5, -9),
   wall("main-east-north", 9, 9.5, -9, -1.25),
   wall("main-east-south", 9, 9.5, 1.25, 9),
   // L-2026-08-30-01: south wall split to leave a doorway into the
@@ -107,51 +135,67 @@ export const MAIN_OFFICE_DOORWAYS: WorldDoorway[] = [
 
 export const WORLD_ROOMS: WorldRoom[] = [
   {
-    // C-35 / L-2026-08-31-02: the CEO office now sits where the
-    // training room used to be (north of the main office, x=[-8, 8],
-    // z=[-19, -9]). The glass wall is on the SOUTH side (z=-9 to
-    // z=-8.78) so the player in the main office can see the CEO at
-    // his desk. The Batman sign is on the NORTH wall facing south
-    // so it is visible through the glass to the main office. The
-    // doorway from the main office (MAIN_OFFICE_DOORWAYS[0]) opens
-    // into this room.
+    // C-35 / L-2026-08-31-02 + C-44: the CEO office sits where
+    // the training room used to be (north of the main office,
+    // x=[-8, 8], z=[-19, -9]). THREE glass walls:
+    //   - south glass: the CEO watches the employees (kept from
+    //     C-35; the solid wall that covered it is gone, #5).
+    //   - east glass: looks into the internal garden shared
+    //     with the training room across the courtyard (#9).
+    // The north wall is a dark accent wall (#6) carrying the
+    // huge Batman emblem (#4). Premium furniture (#1-#3, #8):
+    // 0.75m executive desk with laptop + 2nd monitor, a real
+    // executive chair, a sofa + coffee-table meeting corner,
+    // a bookshelf, and funny posters on the west wall.
     id: "ceo-office",
     name: "CEO Office",
     floor: { minX: -8, maxX: 8, minZ: -19, maxZ: -9 },
     walls: [
-      wall("ceo-north", -8, 8, -19.5, -19),
+      // Accent wall: dark navy inner face (L-2026-08-31-04 #6).
+      wall("ceo-north", -8, 8, -19.5, -19, 0x1a1f3a),
       wall("ceo-west", -8.5, -8, -19, -9),
-      wall("ceo-east", 8, 8.5, -19, -9),
-      // Keep the shared boundary inside the CEO office so it
-      // cannot occupy the same depth range as the main office's
-      // north wall. There is a doorway gap at x=[-1.25, 1.25] for
-      // the door.
-      wall("ceo-south-west", -8, -1.25, -9.5, -9.22),
-      wall("ceo-south-east", 1.25, 8, -9.5, -9.22),
-      // Glass wall facing the main office. Split into two
-      // segments around the doorway so the doorway itself stays
-      // open.
-      wall("glass", -8, -1.25, -9, -8.78),
-      wall("glass", 1.25, 8, -9, -8.78),
+      // East glass: the internal garden view (#9). On the right
+      // when entering the office from the main office.
+      wall("glass", 8, 8.5, -19, -9),
+      // South glass facing the main office, split around the
+      // doorway. This is now the ONLY wall on the boundary (the
+      // main office's solid north wall was removed, #5).
+      wall("glass", -8, -1.25, -9.5, -9.3),
+      wall("glass", 1.25, 8, -9.5, -9.3),
     ],
     doorways: [MAIN_OFFICE_DOORWAYS[0]!],
     floorColor: 0x4d3b2b,
     wallColor: 0x4a2f24,
+    // Two visible ceiling lights (#7), fixtures rendered by the
+    // room builder via makeCeilingLight().
+    lightPositions: [
+      [-3, -14],
+      [3, -14],
+    ],
     furniture: [
-      // The CEO desk is huge (C-38) and faces the glass wall
-      // (south) so the player can see the CEO at it from the
-      // main office.
-      { type: "executive-desk", position: [0, 0.55, -16], size: [4, 1.1, 1.6] },
-      { type: "chair", position: [0, 0.35, -17.5] },
-      { type: "bookshelf", position: [-7.5, 1.25, -17], size: [0.7, 2.5, 3.5] },
-      { type: "bookshelf", position: [7.5, 1.25, -17], size: [0.7, 2.5, 3.5] },
+      // The executive desk (surface at y=0.75, laptop + 2nd
+      // monitor + nameplate + plant + mug + books) faces south
+      // so the CEO watches the office over it.
+      { type: "executive-desk", position: [0, 0, -16] },
+      { type: "executive-chair", position: [0, 0, -17.15] },
+      { type: "bookshelf", position: [-7.55, 1.25, -17], size: [0.7, 2.5, 4] },
+      // Meeting corner against the west wall.
+      { type: "sofa", position: [-6.35, 0, -10.9], rotationY: Math.PI / 2 },
+      { type: "coffee-table", position: [-5.05, 0, -10.9] },
     ],
     signs: [
-      // The Batman sign is on the NORTH wall of the CEO office
-      // facing south, so it is visible through the south glass
-      // wall to the player in the main office. face=PI makes the
-      // plane face +Z (south).
-      { text: "BATMAN", position: [0, 1.65, -18.78], face: Math.PI, color: 0xffdd22, size: [4.5, 2.5] },
+      // The huge Batman emblem fills the north accent wall,
+      // facing south toward the glass and the main office (#4).
+      { text: "BATMAN", position: [0, 1.5, -18.85], face: 0, color: 0xffdd22, size: [15.5, 2.9] },
+      // Funny posters on the solid west wall, facing east (#8,
+      // copy from the GLM content pack).
+      { text: "KEEP CALM AND SHIP IT", position: [-7.9, 1.85, -14.3], face: Math.PI / 2, color: 0xc0392b, size: [2.0, 1.0] },
+      { text: "LINKEDIN TOP VOICE", position: [-7.9, 1.0, -12.9], face: Math.PI / 2, color: 0x1d8bf0, size: [1.3, 0.5] },
+      { text: "HAVE YOU TRIED TURNING IT OFF AND ON AGAIN?", position: [-7.9, 1.85, -11.5], face: Math.PI / 2, color: 0x27ae60, size: [1.6, 0.9] },
+      { text: "DISRUPTION IS JUST PIVOTING WITH CONFIDENCE. - DAWID", position: [-7.9, 0.95, -10.6], face: Math.PI / 2, color: 0xb8912f, size: [1.5, 0.6] },
+      // The BATCAVE door sign greets visitors from the office
+      // side of the south glass, next to the doorway.
+      { text: "BATCAVE - KNOCK TWICE", position: [2.0, 2.1, -9.31], face: 0, color: 0xffdd22, size: [1.8, 0.6] },
     ],
   },
   {
@@ -161,18 +205,10 @@ export const WORLD_ROOMS: WorldRoom[] = [
     walls: [
       wall("kitchen-north", 9, 19, -7.5, -7),
       wall("kitchen-south", 9, 19, 7, 7.5),
-      wall("kitchen-east-north", 19, 19.5, -7, -7),
-      // C-35 / L-2026-08-31-03: the kitchen now has a wide
-      // doorway on its east wall (x=[19, 19.5], z=[-7, -3]) that
-      // opens into the new training room. The kitchen's east wall
-      // is split into two solid segments: one above the doorway
-      // (none, since the doorway reaches the corner) and one
-      // below. To keep the wall valid we leave a thin solid
-      // segment just south of the doorway at z=[-3, -2.75] so
-      // the player can read "KITCHEN" sign there, and a wider
-      // solid segment further south at z=[-2.75, 7].
-      wall("kitchen-east-south", 19, 19.5, -3, -2.75),
-      wall("kitchen-east-far-south", 19, 19.5, -2.75, 7),
+      // C-35: the kitchen's east wall is solid only south of the
+      // training-room doorway (z=[-7, -3]); north of z=-7 the
+      // kitchen north wall closes the corner.
+      wall("kitchen-east", 19, 19.5, -3, 7),
       // Offset shared walls into the kitchen, away from the main-office shell.
       wall("kitchen-west-north", 9.22, 9.5, -7, -1.25),
       wall("kitchen-west-south", 9.22, 9.5, 1.25, 7),
@@ -203,29 +239,32 @@ export const WORLD_ROOMS: WorldRoom[] = [
     signs: [{ text: "TODAY'S MENU: COFFEE", position: [14, 2.25, 6.72], face: Math.PI, color: 0x9b3f2f }],
   },
   {
-    // C-35 / L-2026-08-31-03: the training room now sits in the
-    // former CEO office footprint, east of the kitchen. The
-    // training room is accessed from the KITCHEN (not the main
-    // office) and has huge east-facing windows showing pixel-art
-    // trees, a sun, and birds outside.
+    // C-35 / L-2026-08-31-03 + C-44 #9: the training room sits
+    // east of the kitchen, entered from the KITCHEN. It is now
+    // LONGER: the projector wall moved north from z=-13 to
+    // z=-19, so the room spans z=[-19, -3]. The west wall is
+    // GLASS facing the internal garden it shares with the CEO
+    // office across the courtyard; the east wall is GLASS facing
+    // the outdoor trees, hills and sun.
     id: "training-room",
     name: "Training Room",
-    floor: { minX: 19, maxX: 27, minZ: -13, maxZ: -3 },
+    floor: { minX: 19, maxX: 27, minZ: -19, maxZ: -3 },
     walls: [
-      wall("training-north", 19, 27, -13.5, -13),
+      wall("training-north", 19, 27, -19.5, -19),
       wall("training-south", 19, 27, -3, -2.5),
-      // East side: glass wall (full height, z=-13 to z=-3) so
-      // the player can see the outdoor trees and sun.
-      wall("glass", 27, 27.5, -13, -3),
-      // The solid west segments sit inside the training room
-      // rather than sharing the kitchen east wall's depth volume.
-      // They bracket the kitchen-to-training doorway (z=-7..-3).
-      wall("training-west-north", 19.5, 19.8, -13, -7),
-      wall("training-west-south", 19.5, 19.8, -3, -3),
+      // East glass: the outdoor view (trees, hills, sun).
+      wall("glass", 27, 27.5, -19, -3),
+      // West glass: the internal garden shared with the CEO
+      // office. On the left when entering from the kitchen
+      // doorway (the wall extends north of the entrance).
+      // L-2026-08-31 (screenshot #46): flush with the kitchen's
+      // east wall band (x=[19, 19.5]) so there is no empty
+      // pocket between the glass and the kitchen wall.
+      wall("glass", 19, 19.5, -19, -7),
     ],
     doorways: [
       // Kitchen-to-training doorway (matches the kitchen's
-      // east wall gap).
+      // east wall gap): z=[-7, -3] on the west side.
       gap(
         "training-to-kitchen",
         { minX: 19, maxX: 19.5, minZ: -7, maxZ: -3 },
@@ -235,31 +274,30 @@ export const WORLD_ROOMS: WorldRoom[] = [
     floorColor: 0x9b7653,
     wallColor: 0x245c54,
     furniture: [
-      // The training room keeps its old layout: projector screen
-      // on the north wall, lectern in the middle, whiteboard on
-      // the west wall, rows of audience chairs facing north.
-      { type: "projector-screen", position: [23, 1.7, -12.7], size: [5, 2.2, 0.12] },
-      { type: "lectern", position: [23, 0.6, -10.7], size: [1.2, 1.2, 0.8] },
-      // The whiteboard is flush with the west wall's inner face.
-      // The west wall volume is x=[19.5, 19.8], so the inner face
-      // is at x=19.8 and the 0.12m-deep board centers at 19.86.
-      { type: "whiteboard", position: [19.86, 1.5, -8], size: [0.12, 2, 4], rotationY: 0 },
-      ...[-5.8, -3.9, -2, -0.1].flatMap((z) =>
-        [-4.5, -1.5, 1.5, 4.5].map((x) => ({
+      // Projector screen on the far (north) wall, lectern in
+      // front of it; the audience sits between the lectern and
+      // the entrance, facing north.
+      { type: "projector-screen", position: [23, 1.7, -18.7], size: [5, 2.2, 0.12] },
+      { type: "lectern", position: [23, 0.6, -17], size: [1.2, 1.2, 0.8] },
+      // The whiteboard is flush with the south wall's inner
+      // face (the wall volume is z=[-3, -2.5], inner face
+      // z=-3; the 0.12m-deep board centers at z=-3.06).
+      { type: "whiteboard", position: [23, 1.5, -3.06], size: [4, 2, 0.12], rotationY: 0 },
+      // Audience rows, safely inside the room (L-2026-08-31-04:
+      // the old rows computed positions OUTSIDE the room). Three
+      // rows of four chairs facing the lectern.
+      ...[-15, -13.2, -11.4].flatMap((z) =>
+        [20.8, 22.2, 23.8, 25.2].map((x) => ({
           type: "chair",
-          // Chairs are placed in the southern half of the room,
-          // facing the lectern (which is at z=-10.7). The chair
-          // positions use the x grid from the old room but
-          // shifted to the new room's x range (19..27).
-          position: [19 + (x + 4.5) / 9 * 8, 0.25, -3 + (z - 0.1) * -0.25] as Vector3Tuple,
+          position: [x, 0.25, z] as Vector3Tuple,
+          rotationY: Math.PI,
         })),
       ),
     ],
     signs: [
-      // The "TRAINING ROOM" sign is on the south wall, facing
-      // south (face=PI) so the player in the kitchen sees it on
-      // the way in.
-      { text: "TRAINING ROOM", position: [23, 2.45, -2.78], face: Math.PI, color: 0x2255aa },
+      // Room sign just inside the south wall, facing the
+      // entrance so it is readable when walking in.
+      { text: "TRAINING ROOM", position: [23, 2.45, -3.2], face: 0, color: 0x2255aa },
     ],
   },
   {
@@ -328,8 +366,13 @@ export const WORLD_ROOMS: WorldRoom[] = [
 
 export const WORLD_BOUNDS: AABB = { minX: -19, maxX: 27, minZ: -19, maxZ: 19 };
 
-/** Static walls used by player collision. Glass is visual/raycast-only. */
+/**
+ * Static walls used by player collision. C-44: glass walls are
+ * now included - they are transparent, not passable. This keeps
+ * the player out of the internal garden and stops them walking
+ * through the CEO office's glass walls.
+ */
 export const WORLD_COLLISION_WALLS: readonly AABB[] = [
   ...MAIN_OFFICE_WALLS,
-  ...WORLD_ROOMS.flatMap((room) => room.walls.filter((entry) => entry.id !== "glass")),
+  ...WORLD_ROOMS.flatMap((room) => room.walls),
 ];

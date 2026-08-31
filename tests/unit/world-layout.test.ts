@@ -75,14 +75,18 @@ describe("WORLD_ROOMS", () => {
     expect(MAIN_OFFICE_DOORWAYS[3]!.from).toEqual({ minX: -9, maxX: -8.5, minZ: 9, maxZ: 9.5 });
   });
 
-  it("marks the CEO glass wall and Batman sign", () => {
-    // C-35: the glass wall is on the SOUTH side of the CEO
-    // office (facing the main office). The Batman sign is on the
-    // NORTH wall facing south. The doorway breaks the south wall
-    // into two glass segments.
+  it("marks the CEO glass walls and Batman sign", () => {
+    // C-44: the CEO office has THREE glass walls - two south
+    // segments facing the main office (split around the doorway)
+    // and one east segment facing the internal garden. The huge
+    // Batman sign is on the north accent wall facing south.
     const ceo = WORLD_ROOMS.find((room) => room.id === "ceo-office")!;
-    expect(ceo.walls.filter((wall) => wall.id === "glass")).toHaveLength(2);
+    expect(ceo.walls.filter((wall) => wall.id === "glass")).toHaveLength(3);
     expect(ceo.signs.some((sign) => sign.text.includes("BATMAN"))).toBe(true);
+    // The north wall is an accent wall with a different color.
+    const north = ceo.walls.find((wall) => wall.id === "ceo-north")!;
+    expect(north.accentColor).toBeDefined();
+    expect(north.accentColor).not.toBe(ceo.wallColor);
   });
 
   it("lets the player cross the north doorway", () => {
@@ -120,15 +124,15 @@ describe("buildMultiRoomMeshes", () => {
   });
 
   it("renders the CEO glass walls with a transparent material", () => {
-    // C-35: the CEO office has two glass wall segments (one on
-    // each side of the doorway) on its south side. Both are
-    // rendered with the transparent glass material.
+    // C-44: the CEO office has three glass wall segments (two
+    // south + one east), all rendered with the transparent
+    // glass material.
     const groups = buildMultiRoomMeshes(new THREE.Scene(), WORLD_ROOMS);
     const ceo = groups.find((group) => group.name === "ceo-office")!;
     const glassMeshes = ceo.children.filter(
       (child) => child.userData.kind === "glass",
     ) as THREE.Mesh[];
-    expect(glassMeshes.length).toBeGreaterThanOrEqual(2);
+    expect(glassMeshes).toHaveLength(3);
     for (const glass of glassMeshes) {
       expect((glass.material as THREE.Material).transparent).toBe(true);
     }

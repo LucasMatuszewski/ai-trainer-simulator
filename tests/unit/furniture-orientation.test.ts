@@ -54,13 +54,13 @@ describe("furniture orientation", () => {
     const trainingRoom = WORLD_ROOMS.find((room) => room.id === "training-room")!;
     const definition = trainingRoom.furniture.find((item) => item.type === "whiteboard")!;
     const [x, y, z] = definition.position;
-    const [width] = definition.size!;
+    const [, , depth] = definition.size!;
 
-    // C-35: the training room moved east of the kitchen. Its west
-    // wall volume is inset from the floor edge (the floor extends
-    // under the doorway), so flushness is checked against the
-    // wall's INNER face (maxX of the west wall), not floor.minX.
-    const westWall = trainingRoom.walls.find((wall) => wall.id === "training-west-north")!;
+    // C-44: the whiteboard moved to the SOUTH wall (the west
+    // wall is now glass facing the garden). Flushness is checked
+    // against the south wall's INNER face (minZ of the wall),
+    // with the board on the room side (z < wall face).
+    const southWall = trainingRoom.walls.find((wall) => wall.id === "training-south")!;
 
     expect(y).toBeGreaterThanOrEqual(0.5);
     expect(y).toBeLessThanOrEqual(2.5);
@@ -68,8 +68,8 @@ describe("furniture orientation", () => {
     expect(x).toBeLessThanOrEqual(trainingRoom.floor.maxX);
     expect(z).toBeGreaterThanOrEqual(trainingRoom.floor.minZ);
     expect(z).toBeLessThanOrEqual(trainingRoom.floor.maxZ);
-    expect(x - width / 2).toBeCloseTo(westWall.maxX);
-    expect(x).toBeGreaterThan(westWall.maxX);
+    expect(z + depth / 2).toBeCloseTo(southWall.minZ);
+    expect(z).toBeLessThan(southWall.minZ);
 
     const group = buildMultiRoomMeshes(new THREE.Scene(), [trainingRoom])[0]!;
     const mesh = group.children.find((child) => child.name === "furniture-whiteboard")!;

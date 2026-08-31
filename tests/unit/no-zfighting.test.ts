@@ -47,15 +47,26 @@ function mainWall(wallId: string): WorldWall {
 }
 
 describe("multi-room wall depth separation", () => {
-  it("separates the CEO-office south walls from the main-office north wall", () => {
-    // C-35: the CEO office is the new name for what used to be
-    // the training room. The south walls are now named
-    // "ceo-south-west" and "ceo-south-east". The CEO office still
-    // sits north of the main office, so the same depth-separation
-    // rule applies.
-    const mainZ = centerZ(mainWall("main-north-west"));
-    expect(Math.abs(centerZ(roomWall("ceo-office", "ceo-south-west")) - mainZ)).toBeGreaterThanOrEqual(0.1);
-    expect(Math.abs(centerZ(roomWall("ceo-office", "ceo-south-east")) - mainZ)).toBeGreaterThanOrEqual(0.1);
+  it("uses the CEO south glass as the only wall on the main-office north boundary", () => {
+    // C-44 #5: the solid main-office north segments that covered
+    // the CEO glass are gone. The boundary is now the CEO
+    // office's own south glass; only the two corner strips
+    // beyond the CEO side walls remain solid on the main shell.
+    const ceo = WORLD_ROOMS.find((room) => room.id === "ceo-office")!;
+    const southGlass = ceo.walls.filter(
+      (wall) => wall.id === "glass" && wall.maxZ <= -9.2,
+    );
+    expect(southGlass).toHaveLength(2);
+    expect(MAIN_OFFICE_WALLS.some((wall) => wall.id === "main-north-far-west")).toBe(true);
+    expect(MAIN_OFFICE_WALLS.some((wall) => wall.id === "main-north-far-east")).toBe(true);
+    // The corner strips share no x-range with the glass (which
+    // spans x=[-8, 8] with the doorway gap).
+    for (const corner of ["main-north-far-west", "main-north-far-east"]) {
+      const solid = mainWall(corner);
+      for (const glass of southGlass) {
+        expect(solid.minX >= glass.maxX || solid.maxX <= glass.minX).toBe(true);
+      }
+    }
   });
 
   it("separates the meeting-room north walls from the main-office south wall", () => {
@@ -70,23 +81,25 @@ describe("multi-room wall depth separation", () => {
     expect(Math.abs(centerX(roomWall("kitchen", "kitchen-west-south")) - mainX)).toBeGreaterThanOrEqual(0.1);
   });
 
-  it("keeps the training-room west walls distinct from the kitchen east wall", () => {
-    // C-35: the training room moved to the former CEO office
-    // footprint (east of the kitchen). Its west walls are now
-    // named "training-west-north" and "training-west-south". The
-    // depth-separation rule still applies between the training
-    // room and the kitchen.
-    const kitchenX = centerX(roomWall("kitchen", "kitchen-east-north"));
-    expect(Math.abs(centerX(roomWall("training-room", "training-west-north")) - kitchenX)).toBeGreaterThanOrEqual(0.1);
-  });
-
-  it("does not overlap the kitchen east wall and training-room west wall volumes", () => {
-    // C-35: the training room is now east of the kitchen. The
-    // doorway between them is wide (z=-7..-3); the solid wall
-    // segments must not overlap the kitchen east wall.
-    const kitchenEast = roomWall("kitchen", "kitchen-east-north");
-    const trainingWest = roomWall("training-room", "training-west-north");
-    expect(kitchenEast.maxX).toBeLessThanOrEqual(trainingWest.minX);
+  it("keeps the training-room west glass distinct from the kitchen east wall", () => {
+    // L-2026-08-31 (#46): the training room's west glass sits in
+    // the SAME x band as the kitchen's east wall (x=[19, 19.5])
+    // so there is no pocket between them. They must share no
+    // volume: the z ranges are disjoint (glass z=[-19, -7],
+    // kitchen east wall z=[-3, 7]).
+    const kitchenEast = roomWall("kitchen", "kitchen-east");
+    // The training room has two glass walls (east outdoor view +
+    // west garden view); select the WEST one by its minX.
+    const westGlass = WORLD_ROOMS.find((room) => room.id === "training-room")!
+      .walls.filter((entry) => entry.id === "glass")
+      .reduce((west, entry) => (entry.minX < west.minX ? entry : west));
+    const trainingGlass = westGlass;
+    expect(trainingGlass.minX).toBeCloseTo(kitchenEast.minX, 5);
+    expect(trainingGlass.maxX).toBeCloseTo(kitchenEast.maxX, 5);
+    expect(
+      kitchenEast.minZ >= trainingGlass.maxZ || kitchenEast.maxZ <= trainingGlass.minZ,
+      "kitchen east wall and training glass must not overlap in z",
+    ).toBe(true);
   });
 
   it("adds a positive polygon offset to every solid new-room wall material", () => {

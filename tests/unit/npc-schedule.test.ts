@@ -131,15 +131,14 @@ describe("Random walk destinations (L-2026-08-30-01)", () => {
   });
 
   it("places the training destinations inside the training room bounds", () => {
-    // C-35: the training room moved to the former CEO office
-    // footprint, east of the kitchen. New bounds: x=[19, 27],
-    // z=[-13, -3]. The training random-walk destinations were
-    // updated in 2026-08-31 to match.
+    // C-44: the training room was elongated north (the projector
+    // wall moved from z=-13 to z=-19). New bounds: x=[19, 27],
+    // z=[-19, -3].
     for (const dest of RANDOM_DESTINATIONS) {
       if (dest.state === "training") {
         expect(dest.position.x).toBeGreaterThanOrEqual(19);
         expect(dest.position.x).toBeLessThanOrEqual(27);
-        expect(dest.position.z).toBeGreaterThanOrEqual(-13);
+        expect(dest.position.z).toBeGreaterThanOrEqual(-19);
         expect(dest.position.z).toBeLessThanOrEqual(-3);
       }
     }

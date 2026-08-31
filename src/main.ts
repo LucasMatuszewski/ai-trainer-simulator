@@ -611,6 +611,16 @@ function openDialogueWith(npc: NPC): void {
   if (npc.id === "bartek") {
     if (state.flags["got-acme-contract"] && state.flags["bartek-advanced-contract"]) treeKey = "afterContract";
     else if (state.flags["got-acme-contract"]) treeKey = "after-tutorial";
+  } else if (npc.id === "dawid") {
+    // C-38: the CEO's arc. He brushes the player off until the
+    // first contract, then: first-meeting -> give-task ->
+    // performance-review -> fireside (the always-warm easter
+    // egg). Flags are set by the trees' own effects.
+    if (!state.flags["got-acme-contract"]) treeKey = "default";
+    else if (!state.flags["ceo-met"]) treeKey = "first-meeting";
+    else if (!state.flags["ceo-workshop-offered"]) treeKey = "give-task";
+    else if (!state.flags["ceo-reviewed"]) treeKey = "performance-review";
+    else treeKey = "fireside";
   }
   const tree = npc.dialogues[treeKey] ?? npc.dialogues.default;
   if (!tree) return;
@@ -846,7 +856,7 @@ frame();
 // Bump after every commit so the console line in the browser
 // confirms the user is on the right build. See AGENTS.md
 // "Verify the build you are testing" section.
-const BUILD_VERSION = "v2026.08.31-01";
+const BUILD_VERSION = "v2026.08.31-05";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,

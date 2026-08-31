@@ -27,6 +27,7 @@ import { MAIN_OFFICE_WALLS, WORLD_ROOMS } from "../content/world-layout";
 import { createNpcController, type NpcController } from "./npc-controller";
 import { createNpcMesh } from "./npc-mesh";
 import { buildMultiRoomMeshes } from "./multi-room";
+import { makeGarden, makeOutdoorScenery } from "./furniture/garden";
 import type { NPC, NpcId } from "../types";
 
 const COLORS = {
@@ -301,6 +302,13 @@ export function buildOfficeScene(
   updatables.push(npcController.update);
 
   const multiRoom = buildMultiRoomMeshes(scene, WORLD_ROOMS);
+
+  // C-44 #9: the internal garden (shared courtyard between the
+  // CEO office and the training room) and the outdoor scenery
+  // east of the training room (trees, hills, sun). Decoration
+  // only - the glass walls keep the player out.
+  scene.add(makeGarden());
+  scene.add(makeOutdoorScenery());
 
   // Furniture, monitors and NPC bodies cast compact directional shadows;
   // architectural surfaces receive them. Basic-material screens remain lit.
