@@ -462,9 +462,8 @@ html, body {
 /* --- Dialogue overlay --- */
 .dialogue {
   position: absolute;
-  left: 32px;
-  right: 32px;
-  bottom: 80px;
+  left: 16px;
+  bottom: 16px;
   background: var(--panel);
   border: 3px solid var(--panel-border);
   padding: 20px;
@@ -472,7 +471,7 @@ html, body {
   grid-template-columns: 96px 1fr;
   gap: 20px;
   max-width: 1000px;
-  margin: 0 auto;
+  margin: 0;
   box-shadow: 0 0 0 4px #000;
 }
 
