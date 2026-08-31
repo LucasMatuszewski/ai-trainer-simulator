@@ -1043,7 +1043,7 @@ html, body {
 }
 
 .quest-log-desc {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-dim);
   line-height: 1.45;
 }
@@ -1053,7 +1053,7 @@ html, body {
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px dashed var(--panel-border);
-  font-size: 13px;
+  font-size: 15px;
   color: var(--accent);
   letter-spacing: 0.5px;
 }
