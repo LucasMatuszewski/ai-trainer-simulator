@@ -5,6 +5,35 @@ given. Every item MUST be reflected in `docs/PRD.md` and the
 plan. The agent MUST update this file when Lucas sends feedback so
 nothing is lost again.
 
+## 2026-08-31 — feedback captured (this message)
+
+**ID: L-2026-08-31-02 — Make the game perfect, playable, and fun**
+- **Dog (Burek) should move around the office** — either laying or playing, interacting with people. Right now the dog is a static marker.
+- **NPCs have walk animations but they do not actually walk** — they sit at their desk and "teleport" between schedule positions. The walk cycle needs to be visible.
+- **Toilet door location** — the toilet exists as a back-corner room with no real door. The door should be in the kitchen (kitchen must have direct access to the toilet).
+- **Kitchen equipment is too low quality** — random blocks. Make a high-quality detailed pixelart kitchen: fridge, microwave, bin, sink, dishwasher, funny stickers and details. 3D models in separate files, reusable.
+- **All NPCs should say something in a speech bubble from time to time** — unique to them, connected to their profession and character. Not just generic "Did you restart it?" lines.
+- **CEO office location** — the CEO office should be where the Training Room is right now (i.e. north of the main office, with a glass wall looking into the main office). The Batman sign on the wall should be visible through this glass wall from the office so everybody knows the bat is there.
+- **Add a CEO character** — new, with unique personality, unique dialogues (delegate to GLM-5.3 via `opencode`). The CEO should sit inside the CEO office at his huge desk. The CEO is a typical IT/startup CEO: funny, pseudo-motivational, mentoring in a funny way, pushing, etc. The CEO may not want to talk to us at the beginning (we just started work), but later the CEO may give us tasks, come to us directly and ask for something.
+- **NPC rotation on dialogue** — when we start a conversation, the NPC should always rotate in our direction so we talk to their face, not to their back. After the conversation the NPC should get back to the previous position. The rotation should be animated (slerp), not instant.
+- **Women arms/shoulders** — too close to the body, almost inside. Make them a little bit wider.
+- **Intros with dialogue explaining the game, goal, and rules** — where are they? Add a real intro cinematic that explains who the player is, what the goal is (survive 30 days, don't go bankrupt, run training sessions), and the rules (talk to people, work the contracts, etc).
+- **Cutscenes and events** — the game has none. Add a real morning walk-in cutscene, the CEO entering his office cutscene, and at least one random in-game event with its own little cutscene.
+
+**Already implemented in earlier commits (2026-08-31):**
+- L-2026-08-31-01: chest rectangle removed (commit 2a2dd27). Done.
+- Desk rotation / NPC sitting position / window frame: commit 980100d. Done.
+- Center meeting table removed: commit d9bdfc3. Done.
+- Vending machine rotation: commit 65df90a. Done.
+- Visit-colleague random-walk destination: commit 0033ca8. Done.
+
+**Cross-references (pending update in PRD/plan):**
+- L-2026-08-31-02 → PRD §13 new entry C-34 (dog behavior) + C-35 (CEO office relocation + glass wall) + C-36 (kitchen detailed pixelart) + C-37 (per-NPC unique speech bubbles) + C-38 (new CEO character + dialogues) + C-39 (NPC animated face-to-player + post-dialogue return) + C-40 (women arm width) + C-41 (intro cinematic explaining game/goal) + C-42 (cutscenes and events).
+- L-2026-08-31-02 → New ADR ADR-0016 (3D model library: one .ts per object, reusable across rooms and cutscenes).
+- L-2026-08-31-02 → New ADR ADR-0017 (kitchen equipment content list).
+- L-2026-08-31-02 → New ADR ADR-0018 (CEO character + dialogue policy).
+- L-2026-08-31-02 → Plan §Phase 11 (dog life) + Phase 12 (CEO office relocation) + Phase 13 (kitchen equipment) + Phase 14 (per-NPC bubbles + CEO dialogues via GLM) + Phase 15 (animated NPC rotation + women arms) + Phase 16 (intro cinematic + cutscenes).
+
 ## 2026-08-30 — feedback captured (this message)
 
 **ID: L-2026-08-30-01**

@@ -809,6 +809,128 @@ A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
 - **Why:** the colored shirt-rectangle was a low-poly hack that made the chest look like a clipping glitch. The breast is already part of the body model, so the shirt box had no visual job. Removing it cleans up the silhouette and makes the body color the dominant readable color of the NPC.
 - **Implementation:** `src/engine/npc-mesh.ts` (deletions only — no new code); `tests/unit/npc-mesh-parenting.test.ts` (new "no clothing-shirt object" regression test); `tests/unit/npc-mesh.test.ts` and `tests/unit/female-body.test.ts` updated to look for `breast` (the new mesh name) instead of the old `chest` (which was a per-NPC-radius single sphere, replaced by a fixed-radius pair of body-color spheres on L-2026-08-30). Build version bumped to `v2026.08.31-01`.
 
+### C-34 — Dog (Burek) has its own life, plays, interacts (2026-08-31)
+
+- **Section changed:** `src/content/npc-schedule.ts`, `src/engine/npc-controller.ts`, `src/engine/dog-behavior.ts` (new).
+- **Was:** Burek is a static mesh in the main office. He sits at one position. He has no walk, no play, no interaction with NPCs.
+- **Now:** Burek has a dedicated behavior system, distinct from the human NPC schedule:
+  - **Wander** — every 20-60s picks a random walkable spot (a desk, a chair, the coffee machine, a plant, an NPC's chair) and walks to it with the same walk animation humans use.
+  - **Follow NPC** — 30% of the time, picks a random human NPC within 6m and follows them for 30-90s (sits next to them at their desk, walks with them on their coffee break).
+  - **Play** — 2-4 times a day, performs a "play" animation: 3 quick jumps (Y bob ±0.15m at 6Hz) and a tail-wag, then lies down for 10-20s.
+  - **Sleep** — during afternoon and evening periods, has a 30% chance to be sleeping under a desk (mesh still visible but lying down — body rotated 90° on Z, head resting on paws).
+  - **Sniff** — when standing still, occasionally (every 6-12s) lowers the head 0.15m for 1.5s and bobs the head side-to-side.
+- **Why:** "dog should move around the office! It should be a dog! either laying or playing, interacting with people."
+- **Implementation:** new `src/engine/dog-behavior.ts` with `DogBehavior` interface (`update(dt, npc, position, rng, otherNpcs) → action`). The `npc-controller.ts` runs the dog's update alongside the human schedule interpolation. The dog's animation reuses the same walk-bob/sway from the human controller.
+
+### C-35 — CEO office moves to where the Training Room is; glass wall looking into the main office (2026-08-31)
+
+- **Section changed:** `src/content/world-layout.ts`, `src/content/npc-schedule.ts`, `src/engine/scene.ts`.
+- **Was:** The CEO office is east of the kitchen. The training room is north of the main office. The Batman sign is visible only by walking to the CEO office. Lucas: "the CEO office should be in the place where the Training room is right now (so next to the office) with the glass wall looking to inside the office so CEO can watch the employees! And the batman sign on the wall in CEO room should be visible through this glass wall from the office! So everybody knows the bat is there!"
+- **Now:**
+  - The CEO office is in the same footprint as the training room (north of the main office). It has a glass wall on its south side looking INTO the main office. The Batman sign is on the north wall of the CEO office so the player in the main office can see it through the glass.
+  - The training room is moved to where the CEO office was (east of the kitchen, with its own doorway from the kitchen).
+  - The CEO character (Maciek) has a permanent desk in the CEO office; his schedule has him at his CEO desk every period.
+- **Why:** the CEO is the focal point of the company. He should be visible from the office. The Batman sign is a visual joke — it should be seen by everyone in the office through the glass wall.
+- **Implementation:** swap the `training-room` and `cto-office` room definitions in `WORLD_ROOMS`. Update `MAIN_OFFICE_DOORWAYS` (the doorway into the training room at z=-9 becomes the doorway into the CEO office). Move the old `cto-to-kitchen` doorway to be the new training-room entry. The glass wall is the south wall of the CEO office, from x=19 to x=27, z=-8. The Batman sign is a `WorldSign` at the north wall (z=-13) facing south (face=PI). Maciek's schedule is fixed to the CEO desk.
+
+### C-36 — Kitchen gets a detailed high-quality pixelart pass (2026-08-31)
+
+- **Section changed:** `src/engine/scene.ts`, `src/content/world-layout.ts`, new `src/engine/furniture/kitchen.ts` (and new `src/engine/furniture/` directory).
+- **Was:** The kitchen has a coffee machine, a fridge, a microwave, a sink, and a table — all simple boxes with one color each. The user: "kitchen equipment looks like some random blocks.... very low quality! Make a great nice high quality detailed pixelart kitchen!!! Fridge, microwave, bin, sink, dishwasher, some funny stickers or other funny elements, etc."
+- **Now (the kitchen, end of phase):**
+  - **Fridge** with door handle, top-freezer split, magnets on the door ("DO NOT EAT MY YOGURT", a "GIT PUSH --FORCE" sticker, a Hello Kitty magnet, a Barcelona souvenir).
+  - **Microwave** with a digital clock display, two control buttons, a beeper, a glass door with a plate visible inside.
+  - **Sink** with a faucet (two-tone: spout + handle), a dish rack with three plates and a cup, a soap dispenser.
+  - **Dishwasher** with a control panel and a "LOADED — 47 ITEMS" sign gag.
+  - **Kettle** on the counter with steam.
+  - **Bin** with a foot pedal and a "RECYCLING" label.
+  - **Coffee grinder** next to the coffee machine.
+  - **Menu board** sign on the wall: "TODAY'S MENU: COFFEE ☕ / TOMORROW'S MENU: ALSO COFFEE / SPECIAL: COFFEE, BUT DECAF" (the existing sign, kept).
+  - **Stickers / decoration**: a fire-extinguisher near the door, a small houseplant on the counter, a "CLEAN AS YOU GO" poster (joke, also motivational).
+- **3D models in separate files (per ADR-0016):** each new piece of furniture is a function in `src/engine/furniture/<name>.ts` that returns a `THREE.Group`. The world layout imports the function and places the mesh.
+- **Why:** "kitchen equipment looks like some random blocks" — the user wants real detail, not placeholder boxes. The kitchen is also one of the most-photographed rooms in any office sim; it's the first thing a player shows off in a screenshot.
+
+### C-37 — Per-NPC unique speech bubbles + think-bubbles for every NPC (2026-08-31)
+
+- **Section changed:** `src/engine/bubbles.ts`, new `src/content/npc-bubbles.ts`.
+- **Was:** there is one shared `INTER_NPC_LINES` pool of 10 generic lines, and bubbles only fire when two NPCs are within 2.5m of each other. The user: "all people should say something in the bubble from time to time. ideally something unique for them, connected with their profession and character."
+- **Now:**
+  - Each NPC has its own bubble line pool, 5-10 lines, tied to their role and personality (e.g. Marek: "Did the deploy go out? Anything on fire? / Slack is down again." Klaudia: "Networking is just friendships with ROI / Thoughts on this post?"). Burek has dog-appropriate lines ("WOOF! / Is that bacon?").
+  - **Bubbles fire on two triggers:**
+    1. **Two NPCs within 2.5m** — bubble from one of them (existing).
+    2. **Solo thought bubble** — every 30-60s per NPC, drawn from the NPC's solo pool, fires only if no inter-NPC bubble is currently on screen.
+  - **The CEO has a special "team motivation" line pool** — he occasionally says pseudo-motivational startup things to the room: "We are a family. A very productive family. With KPIs."
+- **Why:** every NPC should have a personality the player can articulate. Speech bubbles are the cheapest way to show personality. The same pool of 10 lines for everyone is the difference between "they have dialogue" and "they have character."
+- **Implementation:** `src/content/npc-bubbles.ts` exports `NPC_BUBBLE_POOLS: Record<NpcId, { solo: string[]; pair: string[] }>`. The bubble system picks from the right pool depending on whether the bubble is solo (any NPC) or pair (the speaker's `pair` pool).
+
+### C-38 — Add a CEO character with GLM-authored IT/startup dialogues (2026-08-31)
+
+- **Section changed:** `src/content/npcs.ts`, `src/content/dialogues.ts` (new CEO tree), `src/content/npc-schedule.ts`.
+- **Was:** Maciek is "the CTO" with a small dialogue tree. There is no CEO.
+- **Now:** **Add a new character: the CEO.**
+  - **Name:** "Dawid" (Lucas's first suggestion; final name comes from GLM).
+  - **Role:** "CEO".
+  - **Personality:** typical IT/startup CEO. Funny, pseudo-motivational, mentors in a funny way, pushes, fires a one-liner every 30 seconds.
+  - **Availability:** at the start of the game (first 1-2 days), Dawid is "in a meeting" or "not in the office" and refuses to talk to the player. After the player completes the first training quest (flag `got-acme-contract`), Dawid becomes available.
+  - **Dialogue (delegate to GLM-5.3 via `opencode`):** ~50 lines across a 3-5 turn first-meeting tree, an "announce a company event" tree, a "give the player a new client" tree, a "performance review" tree, and a "fireside chat" easter-egg tree (Lucas's suggestion to GLM).
+  - **Schedule:** the CEO is at his CEO desk every period. He does not random-walk. He is always reachable in the CEO office.
+- **Why:** "where is CEO? Add new character, the CEO of the company, with unique personality, and unique dialogues ... CEO should sit inside the CEO office on his huge desk! GLM should create dialogues typical to IT/startup CEOs! funny, pseudo-motivational, mentoring in funny way, or pushing, etc. CEO may not want to talk to us at the beginning when we just started work, later CEO may give us tasks, come to us and ask directly for something."
+- **Implementation:** the NPC is `dawid` (id), `Dawid` (name), `CEO` (role). The new dialogue tree is in `src/content/dialogues.ts` under `dawid: { first-meeting, announce-event, give-task, performance-review, fireside }`. The first-meeting tree is gated on `got-acme-contract`; without the flag, talking to Dawid gives a one-line brush-off. The CEO task tree chains a new quest after the first meeting ("Dawid wants you to lead the React workshop — earn $1500").
+
+### C-39 — NPC rotates ANIMATED to face the player on dialogue, returns to previous direction after (2026-08-31)
+
+- **Section changed:** `src/engine/npc-controller.ts`, `src/ui/dialogue.ts`, `src/engine/walk-to-face.ts`.
+- **Was:** when the player initiates a conversation, the NPC's `rotation.y` is set to the face-the-player angle INSTANTLY. The user: "when we start conversation the NPC should always rotate in our direction, so we talk to NPCs face, not in the back like now... after conversation NPC should get back to previous position. [with animation]"
+- **Now:**
+  - **On dialogue open:** the controller stores the NPC's current `rotation.y` as `previousFaceY` and sets a target `facePlayerY`. Over 0.4s the controller slerps the actual `rotation.y` from the current value to `facePlayerY`. If the rotation needs to go the "long way" (more than 180°), it picks the short way (existing `shortestPathYaw` helper).
+  - **During dialogue:** the NPC's `rotation.y` is pinned to the slerped target. Idle animations on the NPC are paused (no typing, no sipping).
+  - **On dialogue close:** the controller slerps back from the current `rotation.y` to `previousFaceY` over 0.6s. After the slerp completes, the NPC returns to its schedule or its idle animation.
+- **Why:** "after conversation NPC should get back to previous position" and "rotate with animation" — both are explicit user requests. The current instant-snap is jarring.
+- **Implementation:** the controller keeps a per-NPC `faceOverride: { target: number; from: number; t: number; duration: number } | null`. On dialogue open the controller is told `setFaceOverride(id, facePlayerY, 0.4)`. The per-frame update slerps `rotation.y` toward `target` while `t < 1`. On dialogue close the controller is told `setFaceOverride(id, previousFaceY, 0.6)`. The schedule and bubble systems use the OVERRIDDEN face, not the schedule face, while an override is active.
+
+### C-40 — Women NPC arms and shoulders a little wider (2026-08-31)
+
+- **Section changed:** `src/engine/npc-mesh.ts`.
+- **Was:** `addHumanoidArms(group, bodyColor, x = 0.38)` for males, `x = 0.22` for females. Lucas: "women arms/shoulder are too close to body, they should be a little bit, just a little bit wider, now they are almost inside the body."
+- **Now:** female arms `x = 0.30` (was 0.22) — wider by 0.08m on each side. Shoulder box width also increased from 0.5m to 0.55m (matching the male 0.6m better). The arms are still inside the body silhouette (no clipping), but the gap between arm and body is now visible.
+- **Why:** user feedback. The female silhouette was too narrow.
+- **Implementation:** the constants in `addHumanoidArms` and `createFemaleMesh` are the only changes. The breast and lower-body positions are unchanged.
+
+### C-41 — Intro cinematic explains the game, the goal, and the rules (2026-08-31)
+
+- **Section changed:** `src/engine/cinematic.ts`, `src/main.ts`.
+- **Was:** the intro cinematic exists but shows only "Day one. Don't mess up. Don't mess up." (C-07). The user: "where are intos with dialogues and explaining what this game is, the goal and rules etc????"
+- **Now:** a multi-stage intro that mixes visuals and dialogue:
+  1. **Exterior establishing shot** (existing).
+  2. **Approach the door** (existing).
+  3. **Walk through the door** (existing).
+  4. **First NPC wave (cutscene):** a short "day 1 morning" sequence — the player avatar (third-person) walks in through the door, sees the NPCs already at their desks and a few walking in (Burek sniffs the player's shoe, Marek waves, Zosia checks her watch). The player avatar then walks to their own desk and sits down. Total length 8-12 seconds.
+  5. **Inner monologue overlay** (3 lines, auto-advanced, the player's inner voice):
+     - "Day one at DevPowers + Edukey. 30 days. Don't go bankrupt. Don't embarrass yourself."
+     - "I'm an IT trainer now. Clients, contracts, courses. The whole thing."
+     - "Bartek is my team lead. He said 'see you Monday.' Today is Monday. I'm terrified."
+  6. **First quest appears in the quest log:** "Talk to Bartek — your team lead."
+- **Why:** Lucas wants the player to know what they are doing, what the goal is, and what the rules are, BEFORE the player is dropped into the office. The intro is the onboarding. The first quest is the next step.
+- **Implementation:** new `src/engine/intro-cinematic.ts` (or a section in `cinematic.ts`) with the multi-stage timeline. The inner monologue is drawn on the lower-third of the screen with the same typewriter effect used in dialogue. The "first NPC wave" is a tween of the existing NPCs to their "walking in" positions, then to their "at desk" positions.
+
+### C-42 — Cutscenes and events (2026-08-31)
+
+- **Section changed:** `src/engine/cutscene.ts` (new), `src/game/events.ts`, `src/content/events.ts`.
+- **Was:** the game has no cutscenes. Random events are just text in the quest log. Lucas: "where are cutscenes and events in the game????"
+- **Now:** two new cutscene types:
+  - **Day-start cutscene (morning, 4-6s).** The camera dollies from the player's spawn position to a "view of the office" angle. NPCs that have not yet arrived at their desk walk in. The player is then given control.
+  - **CEO entrance cutscene (random per day, 1-2 times).** When the CEO enters his office in the morning, the camera pans to the glass wall, shows the CEO walking to his desk, the Batman sign glints briefly. The player is then given control.
+  - **Event cutscene (random, 1-2 per day).** When a major event fires (e.g. "the printer caught fire", "Tomek pushed to main on a Friday", "it's Klaudia's birthday and the office has cake"), the camera pans to the relevant NPC / object, plays a 3-5s tween, then returns to the player.
+- **Why:** cutscenes are how the player LEARNS the world. They are the cheapest way to make the office feel alive. A player who never sees a cutscene thinks the office is static.
+- **Implementation:** new `src/engine/cutscene.ts` with a small timeline runner. The cutscene timeline is an array of `(dt: number, scene: Scene, camera: Camera) => void` steps plus durations. The main loop pauses user input while a cutscene is running, and a small "skip" hint appears in the bottom-right. Events declare a `cutscene?: CutsceneStep[]` field; the main loop fires the cutscene when the event is eligible.
+
+### C-43 — 3D model library: one .ts per object, reusable across rooms and cutscenes (2026-08-31) — captures ADR-0016
+
+- **Section changed:** new `src/engine/furniture/` directory, `src/content/world-layout.ts` uses the furniture factories.
+- **Was:** every piece of furniture is an inline anonymous function or a single line in `src/engine/scene.ts`. There is no separate file per object.
+- **Now:** every reusable 3D object is a function in `src/engine/furniture/<name>.ts` that returns a `THREE.Group`. The world layout imports the function and places the mesh. Examples: `fridge.ts`, `microwave.ts`, `kettle.ts`, `dishwasher.ts`, `bin.ts`, `coffee-grinder.ts`, `soap-dispenser.ts`, `dish-rack.ts`, `plant-counter.ts`. The new kitchen pass (C-36) is the first user of this convention. Future passes (CEO office decoration, meeting-room whiteboard, training-room desks) will use the same convention.
+- **Why:** "All 3D models in the game must be saved in SEPARATE FILES (separate objects, reusable, easy to import anywhere)." Reuse avoids drift: a single `fridge` function is used in the kitchen, the CEO office, and the future office pantry.
+
 ---
 
 ## 14. Definition of Done (per phase, used by the orchestrator and QA agents) — REVISED 2026-08-29
