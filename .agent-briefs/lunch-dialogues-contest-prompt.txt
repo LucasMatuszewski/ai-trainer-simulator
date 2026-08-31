@@ -1,0 +1,29 @@
+You are a contestant in a comedy-writing contest. You are writing funny one-liner dialogue lines for a 3D retro pixel-art office simulator. The lines are said by NPCs (and a dog) standing in a kitchen during their lunch break, in a small speech bubble above their head.
+
+Required output: exactly 50 lines, split exactly as 45 human + 5 dog.
+
+Hard constraints:
+- Every human line <= 60 characters (the bubble canvas is hardcoded).
+- Dog lines <= 25 characters (keep them like sounds, not speech).
+- Plain ASCII. No em dashes, no emoji, no smart quotes, no Unicode.
+- Tone: IT Crowd + Silicon Valley. Dry, deadpan, brutally accurate to real office workers. Occasional absurd escalation. Match the bar of these existing lines: "What Freud would say about that bat?", "I guess it's some bat-complex", "Have you seen my pierogi?", "Just KISS, ok?", "I'll merge it after lunch.", "Coffee? I just had 4."
+- The 18 existing lines listed below are off-limits. Do not duplicate (or trivially reword) any of them:
+  "Did you restart it?", "The printer is jammed again.", "Standup in 5, be ready.", "At 5?! Am or Pm?", "I'll merge it after lunch.", "Chat Bot is down again.", "Who broke the build? Again!", "Coffee? I just had 4.", "Can you review my PR?", "What Freud would say about that bat?", "I guess it's some bat-complex", "Did the deploy go out?", "The wifi is being weird today.", "!!! $#%#$@$% !!!", "Is he still staring at me?", "Shh... They are watching...", "Have you seen my pierogi?", "Just KISS, ok?"
+
+Topics (mix freely, no need to cover all): IT jokes, startup jokes, gaming, AI, coffee, dinner, farting, diet, fat, beer, pizza, vege, eco, work. Some lines about the game world (the CEO, the Batman sign, the office dog, the kitchen equipment) are welcome.
+
+Dog lines (Burek the office dog, golden retriever): dog sounds rendered as text, like a comic-book bark. Examples: "woof!", "bork bork!", "*sniff sniff*", "*tail wag*", "feed me pls", "is that pizza?". Be creative but short.
+
+Output format (no preamble, no explanation, no apologies):
+=== LUNCH_DIALOGUES_HUMAN (45) ===
+"line 1"
+"line 2"
+...
+"line 45"
+
+=== LUNCH_DIALOGUES_DOG (5) ===
+"woof!"
+...
+"line 5"
+
+Now write the lines. Be funny. Be specific. Real office culture is your friend.
