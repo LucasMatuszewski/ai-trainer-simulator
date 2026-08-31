@@ -296,7 +296,28 @@ export function createNpcController(
     const period = getCurrentPeriod();
     if (lastPeriod === null) {
       lastPeriod = period;
-      for (const npc of npcs) settle(npc.id, NPC_SCHEDULES[npc.id][period]);
+      // C-45 amendment (l)/morning entry: every NPC starts the day
+      // at the front door and walks to their morning destination.
+      // Each NPC gets a per-NPC delay (rng) so they don't all enter
+      // on the same frame; some are "late" (up to 8 s), some are
+      // on time (0-1 s), some are mid (2-4 s). The door is at
+      // (0, 0, 8.4) - the main office's south wall gap. The morning
+      // schedule entry is the walk target. The stagger means the
+      // office "fills up" over a few seconds at game start.
+      const doorTarget = { x: 0, y: 0, z: 8.4 };
+      for (const npc of npcs) {
+        const morning = NPC_SCHEDULES[npc.id][period];
+        if (npc.id === "burek") { settle(npc.id, morning); continue; }
+        // Per-NPC late/early/mid delay: hash from id (stable) +
+        // a per-NPC jitter (rng) so the day looks varied.
+        let h = 0;
+        for (let i = 0; i < npc.id.length; i += 1) h = (h * 31 + npc.id.charCodeAt(i)) >>> 0;
+        const baseDelay = (h & 0xff) / 0xff; // 0..1, stable per NPC
+        const jitter = rng() * 1.5;          // 0..1.5 s of frame noise
+        const delay = baseDelay * 8 + jitter; // 0..9.5 s, mostly late-arrivers
+        npcObjects[npc.id].position.set(doorTarget.x, doorTarget.y, doorTarget.z);
+        startPath(npc.id, morning, delay);
+      }
     } else if (period !== lastPeriod) synchronizePeriod(period);
 
     for (const npc of npcs) {
