@@ -285,6 +285,26 @@ function startOffice(playIntro = false): void {
       const rect = canvas.getBoundingClientRect();
       const ndc = ndcFromMouse(e.clientX, e.clientY, rect);
       raycaster!.setFromCamera(new THREE.Vector2(ndc.x, ndc.y), engine.camera);
+      // Debug: log whatever is under the cursor (walks up the parent
+      // chain so we always see a name, even for child meshes like the
+      // "clothing-shirt" or "monitor" sub-parts of a desk group).
+      const debugHits = raycaster!.intersectObjects(engine.scene.children, true);
+      for (const h of debugHits.slice(0, 5)) {
+        let o: THREE.Object3D | null = h.object;
+        const names: string[] = [];
+        while (o) {
+          if (o.name) names.push(o.name);
+          o = o.parent;
+        }
+        const worldPos = h.object.getWorldPosition(new THREE.Vector3());
+        // eslint-disable-next-line no-console
+        console.info(
+          `[click] ${names.join(" < ") || "(unnamed)"}`,
+          `\n  local: (${h.object.position.x.toFixed(2)}, ${h.object.position.y.toFixed(2)}, ${h.object.position.z.toFixed(2)})`,
+          `\n  world: (${worldPos.x.toFixed(2)}, ${worldPos.y.toFixed(2)}, ${worldPos.z.toFixed(2)})`,
+          `\n  dist: ${h.distance.toFixed(2)}m`,
+        );
+      }
       const hit = pickFromCamera({
         raycaster: raycaster!,
         npcMeshes: sceneObjects.npcMeshes,

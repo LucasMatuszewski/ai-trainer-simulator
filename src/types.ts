@@ -71,6 +71,14 @@ export interface NPC {
   role: string;
   emoji: string; // used for the portrait placeholder until real PNG art is added
   position: { x: number; y: number; z: number };
+  /**
+   * World rotation of the NPC marker, in radians around the Y axis.
+   * The mesh's "front" is +Z in local space (the eyes look toward
+   * +Z); with rotation.y = 0 the NPC looks +Z, with rotation.y = π
+   * the NPC looks -Z. Defaults to π in scene.ts for the historic
+   * "face the monitor which sits on the -Z side of the desk" layout.
+   */
+  rotationY?: number;
   triggerRadius: number;
   /**
    * Visual gender. Drives the silhouette in the 3D scene (a future

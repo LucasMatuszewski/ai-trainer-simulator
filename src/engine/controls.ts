@@ -424,8 +424,6 @@ export function createControls(opts: ControlsOptions): Controls {
         }
       }
       pendingReleases = [];
-      // eslint-disable-next-line no-console
-      console.log("[controls] keys Set after deferred flush", Array.from(keys));
     }
   }
 

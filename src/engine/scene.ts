@@ -235,7 +235,16 @@ export function buildOfficeScene(
     const screenColor: number = SCREEN_COLORS[Math.abs(hashId(obs.id)) % SCREEN_COLORS.length]!;
 
     if (obs.id.startsWith("desk-")) {
-      scene.add(makeDesk(cx, cz, w, d, screenColor));
+      // The AABB above is the WORLD bounding box. For desks rotated
+      // ±π/2 the local w/d (used by makeDesk to build the desk top
+      // and the monitor/keyboard placement) are swapped from the
+      // world w/d so the long edge ends up along the wall after
+      // rotation. N/S wall desks (rotation 0 or π) keep w/d as-is.
+      const rotation = obs.rotationY ?? 0;
+      const swapped = Math.abs(rotation) === Math.PI / 2;
+      const localW = swapped ? d : w;
+      const localD = swapped ? w : d;
+      scene.add(makeDesk(cx, cz, localW, localD, screenColor, rotation));
     } else if (obs.id === "server-rack") {
       const r = makeServerRack(cx, cz, w, d);
       // Its LED/front panel is local +Z. Turn it north into the office from
@@ -558,11 +567,18 @@ function addMotivationalSign(scene: THREE.Scene, x: number, y: number, z: number
 }
 
 function addWindow(scene: THREE.Scene, x: number, y: number, z: number, rotY: number): void {
-  // Frame
+  // Frame. Dimensions are 2.4m (X) x 1.6m (Y) x 0.05m (Z) in the
+  // LOCAL frame, so after the -π/2 rotation for an east-wall window
+  // the frame is 2.4m along the wall (world Z) and 0.05m thick
+  // perpendicular to the wall (world X). Earlier the box was
+  // BoxGeometry(0.05, 1.6, 2.4) which, after the same rotation,
+  // put the frame 2.4m perpendicular to the wall — rotated 90°
+  // relative to the glass plane and clipping into the room.
   const frame = new THREE.Mesh(
-    new THREE.BoxGeometry(0.05, 1.6, 2.4),
+    new THREE.BoxGeometry(2.4, 1.6, 0.05),
     new THREE.MeshLambertMaterial({ color: 0xeeeeee }),
   );
+  frame.name = "window-frame";
   frame.position.set(x, y, z);
   frame.rotation.y = rotY;
   scene.add(frame);
@@ -589,6 +605,7 @@ function addWindow(scene: THREE.Scene, x: number, y: number, z: number, rotY: nu
     new THREE.PlaneGeometry(2, 1.4),
     new THREE.MeshBasicMaterial({ map: tex }),
   );
+  glass.name = "window-glass";
   glass.position.set(x, y, z);
   glass.rotation.y = rotY;
   // Offset the glass slightly inside the frame
@@ -609,6 +626,7 @@ function makeDesk(
   w: number,
   d: number,
   screenColor: number,
+  rotationY = 0,
 ): THREE.Group {
   const g = new THREE.Group();
   // Top
@@ -637,24 +655,30 @@ function makeDesk(
     leg.position.set(lx, 0.35, lz);
     g.add(leg);
   }
-  // Monitor on the back edge
+  // Monitor on the back edge. The monitor + keyboard + mouse + mug are
+  // placed at FIXED local positions (not scaled with `d`) so the
+  // working area stays compact near the room-side end of the desk
+  // regardless of the desk's overall depth. Earlier the monitor was
+  // at local z = -d/2 + 0.25 and the keyboard at d/2 - 0.4, which
+  // spread them 1.35m apart for a 2m-deep W/E wall desk and made the
+  // keyboard look "very far from the monitor".
   const mon = makeMonitor(screenColor);
-  mon.position.set(0, 0.75, -d / 2 + 0.25);
+  mon.position.set(0, 0.75, -0.25);
   g.add(mon);
   // Keyboard
   const kb = makeKeyboard();
-  kb.position.set(0, 0.76, d / 2 - 0.4);
+  kb.position.set(0, 0.76, 0.1);
   g.add(kb);
   // Mouse
   const mouse = new THREE.Mesh(
     new THREE.BoxGeometry(0.12, 0.04, 0.18),
     new THREE.MeshLambertMaterial({ color: COLORS.mouse }),
   );
-  mouse.position.set(0.5, 0.77, d / 2 - 0.4);
+  mouse.position.set(0.5, 0.77, 0.1);
   g.add(mouse);
   // Coffee mug
   const mug = makeMug();
-  mug.position.set(-0.6, 0.78, d / 2 - 0.4);
+  mug.position.set(-0.6, 0.78, 0.1);
   g.add(mug);
   // Stack of papers
   const paper = new THREE.Mesh(
@@ -665,6 +689,7 @@ function makeDesk(
   g.add(paper);
 
   g.position.set(cx, 0, cz);
+  g.rotation.y = rotationY;
   return g;
 }
 
@@ -791,10 +816,12 @@ function makeServerRack(cx: number, cz: number, w: number, d: number): {
 
 function makeCoffeeMachine(cx: number, cz: number, w: number, d: number): THREE.Group {
   const g = new THREE.Group();
+  g.name = "coffee-machine";
   const body = new THREE.Mesh(
     new THREE.BoxGeometry(w, 1.4, d),
     new THREE.MeshLambertMaterial({ color: COLORS.coffeeMachine }),
   );
+  body.name = "coffee-machine-body";
   body.position.y = 0.7;
   g.add(body);
   // Red dispenser stripe
@@ -1013,12 +1040,12 @@ function makeFloorLamp(x: number, z: number): THREE.Group {
 function makeNpcMarker(npc: NPC, index: number): THREE.Group {
   const g = createNpcMesh(npc.gender, index, npc.id);
   g.position.set(npc.position.x, 0, npc.position.z);
-  // Desks have their monitor on the -Z side and the keyboard on the +Z side,
-  // so the NPC should look toward -Z to see their own screen. The marker was
-  // authored with eyes on +Z (facing the camera) which made every NPC look
-  // "outward" toward the player with the screen behind their back. Rotate 180°
-  // so the eyes point at the monitor.
-  g.rotation.y = npc.gender === "dog" ? 0 : Math.PI;
+  // The NPC mesh's eyes look at local +Z. By default the desk has its
+  // monitor on the local -Z side, so the NPC was rotated 180° to face
+  // -Z. L-2026-08-31-02: NPC.rotationY is now data-driven so each NPC
+  // faces the office center alongside their desk. Dogs are not rotated
+  // (the dog mesh has no "front").
+  g.rotation.y = npc.gender === "dog" ? 0 : (npc.rotationY ?? Math.PI);
   g.userData.npcId = npc.id;
   return g;
 }

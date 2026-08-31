@@ -25,7 +25,8 @@ export const NPCS: NPC[] = [
     role: "Senior Consultant",
     emoji: "B",
     gender: "male",
-    position: { x: -4, y: 0, z: -2.0 },
+    position: { x: -7.7, y: 0, z: -5 },
+    rotationY: Math.PI / 2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.bartek!.default!,
@@ -39,7 +40,8 @@ export const NPCS: NPC[] = [
     role: "The LinkedIn Influencer",
     emoji: "K",
     gender: "female",
-    position: { x: -7, y: 0, z: -2.0 },
+    position: { x: -7.7, y: 0, z: 5.5 },
+    rotationY: Math.PI / 2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.klaudia!.default!,
@@ -51,7 +53,8 @@ export const NPCS: NPC[] = [
     role: "DevOps / 10x Engineer",
     emoji: "M",
     gender: "male",
-    position: { x: 7, y: 0, z: -2.0 },
+    position: { x: 7.7, y: 0, z: -5 },
+    rotationY: -Math.PI / 2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.marek!.default!,
@@ -63,7 +66,8 @@ export const NPCS: NPC[] = [
     role: "The Manager",
     emoji: "Z",
     gender: "female",
-    position: { x: 4, y: 0, z: 4.0 },
+    position: { x: 3, y: 0, z: 7.7 },
+    rotationY: Math.PI,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.zosia!.default!,
@@ -75,7 +79,8 @@ export const NPCS: NPC[] = [
     role: "The Intern",
     emoji: "P",
     gender: "male",
-    position: { x: 0, y: 0, z: -5.0 },
+    position: { x: -3, y: 0, z: 7.7 },
+    rotationY: Math.PI,
     triggerRadius: 1.6,
     dialogues: {
       default: DIALOGUES.pawel!.default!,
@@ -87,7 +92,8 @@ export const NPCS: NPC[] = [
     role: "The Recruiter",
     emoji: "📱",
     gender: "female",
-    position: { x: -4, y: 0, z: 4.0 },
+    position: { x: 7.7, y: 0, z: 5.5 },
+    rotationY: -Math.PI / 2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.kasia!.default!,
@@ -99,7 +105,8 @@ export const NPCS: NPC[] = [
     role: "Junior Developer",
     emoji: "🐛",
     gender: "male",
-    position: { x: 4, y: 0, z: -2.0 },
+    position: { x: -7.7, y: 0, z: -1.5 },
+    rotationY: Math.PI / 2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.tomek!.default!,
@@ -111,7 +118,8 @@ export const NPCS: NPC[] = [
     role: "Marketing & Synergy",
     emoji: "📣",
     gender: "female",
-    position: { x: -7, y: 0, z: 1.0 },
+    position: { x: 7.7, y: 0, z: -2.5 },
+    rotationY: -Math.PI / 2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.ania!.default!,
@@ -123,7 +131,8 @@ export const NPCS: NPC[] = [
     role: "The Janitor",
     emoji: "🧹",
     gender: "male",
-    position: { x: 7, y: 0, z: 1.0 },
+    position: { x: -7.7, y: 0, z: 2 },
+    rotationY: Math.PI / 2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.janusz!.default!,
@@ -135,7 +144,8 @@ export const NPCS: NPC[] = [
     role: "Office Dog",
     emoji: "🐶",
     gender: "dog",
-    position: { x: -7, y: 0, z: 4.0 },
+    position: { x: -5, y: 0, z: 4 },
+    rotationY: 0,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.burek!.default!,
@@ -147,7 +157,8 @@ export const NPCS: NPC[] = [
     role: "The Accountant",
     emoji: "💰",
     gender: "female",
-    position: { x: 7, y: 0, z: 4.0 },
+    position: { x: 7.7, y: 0, z: 2 },
+    rotationY: -Math.PI / 2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.grazyna!.default!,
@@ -159,7 +170,8 @@ export const NPCS: NPC[] = [
     role: "The CTO",
     emoji: "🚀",
     gender: "male",
-    position: { x: -3, y: 0, z: -6.0 },
+    position: { x: -3, y: 0, z: -7.7 },
+    rotationY: 0,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.maciek!.default!,
@@ -171,7 +183,8 @@ export const NPCS: NPC[] = [
     role: "Sales",
     emoji: "🤝",
     gender: "male",
-    position: { x: 3, y: 0, z: -6.0 },
+    position: { x: 3, y: 0, z: -7.7 },
+    rotationY: 0,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.przemek!.default!,
@@ -189,6 +202,17 @@ export interface Obstacle {
   maxX: number;
   minZ: number;
   maxZ: number;
+  /**
+   * World rotation of the visible mesh, in radians around the Y axis.
+   * The AABB above is the rotated bounding box (used for collision).
+   * The desk's default mesh has its long axis along world +X (width 2m,
+   * depth 1m) and its monitor on the -Z side. After rotation the long
+   * axis and monitor orientation follow the standard rotation rules:
+   *   left/right wall  ->  ±π/2 so the NPC faces the office center
+   *   back/front wall  ->   π   so the NPC faces the office center
+   * If omitted, the obstacle is assumed to be axis-aligned (rotation 0).
+   */
+  rotationY?: number;
   label?: string;
 }
 
@@ -218,23 +242,26 @@ export const MAIN_OFFICE_FILE_CABINETS = [
 export const MAIN_OFFICE_SERVER_RACK_ROTATION_Y = Math.PI;
 
 export const OBSTACLES: Obstacle[] = [
-  // Desks — width 2m, depth 1m (was 2m × 2m). Each NPC now sits at the
-  // FRONT (+Z) edge of the desk in their chair, not at the center. The
-  // monitor is on the -Z side; the keyboard is on the +Z side; the chair
-  // is just past the keyboard.
-  { id: "desk-bartek", minX: -5, maxX: -3, minZ: -3.5, maxZ: -2.5, label: "Desk (Bartek)" },
-  { id: "desk-klaudia", minX: 3, maxX: 5, minZ: -3.5, maxZ: -2.5, label: "Desk (Klaudia)" },
-  { id: "desk-marek", minX: -5, maxX: -3, minZ: 2.5, maxZ: 3.5, label: "Desk (Marek)" },
-  { id: "desk-zosia", minX: 3, maxX: 5, minZ: 2.5, maxZ: 3.5, label: "Desk (Zosia)" },
-  { id: "desk-pawel", minX: -1, maxX: 1, minZ: -6.5, maxZ: -5.5, label: "Desk (Pawel)" },
-  { id: "desk-kasia", minX: 6, maxX: 8, minZ: -3.5, maxZ: -2.5, label: "Desk (Kasia)" },
-  { id: "desk-tomek", minX: -8, maxX: -6, minZ: -3.5, maxZ: -2.5, label: "Desk (Tomek)" },
-  { id: "desk-ania", minX: 6, maxX: 8, minZ: -0.5, maxZ: 0.5, label: "Desk (Ania)" },
-  { id: "desk-janusz", minX: -8, maxX: -6, minZ: -0.5, maxZ: 0.5, label: "Desk (Janusz)" },
-  { id: "desk-burek", minX: -8, maxX: -6, minZ: 2.5, maxZ: 3.5, label: "Dog bed (Burek)" },
-  { id: "desk-grazyna", minX: 6, maxX: 8, minZ: 2.5, maxZ: 3.5, label: "Desk (Grazyna)" },
-  { id: "desk-maciek", minX: -4, maxX: -2, minZ: -7.5, maxZ: -6.5, label: "Desk (Maciek)" },
-  { id: "desk-przemek", minX: 2, maxX: 4, minZ: -7.5, maxZ: -6.5, label: "Desk (Przemek)" },
+  // Desks — L-2026-08-31-02: all 12 NPC desks against the walls, all
+  // facing the office center. AABBs are the WORLD bounding box (used
+  // for collision). W/E wall desks are rotated ±π/2: the long edge
+  // (2m) is perpendicular to the wall, the short edge (1m) runs
+  // along the wall. N wall desks are rotated π; S wall desks are
+  // NOT rotated (the default orientation already faces the center
+  // for a south-wall desk). NPC positions are 0.7m past the desk's
+  // wall-side edge for legroom — see the NPCS array above.
+  { id: "desk-bartek", minX: -7, maxX: -6, minZ: -6, maxZ: -4, rotationY: -Math.PI / 2, label: "Desk (Bartek)" },
+  { id: "desk-tomek", minX: -7, maxX: -6, minZ: -2.5, maxZ: -0.5, rotationY: -Math.PI / 2, label: "Desk (Tomek)" },
+  { id: "desk-janusz", minX: -7, maxX: -6, minZ: 1, maxZ: 3, rotationY: -Math.PI / 2, label: "Desk (Janusz)" },
+  { id: "desk-klaudia", minX: -7, maxX: -6, minZ: 4.5, maxZ: 6.5, rotationY: -Math.PI / 2, label: "Desk (Klaudia)" },
+  { id: "desk-marek", minX: 6, maxX: 7, minZ: -6, maxZ: -4, rotationY: Math.PI / 2, label: "Desk (Marek)" },
+  { id: "desk-ania", minX: 6, maxX: 7, minZ: -3.5, maxZ: -1.5, rotationY: Math.PI / 2, label: "Desk (Ania)" },
+  { id: "desk-grazyna", minX: 6, maxX: 7, minZ: 1, maxZ: 3, rotationY: Math.PI / 2, label: "Desk (Grazyna)" },
+  { id: "desk-kasia", minX: 6, maxX: 7, minZ: 4.5, maxZ: 6.5, rotationY: Math.PI / 2, label: "Desk (Kasia)" },
+  { id: "desk-maciek", minX: -4, maxX: -2, minZ: -7, maxZ: -6, rotationY: Math.PI, label: "Desk (Maciek)" },
+  { id: "desk-przemek", minX: 2, maxX: 4, minZ: -7, maxZ: -6, rotationY: Math.PI, label: "Desk (Przemek)" },
+  { id: "desk-pawel", minX: -4, maxX: -2, minZ: 6, maxZ: 7, label: "Desk (Pawel)" },
+  { id: "desk-zosia", minX: 2, maxX: 4, minZ: 6, maxZ: 7, label: "Desk (Zosia)" },
   // Server rack
   { id: "server-rack", minX: -8.5, maxX: -7.5, minZ: 7.5, maxZ: 8.5, label: "Server rack" },
   // Coffee machine — moved flush against the east wall (was
@@ -242,7 +269,7 @@ export const OBSTACLES: Obstacle[] = [
   // wall" 2026-08-30). The collision AABB is 0.5m deep to match
   // the visible mesh; the visual mesh is placed at the wall
   // by the make* function in scene.ts.
-  { id: "coffee-machine", minX: 8.0, maxX: 8.5, minZ: -8.5, maxZ: -7.5, label: "Coffee machine" },
+  { id: "coffee-machine", minX: 8.0, maxX: 8.5, minZ: -8.9, maxZ: -8.0, label: "Coffee machine" },
   // Vending machine
   { id: "vending", minX: 7.5, maxX: 8.5, minZ: 7.5, maxZ: 8.5, label: "Vending machine" },
   // Filing cabinet — only the south one stays. The north
