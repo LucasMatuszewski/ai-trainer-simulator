@@ -212,7 +212,11 @@ function startOffice(playIntro = false): void {
   setScreen("office");
   if (!engine) {
     engine = createEngine(canvas);
-    const built = buildOfficeScene(engine.scene);
+    const built = buildOfficeScene(
+      engine.scene,
+      () => game.get().timeOfDay,
+      () => game.get().day,
+    );
     sceneObjects = built;
     // L-2026-08-30-01: register the NPC controller with the events
     // dispatcher so every period transition can roll a random
@@ -220,7 +224,7 @@ function startOffice(playIntro = false): void {
     // it as the NPC's schedule override.
     registerNpcController({
       setOverride: (id, entry) => built.npcController.setOverride(id, entry),
-      getNpcIds: () => NPCS.map((n) => n.id),
+      getNpcIds: () => built.npcController.getNpcIds(),
     });
     // L-2026-08-30-01: wire the WebMCP player-action hooks so an
     // external agent can play the game the same way the user does
@@ -674,6 +678,20 @@ function mountOfficeRosterFresh(): void {
 
 // --- Main loop ---
 
+function advanceOfficePeriods(periodCount: number, now: number): void {
+  const prevDay = game.get().day;
+  for (let i = 0; i < periodCount; i++) {
+    game.dispatch({ type: "advance-time" });
+    if (game.get().day === prevDay) runPeriodEvent(hud, game.get().timeOfDay);
+  }
+  if (game.get().day !== prevDay) {
+    officeStartedAt = now;
+    endDay();
+  } else {
+    officeStartedAt += periodCount * SECONDS_PER_PERIOD * 1000;
+  }
+}
+
 function frame(): void {
   const now = performance.now();
   const dt = Math.min(0.1, (now - lastTime) / 1000);
@@ -739,21 +757,7 @@ function frame(): void {
     // ~9 real minutes per in-game day.
     const periodsElapsed = Math.floor(elapsed / SECONDS_PER_PERIOD);
     if (periodsElapsed > 0) {
-      const prevDay = game.get().day;
-      for (let i = 0; i < periodsElapsed; i++) {
-        game.dispatch({ type: "advance-time" });
-        // After advancing, the player's *new* period is the one we should
-        // flavor with a random event. Skip if a day wrapped (endDay handles
-        // the new-day opening event).
-        if (game.get().day === prevDay) {
-          runPeriodEvent(hud, game.get().timeOfDay);
-        }
-      }
-      const afterDay = game.get().day;
-      if (afterDay !== prevDay) {
-        officeStartedAt = now;
-        endDay();
-      }
+      advanceOfficePeriods(periodsElapsed, now);
     }
   }
 
@@ -771,8 +775,9 @@ declare global {
       getFocus: () => string | null;
       getScreen: () => string;
       getSceneObjects: () => { keys: string[]; hasPlayerGroup: boolean } | null;
-      inspectNpcs: () => Array<{ npcId: string; position: { x: number; z: number }; childNames: string[] }> | null;
+      inspectNpcs: () => Array<{ npcId: string; position: { x: number; z: number }; childNames: string[]; state: unknown | null }> | null;
       inspectFurniture: () => Array<{ name: string; position: { x: number; y: number; z: number }; size?: readonly [number, number, number] }> | null;
+      debugSkipPeriod: () => void;
     };
   }
 }
@@ -806,7 +811,12 @@ window.__aitrainer = {
       obj.traverse((c: { name: string }) => {
         if (c.name) childNames.push(c.name);
       });
-      out.push({ npcId, position: { x: obj.position.x, z: obj.position.z }, childNames });
+      out.push({
+        npcId,
+        position: { x: obj.position.x, z: obj.position.z },
+        childNames,
+        state: obj.userData.npcState ?? null,
+      });
     }
     return out;
   },
@@ -833,6 +843,11 @@ window.__aitrainer = {
       }
     });
     return out;
+  },
+  debugSkipPeriod: () => {
+    const now = performance.now();
+    officeStartedAt = now;
+    advanceOfficePeriods(1, now);
   },
 };
 

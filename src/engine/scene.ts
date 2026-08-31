@@ -133,6 +133,7 @@ export interface SceneObjects {
 export function buildOfficeScene(
   scene: THREE.Scene,
   getCurrentPeriod: () => Period = () => "morning",
+  getDay: () => number = () => 1,
 ): SceneObjects {
   const updatables: Array<(dt: number) => void> = [];
 
@@ -298,7 +299,7 @@ export function buildOfficeScene(
     npcObjects[npc.id] = m;
   });
 
-  const npcController = createNpcController(NPCS, npcObjects, getCurrentPeriod);
+  const npcController = createNpcController(NPCS, npcObjects, getCurrentPeriod, getDay);
   updatables.push(npcController.update);
 
   const multiRoom = buildMultiRoomMeshes(scene, WORLD_ROOMS);

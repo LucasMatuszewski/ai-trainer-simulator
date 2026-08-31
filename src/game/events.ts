@@ -58,14 +58,12 @@ function rollRandomNpcDestinations(period: Period): void {
   // Roll per-NPC. PickRandomDestination returns null when the NPC
   // should stay at the desk (70% of the time on average).
   for (const npcId of npcControllerHooks.getNpcIds()) {
-    const dest = pickRandomDestination(npcId, Math.random, state.day);
+    const dest = pickRandomDestination(npcId, Math.random, state.day, {
+      period,
+      periodElapsed: 0,
+    });
     npcControllerHooks.setOverride(npcId, dest);
   }
-  // The `period` argument is not yet used by the destination roll
-  // (destinations are time-agnostic), but it is in the signature so
-  // future morning/evening variations can be added without a
-  // breaking change.
-  void period;
 }
 
 /** Pick a weighted random event that is eligible for the current state + period. */

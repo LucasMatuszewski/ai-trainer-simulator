@@ -1,7 +1,16 @@
 import * as THREE from "three";
 import {
+  CORRIDOR_WAYPOINTS,
+  DEFAULT_MAX_EDGE_LENGTH,
+  buildWaypointEdges,
+} from "../content/corridor-waypoints";
+import { BUREK_LINES } from "../content/dog-dialogues";
+import {
+  KITCHEN_STOP_DWELL,
+  LUNCH_STAGGER_OFFSET,
   NPC_SCHEDULES,
-  type NpcState,
+  pickKitchenSequence,
+  type KitchenSequenceStop,
   type Period,
   type ScheduleEntry,
 } from "../content/npc-schedule";
@@ -9,119 +18,142 @@ import type { NPC, NpcId } from "../types";
 import {
   createBubbleSystem,
   findClosestPair,
-  INTER_NPC_LINES,
   pickLine,
+  resolveBubblePool,
   shouldShowBubble,
 } from "./bubbles";
+import { computeAvoidancePush, type AvoidanceAgent } from "./npc-avoidance";
 import { createInitialIdleState, updateIdle, type IdleState } from "./npc-idle";
-import { findValidNpcSpawn, getNpcObstacles, NPC_DEFAULT_RADIUS } from "./npc-spawn-validator";
-
-export const NPC_INTERP_DURATION = 2;
+import { planNpcPath } from "./npc-path";
+import {
+  findValidNpcSpawn,
+  getNpcObstacles,
+  isSpawnBlocked,
+  NPC_DEFAULT_RADIUS,
+} from "./npc-spawn-validator";
+import { updateWalkCycle, type WalkCycleState } from "./npc-walk-cycle";
 
 export interface NpcController {
   update: (dt: number) => void;
   destroy: () => void;
-  /**
-   * Override the schedule for a specific NPC for the current period.
-   * Used by the random-walk layer (L-2026-08-30-01) to drop an NPC in
-   * the kitchen / toilet / meeting / training room without authoring
-   * a fresh schedule entry. The override persists until cleared or
-   * the period changes.
-   */
   setOverride: (npcId: NpcId, entry: ScheduleEntry | null) => void;
+  getNpcIds: () => readonly NpcId[];
 }
 
-export interface InterpolatedNpc {
-  position: ScheduleEntry["position"];
+export interface PathAdvanceResult {
+  position: THREE.Vector3;
+  segmentIndex: number;
+  distanceInSegment: number;
+  finished: boolean;
   face: number;
-  state: NpcState;
 }
 
-const PERIODS: readonly Period[] = ["morning", "afternoon", "evening"];
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
+interface NpcRuntime {
+  path: THREE.Vector3[] | null;
+  segmentIndex: number;
+  distanceInSegment: number;
+  walkCycle: WalkCycleState;
+  target: ScheduleEntry | null;
+  departureDelay: number;
+  kitchenStops: KitchenSequenceStop[] | null;
+  kitchenIndex: number;
+  dwellRemaining: number;
+  returnEntry: ScheduleEntry | null;
+  baseY: number;
+  velocity: { x: number; z: number };
 }
 
-function normalizeYaw(angle: number): number {
-  // Normalize to (-PI, PI]. The `+ 2*PI` before `% 2*PI` makes
-  // sure JavaScript's % (which can return negatives) gives a
-  // non-negative intermediate. Then subtract PI to shift to the
-  // (-PI, PI] range. Note: PI itself should normalize to PI (not
-  // -PI), so we use (-PI, PI] and the test `wrapped === -PI` is
-  // a guard against the exact-PI case.
-  const TWO_PI = Math.PI * 2;
-  let wrapped = ((angle % TWO_PI) + TWO_PI) % TWO_PI;
-  if (wrapped === 0) return 0;
-  if (wrapped > Math.PI) wrapped -= TWO_PI;
-  if (wrapped === -Math.PI) return Math.PI;
-  return Object.is(wrapped, -0) ? 0 : wrapped;
-}
-
-export function shortestPathYaw(from: number, to: number, t: number): number {
-  const progress = clamp01(t);
-  const delta = normalizeYaw(to - from);
-  return normalizeYaw(from + delta * progress);
-}
-
-export function interpPosition(
-  from: ScheduleEntry["position"],
-  to: ScheduleEntry["position"],
-  t: number,
-): ScheduleEntry["position"] {
-  const progress = clamp01(t);
-  // Return the endpoint exactly at progress 1 so callers (and
-  // tests) compare against the schedule entry without float
-  // drift (e.g. 7.7 + (-15.2 * 1) = -7.499999999999999).
-  if (progress >= 1) return { x: to.x, y: to.y, z: to.z };
+export function advanceAlongPath(
+  position: THREE.Vector3,
+  path: readonly THREE.Vector3[],
+  segmentIndex: number,
+  distanceInSegment: number,
+  walkSpeed: number,
+  dt: number,
+): PathAdvanceResult {
+  if (path.length < 2 || segmentIndex >= path.length - 1) {
+    return { position: position.clone(), segmentIndex, distanceInSegment, finished: true, face: 0 };
+  }
+  let index = Math.max(0, segmentIndex);
+  let progressed = Math.max(0, distanceInSegment);
+  let remaining = Math.max(0, walkSpeed) * Math.max(0, dt);
+  // Advance FROM THE CURRENT POSITION toward the next waypoint, not
+  // by re-projecting onto the ideal segment line: a lateral
+  // avoidance push applied between frames must persist (otherwise
+  // the next update snaps the NPC back into the neighbour it was
+  // pushed away from).
+  const result = position.clone();
+  let face = 0;
+  while (index < path.length - 1) {
+    const to = path[index + 1]!;
+    const dx = to.x - result.x;
+    const dz = to.z - result.z;
+    const distToTo = Math.hypot(dx, dz);
+    if (distToTo <= 1e-9) { index += 1; progressed = 0; continue; }
+    face = Math.atan2(dx, dz);
+    if (remaining >= distToTo) {
+      result.copy(to);
+      remaining -= distToTo;
+      progressed = 0;
+      index += 1;
+      continue;
+    }
+    const step = remaining / distToTo;
+    result.set(
+      result.x + dx * step,
+      result.y + (to.y - result.y) * step,
+      result.z + dz * step,
+    );
+    progressed += remaining;
+    remaining = 0;
+    break;
+  }
   return {
-    x: from.x + (to.x - from.x) * progress,
-    y: from.y + (to.y - from.y) * progress,
-    z: from.z + (to.z - from.z) * progress,
+    position: result,
+    segmentIndex: index,
+    distanceInSegment: progressed,
+    finished: index >= path.length - 1,
+    face,
   };
 }
 
-export function interpolate(
-  id: NpcId,
-  fromPeriod: Period,
-  toPeriod: Period,
-  transitionProgress: number,
-): InterpolatedNpc {
-  const from = NPC_SCHEDULES[id][fromPeriod];
-  const to = NPC_SCHEDULES[id][toPeriod];
-  const progress = clamp01(transitionProgress);
-
-  return {
-    position: interpPosition(from.position, to.position, progress),
-    face: shortestPathYaw(from.face, to.face, progress),
-    state: progress < 1 ? "walking" : to.state,
-  };
+export function nextBarkDelay(rng: () => number): number {
+  return 150 + Math.max(0, Math.min(1, rng())) * 150;
 }
 
-function previousPeriod(period: Period): Period {
-  const index = PERIODS.indexOf(period);
-  return PERIODS[(index + PERIODS.length - 1) % PERIODS.length]!;
+function priorityFor(id: NpcId): number {
+  if (id === "burek") return 1;
+  if (id === "dawid") return 2;
+  if (id === "zosia") return 3;
+  return 4;
+}
+
+function isKitchenState(state: unknown): boolean {
+  return state === "kitchen" || state === "dwelling";
 }
 
 export function createNpcController(
   npcs: readonly NPC[],
   npcObjects: Readonly<Record<NpcId, THREE.Object3D>>,
   getCurrentPeriod: () => Period,
+  getDay: () => number = () => 1,
   rng: () => number = Math.random,
 ): NpcController {
-  let lastPeriod: Period | null = null;
-  let transitionElapsed = NPC_INTERP_DURATION;
-  let animationElapsed = 0;
-  let destroyed = false;
-  let dtBubbleCheck = 0;
-  let timeSinceLastBubble = 0;
-  let idleElapsed = 0;
+  const obstacles = getNpcObstacles();
+  const edges = buildWaypointEdges(CORRIDOR_WAYPOINTS, obstacles, DEFAULT_MAX_EDGE_LENGTH);
+  const runtime = new Map<NpcId, NpcRuntime>();
   const idleStates = new Map<NpcId, IdleState>();
-  // Per-NPC schedule override (L-2026-08-30-01). When set, the
-  // controller interpolates from the previous period's position to
-  // the override entry instead of the schedule entry. Cleared on
-  // period change so each new period starts from a clean slate.
   const overrides = new Map<NpcId, ScheduleEntry>();
+  const validatedDestinations = new Map<NpcId, ScheduleEntry>();
+  let lastPeriod: Period | null = null;
+  let destroyed = false;
+  let idleElapsed = 0;
+  let bubbleElapsed = 0;
+  let timeSinceLastBubble = 0;
+  let controllerElapsed = 0;
+  let lastBurekBubbleAt = -Infinity;
+  let barkAt = nextBarkDelay(rng);
+
   const firstNpc = npcs[0];
   let root: THREE.Object3D | null = firstNpc === undefined ? null : npcObjects[firstNpc.id];
   while (root?.parent) root = root.parent;
@@ -129,182 +161,273 @@ export function createNpcController(
   const bubbleSystem = sceneRoot === null ? null : createBubbleSystem(sceneRoot);
   const fallbackCamera = new THREE.PerspectiveCamera();
 
-  // L-2026-08-31-05: validate a destination before setting an
-  // override. The kitchen coffee machine destination (11, -6.2) is
-  // the same XZ as the new kitchen coffee machine, so a naive
-  // override spawns the NPC inside the box. The validator samples
-  // around the desired point and returns a free spot, or null if
-  // none is available (in which case we keep the NPC at its desk).
-  const validatedDestinations = new Map<NpcId, ScheduleEntry>();
+  for (const npc of npcs) {
+    runtime.set(npc.id, {
+      path: null, segmentIndex: 0, distanceInSegment: 0,
+      walkCycle: { distanceTraveled: 0 }, target: null, departureDelay: 0,
+      kitchenStops: null, kitchenIndex: 0, dwellRemaining: 0, returnEntry: null,
+      baseY: npcObjects[npc.id].position.y, velocity: { x: 0, z: 0 },
+    });
+  }
+
   const validateOverride = (npcId: NpcId, entry: ScheduleEntry): ScheduleEntry | null => {
     const cached = validatedDestinations.get(npcId);
     if (cached !== undefined) return cached;
     const valid = findValidNpcSpawn(
-      { x: entry.position.x, z: entry.position.z, radius: NPC_DEFAULT_RADIUS },
-      getNpcObstacles(),
-      2.0,
+      { x: entry.position.x, z: entry.position.z, radius: NPC_DEFAULT_RADIUS }, obstacles, 2,
     );
     if (valid === null) return null;
     const result: ScheduleEntry = {
-      position: { x: valid.x, y: entry.position.y, z: valid.z },
-      face: entry.face,
-      state: entry.state,
+      position: { x: valid.x, y: entry.position.y, z: valid.z }, face: entry.face, state: entry.state,
     };
     validatedDestinations.set(npcId, result);
     return result;
   };
 
-  const applyEntry = (id: NpcId, entry: InterpolatedNpc, walking: boolean): void => {
-    const object = npcObjects[id];
+  const settle = (npcId: NpcId, entry: ScheduleEntry): void => {
+    const object = npcObjects[npcId];
+    const state = runtime.get(npcId)!;
+    state.path = null;
+    state.target = entry;
+    state.velocity = { x: 0, z: 0 };
     object.position.set(entry.position.x, entry.position.y, entry.position.z);
     object.rotation.y = entry.face;
+    object.rotation.z = 0;
     object.visible = entry.state !== "gone-home";
     object.userData.npcState = entry.state;
+  };
 
-    const bob = walking ? Math.abs(Math.sin(animationElapsed * 9)) * 0.06 : 0;
-    const sway = walking ? Math.sin(animationElapsed * 9) * 0.035 : 0;
-    object.position.y += bob;
-    object.rotation.z = sway;
+  const startPath = (npcId: NpcId, entry: ScheduleEntry, delay: number): boolean => {
+    const object = npcObjects[npcId];
+    const state = runtime.get(npcId)!;
+    const target = new THREE.Vector3(entry.position.x, entry.position.y, entry.position.z);
+    if (object.position.distanceTo(target) <= 1e-6) { settle(npcId, entry); return true; }
+    const path = planNpcPath(object.position.clone(), target, CORRIDOR_WAYPOINTS, edges, obstacles);
+    if (path === null) return false;
+    state.path = path;
+    state.segmentIndex = 0;
+    state.distanceInSegment = 0;
+    state.target = entry;
+    state.departureDelay = Math.max(0, delay);
+    state.baseY = entry.position.y;
+    state.velocity = { x: 0, z: 0 };
+    object.visible = entry.state !== "gone-home";
+    object.userData.npcState = "walking";
+    return true;
+  };
+
+  const startKitchen = (npcId: NpcId, returnEntry: ScheduleEntry, lunch: boolean): void => {
+    const state = runtime.get(npcId)!;
+    state.kitchenStops = pickKitchenSequence(npcId, rng);
+    state.kitchenIndex = 0;
+    state.dwellRemaining = 0;
+    state.returnEntry = returnEntry;
+    const first = state.kitchenStops[0];
+    if (first === undefined) return;
+    const delay = lunch ? LUNCH_STAGGER_OFFSET(npcId, getDay(), rng) : rng() * 0.3;
+    if (!startPath(npcId, first.entry, delay)) {
+      state.kitchenStops = null;
+      state.returnEntry = null;
+      strand(npcId);
+    }
+  };
+
+  /** No route exists: rather than leaving the NPC frozen mid-office
+   *  with a stale "walking" state (which also blocks the idle
+   *  animation), strand it in place as at-desk. */
+  const strand = (npcId: NpcId): void => {
+    const state = runtime.get(npcId)!;
+    state.path = null;
+    state.kitchenStops = null;
+    state.returnEntry = null;
+    state.target = null;
+    npcObjects[npcId].userData.npcState = "at-desk";
+  };
+
+  const planForEntry = (npcId: NpcId, entry: ScheduleEntry, lunch = false): void => {
+    if (entry.state === "kitchen") startKitchen(npcId, NPC_SCHEDULES[npcId][getCurrentPeriod()], lunch);
+    else if (!startPath(npcId, entry, rng() * 0.3)) strand(npcId);
+  };
+
+  const synchronizePeriod = (period: Period): void => {
+    lastPeriod = period;
+    overrides.clear();
+    validatedDestinations.clear();
+    for (const npc of npcs) {
+      const state = runtime.get(npc.id)!;
+      state.path = null; state.kitchenStops = null; state.dwellRemaining = 0; state.returnEntry = null;
+      planForEntry(npc.id, NPC_SCHEDULES[npc.id][period]);
+    }
+  };
+
+  const finishWalk = (npcId: NpcId): void => {
+    const state = runtime.get(npcId)!;
+    const target = state.target;
+    if (target === null) return;
+    settle(npcId, target);
+    if (state.kitchenStops !== null && state.kitchenIndex < state.kitchenStops.length) {
+      const stop = state.kitchenStops[state.kitchenIndex]!;
+      state.dwellRemaining = KITCHEN_STOP_DWELL[stop.id];
+      npcObjects[npcId].userData.npcState = "dwelling";
+    }
+  };
+
+  const continueKitchen = (npcId: NpcId): void => {
+    const state = runtime.get(npcId)!;
+    if (state.kitchenStops === null) return;
+    state.kitchenIndex += 1;
+    const next = state.kitchenStops[state.kitchenIndex];
+    if (next !== undefined) { startPath(npcId, next.entry, 0); return; }
+    const returnEntry = state.returnEntry;
+    state.kitchenStops = null;
+    state.returnEntry = null;
+    if (returnEntry !== null) startPath(npcId, returnEntry, 0);
   };
 
   const update = (dt: number): void => {
     if (destroyed) return;
-
-    const safeDt = Math.max(0, dt);
-    idleElapsed += safeDt;
-    dtBubbleCheck += safeDt;
-    timeSinceLastBubble += safeDt;
+    const safeDt = Number.isFinite(dt) ? Math.max(0, dt) : 0;
+    idleElapsed += safeDt; bubbleElapsed += safeDt; timeSinceLastBubble += safeDt; controllerElapsed += safeDt;
     if (bubbleSystem !== null && sceneRoot !== null) {
       const camera = sceneRoot.getObjectByProperty("isCamera", true) as THREE.Camera | undefined;
       bubbleSystem.update(safeDt, camera ?? fallbackCamera);
     }
 
-    const currentPeriod = getCurrentPeriod();
-    const isInitialUpdate = lastPeriod === null;
+    const period = getCurrentPeriod();
     if (lastPeriod === null) {
-      lastPeriod = currentPeriod;
-      for (const npc of npcs) {
-        applyEntry(npc.id, interpolate(npc.id, currentPeriod, currentPeriod, 1), false);
+      lastPeriod = period;
+      for (const npc of npcs) settle(npc.id, NPC_SCHEDULES[npc.id][period]);
+    } else if (period !== lastPeriod) synchronizePeriod(period);
+
+    for (const npc of npcs) {
+      const state = runtime.get(npc.id)!;
+      const object = npcObjects[npc.id];
+      state.velocity = { x: 0, z: 0 };
+      if (state.dwellRemaining > 0) {
+        state.dwellRemaining = Math.max(0, state.dwellRemaining - safeDt);
+        if (state.dwellRemaining === 0) continueKitchen(npc.id);
       }
-    } else if (currentPeriod !== lastPeriod) {
-      lastPeriod = currentPeriod;
-      transitionElapsed = 0;
-      animationElapsed = 0;
-      // Each new period starts from a clean schedule; previous
-      // random-walk overrides (e.g. yesterday's coffee break) are
-      // discarded. The validated-destination cache is cleared too
-      // so the next period's overrides re-validate.
-      overrides.clear();
-      validatedDestinations.clear();
+      if (state.path === null) {
+        object.position.y = state.baseY;
+        continue;
+      }
+      let movementDt = safeDt;
+      if (state.departureDelay > 0) {
+        const waited = Math.min(state.departureDelay, movementDt);
+        state.departureDelay -= waited;
+        movementDt -= waited;
+        if (movementDt <= 0) {
+          object.position.y = state.baseY;
+          continue;
+        }
+      }
+      const before = object.position.clone();
+      const advanced = advanceAlongPath(before, state.path, state.segmentIndex, state.distanceInSegment, npc.walkSpeed, movementDt);
+      state.segmentIndex = advanced.segmentIndex;
+      state.distanceInSegment = advanced.distanceInSegment;
+      object.position.copy(advanced.position);
+      object.rotation.y = advanced.face;
+      state.velocity = movementDt > 0
+        ? { x: (object.position.x - before.x) / movementDt, z: (object.position.z - before.z) / movementDt }
+        : { x: 0, z: 0 };
+      if (advanced.finished) finishWalk(npc.id);
+      else {
+        object.userData.npcState = "walking";
+        const cycle = updateWalkCycle(state.walkCycle, movementDt, npc.walkSpeed);
+        state.walkCycle = cycle.state;
+        object.position.y = state.baseY + cycle.bobAmount;
+        const leftLeg = object.getObjectByName("left-leg");
+        const rightLeg = object.getObjectByName("right-leg");
+        const leftArm = object.getObjectByName("arm-left");
+        const rightArm = object.getObjectByName("arm-right");
+        if (leftLeg) leftLeg.rotation.x = cycle.legSwing;
+        if (rightLeg) rightLeg.rotation.x = -cycle.legSwing;
+        if (leftArm) leftArm.rotation.x = cycle.armSwing;
+        if (rightArm) rightArm.rotation.x = -cycle.armSwing;
+      }
     }
 
-    if (!isInitialUpdate) {
-      transitionElapsed = Math.min(NPC_INTERP_DURATION, transitionElapsed + safeDt);
-      animationElapsed += safeDt;
-      const progress = transitionElapsed / NPC_INTERP_DURATION;
-      const fromPeriod = previousPeriod(currentPeriod);
-
-      for (const npc of npcs) {
-        const from = NPC_SCHEDULES[npc.id][fromPeriod];
-        const scheduledTo = NPC_SCHEDULES[npc.id][currentPeriod];
-        const override = overrides.get(npc.id);
-        // L-2026-08-31-05: when an override is set, validate the
-        // destination. If the validator returns null (no free spot
-        // within 2.0m), fall back to the schedule so the NPC
-        // doesn't get "stuck" mid-walk to a blocked point.
-        const to = override === undefined
-          ? scheduledTo
-          : (validateOverride(npc.id, override) ?? scheduledTo);
-        const arriving = from.state === "gone-home" && to.state !== "gone-home";
-        const result = arriving
-          ? {
-              position: to.position,
-              face: to.face,
-              state: to.state,
-            }
-          : {
-              position: interpPosition(from.position, to.position, progress),
-              face: shortestPathYaw(from.face, to.face, progress),
-              state: progress < 1 ? "walking" : to.state,
-            };
-        applyEntry(npc.id, result, result.state === "walking");
-      }
+    const agents: AvoidanceAgent[] = npcs.map((npc) => {
+      const object = npcObjects[npc.id]; const state = runtime.get(npc.id)!;
+      return { id: npc.id, position: object.position, velocity: state.velocity, priority: priorityFor(npc.id) };
+    });
+    for (const npc of npcs) {
+      const object = npcObjects[npc.id]; const state = runtime.get(npc.id)!;
+      if (state.path === null || object.userData.npcState !== "walking") continue;
+      const self = agents.find((agent) => agent.id === npc.id)!;
+      const push = computeAvoidancePush(self, agents);
+      const candidateX = object.position.x + push.x;
+      if (!isSpawnBlocked({ x: candidateX, z: object.position.z, radius: NPC_DEFAULT_RADIUS }, obstacles)) object.position.x = candidateX;
+      const candidateZ = object.position.z + push.z;
+      if (!isSpawnBlocked({ x: object.position.x, z: candidateZ, radius: NPC_DEFAULT_RADIUS }, obstacles)) object.position.z = candidateZ;
     }
 
     for (const npc of npcs) {
       const object = npcObjects[npc.id];
       if (!object.visible || object.userData.npcState === "walking") continue;
-      const idleState = idleStates.get(npc.id) ?? createInitialIdleState(0, npc.id);
-      idleStates.set(
-        npc.id,
-        updateIdle(idleState, safeDt, object.position, object.rotation.y, object, idleElapsed, rng),
-      );
+      const idle = idleStates.get(npc.id) ?? createInitialIdleState(0, npc.id);
+      idleStates.set(npc.id, updateIdle(idle, safeDt, object.position, object.rotation.y, object, idleElapsed, rng));
     }
 
-    if (dtBubbleCheck >= 1) {
-      dtBubbleCheck = 0;
-      const visibleNpcs = npcs
-        .filter((npc) => npcObjects[npc.id].visible)
-        .map((npc) => ({ id: npc.id, position: npcObjects[npc.id].position }));
-      const pair = findClosestPair(visibleNpcs, 2.5);
+    if (bubbleElapsed >= 1) {
+      bubbleElapsed = 0;
+      const visible = npcs.filter((npc) => npcObjects[npc.id].visible).map((npc) => ({ id: npc.id, position: npcObjects[npc.id].position }));
+      const pair = findClosestPair(visible, 2.5);
       if (pair !== null) {
-        const first = npcObjects[pair[0] as NpcId];
-        const second = npcObjects[pair[1] as NpcId];
-        const distance = Math.hypot(
-          first.position.x - second.position.x,
-          first.position.z - second.position.z,
-        );
+        const firstId = pair[0] as NpcId; const secondId = pair[1] as NpcId;
+        const first = npcObjects[firstId]; const second = npcObjects[secondId];
+        const distance = Math.hypot(first.position.x - second.position.x, first.position.z - second.position.z);
         if (shouldShowBubble(distance, timeSinceLastBubble, rng)) {
-          bubbleSystem?.show(first.position, pickLine(INTER_NPC_LINES, rng));
+          const speakerId = firstId === "burek" || secondId !== "burek" ? firstId : secondId;
+          const speaker = npcObjects[speakerId];
+          const bothInKitchen = isKitchenState(first.userData.npcState) && isKitchenState(second.userData.npcState);
+          bubbleSystem?.show(speaker.position, pickLine(resolveBubblePool(speakerId === "burek", bothInKitchen), rng));
           timeSinceLastBubble = 0;
+          if (speakerId === "burek") lastBurekBubbleAt = controllerElapsed;
         }
-        // L-2026-08-30 (Lucas): "NPCs who are working stay next to
-        // the desk but with monitor behind their back, so they do
-        // not really work". When two NPCs are within the bubble
-        // range, make them face each other briefly so the player
-        // sees a 'cooperation' beat. The facing override is held
-        // for ~3 seconds after the NPCs separate, so the player
-        // catches the eye-contact moment.
         if (distance < 2.5) {
-          const dx = second.position.x - first.position.x;
-          const dz = second.position.z - first.position.z;
-          const yawA = Math.atan2(dx, dz);
-          const yawB = Math.atan2(-dx, -dz);
-          if (Math.abs(yawA - first.rotation.y) > 0.1) {
-            first.rotation.y = yawA;
-          }
-          if (Math.abs(yawB - second.rotation.y) > 0.1) {
-            second.rotation.y = yawB;
-          }
+          const dx = second.position.x - first.position.x; const dz = second.position.z - first.position.z;
+          first.rotation.y = Math.atan2(dx, dz); second.rotation.y = Math.atan2(-dx, -dz);
         }
       }
+    }
+
+    if (controllerElapsed >= barkAt) {
+      const burek = npcs.find((npc) => npc.id === "burek");
+      const object = burek === undefined ? undefined : npcObjects.burek;
+      if (object !== undefined && object.visible && object.userData.npcState !== "gone-home" && controllerElapsed - lastBurekBubbleAt >= 60) {
+        bubbleSystem?.show(object.position, pickLine(BUREK_LINES, rng));
+        lastBurekBubbleAt = controllerElapsed;
+        timeSinceLastBubble = 0;
+        barkAt = controllerElapsed + nextBarkDelay(rng);
+      } else barkAt = Math.max(barkAt + 1, lastBurekBubbleAt + 60);
     }
   };
 
   return {
     update,
-    destroy: () => {
-      destroyed = true;
-      bubbleSystem?.destroy();
-    },
+    destroy: () => { destroyed = true; bubbleSystem?.destroy(); },
+    getNpcIds: () => npcs.map((npc) => npc.id),
     setOverride: (npcId, entry) => {
+      const period = getCurrentPeriod();
+      if (lastPeriod !== null && period !== lastPeriod) synchronizePeriod(period);
+      const state = runtime.get(npcId);
+      if (state === undefined) return;
+      state.path = null; state.kitchenStops = null; state.dwellRemaining = 0; state.returnEntry = null;
       if (entry === null) {
-        overrides.delete(npcId);
-        validatedDestinations.delete(npcId);
-      } else {
-        // Validate the destination against the furniture AABBs.
-        // If the validator finds a free spot nearby, use it; if
-        // not, drop the override entirely (the NPC stays at its
-        // desk). The cached validated destination is reused for
-        // every frame in the 2s walk.
-        const validated = validateOverride(npcId, entry);
-        if (validated === null) {
-          overrides.delete(npcId);
-          validatedDestinations.delete(npcId);
-        } else {
-          overrides.set(npcId, validated);
-        }
+        overrides.delete(npcId); validatedDestinations.delete(npcId);
+        planForEntry(npcId, NPC_SCHEDULES[npcId][period]);
+        return;
       }
+      if (entry.state === "kitchen") {
+        overrides.set(npcId, entry);
+        startKitchen(npcId, NPC_SCHEDULES[npcId][period], period === "afternoon");
+        return;
+      }
+      const validated = validateOverride(npcId, entry);
+      if (validated === null) { settle(npcId, NPC_SCHEDULES[npcId][period]); return; }
+      overrides.set(npcId, validated);
+      startPath(npcId, validated, rng() * 0.3);
     },
   };
 }

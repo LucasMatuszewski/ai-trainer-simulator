@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { BUREK_LINES } from "../content/dog-dialogues";
+import { LUNCH_DIALOGUES_HUMAN } from "../content/lunch-dialogues";
 
 export interface BubbleHandle {
   update: (dt: number, camera: THREE.Camera) => void;
@@ -39,6 +41,14 @@ export const INTER_NPC_LINES: string[] = [
   "I recycle bugs. It's called QA.",
   "I'm not asleep, I'm doing deep mental architecture.",
 ];
+
+export function resolveBubblePool(
+  speakerIsBurek: boolean,
+  bothInKitchen: boolean,
+): ReadonlyArray<string> {
+  if (speakerIsBurek) return BUREK_LINES;
+  return bothInKitchen ? LUNCH_DIALOGUES_HUMAN : INTER_NPC_LINES;
+}
 
 const lastLineByList = new WeakMap<ReadonlyArray<string>, number>();
 

@@ -3,8 +3,20 @@ import {
   findClosestPair,
   INTER_NPC_LINES,
   pickLine,
+  resolveBubblePool,
   shouldShowBubble,
 } from "../../src/engine/bubbles";
+import { BUREK_LINES } from "../../src/content/dog-dialogues";
+import { LUNCH_DIALOGUES_HUMAN } from "../../src/content/lunch-dialogues";
+
+describe("resolveBubblePool", () => {
+  it.each([
+    [true, false, BUREK_LINES], [true, true, BUREK_LINES],
+    [false, true, LUNCH_DIALOGUES_HUMAN], [false, false, INTER_NPC_LINES],
+  ] as const)("resolves dog=%s kitchen=%s", (speakerIsBurek, bothInKitchen, expected) => {
+    expect(resolveBubblePool(speakerIsBurek, bothInKitchen)).toBe(expected);
+  });
+});
 
 describe("shouldShowBubble", () => {
   it("shows an eligible nearby bubble", () => {
