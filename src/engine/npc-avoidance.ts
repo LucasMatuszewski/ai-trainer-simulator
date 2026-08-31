@@ -9,8 +9,8 @@ export interface AvoidanceAgent {
 export function computeAvoidancePush(
   self: AvoidanceAgent,
   others: readonly AvoidanceAgent[],
-  radius = 1.5,
-  pushMeters = 0.3,
+  radius = 1,
+  pushMeters = 0.3, // smaller value avoids blocking on collisions, but NPC walk through each other like ghosts.
 ): { x: number; z: number } {
   const selfSpeed = Math.hypot(self.velocity.x, self.velocity.z);
   if (selfSpeed <= 0.05 || radius <= 0 || pushMeters <= 0) return { x: 0, z: 0 };
