@@ -54,6 +54,11 @@ export const NPC_DEFAULT_RADIUS = 0.3;
  *  standing at, say, (11, -6.2) (the coffee machine destination) is
  *  detected as overlapping the coffee machine / counter.
  *
+ *  L-2026-08-31-06: the counter is 7.55m wide, x=[11.475, 19.025].
+ *  The fridge is at x=[10.1, 11.1] - WEST of the counter, not
+ *  under it. The bin is at x=[19.175, 19.625] - sticking out
+ *  past the east wall, by design.
+ *
  *  Why hand-curated and not auto-derived? The `position` field in
  *  `WorldFurniture` is the GROUP origin; the actual AABB depends on
  *  the factory function. Curating the list is the right call for our
@@ -62,20 +67,22 @@ export const NPC_DEFAULT_RADIUS = 0.3;
  */
 export const ROOM_FURNITURE_AABBS: readonly AABB[] = [
   // ---- KITCHEN (C-36, x=[9, 19], z=[-7, 7]) ----
-  // The 9m counter run along the north wall.
-  { minX: 9.75, maxX: 18.75, minZ: -6.55, maxZ: -5.85 },
-  // Fridge.
-  { minX: 10.1, maxX: 11.1, minZ: -7.1, maxZ: -6.1 },
-  // Kitchen coffee machine (the new detailed one).
-  { minX: 11.65, maxX: 12.35, minZ: -6.95, maxZ: -6.25 },
+  // The counter (one continuous unit: cabinet + top + splash + doors).
+  // 7.55m wide, 0.7m deep, from z=-6.95 to z=-6.25.
+  { minX: 11.475, maxX: 19.025, minZ: -6.95, maxZ: -5.85 },
+  // Fridge (free-standing against the wall, x=10.1-11.1, z=-7.0 to -6.1).
+  { minX: 10.1, maxX: 11.1, minZ: -7.0, maxZ: -6.1 },
+  // Kitchen coffee machine (sits on the counter top).
+  { minX: 12.65, maxX: 13.35, minZ: -6.95, maxZ: -6.25 },
   // Microwave on the counter.
-  { minX: 13.75, maxX: 14.65, minZ: -6.95, maxZ: -6.15 },
+  { minX: 14.85, maxX: 15.55, minZ: -6.95, maxZ: -6.25 },
   // Sink (the counter section with the basin).
-  { minX: 15.7, maxX: 17.3, minZ: -6.95, maxZ: -6.25 },
-  // Dishwasher under the counter.
-  { minX: 17.45, maxX: 18.15, minZ: -6.95, maxZ: -6.25 },
-  // Bin against the north wall.
-  { minX: 18.275, maxX: 18.725, minZ: -6.2, maxZ: -5.8 },
+  { minX: 16.7, maxX: 18.3, minZ: -6.95, maxZ: -6.25 },
+  // Dishwasher (built into the cabinet, east end).
+  { minX: 18.25, maxX: 18.95, minZ: -6.55, maxZ: -5.85 },
+  // Bin against the north wall, EAST of the counter (sticks out
+  // past the east wall by design - the user said this is fine).
+  { minX: 19.175, maxX: 19.625, minZ: -6.6, maxZ: -6.2 },
   // Round kitchen table in the middle of the room.
   { minX: 13.3, maxX: 14.7, minZ: 1.8, maxZ: 3.2 },
   // The three kitchen chairs.

@@ -242,40 +242,65 @@ export const WORLD_ROOMS: WorldRoom[] = [
     floorColor: 0xc7b98b,
     wallColor: 0xb8dce8,
     // C-36: full kitchen premium pass. The counter runs along the
-    // north wall (z=-6.2, the room's z range is [-7, 7]). The detailed
-    // coffee-machine, fridge, microwave, sink, kettle, etc. all sit
-    // on the counter; the bin, fire extinguisher, and dishwasher are
-    // free-standing or under-counter; the table + chairs are in the
-    // middle of the room.
+    // north wall (z=-6.6, the room's z range is [-7, 7]). The
+    // counter is 0.7m deep so it actually meets the back wall
+    // (L-2026-08-31-06). The fridge is the LAST element on the
+    // WEST end (free-standing, not built into the cabinet). The
+    // cabinet AND countertop end where the cabinet ends so the
+    // bin sits on the floor just past the counter (it can stick
+    // out slightly past the east wall, that's fine).
+    //
+    // L-2026-08-31-06 (after Lucas's screenshot): the whole kitchen
+    // equipment row is shifted RIGHT by 1.0m so the fridge's west
+    // edge clears the west wall (x=9.78) with 0.32m of breathing
+    // room. The fridge's back face is at z=-6.9 (0.1m off the back
+    // wall at z=-7). The counter, all the counter-top appliances,
+    // and the bin are shifted by the same 1.0m.
     furniture: [
-      // The long counter (9m wide, 0.7m deep, 0.85m tall) running
-      // along the north wall.
-      { type: "kitchen-counter", position: [14.25, 0, -6.2] },
-      // Appliances ON the counter, at y=0.91 (counter top surface).
-      // The fridge is the biggest item, leftmost.
-      { type: "fridge", position: [10.6, 0, -6.6] },
-      // The coffee machine (the new detailed C-36 one).
-      { type: "coffee-machine-kitchen", position: [12.0, 0, -6.6] },
+      // The counter is 7.55m wide, centered at x=15.25, so it
+      // spans world x = [11.475, 19.025]. The fridge sits to the
+      // WEST of the counter (NOT under it). The bin sits just
+      // east of the counter.
+      { type: "kitchen-counter", position: [15.25, 0, -6.6] },
+      // The fridge is the LAST element on the west end, free-
+      // standing against the wall (NOT on the counter top, NOT in
+      // a built-in cabinet). West face at x=10.1 (0.32m from the
+      // west wall inner face at x=9.78). Back face at z=-7.0...
+      // wait, the wall inner face IS at z=-7. The fridge depth
+      // center is at z=-6.5, depth 0.95m, so back at z=-6.5-0.475
+      // = -6.975 (0.025m from the wall). The makeFridge() body
+      // depth is 0.95, so it fits.
+      { type: "fridge", position: [10.6, 0, -6.5] },
+      // The coffee machine (the new detailed C-36 one) sits on
+      // the counter top. Counter top surface y = 0.89.
+      { type: "coffee-machine-kitchen", position: [13.0, 0, -6.6] },
       // A kettle next to the coffee machine.
-      { type: "kettle", position: [12.7, 0.91, -6.55] },
+      { type: "kettle", position: [13.7, 0.91, -6.6] },
       // A coffee grinder.
-      { type: "coffee-grinder", position: [13.2, 0.91, -6.55] },
+      { type: "coffee-grinder", position: [14.2, 0.91, -6.6] },
       // The microwave (sits on the counter).
-      { type: "microwave", position: [14.2, 0.91, -6.55] },
+      { type: "microwave", position: [15.2, 0.91, -6.6] },
       // A soap dispenser.
-      { type: "soap-dispenser", position: [15.0, 0.91, -6.55] },
+      { type: "soap-dispenser", position: [16.0, 0.91, -6.6] },
       // A small houseplant.
-      { type: "plant-counter", position: [15.4, 0.91, -6.55] },
+      { type: "plant-counter", position: [16.4, 0.91, -6.6] },
       // The sink (a big counter section with basin + faucet).
-      { type: "sink", position: [16.5, 0, -6.6] },
+      { type: "sink", position: [17.5, 0, -6.6] },
       // A dish rack on the counter next to the sink.
-      { type: "dish-rack", position: [17.6, 0.91, -6.55] },
-      // The dishwasher (under-counter, but separate for collision).
-      { type: "dishwasher", position: [17.8, 0, -6.2] },
-      // The bin (free-standing, against the north wall east end).
-      { type: "bin", position: [18.5, 0, -6.0] },
-      // Fire extinguisher (mounted near the door, at the west end of the counter).
-      { type: "fire-extinguisher-kitchen", position: [9.85, 0, -6.4] },
+      { type: "dish-rack", position: [18.6, 0.91, -6.6] },
+      // The dishwasher (built into the cabinet, in the east end).
+      { type: "dishwasher", position: [18.6, 0, -6.6] },
+      // The bin sits on the floor JUST EAST of the counter. The
+      // counter ends at x=19.025; the bin is 0.45m wide, so place
+      // its CENTER at x=19.4 (it spans x=19.175 to 19.625,
+      // sticking out past the east wall at x=19 by 0.625m). The
+      // bin can be partially outside the kitchen — that is fine.
+      { type: "bin", position: [19.4, 0, -6.4] },
+      // Fire extinguisher mounted on the west wall, in the corner
+      // near the doorway (x=9.78 is the kitchen's west wall inner
+      // face). Placed at x=9.95 (0.17m east of the wall) so it
+      // sits against the wall without clipping.
+      { type: "fire-extinguisher-kitchen", position: [9.95, 0, -3] },
       // The kitchen table (round) and three chairs in the middle of the room.
       { type: "kitchen-table", position: [14, 0, 2.5] },
       { type: "kitchen-chair", position: [13.0, 0, 2.5], rotationY: Math.PI / 2 },

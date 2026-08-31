@@ -86,6 +86,31 @@ export function makeMicrowave(): THREE.Group {
     group.add(box(`microwave-digit-${i}`, [width, 0.04, 0.006], new THREE.MeshBasicMaterial({ color: DISPLAY_GREEN }), [0.235 + i * 0.028, 0.35, 0.344]));
   }
 
+  // L-2026-08-31-07: a single blinking LED next to the digits. This
+  // is the classic "12:00" forgotten-clock look - a coworker set
+  // the microwave to heat their lunch 4 years ago, walked away,
+  // and nobody has touched it since. The LED ticks once per second
+  // (50% duty cycle, on for 500ms / off for 500ms) and is wired
+  // up via the Mesh's onBeforeRender hook.
+  //
+  // NOTE: setting `visible = false` would NOT work here because
+  // Three.js skips onBeforeRender on invisible objects (a chicken-
+  // and-egg problem). Instead, the callback swaps the material's
+  // color between a bright green (LED "on") and a dim dark green
+  // (LED "off"). The mesh stays visible all the time; only the
+  // color changes.
+  const ledMaterial = new THREE.MeshBasicMaterial({ color: DISPLAY_GREEN });
+  const led = box("microwave-blink-led", [0.018, 0.018, 0.006], ledMaterial, [0.4, 0.42, 0.345]);
+  led.onBeforeRender = () => {
+    // performance.now() in seconds, modulo 1 = phase in [0, 1).
+    // The LED is on for the first 50% of each 1-second period.
+    const phase = (performance.now() / 1000) % 1.0;
+    const isOn = phase < 0.5;
+    // Bright green when on, dim dark green when off.
+    ledMaterial.color.setHex(isOn ? 0x40e090 : 0x0a2a1c);
+  };
+  group.add(led);
+
   // Two control buttons.
   group.add(box("microwave-button-1", [0.07, 0.07, 0.012], new THREE.MeshLambertMaterial({ color: BUTTON }), [0.29, 0.24, 0.343]));
   group.add(box("microwave-button-2", [0.07, 0.07, 0.012], new THREE.MeshLambertMaterial({ color: BUTTON_RED }), [0.29, 0.16, 0.343]));
