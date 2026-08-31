@@ -331,7 +331,7 @@ export function buildOfficeScene(
     // Move to the east side of the south wall, well clear of
     // the meeting-room door (which is at x=0), and face them
     // NORTH so the first thing they see is the office interior.
-    playerStart: new THREE.Vector3(1, 0.5, 5),
+    playerStart: new THREE.Vector3(1, 0, 5),
     updatables,
     multiRoom,
     npcController,
