@@ -31,13 +31,23 @@ export function clothingForNpc(id: string, gender: Exclude<NpcMeshGender, "dog">
   };
 }
 
+/**
+ * C-45 amendment (l)(4): `pivotAtTop` shifts the box geometry so
+ * its TOP edge is at the mesh's local origin. That makes the
+ * rotation pivot the shoulder (or hip), not the box's center, so
+ * the arm hangs from the joint and swings correctly. Used for
+ * arms and legs; everything else keeps the default centered pivot.
+ */
 function box(
   name: string,
   dimensions: [number, number, number],
   material: THREE.Material,
   position: [number, number, number],
+  pivotAtTop = false,
 ): THREE.Mesh<THREE.BoxGeometry, THREE.Material> {
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(...dimensions), material);
+  const geometry = new THREE.BoxGeometry(...dimensions);
+  if (pivotAtTop) geometry.translate(0, -dimensions[1] / 2, 0);
+  const mesh = new THREE.Mesh(geometry, material);
   mesh.name = name;
   mesh.position.set(...position);
   return mesh;
@@ -67,17 +77,22 @@ function createHumanoidHead(hairColor: number, female: boolean): THREE.Group {
 
 function addHumanoidLegs(group: THREE.Group): void {
   const legMaterial = new THREE.MeshLambertMaterial({ color: DARK_CLOTHING });
+  // pivotAtTop: leg box's TOP is at the hip (y=0.3) so the rotation
+  // pivots the hip joint instead of the box's center.
   group.add(
-    box("left-leg", [0.18, 0.3, 0.3], legMaterial, [-0.15, 0.15, 0]),
-    box("right-leg", [0.18, 0.3, 0.3], legMaterial, [0.15, 0.15, 0]),
+    box("left-leg", [0.18, 0.3, 0.3], legMaterial, [-0.15, 0.3, 0], true),
+    box("right-leg", [0.18, 0.3, 0.3], legMaterial, [0.15, 0.3, 0], true),
   );
 }
 
 function addHumanoidArms(group: THREE.Group, bodyColor: number, x = 0.38): void {
   const material = new THREE.MeshLambertMaterial({ color: bodyColor });
+  // pivotAtTop: arm box's TOP is at the shoulder (y=1.05) so the
+  // rotation pivots the shoulder joint instead of the box's center
+  // (was rotating the arm around its waist, looking like a flail).
   group.add(
-    box("arm-left", [0.14, 0.65, 0.16], material, [-x, 0.72, 0]),
-    box("arm-right", [0.14, 0.65, 0.16], material, [x, 0.72, 0]),
+    box("arm-left", [0.14, 0.65, 0.16], material, [-x, 1.05, 0], true),
+    box("arm-right", [0.14, 0.65, 0.16], material, [x, 1.05, 0], true),
   );
 }
 
@@ -86,7 +101,7 @@ function createMaleMesh(bodyColor: number, hairColor: number): THREE.Group {
   group.add(
     box("body", [0.6, 1, 0.4], new THREE.MeshLambertMaterial({ color: bodyColor }), [0, 0.5, 0]),
     box("belt", [0.62, 0.08, 0.42], new THREE.MeshLambertMaterial({ color: 0x222222 }), [0, 0.45, 0]),
-    box("tie", [0.08, 0.38, 0.02], new THREE.MeshLambertMaterial({ color: 0x992222 }), [0, 0.78, 0.211]),
+    box("tie", [0.08, 0.38, 0.02], new THREE.MeshLambertMaterial({ color: 0x992222 }), [0, 0.65, 0.211]),
     createHumanoidHead(hairColor, false),
   );
   addHumanoidLegs(group);
