@@ -181,24 +181,28 @@ export const WORLD_ROOMS: WorldRoom[] = [
       // so the CEO watches the office over it.
       { type: "executive-desk", position: [0, 0, -16] },
       { type: "executive-chair", position: [0, 0, -17.15] },
-      { type: "bookshelf", position: [-7.55, 1.25, -17], size: [0.7, 2.5, 4] },
+      // Real bookshelf (screenshot #48: the old placeholder was
+      // one huge brown box): frame, shelves, book rows, trophy
+      // and plant. Runs along the west wall.
+      { type: "bookshelf", position: [-7.6, 0, -17], rotationY: Math.PI / 2 },
       // Meeting corner against the west wall.
       { type: "sofa", position: [-6.35, 0, -10.9], rotationY: Math.PI / 2 },
       { type: "coffee-table", position: [-5.05, 0, -10.9] },
     ],
     signs: [
-      // The huge Batman emblem fills the north accent wall,
-      // facing south toward the glass and the main office (#4).
-      { text: "BATMAN", position: [0, 1.5, -18.85], face: 0, color: 0xffdd22, size: [15.5, 2.9] },
-      // Funny posters on the solid west wall, facing east (#8,
-      // copy from the GLM content pack).
-      { text: "KEEP CALM AND SHIP IT", position: [-7.9, 1.85, -14.3], face: Math.PI / 2, color: 0xc0392b, size: [2.0, 1.0] },
-      { text: "LINKEDIN TOP VOICE", position: [-7.9, 1.0, -12.9], face: Math.PI / 2, color: 0x1d8bf0, size: [1.3, 0.5] },
-      { text: "HAVE YOU TRIED TURNING IT OFF AND ON AGAIN?", position: [-7.9, 1.85, -11.5], face: Math.PI / 2, color: 0x27ae60, size: [1.6, 0.9] },
-      { text: "DISRUPTION IS JUST PIVOTING WITH CONFIDENCE. - DAWID", position: [-7.9, 0.95, -10.6], face: Math.PI / 2, color: 0xb8912f, size: [1.5, 0.6] },
+      // The huge Batman emblem on the north accent wall, facing
+      // south toward the glass and the main office (#4 + #49:
+      // kept 1m of wall margin on each side so it does not span
+      // the whole wall).
+      { text: "BATMAN", position: [0, 1.5, -18.85], face: 0, color: 0xffdd22, size: [14, 2.85] },
+      // West-wall posters (#48: fewer, muted, wrapped by the new
+      // drawPoster renderer - copy from the GLM content pack).
+      { text: "KEEP CALM AND SHIP IT", position: [-7.9, 1.7, -13.6], face: Math.PI / 2, color: 0x7a3b32, size: [1.9, 0.95] },
+      { text: "DISRUPTION IS JUST PIVOTING WITH CONFIDENCE", position: [-7.9, 1.7, -11.5], face: Math.PI / 2, color: 0x6e5a2e, size: [1.9, 0.95] },
       // The BATCAVE door sign greets visitors from the office
-      // side of the south glass, next to the doorway.
-      { text: "BATCAVE - KNOCK TWICE", position: [2.0, 2.1, -9.31], face: 0, color: 0xffdd22, size: [1.8, 0.6] },
+      // side of the south glass, next to the doorway (#49: the
+      // renderer wraps it onto two lines; tall enough to read).
+      { text: "BATCAVE - KNOCK TWICE", position: [2.0, 2.1, -9.31], face: 0, color: 0x8a6d1f, size: [1.6, 0.7] },
     ],
   },
   {

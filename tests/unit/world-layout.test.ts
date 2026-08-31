@@ -28,6 +28,8 @@ beforeAll(() => {
     fillRect: vi.fn(),
     strokeRect: vi.fn(),
     fillText: vi.fn(),
+    createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+    measureText: vi.fn((text: string) => ({ width: text.length * 20 })),
   }) as unknown as CanvasRenderingContext2D);
 });
 

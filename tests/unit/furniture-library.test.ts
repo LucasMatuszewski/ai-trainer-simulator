@@ -9,6 +9,7 @@ import { makeExecutiveChair } from "../../src/engine/furniture/executive-chair";
 import { makeExecutiveDesk } from "../../src/engine/furniture/executive-desk";
 import { makeGarden, GARDEN_BOUNDS, makeOutdoorScenery } from "../../src/engine/furniture/garden";
 import { makeSofa } from "../../src/engine/furniture/sofa";
+import { makeBookshelf } from "../../src/engine/furniture/bookshelf";
 
 function namedChildren(group: THREE.Object3D): string[] {
   return group.children.flatMap((child) =>
@@ -77,6 +78,17 @@ describe("sofa and coffee table (C-44 #8)", () => {
     for (const name of ["sofa-base", "sofa-seat-left", "sofa-seat-right", "sofa-back-left", "sofa-arm-left", "sofa-arm-right"]) {
       expect(sofa.getObjectByName(name), name).toBeDefined();
     }
+  });
+
+  it("builds a bookshelf with shelves, books and decor, not one brown box", () => {
+    const shelf = makeBookshelf();
+    for (const name of ["shelf-side-left", "shelf-side-right", "shelf-top", "shelf-back", "shelf-trophy", "shelf-plant-pot"]) {
+      expect(shelf.getObjectByName(name), name).toBeDefined();
+    }
+    expect(shelf.children.filter((child) => child.name === "shelf-board")).toHaveLength(4);
+    expect(shelf.children.filter((child) => child.name === "book-row").length).toBeGreaterThanOrEqual(3);
+    const books = shelf.children.flatMap((row) => row.children);
+    expect(books.filter((book) => book.name === "book").length).toBeGreaterThanOrEqual(20);
   });
 
   it("builds a coffee table with a translucent glass top", () => {

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import type { WorldFurniture, WorldRoom } from "../content/world-layout";
 import { drawBatmanEmblem } from "./furniture/batman-emblem";
+import { makeBookshelf } from "./furniture/bookshelf";
 import { makeExecutiveChair } from "./furniture/executive-chair";
 import { makeExecutiveDesk } from "./furniture/executive-desk";
 import { makeCeilingLight } from "./furniture/ceiling-light";
@@ -15,6 +16,7 @@ import { makeSofa } from "./furniture/sofa";
 const FURNITURE_FACTORIES: Record<string, () => THREE.Group> = {
   "executive-desk": makeExecutiveDesk,
   "executive-chair": makeExecutiveChair,
+  bookshelf: makeBookshelf,
   sofa: makeSofa,
   "coffee-table": makeCoffeeTable,
 };
@@ -135,19 +137,10 @@ export function buildMultiRoomMeshes(
       canvas.height = 256;
       const context = canvas.getContext("2d");
       if (context) {
-        context.fillStyle = "#171717";
-        context.fillRect(0, 0, canvas.width, canvas.height);
         if (sign.text === "BATMAN") {
           drawBatmanEmblem(context, canvas.width, canvas.height);
         } else {
-          context.strokeStyle = `#${sign.color.toString(16).padStart(6, "0")}`;
-          context.lineWidth = 18;
-          context.strokeRect(9, 9, canvas.width - 18, canvas.height - 18);
-          context.fillStyle = `#${sign.color.toString(16).padStart(6, "0")}`;
-          context.font = "bold 54px monospace";
-          context.textAlign = "center";
-          context.textBaseline = "middle";
-          context.fillText(sign.text, canvas.width / 2, canvas.height / 2);
+          drawPoster(context, canvas.width, canvas.height, sign.text, sign.color);
         }
       }
       const texture = new THREE.CanvasTexture(canvas);
@@ -166,6 +159,77 @@ export function buildMultiRoomMeshes(
 
     layout.add(group);
     return group;
+  });
+}
+
+/**
+ * Draw a wall sign / poster (L-2026-08-31 #48: the old renderer
+ * drew one saturated-color line that overflowed the canvas).
+ *
+ * Style: a muted, gallery-like poster - deep desaturated
+ * background tinted by the sign color, a thin double frame in
+ * warm ivory, and the text word-wrapped, auto-fitted and set in
+ * the same ivory rather than the loud accent color.
+ */
+function drawPoster(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  text: string,
+  accentColor: number,
+): void {
+  // Deep charcoal tinted ~15% toward the accent color.
+  const accent = new THREE.Color(accentColor);
+  const background = new THREE.Color(0x1c1a18).lerp(accent, 0.15);
+  context.fillStyle = `#${background.getHexString()}`;
+  context.fillRect(0, 0, width, height);
+
+  // Subtle inner vignette so the poster reads as printed paper.
+  const vignette = context.createLinearGradient(0, 0, 0, height);
+  vignette.addColorStop(0, "rgba(255,255,255,0.05)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.18)");
+  context.fillStyle = vignette;
+  context.fillRect(0, 0, width, height);
+
+  // Thin double frame in warm ivory.
+  const ivory = "#d8d2c0";
+  context.strokeStyle = ivory;
+  context.lineWidth = 5;
+  context.strokeRect(16, 16, width - 32, height - 32);
+  context.lineWidth = 2;
+  context.strokeRect(26, 26, width - 52, height - 52);
+
+  // Word-wrap with auto-fit: shrink the font until the text
+  // fits in at most 3 lines inside the frame.
+  const maxWidth = width - 100;
+  const words = text.split(/\s+/).filter((word) => word.length > 0);
+  let fontSize = 46;
+  let lines: string[] = [];
+  for (; fontSize >= 22; fontSize -= 4) {
+    context.font = `bold ${fontSize}px monospace`;
+    lines = [];
+    let current = "";
+    for (const word of words) {
+      const candidate = current === "" ? word : `${current} ${word}`;
+      if (context.measureText(candidate).width <= maxWidth || current === "") {
+        current = candidate;
+      } else {
+        lines.push(current);
+        current = word;
+      }
+    }
+    if (current !== "") lines.push(current);
+    if (lines.length <= 3) break;
+  }
+
+  context.fillStyle = ivory;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  const lineHeight = fontSize * 1.25;
+  const totalHeight = lines.length * lineHeight;
+  const startY = height / 2 - totalHeight / 2 + lineHeight / 2;
+  lines.forEach((line, index) => {
+    context.fillText(line, width / 2, startY + index * lineHeight, maxWidth);
   });
 }
 
