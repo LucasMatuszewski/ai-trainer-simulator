@@ -17,7 +17,7 @@ import type { NPC, NpcId } from "../types";
 export interface OfficeRosterHandle {
   root: HTMLElement;
   /** Re-render the relationship numbers / availability state. */
-  refresh: (npcStates: Map<NpcId, { relationship: number; available: boolean }>) => void;
+  refresh: (npcStates: Map<NpcId, { relationship: number; available: boolean; status?: string }>) => void;
   /** Set the currently-focused NPC (camera will pan to them). */
   setFocus: (id: NpcId | null) => void;
 }
@@ -89,12 +89,26 @@ export function mountOfficeRoster(
         relEl.textContent = relationshipLabel(s.relationship);
         relEl.dataset.mood = relationshipMood(s.relationship);
         const statusEl = card.querySelector<HTMLElement>("[data-status]")!;
+        // C-45 amendment (l)(5): surface the live NPC state (kitchen,
+        // dwelling, walking, gone-home) instead of the always-lying
+        // "At desk". gone-home = unavailable (evening / away); the
+        // other states remain clickable so the player can still
+        // approach a luncher or a mid-walk NPC.
         if (!s.available) {
-          statusEl.textContent = "Out for lunch";
+          statusEl.textContent = "Not in office";
           statusEl.dataset.state = "away";
+        } else if (s.status === "kitchen" || s.status === "dwelling") {
+          statusEl.textContent = s.status === "dwelling" ? "At kitchen" : "Walking to kitchen";
+          statusEl.dataset.state = "available";
+        } else if (s.status === "walking") {
+          statusEl.textContent = "Walking";
+          statusEl.dataset.state = "available";
+        } else if (currentFocus === npc.id) {
+          statusEl.textContent = "Talking...";
+          statusEl.dataset.state = "talking";
         } else {
-          statusEl.textContent = currentFocus === npc.id ? "Talking..." : "At desk";
-          statusEl.dataset.state = currentFocus === npc.id ? "talking" : "available";
+          statusEl.textContent = "At desk";
+          statusEl.dataset.state = "available";
         }
         card.classList.toggle("focused", currentFocus === npc.id);
         card.classList.toggle("away", !s.available);
