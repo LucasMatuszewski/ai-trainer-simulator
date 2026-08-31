@@ -1,0 +1,264 @@
+/**
+ * NPC spawn / destination validator.
+ *
+ * The NPC controller interpolates each NPC from its previous position
+ * to a target destination over 2 seconds. Before today, the destination
+ * was trusted blindly: if a random destination had the same XZ as a
+ * piece of furniture (e.g. the kitchen coffee machine at x=11, z=-6.2),
+ * the NPC visually spawned inside the box.
+ *
+ * This module is the pure-function fix. Three pieces:
+ *
+ *   1. `NPC_OBSTACLES` — the static AABBs the NPCs must not overlap.
+ *      Built from the main-office OBSTACLES, the multi-room furniture
+ *      (fridge, microwave, sink, counter, etc.), and the room walls.
+ *
+ *   2. `findFreeSpawnNear(desired, obstacles, maxRadius)` — if the
+ *      desired spawn is blocked, sample a ring of offsets around it
+ *      and return the first free position. The standard "sample around
+ *      the point" technique from the three.js community
+ *      (https://dev.to/bandinopla/collision-detection-in-threejs-made-easy-using-bvh-41g5).
+ *
+ *   3. `depenetrate(pos, obstacles)` — push the NPC out of any
+ *      overlapping AABB along the minimum-translation vector. One
+ *      pass is enough for our ~20-NPC / ~50-furniture scale.
+ *
+ * This file has zero dependencies on three.js, the scene, or any
+ * DOM. It is unit-testable.
+ */
+import type { AABB } from "./collision";
+import { OBSTACLES } from "../content/npcs";
+import { WORLD_COLLISION_WALLS } from "../content/world-layout";
+
+export interface NpcSpawn {
+  x: number;
+  z: number;
+  /** NPC circle radius. The kitchen coffee machine NPC uses 0.3. */
+  radius: number;
+}
+
+/**
+ * Default NPC circle radius (matching the player radius used by
+ * controls.ts). 0.3m is a comfortable office-corridor width.
+ */
+export const NPC_DEFAULT_RADIUS = 0.3;
+
+/** A static set of additional furniture AABBs in the multi-room
+ *  layout (kitchen, training, meeting, toilet, CEO office). The
+ *  generic `furniture` typed entries in `WORLD_ROOMS.furniture` are
+ *  not AABBs by themselves; this list is hand-curated to cover the
+ *  kitchen's dense new furniture, where the random-walk destinations
+ *  land most often.
+ *
+ *  Coords are matched to the world-layout.ts placements so an NPC
+ *  standing at, say, (11, -6.2) (the coffee machine destination) is
+ *  detected as overlapping the coffee machine / counter.
+ *
+ *  Why hand-curated and not auto-derived? The `position` field in
+ *  `WorldFurniture` is the GROUP origin; the actual AABB depends on
+ *  the factory function. Curating the list is the right call for our
+ *  scale: ~15 entries, updated whenever a new furniture item lands
+ *  in a place NPCs walk.
+ */
+export const ROOM_FURNITURE_AABBS: readonly AABB[] = [
+  // ---- KITCHEN (C-36, x=[9, 19], z=[-7, 7]) ----
+  // The 9m counter run along the north wall.
+  { minX: 9.75, maxX: 18.75, minZ: -6.55, maxZ: -5.85 },
+  // Fridge.
+  { minX: 10.1, maxX: 11.1, minZ: -7.1, maxZ: -6.1 },
+  // Kitchen coffee machine (the new detailed one).
+  { minX: 11.65, maxX: 12.35, minZ: -6.95, maxZ: -6.25 },
+  // Microwave on the counter.
+  { minX: 13.75, maxX: 14.65, minZ: -6.95, maxZ: -6.15 },
+  // Sink (the counter section with the basin).
+  { minX: 15.7, maxX: 17.3, minZ: -6.95, maxZ: -6.25 },
+  // Dishwasher under the counter.
+  { minX: 17.45, maxX: 18.15, minZ: -6.95, maxZ: -6.25 },
+  // Bin against the north wall.
+  { minX: 18.275, maxX: 18.725, minZ: -6.2, maxZ: -5.8 },
+  // Round kitchen table in the middle of the room.
+  { minX: 13.3, maxX: 14.7, minZ: 1.8, maxZ: 3.2 },
+  // The three kitchen chairs.
+  { minX: 12.78, maxX: 13.22, minZ: 2.28, maxZ: 2.72 },
+  { minX: 14.78, maxX: 15.22, minZ: 2.28, maxZ: 2.72 },
+  { minX: 13.78, maxX: 14.22, minZ: 3.38, maxZ: 3.82 },
+  // ---- TOILET (x=[-19, -9], z=[9, 19]) ----
+  // Two stalls.
+  { minX: -16.6, maxX: -15.4, minZ: 15.2, maxZ: 16.8 },
+  { minX: -12.6, maxX: -11.4, minZ: 15.2, maxZ: 16.8 },
+  // Sink.
+  { minX: -14.95, maxX: -13.05, minZ: 11.2, maxZ: 11.8 },
+  // ---- MEETING ROOM (x=[-6, 6], z=[9, 19]) ----
+  // The big table.
+  { minX: -1.5, maxX: 1.5, minZ: 11.25, maxZ: 16.75 },
+  // ---- TRAINING ROOM (x=[19, 27], z=[-19, -3]) ----
+  // Projector screen (a thin wall on the far north wall).
+  { minX: 20.5, maxX: 25.5, minZ: -19.06, maxZ: -18.34 },
+  // Lectern.
+  { minX: 22.4, maxX: 23.6, minZ: -17.4, maxZ: -16.6 },
+  // Whiteboard on the south wall.
+  { minX: 21.0, maxX: 25.0, minZ: -3.12, maxZ: -3.0 },
+  // CEO office desk (a wide bar, north side of the room).
+  { minX: -1.6, maxX: 1.6, minZ: -16.4, maxZ: -15.6 },
+  // CEO office chair.
+  { minX: -0.25, maxX: 0.25, minZ: -17.4, maxZ: -16.9 },
+];
+
+/**
+ * The complete set of static obstacles for NPC collision. Built
+ * lazily on first call so importing the module doesn't pay the
+ * construction cost when an NPC validator is never used.
+ */
+let cachedNpcObstacles: ReadonlyArray<AABB> | null = null;
+export function getNpcObstacles(): ReadonlyArray<AABB> {
+  if (cachedNpcObstacles === null) {
+    cachedNpcObstacles = [...OBSTACLES, ...ROOM_FURNITURE_AABBS, ...WORLD_COLLISION_WALLS];
+  }
+  return cachedNpcObstacles;
+}
+
+/** Returns true if the spawn circle overlaps any static AABB.
+ *  Uses the proper circle-vs-AABB test (Christer Ericke §5.5): clamp
+ *  the center to the AABB, compute the squared distance, compare to
+ *  the squared radius. This is the same test that `depenetrate`
+ *  uses internally, so the two functions stay in sync. */
+export function isSpawnBlocked(spawn: NpcSpawn, obstacles: ReadonlyArray<AABB>): boolean {
+  for (const o of obstacles) {
+    if (circleOverlapsAabb(spawn.x, spawn.z, spawn.radius, o)) return true;
+  }
+  return false;
+}
+
+/**
+ * Pick a free spawn point near `desired`. Samples a ring of offsets
+ * at increasing radius. Returns the first non-blocked point, or
+ * `null` if none found within `maxRadius`. The caller should fall
+ * back to staying at the desk when this returns null.
+ *
+ * Strategy (the standard AABB-sampling pattern from the three.js
+ * community BVH guide):
+ *   1. Try the desired point as-is.
+ *   2. For each radius in [0.5, 1.0, 1.5, 2.0], sample 8 directions
+ *      (cardinal + diagonal). Return the first non-blocked.
+ *   3. If all 32 sample points are blocked, return null.
+ *
+ * 8 directions at 4 radii = 32 candidates, which is fine for the
+ * 1-in-10 random walk that picks a kitchen destination.
+ */
+export function findFreeSpawnNear(
+  desired: NpcSpawn,
+  obstacles: ReadonlyArray<AABB>,
+  maxRadius = 2.0,
+): NpcSpawn | null {
+  if (!isSpawnBlocked(desired, obstacles)) return desired;
+  for (const r of [0.5, 1.0, 1.5, 2.0]) {
+    if (r > maxRadius) break;
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const candidate: NpcSpawn = {
+        x: desired.x + Math.cos(angle) * r,
+        z: desired.z + Math.sin(angle) * r,
+        radius: desired.radius,
+      };
+      if (!isSpawnBlocked(candidate, obstacles)) return candidate;
+    }
+  }
+  return null;
+}
+
+/** Circle-vs-AABB overlap test (the correct test for a circle NPC).
+ *  Returns true if any part of the circle overlaps the AABB.
+ *
+ *  The trick: clamp the circle center to the AABB, get the closest
+ *  point on the AABB to the center, and check if the distance from
+ *  the center to that point is less than the radius. This is the
+ *  standard circle-vs-AABB test from real-time collision detection
+ *  (Christer Ericke, "Real-Time Collision Detection", 2004, §5.5). */
+function circleOverlapsAabb(
+  cx: number,
+  cz: number,
+  radius: number,
+  o: AABB,
+): boolean {
+  const closestX = Math.max(o.minX, Math.min(cx, o.maxX));
+  const closestZ = Math.max(o.minZ, Math.min(cz, o.maxZ));
+  const dx = cx - closestX;
+  const dz = cz - closestZ;
+  return dx * dx + dz * dz < radius * radius;
+}
+
+/**
+ * Push the NPC out of any overlapping AABB using the closest-point
+ * normal (Christer Ericke §5.5.5). The push direction is FROM the
+ * closest point on the AABB TO the circle center, normalized, times
+ * (radius - currentDistance) so the circle sits exactly at the
+ * boundary after the push.
+ *
+ * Multiple passes (up to 4) handle the corner case where pushing
+ * out of one AABB lands the NPC into another.
+ *
+ * The 0.001m epsilon on the final position prevents the NPC from
+ * resting exactly on the boundary, where float drift could cause
+ * the next frame's overlap test to flicker.
+ */
+export function depenetrate(
+  pos: NpcSpawn,
+  obstacles: ReadonlyArray<AABB>,
+): NpcSpawn {
+  let { x, z } = pos;
+  let changed = true;
+  let iterations = 0;
+  while (changed && iterations < 4) {
+    changed = false;
+    iterations++;
+    for (const o of obstacles) {
+      if (!circleOverlapsAabb(x, z, pos.radius, o)) continue;
+      const closestX = Math.max(o.minX, Math.min(x, o.maxX));
+      const closestZ = Math.max(o.minZ, Math.min(z, o.maxZ));
+      let dx = x - closestX;
+      let dz = z - closestZ;
+      let dist = Math.hypot(dx, dz);
+      if (dist < 1e-6) {
+        // The center is exactly on the AABB — pick a deterministic
+        // push direction (the axis of minimum penetration, which is
+        // also the largest gap).
+        const pushLeft = x - o.minX;
+        const pushRight = o.maxX - x;
+        const pushBack = z - o.minZ;
+        const pushFront = o.maxZ - z;
+        const maxGap = Math.max(pushLeft, pushRight, pushBack, pushFront);
+        if (maxGap === pushLeft) { dx = -1; dz = 0; dist = 0; }
+        else if (maxGap === pushRight) { dx = 1; dz = 0; dist = 0; }
+        else if (maxGap === pushBack) { dx = 0; dz = -1; dist = 0; }
+        else { dx = 0; dz = 1; dist = 0; }
+      }
+      const push = (pos.radius - dist) / dist;
+      x += dx * push + (dx / Math.max(dist, 1e-6)) * 0.001;
+      z += dz * push + (dz / Math.max(dist, 1e-6)) * 0.001;
+      changed = true;
+    }
+  }
+  return { x, z, radius: pos.radius };
+}
+
+/**
+ * Convenience: validate AND depenetrate. The pipeline used by the
+ * NPC controller on every destination choice and every arrival.
+ *
+ *   1. If the desired point is free, return it.
+ *   2. Otherwise, sample around it for a free point.
+ *   3. If no free point is found within `maxRadius`, return null
+ *      (the caller should keep the NPC at its desk).
+ *   4. Otherwise, depenetrate the chosen point (handles the rare
+ *      case where a sampled point is still slightly inside a thin
+ *      corner).
+ */
+export function findValidNpcSpawn(
+  desired: NpcSpawn,
+  obstacles: ReadonlyArray<AABB> = getNpcObstacles(),
+  maxRadius = 2.0,
+): NpcSpawn | null {
+  const candidate = findFreeSpawnNear(desired, obstacles, maxRadius);
+  if (candidate === null) return null;
+  return depenetrate(candidate, obstacles);
+}

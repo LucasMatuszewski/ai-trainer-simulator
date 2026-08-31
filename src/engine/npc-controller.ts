@@ -14,6 +14,7 @@ import {
   shouldShowBubble,
 } from "./bubbles";
 import { createInitialIdleState, updateIdle, type IdleState } from "./npc-idle";
+import { findValidNpcSpawn, getNpcObstacles, NPC_DEFAULT_RADIUS } from "./npc-spawn-validator";
 
 export const NPC_INTERP_DURATION = 2;
 
@@ -128,6 +129,31 @@ export function createNpcController(
   const bubbleSystem = sceneRoot === null ? null : createBubbleSystem(sceneRoot);
   const fallbackCamera = new THREE.PerspectiveCamera();
 
+  // L-2026-08-31-05: validate a destination before setting an
+  // override. The kitchen coffee machine destination (11, -6.2) is
+  // the same XZ as the new kitchen coffee machine, so a naive
+  // override spawns the NPC inside the box. The validator samples
+  // around the desired point and returns a free spot, or null if
+  // none is available (in which case we keep the NPC at its desk).
+  const validatedDestinations = new Map<NpcId, ScheduleEntry>();
+  const validateOverride = (npcId: NpcId, entry: ScheduleEntry): ScheduleEntry | null => {
+    const cached = validatedDestinations.get(npcId);
+    if (cached !== undefined) return cached;
+    const valid = findValidNpcSpawn(
+      { x: entry.position.x, z: entry.position.z, radius: NPC_DEFAULT_RADIUS },
+      getNpcObstacles(),
+      2.0,
+    );
+    if (valid === null) return null;
+    const result: ScheduleEntry = {
+      position: { x: valid.x, y: entry.position.y, z: valid.z },
+      face: entry.face,
+      state: entry.state,
+    };
+    validatedDestinations.set(npcId, result);
+    return result;
+  };
+
   const applyEntry = (id: NpcId, entry: InterpolatedNpc, walking: boolean): void => {
     const object = npcObjects[id];
     object.position.set(entry.position.x, entry.position.y, entry.position.z);
@@ -166,8 +192,10 @@ export function createNpcController(
       animationElapsed = 0;
       // Each new period starts from a clean schedule; previous
       // random-walk overrides (e.g. yesterday's coffee break) are
-      // discarded.
+      // discarded. The validated-destination cache is cleared too
+      // so the next period's overrides re-validate.
       overrides.clear();
+      validatedDestinations.clear();
     }
 
     if (!isInitialUpdate) {
@@ -180,7 +208,13 @@ export function createNpcController(
         const from = NPC_SCHEDULES[npc.id][fromPeriod];
         const scheduledTo = NPC_SCHEDULES[npc.id][currentPeriod];
         const override = overrides.get(npc.id);
-        const to = override ?? scheduledTo;
+        // L-2026-08-31-05: when an override is set, validate the
+        // destination. If the validator returns null (no free spot
+        // within 2.0m), fall back to the schedule so the NPC
+        // doesn't get "stuck" mid-walk to a blocked point.
+        const to = override === undefined
+          ? scheduledTo
+          : (validateOverride(npc.id, override) ?? scheduledTo);
         const arriving = from.state === "gone-home" && to.state !== "gone-home";
         const result = arriving
           ? {
@@ -254,8 +288,23 @@ export function createNpcController(
       bubbleSystem?.destroy();
     },
     setOverride: (npcId, entry) => {
-      if (entry === null) overrides.delete(npcId);
-      else overrides.set(npcId, entry);
+      if (entry === null) {
+        overrides.delete(npcId);
+        validatedDestinations.delete(npcId);
+      } else {
+        // Validate the destination against the furniture AABBs.
+        // If the validator finds a free spot nearby, use it; if
+        // not, drop the override entirely (the NPC stays at its
+        // desk). The cached validated destination is reused for
+        // every frame in the 2s walk.
+        const validated = validateOverride(npcId, entry);
+        if (validated === null) {
+          overrides.delete(npcId);
+          validatedDestinations.delete(npcId);
+        } else {
+          overrides.set(npcId, validated);
+        }
+      }
     },
   };
 }
