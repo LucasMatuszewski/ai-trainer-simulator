@@ -59,8 +59,11 @@ Lucas reported that NPCs "walk but at the same place, bouncing with animation". 
 - **Path-following** with **obstacle avoidance** while NPCs walk (currently they teleport through walls in a 2 s linear lerp).
 - **Walk animation** that's tied to actual movement, not to wall-clock (currently the bob/sway runs on stationary meshes when morning.position === afternoon.position).
 - **Sub-state sequencing inside the kitchen** — work → fridge → coffee / sink / microwave / table (random order) → desk. Same template for every NPC; the order is randomised per walk. Some NPCs go outside lunch time ("outsiders" who eat alone).
-- **Lunch window** — at lunch time multiple people go to the kitchen together, staggered by 1-2 s per NPC so they don't all start at once. The order of kitchen stops is randomised so they don't walk the same path. If they avoid obstacles (including other NPCs) they "walk together and stand together, like they are talking".
-- **A separate `LUNCH_DIALOGUES` pool** for in-kitchen chatter. Funny lines about: IT jokes, startup jokes, gaming, AI, coffee, dinner, farting, diet, fat, beer, pizza, vege, eco, and work. The lunch pool must not be mixed with the work pool (`INTER_NPC_LINES`).
+- **Lunch window** — at lunch time multiple people go to the kitchen together, staggered by **0-2 s per NPC** so they don't all start at once. The order of kitchen stops is randomised so they don't walk the same path. If they avoid obstacles (including other NPCs) they "walk together and stand together, like they are talking". Window length: **120 s** (≈ 2 min, 20% of the 10-min afternoon at 5/10/5).
+- **A separate `LUNCH_DIALOGUES` pool** for in-kitchen chatter. **50 lines total** (~45 human + 5-8 dog). Funny lines about: IT jokes, startup jokes, gaming, AI, coffee, dinner, farting, diet, fat, beer, pizza, vege, eco, and work. The lunch pool must not be mixed with the work pool (`INTER_NPC_LINES`).
+- **Outsiders (confirmed 2026-08-31):** **Maciek — the CTO** and **Marek — the DevOps** eat alone 30% of the time outside the lunch window and skip lunch 30% of the time.
+- **Burek always joins the lunch, no exceptions** (Lucas, 2026-08-31: "Where is food there is Burek!"). He's in the social-lunchers set with 100% probability during the window and 60% outside. He has his own dog-sound dialogue pool (`LUNCH_DIALOGUES_DOG`).
+- **Lunch dialogue contest** (Lucas, 2026-08-31): run the brief against both **grok-4.5** and **agy / sonnet 4.6** in parallel, pick the funniest / sharpest / most specific lines, and merge.
 - **Cross-references:** PRD §13 new entry C-45 (NPC real walking). Plan new section "Phase 3.6 — NPC real walking: A* pathfinding, walk cycle, kitchen micro-sequence (PRD C-45)".
 
 ## 2026-08-30 — feedback captured (this message)
