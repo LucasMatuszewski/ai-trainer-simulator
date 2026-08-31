@@ -241,17 +241,51 @@ export const WORLD_ROOMS: WorldRoom[] = [
     ],
     floorColor: 0xc7b98b,
     wallColor: 0xb8dce8,
+    // C-36: full kitchen premium pass. The counter runs along the
+    // north wall (z=-6.2, the room's z range is [-7, 7]). The detailed
+    // coffee-machine, fridge, microwave, sink, kettle, etc. all sit
+    // on the counter; the bin, fire extinguisher, and dishwasher are
+    // free-standing or under-counter; the table + chairs are in the
+    // middle of the room.
     furniture: [
-      { type: "coffee-machine", position: [11, 0.8, -6.2], size: [1, 1.6, 0.8] },
-      { type: "fridge", position: [13, 1.1, -6.2], size: [1.2, 2.2, 1] },
-      { type: "microwave", position: [15, 1.15, -6.2], size: [1.1, 0.7, 0.8] },
-      { type: "sink", position: [17.3, 0.55, -6.2], size: [2, 1.1, 0.9] },
-      { type: "table", position: [14, 0.45, 2.5], size: [2.5, 0.9, 2] },
-      { type: "chair", position: [12.2, 0.25, 2.5] },
-      { type: "chair", position: [15.8, 0.25, 2.5] },
-      { type: "chair", position: [14, 0.25, 4] },
+      // The long counter (9m wide, 0.7m deep, 0.85m tall) running
+      // along the north wall.
+      { type: "kitchen-counter", position: [14.25, 0, -6.2] },
+      // Appliances ON the counter, at y=0.91 (counter top surface).
+      // The fridge is the biggest item, leftmost.
+      { type: "fridge", position: [10.6, 0, -6.6] },
+      // The coffee machine (the new detailed C-36 one).
+      { type: "coffee-machine-kitchen", position: [12.0, 0, -6.6] },
+      // A kettle next to the coffee machine.
+      { type: "kettle", position: [12.7, 0.91, -6.55] },
+      // A coffee grinder.
+      { type: "coffee-grinder", position: [13.2, 0.91, -6.55] },
+      // The microwave (sits on the counter).
+      { type: "microwave", position: [14.2, 0.91, -6.55] },
+      // A soap dispenser.
+      { type: "soap-dispenser", position: [15.0, 0.91, -6.55] },
+      // A small houseplant.
+      { type: "plant-counter", position: [15.4, 0.91, -6.55] },
+      // The sink (a big counter section with basin + faucet).
+      { type: "sink", position: [16.5, 0, -6.6] },
+      // A dish rack on the counter next to the sink.
+      { type: "dish-rack", position: [17.6, 0.91, -6.55] },
+      // The dishwasher (under-counter, but separate for collision).
+      { type: "dishwasher", position: [17.8, 0, -6.2] },
+      // The bin (free-standing, against the north wall east end).
+      { type: "bin", position: [18.5, 0, -6.0] },
+      // Fire extinguisher (mounted near the door, at the west end of the counter).
+      { type: "fire-extinguisher-kitchen", position: [9.85, 0, -6.4] },
+      // The kitchen table (round) and three chairs in the middle of the room.
+      { type: "kitchen-table", position: [14, 0, 2.5] },
+      { type: "kitchen-chair", position: [13.0, 0, 2.5], rotationY: Math.PI / 2 },
+      { type: "kitchen-chair", position: [15.0, 0, 2.5], rotationY: -Math.PI / 2 },
+      { type: "kitchen-chair", position: [14, 0, 3.6], rotationY: Math.PI },
     ],
-    signs: [{ text: "TODAY'S MENU: COFFEE", position: [14, 2.25, 6.72], face: Math.PI, color: 0x9b3f2f }],
+    signs: [
+      { text: "TODAY'S MENU: COFFEE", position: [14, 2.25, 6.72], face: Math.PI, color: 0x9b3f2f },
+      { text: "CLEAN AS YOU GO", position: [16.5, 1.7, -6.6], face: Math.PI, color: 0x4a7d3a },
+    ],
   },
   {
     // C-35 / L-2026-08-31-03 + C-44 #9: the training room sits

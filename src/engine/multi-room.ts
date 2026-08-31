@@ -1,11 +1,25 @@
 import * as THREE from "three";
 import type { WorldFurniture, WorldRoom } from "../content/world-layout";
 import { drawBatmanEmblem } from "./furniture/batman-emblem";
+import { makeBin } from "./furniture/bin";
 import { makeBookshelf } from "./furniture/bookshelf";
+import { makeCeilingLight } from "./furniture/ceiling-light";
+import { makeCoffeeGrinder } from "./furniture/coffee-grinder";
+import { makeCoffeeMachineKitchen } from "./furniture/coffee-machine";
+import { makeCoffeeTable } from "./furniture/coffee-table";
+import { makeDishRack } from "./furniture/dish-rack";
+import { makeDishwasher } from "./furniture/dishwasher";
 import { makeExecutiveChair } from "./furniture/executive-chair";
 import { makeExecutiveDesk } from "./furniture/executive-desk";
-import { makeCeilingLight } from "./furniture/ceiling-light";
-import { makeCoffeeTable } from "./furniture/coffee-table";
+import { makeFireExtinguisherKitchen } from "./furniture/fire-extinguisher";
+import { makeFridge } from "./furniture/fridge";
+import { makeKettle } from "./furniture/kettle";
+import { makeKitchenCounter } from "./furniture/kitchen-counter";
+import { makeKitchenTable, makeKitchenChair } from "./furniture/menu-board";
+import { makeMicrowave } from "./furniture/microwave";
+import { makePlantCounter } from "./furniture/plant-counter";
+import { makeSink } from "./furniture/sink";
+import { makeSoapDispenser } from "./furniture/soap-dispenser";
 import { makeSofa } from "./furniture/sofa";
 
 /**
@@ -19,6 +33,22 @@ const FURNITURE_FACTORIES: Record<string, () => THREE.Group> = {
   bookshelf: makeBookshelf,
   sofa: makeSofa,
   "coffee-table": makeCoffeeTable,
+  // Kitchen (C-36)
+  "kitchen-counter": makeKitchenCounter,
+  fridge: makeFridge,
+  microwave: makeMicrowave,
+  sink: makeSink,
+  kettle: makeKettle,
+  dishwasher: makeDishwasher,
+  bin: makeBin,
+  "coffee-grinder": makeCoffeeGrinder,
+  "dish-rack": makeDishRack,
+  "soap-dispenser": makeSoapDispenser,
+  "plant-counter": makePlantCounter,
+  "fire-extinguisher-kitchen": makeFireExtinguisherKitchen,
+  "coffee-machine-kitchen": makeCoffeeMachineKitchen,
+  "kitchen-table": makeKitchenTable,
+  "kitchen-chair": makeKitchenChair,
 };
 
 const WALL_HEIGHT = 3;
