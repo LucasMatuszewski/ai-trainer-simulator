@@ -120,14 +120,14 @@ The orchestrator:
    - no line appears in both human and dog pools.
 3. **Picks the best 45 human lines from the union** of the three contestants' pools. Bias toward the lines that are: (a) the most specific (not generic), (b) the funniest, (c) the most "office-real" (a thing you would actually hear a coworker say in a kitchen).
 4. **Picks the best 5-8 dog lines** from the union. Same bias.
-5. **Writes TWO files.** `src/content/lunch-dialogues.ts` exporting `LUNCH_DIALOGUES_HUMAN` (exactly 45) with a `pickLunchLine(rng)` helper, and `src/content/dog-dialogues.ts` exporting `BUREK_LINES` (5-8) with a `pickBurekLine(rng)` helper. The dog pool is context-free: same lines at lunch, at a desk, in the corridor (the ambient bark trigger is Phase 3.6 controller work, not part of this brief).
+5. **Writes TWO files.** `src/content/lunch-dialogues.ts` exporting `LUNCH_DIALOGUES_HUMAN` (exactly 45) and `src/content/dog-dialogues.ts` exporting `BUREK_LINES` (5-8). Arrays only — no picker helpers in content: the existing generic `pickLine(lines, rng)` in `src/engine/bubbles.ts` already does no-immediate-repeat picking for any array, and the engine importing content is the right dependency direction (content must not import from engine). The dog pool is context-free: same lines at lunch, at a desk, in the corridor (the ambient bark trigger is Phase 3.6 controller work, not part of this brief).
 6. **Adds tests** in `tests/unit/lunch-dialogues.test.ts` and `tests/unit/dog-dialogues.test.ts` (TDD: the test files are written FIRST and fail against the missing modules, then the implementations land):
    - human count exactly 45; dog count 5-8;
    - no line > 60 chars (human) / 25 chars (dog);
    - every line plain ASCII; no duplicates within a pool;
    - no overlap with `INTER_NPC_LINES` (programmatic);
    - no overlap between the two pools;
-   - `pickLunchLine(rng)` returns a human line and `pickBurekLine(rng)` returns a dog line; no immediate repeat on back-to-back calls.
+   - every line is a non-empty string.
 7. **Stages, typecheck, tests, commits** (after Lucas sees the file). Push only at the Phase 3.6 end-of-phase gate per HR-6.
 
 ## What to do NOT
