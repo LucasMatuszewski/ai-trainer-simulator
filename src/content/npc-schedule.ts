@@ -1,4 +1,5 @@
-import type { NpcId } from "../types";
+import type { NPC, NpcId } from "../types";
+import { NPCS } from "./npcs";
 
 export type Period = "morning" | "afternoon" | "evening";
 
@@ -164,6 +165,36 @@ export function pickRandomDestination(
   const r = rng();
   const stay = npcId === "burek" ? 0.5 : npcId === "zosia" ? 0.7 : 0.9;
   if (r < stay) return null;
+  // 20% of walks: visit a colleague at their desk.
+  if (rng() < 0.2) {
+    return pickColleagueDesk(npcId, rng);
+  }
   const idx = Math.floor(rng() * RANDOM_DESTINATIONS.length);
   return RANDOM_DESTINATIONS[idx] ?? null;
+}
+
+/** Pick a random colleague's desk as a destination. The visitor
+ *  walks to a spot 1.2m in front of the colleague's NPC position
+ *  (the same spot the colleague occupies), and the existing
+ *  bubble system (which fires within 2.5m) will start a
+ *  conversation. The face is rotated to look at the colleague.
+ *  Returns null if no colleagues are eligible (e.g. the dog has
+ *  no human colleagues to visit). */
+function pickColleagueDesk(
+  npcId: NpcId,
+  rng: () => number,
+): ScheduleEntry | null {
+  const candidates: readonly NPC[] = NPCS.filter(
+    (n) => n.id !== npcId && n.gender !== "dog",
+  );
+  if (candidates.length === 0) return null;
+  const target = candidates[Math.floor(rng() * candidates.length)]!;
+  // Visitor stands 1.2m in front of the target (south, so they
+  // can see the colleague's monitor and face them). Visitor faces
+  // -Z (Math.PI) to look at the colleague who is to the north.
+  return {
+    position: { x: target.position.x, y: 0, z: target.position.z - 1.2 },
+    face: Math.PI,
+    state: "walking",
+  };
 }
