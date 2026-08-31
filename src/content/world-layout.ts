@@ -202,7 +202,7 @@ export const WORLD_ROOMS: WorldRoom[] = [
       // The BATCAVE door sign greets visitors from the office
       // side of the south glass, next to the doorway (#49: the
       // renderer wraps it onto two lines; tall enough to read).
-      { text: "BATCAVE - KNOCK TWICE", position: [2.0, 2.1, -9.31], face: 0, color: 0x8a6d1f, size: [1.6, 0.7] },
+      { text: "BATCAVE - KNOCK TWICE", position: [2.1, 2.1, -9.31], face: 0, color: 0x8a6d1f, size: [1.6, 0.7] },
     ],
   },
   {
@@ -302,14 +302,22 @@ export const WORLD_ROOMS: WorldRoom[] = [
       // sits against the wall without clipping.
       { type: "fire-extinguisher-kitchen", position: [9.95, 0, -3] },
       // The kitchen table (round) and three chairs in the middle of the room.
-      { type: "kitchen-table", position: [14, 0, 2.5] },
-      { type: "kitchen-chair", position: [13.0, 0, 2.5], rotationY: Math.PI / 2 },
-      { type: "kitchen-chair", position: [15.0, 0, 2.5], rotationY: -Math.PI / 2 },
-      { type: "kitchen-chair", position: [14, 0, 3.6], rotationY: Math.PI },
+      { type: "kitchen-table", position: [16, 0, 2.5] },
+      { type: "kitchen-chair", position: [15.0, 0, 2.5], rotationY: Math.PI / 2 },
+      { type: "kitchen-chair", position: [17.0, 0, 2.5], rotationY: -Math.PI / 2 },
+      { type: "kitchen-chair", position: [16, 0, 3.6], rotationY: Math.PI },
+      // The kitchen table 2nd (round) and three chairs in the middle of the room.
+      { type: "kitchen-table", position: [12, 0, 2.8], rotationY: Math.PI / 1.3 },
+      { type: "kitchen-chair", position: [11.0, 0, 2.8], rotationY: Math.PI / 1.8 },
+      { type: "kitchen-chair", position: [13.0, 0, 2.8], rotationY: -Math.PI / 2.1 },
+      { type: "kitchen-chair", position: [12, 0, 4.1], rotationY: Math.PI },
     ],
     signs: [
-      { text: "TODAY'S MENU: COFFEE", position: [14, 2.25, 6.72], face: Math.PI, color: 0x9b3f2f },
-      { text: "CLEAN AS YOU GO", position: [16.5, 1.7, -6.6], face: Math.PI, color: 0x4a7d3a },
+      { text: "TODAY'S MENU: COFFEE", position: [14, 2.1, 6.72], face: Math.PI, color: 0x9b3f2f },
+      // CLEAN AS YOU GO poster: above the counter, against the back
+      // wall (z=-6.95, the wall inner face is at z=-7). Face 0 so it
+      // faces the room (toward the player walking in).
+      { text: "CLEAN AS YOU GO", position: [16.5, 2.1, -6.95], face: 0, color: 0x4a7d3a },
     ],
   },
   {
@@ -369,9 +377,9 @@ export const WORLD_ROOMS: WorldRoom[] = [
       ),
     ],
     signs: [
-      // Room sign just inside the south wall, facing the
-      // entrance so it is readable when walking in.
-      { text: "TRAINING ROOM", position: [23, 2.45, -3.2], face: 0, color: 0x2255aa },
+      // Room sign just east of the kitchen-to-training doorway,
+      // mounted on the KITCHEN side of the south wall .
+      { text: "TRAINING ROOM", position: [20, 2.2, -3.05], face: Math.PI, color: 0x2255aa, size: [1.6, 0.6] },
     ],
   },
   {
