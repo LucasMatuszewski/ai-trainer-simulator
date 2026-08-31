@@ -710,6 +710,42 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
       },
     },
   },
+
+  // C-38: placeholder dialogue for the new CEO character (Dawid).
+  // The full tree is delegated to GLM-5.3 in a later phase; this
+  // version lets the type system and the NPC controller compile,
+  // and gives the player one working first-meeting line so they
+  // can confirm the CEO is reachable through the glass wall. The
+  // branch on `got-acme-contract` (the flag the player gets from
+  // Bartek's tutorial) is checked at the greeting node: if the
+  // flag is missing, the CEO brushes the player off.
+  dawid: {
+    default: {
+      nodes: {
+        greeting: {
+          id: "greeting",
+          text: "Dawid, CEO. I love what you are doing. Love it. I am in back-to-back meetings all day — every day, every hour, every minute of every day — but I want you to know: you are seen. You are valued. You are a number on a spreadsheet that goes up. Now go talk to Bartek, get your first contract, then come back. We will do great things together. (The spreadsheet. The going up. The things.)",
+          options: [
+            {
+              text: "Will do, sir.",
+              nextNodeId: "_end",
+              effects: [{ type: "add-relationship", target: "dawid", delta: 5 }],
+            },
+            {
+              text: "Are you ever NOT in a meeting?",
+              nextNodeId: "dawid-meetings",
+            },
+          ],
+        },
+        "dawid-meetings": {
+          id: "dawid-meetings",
+          text: "Great question. Meetings are the cost of doing business. Also the cost of NOT doing business. The trick is to have one meeting to plan another meeting. Sometimes I have a meeting about a meeting about a meeting. I do not remember which ones are real. That is what PAs are for. Go. Ship. Disrupt.",
+          next: "_end",
+        },
+        _end: { id: "_end", text: "", next: "_end" },
+      },
+    },
+  },
 };
 
 // Phase 7: more dialogue trees for branching + memory (L-2026-08-30-02).

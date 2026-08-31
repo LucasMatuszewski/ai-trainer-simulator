@@ -56,13 +56,20 @@ describe("furniture orientation", () => {
     const [x, y, z] = definition.position;
     const [width] = definition.size!;
 
+    // C-35: the training room moved east of the kitchen. Its west
+    // wall volume is inset from the floor edge (the floor extends
+    // under the doorway), so flushness is checked against the
+    // wall's INNER face (maxX of the west wall), not floor.minX.
+    const westWall = trainingRoom.walls.find((wall) => wall.id === "training-west-north")!;
+
     expect(y).toBeGreaterThanOrEqual(0.5);
     expect(y).toBeLessThanOrEqual(2.5);
     expect(x).toBeGreaterThanOrEqual(trainingRoom.floor.minX);
     expect(x).toBeLessThanOrEqual(trainingRoom.floor.maxX);
     expect(z).toBeGreaterThanOrEqual(trainingRoom.floor.minZ);
     expect(z).toBeLessThanOrEqual(trainingRoom.floor.maxZ);
-    expect(x - width / 2).toBeCloseTo(trainingRoom.floor.minX);
+    expect(x - width / 2).toBeCloseTo(westWall.maxX);
+    expect(x).toBeGreaterThan(westWall.maxX);
 
     const group = buildMultiRoomMeshes(new THREE.Scene(), [trainingRoom])[0]!;
     const mesh = group.children.find((child) => child.name === "furniture-whiteboard")!;

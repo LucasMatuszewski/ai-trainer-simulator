@@ -33,6 +33,7 @@ const NPC_IDS: NpcId[] = [
   "grazyna",
   "maciek",
   "przemek",
+  "dawid",
 ];
 
 function emptyMemory(): NpcMemory {

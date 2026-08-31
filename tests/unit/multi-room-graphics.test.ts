@@ -25,10 +25,13 @@ describe("multi-room graphics", () => {
     }
   });
 
-  it("mounts a canvas-textured Batman emblem in the CTO office", () => {
+  it("mounts a canvas-textured Batman emblem in the CEO office", () => {
+    // C-35: the CEO office (formerly the CTO office) is the new
+    // home of the Batman emblem. The emblem still uses the same
+    // CanvasTexture pipeline.
     const scene = new THREE.Scene();
-    const ctoOffice = buildMultiRoomMeshes(scene, WORLD_ROOMS).find((group) => group.name === "cto-office");
-    const emblem = ctoOffice?.children.find(
+    const ceoOffice = buildMultiRoomMeshes(scene, WORLD_ROOMS).find((group) => group.name === "ceo-office");
+    const emblem = ceoOffice?.children.find(
       (child) => child instanceof THREE.Mesh && child.userData.signType === "batman",
     ) as THREE.Mesh | undefined;
 

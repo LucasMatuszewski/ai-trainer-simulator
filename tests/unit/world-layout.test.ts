@@ -32,12 +32,18 @@ beforeAll(() => {
 });
 
 describe("WORLD_ROOMS", () => {
-  it("defines the requested rooms (training, kitchen, meeting, CTO, toilet)", () => {
+  it("defines the requested rooms (CEO, kitchen, training, meeting, toilet)", () => {
+    // C-35: the room order changed in 2026-08-31. The CEO office
+    // moved into the former training room footprint (north of the
+    // main office), and the training room moved into the former
+    // CEO office footprint (east of the kitchen). The
+    // "cto-office" id is no longer used; it was renamed to
+    // "ceo-office" to match the project's PRD.
     expect(WORLD_ROOMS.map((room) => room.id)).toEqual([
-      "training-room",
+      "ceo-office",
       "kitchen",
+      "training-room",
       "meeting-room",
-      "cto-office",
       "toilet",
     ]);
   });
@@ -69,10 +75,14 @@ describe("WORLD_ROOMS", () => {
     expect(MAIN_OFFICE_DOORWAYS[3]!.from).toEqual({ minX: -9, maxX: -8.5, minZ: 9, maxZ: 9.5 });
   });
 
-  it("marks the CTO glass wall and Batman sign", () => {
-    const cto = WORLD_ROOMS.find((room) => room.id === "cto-office")!;
-    expect(cto.walls.some((wall) => wall.id === "glass")).toBe(true);
-    expect(cto.signs.some((sign) => sign.text.includes("BATMAN"))).toBe(true);
+  it("marks the CEO glass wall and Batman sign", () => {
+    // C-35: the glass wall is on the SOUTH side of the CEO
+    // office (facing the main office). The Batman sign is on the
+    // NORTH wall facing south. The doorway breaks the south wall
+    // into two glass segments.
+    const ceo = WORLD_ROOMS.find((room) => room.id === "ceo-office")!;
+    expect(ceo.walls.filter((wall) => wall.id === "glass")).toHaveLength(2);
+    expect(ceo.signs.some((sign) => sign.text.includes("BATMAN"))).toBe(true);
   });
 
   it("lets the player cross the north doorway", () => {
@@ -109,11 +119,19 @@ describe("buildMultiRoomMeshes", () => {
     expect(groups.every((group) => group.parent === scene)).toBe(true);
   });
 
-  it("renders the CTO glass wall with a transparent material", () => {
+  it("renders the CEO glass walls with a transparent material", () => {
+    // C-35: the CEO office has two glass wall segments (one on
+    // each side of the doorway) on its south side. Both are
+    // rendered with the transparent glass material.
     const groups = buildMultiRoomMeshes(new THREE.Scene(), WORLD_ROOMS);
-    const cto = groups.find((group) => group.name === "cto-office")!;
-    const glass = cto.children.find((child) => child.userData.kind === "glass") as THREE.Mesh;
-    expect((glass.material as THREE.Material).transparent).toBe(true);
+    const ceo = groups.find((group) => group.name === "ceo-office")!;
+    const glassMeshes = ceo.children.filter(
+      (child) => child.userData.kind === "glass",
+    ) as THREE.Mesh[];
+    expect(glassMeshes.length).toBeGreaterThanOrEqual(2);
+    for (const glass of glassMeshes) {
+      expect((glass.material as THREE.Material).transparent).toBe(true);
+    }
   });
 
   it("uses a CanvasTexture for every sign", () => {

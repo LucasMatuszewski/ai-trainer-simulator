@@ -33,6 +33,7 @@ const EXPECTED_GENDER: Record<NpcId, "male" | "female" | "dog"> = {
   grazyna: "female",
   maciek: "male",
   przemek: "male",
+  dawid: "male",
 };
 
 describe("NPCS data", () => {
@@ -65,6 +66,11 @@ describe("NPCS data", () => {
   });
 
   it("places every NPC inside the office bounds", () => {
+    // C-35 / L-2026-08-31-02: the CEO (Dawid) sits in the CEO
+    // office north of the main office (x=[-8, 8], z=[-19, -9]),
+    // so his z is below OFFICE_BOUNDS.minZ by design. Every
+    // other NPC stays inside the main office bounds.
+    const CEO_OFFICE_MIN_Z = -19;
     for (const npc of NPCS) {
       expect(
         npc.position.x,
@@ -74,7 +80,7 @@ describe("NPCS data", () => {
       expect(
         npc.position.z,
         `${npc.id}.z out of bounds`,
-      ).toBeGreaterThanOrEqual(OFFICE_BOUNDS.minZ);
+      ).toBeGreaterThanOrEqual(npc.id === "dawid" ? CEO_OFFICE_MIN_Z : OFFICE_BOUNDS.minZ);
       expect(npc.position.z).toBeLessThanOrEqual(OFFICE_BOUNDS.maxZ);
     }
   });

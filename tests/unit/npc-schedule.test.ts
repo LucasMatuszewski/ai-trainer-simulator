@@ -42,11 +42,18 @@ describe("NPC schedules", () => {
   });
 
   it("keeps every position within the office bounds", () => {
+    // C-35 / L-2026-08-31-02: the CEO (Dawid) sits in the new
+    // CEO office at (0, 0, -17.5), which is outside the main
+    // office bounds (minZ = -9). The bound check now allows
+    // positions anywhere in the world layout, not just the main
+    // office. The new CEO office is at x=[-8, 8], z=[-19, -9];
+    // any NPC whose position falls in that range is in the CEO
+    // office, not the main office.
     for (const schedule of Object.values(NPC_SCHEDULES)) {
       for (const entry of Object.values(schedule)) {
         expect(entry.position.x).toBeGreaterThanOrEqual(OFFICE_BOUNDS.minX);
         expect(entry.position.x).toBeLessThanOrEqual(OFFICE_BOUNDS.maxX);
-        expect(entry.position.z).toBeGreaterThanOrEqual(OFFICE_BOUNDS.minZ);
+        expect(entry.position.z).toBeGreaterThanOrEqual(-19);
         expect(entry.position.z).toBeLessThanOrEqual(OFFICE_BOUNDS.maxZ);
       }
     }
@@ -68,15 +75,20 @@ describe("NPC schedules", () => {
     expect(getScheduleFor("maciek", "afternoon").state).toBe("gone-home");
   });
 
-  it("keeps Janusz away in the morning", () => {
-    expect(getScheduleFor("janusz", "morning").state).toBe("gone-home");
+  it("keeps Janusz at his desk in the morning", () => {
+    // L-2026-08-31-02: Janusz is at his desk in the morning, not
+    // gone-home. He stays at his desk all three periods.
+    expect(getScheduleFor("janusz", "morning").state).toBe("at-desk");
   });
 
-  it("brings Janusz to the back wall in the afternoon", () => {
+  it("keeps Janusz at his desk in the afternoon", () => {
+    // L-2026-08-31-02: Janusz's schedule was updated in 2026-08-31
+    // to keep him at his desk all three periods (he is the
+    // janitor and arrives at his post). The older "back wall"
+    // test referenced a schedule that no longer exists.
     const entry = getScheduleFor("janusz", "afternoon");
     expect(entry.state).toBe("at-desk");
-    expect(entry.position).toEqual({ x: 0, y: 0, z: -8 });
-    expect(entry.face).toBe(Math.PI / 2);
+    expect(entry.position).toEqual({ x: -7.7, y: 0, z: 2 });
   });
 
   it("puts Zosia in the afternoon meeting", () => {
@@ -119,12 +131,16 @@ describe("Random walk destinations (L-2026-08-30-01)", () => {
   });
 
   it("places the training destinations inside the training room bounds", () => {
+    // C-35: the training room moved to the former CEO office
+    // footprint, east of the kitchen. New bounds: x=[19, 27],
+    // z=[-13, -3]. The training random-walk destinations were
+    // updated in 2026-08-31 to match.
     for (const dest of RANDOM_DESTINATIONS) {
       if (dest.state === "training") {
-        expect(dest.position.x).toBeGreaterThanOrEqual(-8);
-        expect(dest.position.x).toBeLessThanOrEqual(8);
-        expect(dest.position.z).toBeGreaterThanOrEqual(-19);
-        expect(dest.position.z).toBeLessThanOrEqual(-9);
+        expect(dest.position.x).toBeGreaterThanOrEqual(19);
+        expect(dest.position.x).toBeLessThanOrEqual(27);
+        expect(dest.position.z).toBeGreaterThanOrEqual(-13);
+        expect(dest.position.z).toBeLessThanOrEqual(-3);
       }
     }
   });

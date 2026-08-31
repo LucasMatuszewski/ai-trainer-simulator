@@ -190,6 +190,27 @@ export const NPCS: NPC[] = [
       default: DIALOGUES.przemek!.default!,
     },
   },
+  {
+    // C-38: the new CEO character. Lives in the new CEO office
+    // (former training room footprint, north of the main office).
+    // Sits at the executive desk facing south so the player in
+    // the main office sees him through the glass wall. The
+    // dialogue tree is gated on `got-acme-contract` so the player
+    // cannot talk to him on day 1. The dialogue authoring is
+    // delegated to GLM-5.3 in a later phase; for now the CEO has
+    // a single first-meeting tree.
+    id: "dawid",
+    name: "Dawid",
+    role: "The CEO",
+    emoji: "👔",
+    gender: "male",
+    position: { x: 0, y: 0, z: -17.5 },
+    rotationY: 0,
+    triggerRadius: 1.8,
+    dialogues: {
+      default: DIALOGUES.dawid!.default!,
+    },
+  },
 ];
 
 /** Office layout: a 20x20 room with walls, the player start, and walkable interior. */

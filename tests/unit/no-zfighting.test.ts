@@ -47,10 +47,15 @@ function mainWall(wallId: string): WorldWall {
 }
 
 describe("multi-room wall depth separation", () => {
-  it("separates the training-room south walls from the main-office north wall", () => {
+  it("separates the CEO-office south walls from the main-office north wall", () => {
+    // C-35: the CEO office is the new name for what used to be
+    // the training room. The south walls are now named
+    // "ceo-south-west" and "ceo-south-east". The CEO office still
+    // sits north of the main office, so the same depth-separation
+    // rule applies.
     const mainZ = centerZ(mainWall("main-north-west"));
-    expect(Math.abs(centerZ(roomWall("training-room", "training-south-west")) - mainZ)).toBeGreaterThanOrEqual(0.1);
-    expect(Math.abs(centerZ(roomWall("training-room", "training-south-east")) - mainZ)).toBeGreaterThanOrEqual(0.1);
+    expect(Math.abs(centerZ(roomWall("ceo-office", "ceo-south-west")) - mainZ)).toBeGreaterThanOrEqual(0.1);
+    expect(Math.abs(centerZ(roomWall("ceo-office", "ceo-south-east")) - mainZ)).toBeGreaterThanOrEqual(0.1);
   });
 
   it("separates the meeting-room north walls from the main-office south wall", () => {
@@ -65,16 +70,23 @@ describe("multi-room wall depth separation", () => {
     expect(Math.abs(centerX(roomWall("kitchen", "kitchen-west-south")) - mainX)).toBeGreaterThanOrEqual(0.1);
   });
 
-  it("keeps the CTO west walls distinct from the main-office east wall", () => {
-    const mainX = centerX(mainWall("main-east-north"));
-    expect(Math.abs(centerX(roomWall("cto-office", "cto-west-north")) - mainX)).toBeGreaterThanOrEqual(0.1);
-    expect(Math.abs(centerX(roomWall("cto-office", "cto-west-south")) - mainX)).toBeGreaterThanOrEqual(0.1);
+  it("keeps the training-room west walls distinct from the kitchen east wall", () => {
+    // C-35: the training room moved to the former CEO office
+    // footprint (east of the kitchen). Its west walls are now
+    // named "training-west-north" and "training-west-south". The
+    // depth-separation rule still applies between the training
+    // room and the kitchen.
+    const kitchenX = centerX(roomWall("kitchen", "kitchen-east-north"));
+    expect(Math.abs(centerX(roomWall("training-room", "training-west-north")) - kitchenX)).toBeGreaterThanOrEqual(0.1);
   });
 
-  it("does not overlap the kitchen east wall and CTO west wall volumes", () => {
+  it("does not overlap the kitchen east wall and training-room west wall volumes", () => {
+    // C-35: the training room is now east of the kitchen. The
+    // doorway between them is wide (z=-7..-3); the solid wall
+    // segments must not overlap the kitchen east wall.
     const kitchenEast = roomWall("kitchen", "kitchen-east-north");
-    const ctoWest = roomWall("cto-office", "cto-west-north");
-    expect(kitchenEast.maxX).toBeLessThanOrEqual(ctoWest.minX);
+    const trainingWest = roomWall("training-room", "training-west-north");
+    expect(kitchenEast.maxX).toBeLessThanOrEqual(trainingWest.minX);
   });
 
   it("adds a positive polygon offset to every solid new-room wall material", () => {

@@ -91,6 +91,17 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
     afternoon: { position: { x: 3, y: 0, z: -7.7 }, face: 0, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
   },
+  // C-38: the new CEO (Dawid) sits at the CEO desk in the new
+  // CEO office (former training room footprint, north of the
+  // main office) every period. He faces south (face=0 in this
+  // convention means facing +Z = south) so the player in the
+  // main office can see him at his desk through the glass wall.
+  // He does not random-walk.
+  dawid: {
+    morning: { position: { x: 0, y: 0, z: -17.5 }, face: 0, state: "at-desk" },
+    afternoon: { position: { x: 0, y: 0, z: -17.5 }, face: 0, state: "at-desk" },
+    evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
+  },
 };
 
 /**
@@ -133,17 +144,15 @@ export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
   // Meeting room: by the meeting table (center of room).
   // The table is in the center; just stand there.
   { position: { x: 0, y: 0, z: 14 }, face: 0, state: "meeting" },
-  // Training room: by the lectern (the NPC is teaching).
-  // Lectern is at z=-16.7; the NPC is at z=-16.7 (same z).
-  // Lectern faces south (+Z) so the NPC should look +Z (face 0).
-  // But the NPC is the speaker; the audience is south. So
-  // speaker faces the audience = +Z = face 0.
-  { position: { x: 0, y: 0, z: -16.7 }, face: 0, state: "training" },
-  // Training room: a student chair. The lectern is at z=-16.7
-  // (north), the audience faces it. Student chair at z=-14.1,
-  // student faces +Z toward the lectern. So face 0.
-  { position: { x: -2, y: 0, z: -14.1 }, face: 0, state: "training" },
-  { position: { x: 1.5, y: 0, z: -11.4 }, face: 0, state: "training" },
+  // Training room (new location: east of the kitchen, x=19..27,
+  // z=-13..-3). The lectern is at x=23, z=-10.7; the audience
+  // chairs are south of the lectern at z=-8 and z=-7.4. The
+  // speaker stands at the lectern and faces south (face=0 in
+  // this convention means facing +Z = south); the audience
+  // members face north (face=PI) to look at the speaker.
+  { position: { x: 23, y: 0, z: -10.7 }, face: 0, state: "training" },
+  { position: { x: 21, y: 0, z: -8 }, face: Math.PI, state: "training" },
+  { position: { x: 25, y: 0, z: -7.4 }, face: Math.PI, state: "training" },
 ];
 
 /** Pick a random destination for the given NPC, weighted by role.

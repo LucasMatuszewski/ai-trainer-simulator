@@ -74,8 +74,14 @@ export const MAIN_OFFICE_WALLS: WorldWall[] = [
 ];
 
 export const MAIN_OFFICE_DOORWAYS: WorldDoorway[] = [
+  // C-35 / L-2026-08-31-02 + L-2026-08-31-03: the doorway at
+  // z=-9 now opens into the CEO office (formerly the training
+  // room). The training room has moved to the former CEO office
+  // footprint east of the kitchen. The doorway id is now
+  // "main-to-ceo"; downstream code uses the doorway coordinates,
+  // not the id, so this is a naming fix only.
   gap(
-    "main-to-training",
+    "main-to-ceo",
     { minX: -1.25, maxX: 1.25, minZ: -9.5, maxZ: -9 },
     { minX: -1.25, maxX: 1.25, minZ: -9, maxZ: -8.5 },
   ),
@@ -101,34 +107,52 @@ export const MAIN_OFFICE_DOORWAYS: WorldDoorway[] = [
 
 export const WORLD_ROOMS: WorldRoom[] = [
   {
-    id: "training-room",
-    name: "Training Room",
+    // C-35 / L-2026-08-31-02: the CEO office now sits where the
+    // training room used to be (north of the main office, x=[-8, 8],
+    // z=[-19, -9]). The glass wall is on the SOUTH side (z=-9 to
+    // z=-8.78) so the player in the main office can see the CEO at
+    // his desk. The Batman sign is on the NORTH wall facing south
+    // so it is visible through the glass to the main office. The
+    // doorway from the main office (MAIN_OFFICE_DOORWAYS[0]) opens
+    // into this room.
+    id: "ceo-office",
+    name: "CEO Office",
     floor: { minX: -8, maxX: 8, minZ: -19, maxZ: -9 },
     walls: [
-      wall("training-north", -8, 8, -19.5, -19),
-      wall("training-west", -8.5, -8, -19, -9),
-      wall("training-east", 8, 8.5, -19, -9),
-      // Keep the shared boundary inside the training room so it cannot occupy
-      // the same depth range as the main office's north wall.
-      wall("training-south-west", -8, -1.25, -9.5, -9.22),
-      wall("training-south-east", 1.25, 8, -9.5, -9.22),
+      wall("ceo-north", -8, 8, -19.5, -19),
+      wall("ceo-west", -8.5, -8, -19, -9),
+      wall("ceo-east", 8, 8.5, -19, -9),
+      // Keep the shared boundary inside the CEO office so it
+      // cannot occupy the same depth range as the main office's
+      // north wall. There is a doorway gap at x=[-1.25, 1.25] for
+      // the door.
+      wall("ceo-south-west", -8, -1.25, -9.5, -9.22),
+      wall("ceo-south-east", 1.25, 8, -9.5, -9.22),
+      // Glass wall facing the main office. Split into two
+      // segments around the doorway so the doorway itself stays
+      // open.
+      wall("glass", -8, -1.25, -9, -8.78),
+      wall("glass", 1.25, 8, -9, -8.78),
     ],
     doorways: [MAIN_OFFICE_DOORWAYS[0]!],
-    floorColor: 0x9b7653,
-    wallColor: 0x245c54,
+    floorColor: 0x4d3b2b,
+    wallColor: 0x4a2f24,
     furniture: [
-      { type: "projector-screen", position: [0, 1.7, -18.7], size: [5, 2.2, 0.12] },
-      { type: "lectern", position: [0, 0.6, -16.7], size: [1.2, 1.2, 0.8] },
-      // The 0.12 m-deep board is flush with the west wall's inner face at x=-8.
-      { type: "whiteboard", position: [-7.94, 1.5, -14], size: [0.12, 2, 4], rotationY: 0 },
-      ...[-5.8, -3.9, -2, -0.1].flatMap((z) =>
-        [-4.5, -1.5, 1.5, 4.5].map((x) => ({
-          type: "chair",
-          position: [x, 0.25, z - 9] as Vector3Tuple,
-        })),
-      ),
+      // The CEO desk is huge (C-38) and faces the glass wall
+      // (south) so the player can see the CEO at it from the
+      // main office.
+      { type: "executive-desk", position: [0, 0.55, -16], size: [4, 1.1, 1.6] },
+      { type: "chair", position: [0, 0.35, -17.5] },
+      { type: "bookshelf", position: [-7.5, 1.25, -17], size: [0.7, 2.5, 3.5] },
+      { type: "bookshelf", position: [7.5, 1.25, -17], size: [0.7, 2.5, 3.5] },
     ],
-    signs: [{ text: "TRAINING ROOM", position: [0, 2.45, -19.22], face: 0, color: 0x2255aa }],
+    signs: [
+      // The Batman sign is on the NORTH wall of the CEO office
+      // facing south, so it is visible through the south glass
+      // wall to the player in the main office. face=PI makes the
+      // plane face +Z (south).
+      { text: "BATMAN", position: [0, 1.65, -18.78], face: Math.PI, color: 0xffdd22, size: [4.5, 2.5] },
+    ],
   },
   {
     id: "kitchen",
@@ -137,18 +161,31 @@ export const WORLD_ROOMS: WorldRoom[] = [
     walls: [
       wall("kitchen-north", 9, 19, -7.5, -7),
       wall("kitchen-south", 9, 19, 7, 7.5),
-      wall("kitchen-east-north", 19, 19.5, -7, -5.25),
-      wall("kitchen-east-south", 19, 19.5, -2.75, 7),
+      wall("kitchen-east-north", 19, 19.5, -7, -7),
+      // C-35 / L-2026-08-31-03: the kitchen now has a wide
+      // doorway on its east wall (x=[19, 19.5], z=[-7, -3]) that
+      // opens into the new training room. The kitchen's east wall
+      // is split into two solid segments: one above the doorway
+      // (none, since the doorway reaches the corner) and one
+      // below. To keep the wall valid we leave a thin solid
+      // segment just south of the doorway at z=[-3, -2.75] so
+      // the player can read "KITCHEN" sign there, and a wider
+      // solid segment further south at z=[-2.75, 7].
+      wall("kitchen-east-south", 19, 19.5, -3, -2.75),
+      wall("kitchen-east-far-south", 19, 19.5, -2.75, 7),
       // Offset shared walls into the kitchen, away from the main-office shell.
       wall("kitchen-west-north", 9.22, 9.5, -7, -1.25),
       wall("kitchen-west-south", 9.22, 9.5, 1.25, 7),
     ],
     doorways: [
       MAIN_OFFICE_DOORWAYS[1]!,
+      // Wide doorway from the kitchen to the new training room
+      // (formerly cto-to-kitchen). The training room is east of
+      // the kitchen; the doorway is 4m wide.
       gap(
-        "kitchen-to-cto",
-        { minX: 19, maxX: 19.5, minZ: -5.25, maxZ: -2.75 },
-        { minX: 19.5, maxX: 20, minZ: -5.25, maxZ: -2.75 },
+        "kitchen-to-training",
+        { minX: 19, maxX: 19.5, minZ: -7, maxZ: -3 },
+        { minX: 19.5, maxX: 20, minZ: -7, maxZ: -3 },
       ),
     ],
     floorColor: 0xc7b98b,
@@ -164,6 +201,66 @@ export const WORLD_ROOMS: WorldRoom[] = [
       { type: "chair", position: [14, 0.25, 4] },
     ],
     signs: [{ text: "TODAY'S MENU: COFFEE", position: [14, 2.25, 6.72], face: Math.PI, color: 0x9b3f2f }],
+  },
+  {
+    // C-35 / L-2026-08-31-03: the training room now sits in the
+    // former CEO office footprint, east of the kitchen. The
+    // training room is accessed from the KITCHEN (not the main
+    // office) and has huge east-facing windows showing pixel-art
+    // trees, a sun, and birds outside.
+    id: "training-room",
+    name: "Training Room",
+    floor: { minX: 19, maxX: 27, minZ: -13, maxZ: -3 },
+    walls: [
+      wall("training-north", 19, 27, -13.5, -13),
+      wall("training-south", 19, 27, -3, -2.5),
+      // East side: glass wall (full height, z=-13 to z=-3) so
+      // the player can see the outdoor trees and sun.
+      wall("glass", 27, 27.5, -13, -3),
+      // The solid west segments sit inside the training room
+      // rather than sharing the kitchen east wall's depth volume.
+      // They bracket the kitchen-to-training doorway (z=-7..-3).
+      wall("training-west-north", 19.5, 19.8, -13, -7),
+      wall("training-west-south", 19.5, 19.8, -3, -3),
+    ],
+    doorways: [
+      // Kitchen-to-training doorway (matches the kitchen's
+      // east wall gap).
+      gap(
+        "training-to-kitchen",
+        { minX: 19, maxX: 19.5, minZ: -7, maxZ: -3 },
+        { minX: 19.5, maxX: 20, minZ: -7, maxZ: -3 },
+      ),
+    ],
+    floorColor: 0x9b7653,
+    wallColor: 0x245c54,
+    furniture: [
+      // The training room keeps its old layout: projector screen
+      // on the north wall, lectern in the middle, whiteboard on
+      // the west wall, rows of audience chairs facing north.
+      { type: "projector-screen", position: [23, 1.7, -12.7], size: [5, 2.2, 0.12] },
+      { type: "lectern", position: [23, 0.6, -10.7], size: [1.2, 1.2, 0.8] },
+      // The whiteboard is flush with the west wall's inner face.
+      // The west wall volume is x=[19.5, 19.8], so the inner face
+      // is at x=19.8 and the 0.12m-deep board centers at 19.86.
+      { type: "whiteboard", position: [19.86, 1.5, -8], size: [0.12, 2, 4], rotationY: 0 },
+      ...[-5.8, -3.9, -2, -0.1].flatMap((z) =>
+        [-4.5, -1.5, 1.5, 4.5].map((x) => ({
+          type: "chair",
+          // Chairs are placed in the southern half of the room,
+          // facing the lectern (which is at z=-10.7). The chair
+          // positions use the x grid from the old room but
+          // shifted to the new room's x range (19..27).
+          position: [19 + (x + 4.5) / 9 * 8, 0.25, -3 + (z - 0.1) * -0.25] as Vector3Tuple,
+        })),
+      ),
+    ],
+    signs: [
+      // The "TRAINING ROOM" sign is on the south wall, facing
+      // south (face=PI) so the player in the kitchen sees it on
+      // the way in.
+      { text: "TRAINING ROOM", position: [23, 2.45, -2.78], face: Math.PI, color: 0x2255aa },
+    ],
   },
   {
     id: "meeting-room",
@@ -189,36 +286,6 @@ export const WORLD_ROOMS: WorldRoom[] = [
       { type: "projector-screen", position: [0, 1.7, 18.72], size: [4.5, 2, 0.12] },
     ],
     signs: [{ text: "NEXT MEETING: 5 MIN AGO", position: [4, 2.2, 9.28], face: 0, color: 0xaa3322 }],
-  },
-  {
-    id: "cto-office",
-    name: "CTO Office",
-    floor: { minX: 19, maxX: 27, minZ: -13, maxZ: -3 },
-    walls: [
-      wall("cto-north", 19, 27, -13.5, -13),
-      wall("cto-south", 19, 27, -3, -2.5),
-      wall("cto-east", 27, 27.5, -13, -3),
-      wall("glass", 19, 19.18, -13, -8),
-      // The solid west segments sit inside the CTO office rather than sharing
-      // the kitchen east wall's depth volume.
-      wall("cto-west-north", 19.5, 19.8, -8, -5.25),
-      wall("cto-west-south", 19.5, 19.8, -2.75, -3),
-    ],
-    doorways: [
-      gap(
-        "cto-to-kitchen",
-        { minX: 19, maxX: 19.5, minZ: -5.25, maxZ: -2.75 },
-        { minX: 19.5, maxX: 20, minZ: -5.25, maxZ: -2.75 },
-      ),
-    ],
-    floorColor: 0x4d3b2b,
-    wallColor: 0x4a2f24,
-    furniture: [
-      { type: "executive-desk", position: [24, 0.55, -9.5], size: [3.4, 1.1, 1.4] },
-      { type: "chair", position: [24, 0.35, -11] },
-      { type: "bookshelf", position: [26.5, 1.25, -7], size: [0.7, 2.5, 4] },
-    ],
-    signs: [{ text: "BATMAN", position: [24, 1.65, -12.72], face: 0, color: 0xffdd22, size: [4.5, 2.5] }],
   },
   {
     // L-2026-08-30-01: "NPCs should RANDOMLY walk to: the toilet (a new

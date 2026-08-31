@@ -69,6 +69,10 @@ export function interpPosition(
   t: number,
 ): ScheduleEntry["position"] {
   const progress = clamp01(t);
+  // Return the endpoint exactly at progress 1 so callers (and
+  // tests) compare against the schedule entry without float
+  // drift (e.g. 7.7 + (-15.2 * 1) = -7.499999999999999).
+  if (progress >= 1) return { x: to.x, y: to.y, z: to.z };
   return {
     x: from.x + (to.x - from.x) * progress,
     y: from.y + (to.y - from.y) * progress,
