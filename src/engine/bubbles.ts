@@ -66,10 +66,18 @@ export function shouldShowBubble(
   distance: number,
   dtSinceLastCheck: number,
   rng: () => number,
+  nearByCount = 2,
 ): boolean {
   if (distance > 2.5) return false;
-  const interval = 8 + rng() * 4;
-  return dtSinceLastCheck >= interval && rng() < 0.25;
+  // C-45 amendment (l)/Lucas 2026-08-31: NPCs should NOT talk to
+  // themselves - chatter is a social thing. A solo NPC (nearByCount
+  // = 1, just the speaker pair) gets a heavy penalty; a 3+ crowd
+  // gets the normal fire rate. Interval stays 3-6 s, base fire
+  // rate is 50% in a crowd and 5% solo.
+  const interval = 3 + rng() * 3;
+  const solo = nearByCount <= 1;
+  const chance = solo ? 0.05 : 0.5;
+  return dtSinceLastCheck >= interval && rng() < chance;
 }
 
 export function findClosestPair(
