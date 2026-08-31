@@ -54,6 +54,15 @@ Lucas looked at the new CEO office from the inside (screenshot #45). 9 specific 
 - L-2026-08-31-02 → Plan §Phase 11 (dog life) + Phase 12 (CEO office relocation) + Phase 13 (kitchen equipment) + Phase 14 (per-NPC bubbles + CEO dialogues via GLM) + Phase 15 (animated NPC rotation + women arms) + Phase 16 (intro cinematic + cutscenes).
 - L-2026-08-31-04 → Plan §Phase 12.1 (CEO office premium pass: C-44) + Phase 12.2 (internal garden: glass wall on CEO west + training room extension).
 
+**ID: L-2026-08-31-07 — NPC real walking, path-following, kitchen micro-sequence, lunch dialogues (2026-08-31)**
+Lucas reported that NPCs "walk but at the same place, bouncing with animation". He wants:
+- **Path-following** with **obstacle avoidance** while NPCs walk (currently they teleport through walls in a 2 s linear lerp).
+- **Walk animation** that's tied to actual movement, not to wall-clock (currently the bob/sway runs on stationary meshes when morning.position === afternoon.position).
+- **Sub-state sequencing inside the kitchen** — work → fridge → coffee / sink / microwave / table (random order) → desk. Same template for every NPC; the order is randomised per walk. Some NPCs go outside lunch time ("outsiders" who eat alone).
+- **Lunch window** — at lunch time multiple people go to the kitchen together, staggered by 1-2 s per NPC so they don't all start at once. The order of kitchen stops is randomised so they don't walk the same path. If they avoid obstacles (including other NPCs) they "walk together and stand together, like they are talking".
+- **A separate `LUNCH_DIALOGUES` pool** for in-kitchen chatter. Funny lines about: IT jokes, startup jokes, gaming, AI, coffee, dinner, farting, diet, fat, beer, pizza, vege, eco, and work. The lunch pool must not be mixed with the work pool (`INTER_NPC_LINES`).
+- **Cross-references:** PRD §13 new entry C-45 (NPC real walking). Plan new section "Phase 3.6 — NPC real walking: A* pathfinding, walk cycle, kitchen micro-sequence (PRD C-45)".
+
 ## 2026-08-30 — feedback captured (this message)
 
 **ID: L-2026-08-30-01**
