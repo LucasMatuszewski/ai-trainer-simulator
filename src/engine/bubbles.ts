@@ -26,6 +26,18 @@ export const INTER_NPC_LINES: string[] = [
   "Shh... They are watching...",
   "Have you seen my pierogi?",
   "Just KISS, ok?",
+  // General-office additions from the 2026-08-31 dialogue contest
+  // (non-food lines promoted from the contest union per Lucas).
+  "I have 47 tabs open and one fear.",
+  "The intern pushed to main. We're so proud.",
+  "I asked AI to fix it. Now there are two bugs.",
+  "My rubber duck got upgraded to an LLM. It lies.",
+  "I left a TODO in 2019. It's load-bearing now.",
+  "The standup ran 40 minutes. Nobody stood.",
+  "Kubernetes is just astrology for sysadmins.",
+  "We don't need tests, our users test in prod for free.",
+  "I recycle bugs. It's called QA.",
+  "I'm not asleep, I'm doing deep mental architecture.",
 ];
 
 const lastLineByList = new WeakMap<ReadonlyArray<string>, number>();
