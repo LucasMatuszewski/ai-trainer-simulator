@@ -13,7 +13,7 @@ Lucas (2026-08-31): "make a contest and make them funny. Choose the best. Irony.
 - **Exactly 50 lines per contestant**, split:
   - `LUNCH_DIALOGUES_HUMAN: string[]` — **45 lines**.
   - `LUNCH_DIALOGUES_DOG: string[]` — **5-8 lines**, all of them. Burek's lines are dog-sounds rendered as text.
-- **The merged file is also exactly 50 lines total** (~45 human + 5-8 dog, e.g. 45+5 or 42+8 — confirmed by Lucas on 2026-08-31), picked from the union of the three contestants.
+- **The merged output is 45 human lines + 5-8 dog lines, in TWO files** — the dog pool is NOT lunch-specific (Lucas, 2026-08-31: "Dog dialogues should not be LUNCH specific, always the same, lunch or outside the lunch, Burek should say same dialogues at random, rarely, but many times a day"): human lines go to `src/content/lunch-dialogues.ts` (`LUNCH_DIALOGUES_HUMAN`, exactly 45), dog lines go to `src/content/dog-dialogues.ts` (`BUREK_LINES`, 5-8) and fire all day from a dedicated rare ambient bark trigger. The contestants themselves still deliver 45 + 5 in one block — the split into two files happens at merge time.
 - **Every line ≤ 60 characters** (the bubble canvas is hardcoded to 32 chars × 2 lines = 61 max; staying under 60 avoids the `...` truncation in `src/engine/bubbles.ts:fitLine`).
 - **Every line plain ASCII** (`/^[\x20-\x7E]+$/`): no em dashes, no smart quotes, no emoji, no Unicode — contestant models love typographic characters, so this is validated programmatically after the merge.
 - **No line may appear in both pools** (`LUNCH_DIALOGUES_HUMAN` and `LUNCH_DIALOGUES_DOG`).
@@ -119,15 +119,15 @@ The orchestrator:
    - no line in any pool is in `INTER_NPC_LINES` (diff the sets).
    - no line appears in both human and dog pools.
 3. **Picks the best 45 human lines from the union** of the three contestants' pools. Bias toward the lines that are: (a) the most specific (not generic), (b) the funniest, (c) the most "office-real" (a thing you would actually hear a coworker say in a kitchen).
-4. **Picks the best 5-8 dog lines** from the union. Same bias. Keep the merged file at **exactly 50 lines total**.
-5. **Writes** `src/content/lunch-dialogues.ts` exporting the two arrays. Plus a `pickLunchLine(rng, isBurek)` helper that picks from the right pool.
-6. **Adds tests** in `tests/unit/lunch-dialogues.test.ts` (TDD: the test file is written FIRST and fails against the missing module, then the implementation lands):
-   - exactly 50 lines total; human count ≥ 42, dog count 5-8;
+4. **Picks the best 5-8 dog lines** from the union. Same bias.
+5. **Writes TWO files.** `src/content/lunch-dialogues.ts` exporting `LUNCH_DIALOGUES_HUMAN` (exactly 45) with a `pickLunchLine(rng)` helper, and `src/content/dog-dialogues.ts` exporting `BUREK_LINES` (5-8) with a `pickBurekLine(rng)` helper. The dog pool is context-free: same lines at lunch, at a desk, in the corridor (the ambient bark trigger is Phase 3.6 controller work, not part of this brief).
+6. **Adds tests** in `tests/unit/lunch-dialogues.test.ts` and `tests/unit/dog-dialogues.test.ts` (TDD: the test files are written FIRST and fail against the missing modules, then the implementations land):
+   - human count exactly 45; dog count 5-8;
    - no line > 60 chars (human) / 25 chars (dog);
    - every line plain ASCII; no duplicates within a pool;
    - no overlap with `INTER_NPC_LINES` (programmatic);
    - no overlap between the two pools;
-   - `pickLunchLine(rng, true)` returns a dog line, `pickLunchLine(rng, false)` returns a human line; no immediate repeat on back-to-back calls with the same flag.
+   - `pickLunchLine(rng)` returns a human line and `pickBurekLine(rng)` returns a dog line; no immediate repeat on back-to-back calls.
 7. **Stages, typecheck, tests, commits** (after Lucas sees the file). Push only at the Phase 3.6 end-of-phase gate per HR-6.
 
 ## What to do NOT
@@ -140,7 +140,7 @@ The orchestrator:
 
 ## Files this work touches
 
-- **NEW** `src/content/lunch-dialogues.ts` — the picked-and-merged lines.
-- **NEW** `tests/unit/lunch-dialogues.test.ts` — the validation tests.
-- (Possibly) `src/engine/bubbles.ts` — re-export the new arrays from there, or import them in `npc-controller.ts` directly. (Likely direct import in `npc-controller.ts`; the bubble canvas code stays where it is.)
-- (Possibly) `src/engine/npc-controller.ts` — add the `dialogueContext: "lunch" | "work"` argument to the bubble trigger. This is Phase 3.6 code, not part of this brief.
+- **NEW** `src/content/lunch-dialogues.ts` — `LUNCH_DIALOGUES_HUMAN` (exactly 45) + `pickLunchLine(rng)`.
+- **NEW** `src/content/dog-dialogues.ts` — `BUREK_LINES` (5-8, all-day pool, NOT lunch-specific) + `pickBurekLine(rng)`.
+- **NEW** `tests/unit/lunch-dialogues.test.ts` and `tests/unit/dog-dialogues.test.ts` — the validation tests.
+- (Later, Phase 3.6 controller work, NOT this brief) `src/engine/npc-controller.ts` — the `dialogueContext: "lunch" | "work"` argument to the bubble trigger + the Burek ambient bark timer (`DOG_BARK_INTERVAL`, randomized 150-300 s, several barks per 20-minute day).
