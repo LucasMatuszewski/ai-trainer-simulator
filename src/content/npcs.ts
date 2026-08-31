@@ -235,8 +235,6 @@ export const OBSTACLES: Obstacle[] = [
   { id: "desk-grazyna", minX: 6, maxX: 8, minZ: 2.5, maxZ: 3.5, label: "Desk (Grazyna)" },
   { id: "desk-maciek", minX: -4, maxX: -2, minZ: -7.5, maxZ: -6.5, label: "Desk (Maciek)" },
   { id: "desk-przemek", minX: 2, maxX: 4, minZ: -7.5, maxZ: -6.5, label: "Desk (Przemek)" },
-  // Center meeting table — unchanged. The user only mentioned desks.
-  { id: "meeting-table", minX: -2, maxX: 2, minZ: -1, maxZ: 1, label: "Meeting table" },
   // Server rack
   { id: "server-rack", minX: -8.5, maxX: -7.5, minZ: 7.5, maxZ: 8.5, label: "Server rack" },
   // Coffee machine — moved flush against the east wall (was

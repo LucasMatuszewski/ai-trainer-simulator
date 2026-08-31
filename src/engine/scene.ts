@@ -236,8 +236,6 @@ export function buildOfficeScene(
 
     if (obs.id.startsWith("desk-")) {
       scene.add(makeDesk(cx, cz, w, d, screenColor));
-    } else if (obs.id === "meeting-table") {
-      scene.add(makeMeetingTable(cx, cz, w, d));
     } else if (obs.id === "server-rack") {
       const r = makeServerRack(cx, cz, w, d);
       // Its LED/front panel is local +Z. Turn it north into the office from
@@ -736,59 +734,6 @@ function makeMug(): THREE.Group {
   handle.position.set(0.05, 0.06, 0);
   handle.rotation.y = Math.PI / 2;
   g.add(handle);
-  return g;
-}
-
-function makeMeetingTable(cx: number, cz: number, w: number, d: number): THREE.Group {
-  const g = new THREE.Group();
-  const top = new THREE.Mesh(
-    new THREE.BoxGeometry(w, 0.1, d),
-    new THREE.MeshLambertMaterial({ color: COLORS.deskTop }),
-  );
-  top.position.y = 0.7;
-  g.add(top);
-  const legGeom = new THREE.BoxGeometry(0.2, 0.7, 0.2);
-  const legMat = new THREE.MeshLambertMaterial({ color: COLORS.desk });
-  for (const [lx, lz] of [
-    [-w / 2 + 0.15, -d / 2 + 0.15],
-    [w / 2 - 0.15, -d / 2 + 0.15],
-    [-w / 2 + 0.15, d / 2 - 0.15],
-    [w / 2 - 0.15, d / 2 - 0.15],
-  ] as Array<[number, number]>) {
-    const leg = new THREE.Mesh(legGeom, legMat);
-    leg.position.set(lx, 0.35, lz);
-    g.add(leg);
-  }
-  // A small notepad on the table
-  const pad = new THREE.Mesh(
-    new THREE.BoxGeometry(0.4, 0.02, 0.3),
-    new THREE.MeshLambertMaterial({ color: 0xff8888 }),
-  );
-  pad.position.set(0.4, 0.77, 0);
-  g.add(pad);
-  // A pen
-  const pen = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.01, 0.01, 0.15, 6),
-    new THREE.MeshBasicMaterial({ color: 0x000088 }),
-  );
-  pen.position.set(0.4, 0.78, 0);
-  pen.rotation.x = Math.PI / 6;
-  g.add(pen);
-  // A laptop
-  const laptopBase = new THREE.Mesh(
-    new THREE.BoxGeometry(0.4, 0.02, 0.28),
-    new THREE.MeshLambertMaterial({ color: 0x222244 }),
-  );
-  laptopBase.position.set(-0.4, 0.77, 0);
-  g.add(laptopBase);
-  const laptopScreen = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.38, 0.26),
-    new THREE.MeshBasicMaterial({ color: 0x33aaff }),
-  );
-  laptopScreen.position.set(-0.4, 0.9, -0.14);
-  laptopScreen.rotation.x = -0.2;
-  g.add(laptopScreen);
-  g.position.set(cx, 0, cz);
   return g;
 }
 
