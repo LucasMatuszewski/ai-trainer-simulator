@@ -19,7 +19,7 @@ You are implementing the integration part of PRD C-45 (docs/PRD.md section 13 en
 2. `src/engine/npc-avoidance.ts` - NEW pure module.
 3. `src/engine/bubbles.ts` - add `resolveBubblePool` (see below). Do NOT remove or rename any existing export.
 4. `src/game/events.ts` - pass a `LunchContext` into `pickRandomDestination` (period + real elapsed seconds into the period if the caller knows it, else 0).
-5. `src/main.ts` - only if needed to wire period elapsed / getNpcIds; keep `window.__aitrainer` fully working (the e2e tests and Playwright scripts depend on `getPlayer`, `inspectNpcs`, and friends - do not remove or rename any hook).
+5. `src/main.ts` - only if needed to wire period elapsed / getNpcIds; keep `window.__aitrainer` fully working (the e2e tests and Playwright scripts depend on `getPlayer`, `inspectNpcs`, and friends - do not remove or rename any hook). TWO additions, both needed by the Phase 3.6 QA scripts: (a) extend `inspectNpcs` to also return `state: obj.userData.npcState ?? null` per NPC (additive field, existing fields unchanged); (b) add `debugSkipPeriod: () => void` to `__aitrainer` that fast-forwards the game clock to the next period boundary (the wall-clock `elapsed` accumulator driving `periodsElapsed` around line 738-749) so Playwright can reach the afternoon lunch window without waiting `SECONDS_PER_PERIOD` real seconds. It must trigger the same period-change path a natural boundary does (the `runPeriodEvent` roll and the controller's interruption).
 6. Tests: rewrite `tests/unit/npc-controller.test.ts` for the new behaviour; NEW `tests/unit/npc-avoidance.test.ts`; extend `tests/unit/bubbles.test.ts`.
 
 ## The rewrite, requirement by requirement

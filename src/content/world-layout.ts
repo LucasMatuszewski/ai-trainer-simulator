@@ -417,7 +417,7 @@ export const WORLD_ROOMS: WorldRoom[] = [
     // mandatory "OUT OF ORDER" sign (IT Crowd homage).
     id: "toilet",
     name: "Toilet",
-    floor: { minX: -19, maxX: -9, minZ: 9, maxZ: 19 },
+    floor: { minX: -19, maxX: -6.5, minZ: 9, maxZ: 19 },
     walls: [
       wall("toilet-west", -19.5, -19, 9, 19),
       wall("toilet-north", -19, -9, 19, 19.5),
@@ -427,8 +427,15 @@ export const WORLD_ROOMS: WorldRoom[] = [
       wall("toilet-east-south", -9, -8.78, 9.5, 10.25),
       // The south wall sits inside the toilet at z=[9, 9.5]. There
       // is a doorway gap at x=[-9, -8.5], z=[9, 9.5] so the player
-      // can pass from the main office to the toilet.
-      wall("toilet-south", -19, -8.5, 9, 9.5),
+      // can pass from the main office to the toilet. C-45
+      // amendment (k): this wall used to end at x=-8.5, sealing
+      // the very gap the comment describes (the toilet was
+      // unreachable - NPCs only "entered" it because the old 2 s
+      // lerp ignored collision). It now ends at x=-9, leaving the
+      // gap open. The floor below extends to x=-6.5 to cover the
+      // antechamber strip between the toilet and the meeting room
+      // (the toilet's east side is open at z=[10.25, 17.75]).
+      wall("toilet-south", -19, -9, 9, 9.5),
     ],
     doorways: [
       gap(
