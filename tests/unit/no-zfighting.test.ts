@@ -46,6 +46,38 @@ function mainWall(wallId: string): WorldWall {
   return wall;
 }
 
+describe("no two world walls share a volume", () => {
+  // L-2026-08-31 (#47): the kitchen's east wall overlapped the
+  // training room's south wall in the doorway corner cube and
+  // z-fought (blue vs green). This general check catches that
+  // whole bug class: every pair of walls (main office + every
+  // room) may TOUCH on a face but must never overlap in both x
+  // and z.
+  it("keeps every wall pair volume-disjoint", () => {
+    const allWalls = [...MAIN_OFFICE_WALLS, ...WORLD_ROOMS.flatMap((room) => room.walls)];
+    const normalize = (wall: WorldWall) => ({
+      id: wall.id,
+      minX: Math.min(wall.minX, wall.maxX),
+      maxX: Math.max(wall.minX, wall.maxX),
+      minZ: Math.min(wall.minZ, wall.maxZ),
+      maxZ: Math.max(wall.minZ, wall.maxZ),
+    });
+    const walls = allWalls.map(normalize);
+    for (let i = 0; i < walls.length; i += 1) {
+      for (let j = i + 1; j < walls.length; j += 1) {
+        const a = walls[i]!;
+        const b = walls[j]!;
+        const overlapsX = a.minX < b.maxX && b.minX < a.maxX;
+        const overlapsZ = a.minZ < b.maxZ && b.minZ < a.maxZ;
+        expect(
+          !(overlapsX && overlapsZ),
+          `${a.id} overlaps ${b.id} (${JSON.stringify(a)} vs ${JSON.stringify(b)})`,
+        ).toBe(true);
+      }
+    }
+  });
+});
+
 describe("multi-room wall depth separation", () => {
   it("uses the CEO south glass as the only wall on the main-office north boundary", () => {
     // C-44 #5: the solid main-office north segments that covered
@@ -53,8 +85,11 @@ describe("multi-room wall depth separation", () => {
     // office's own south glass; only the two corner strips
     // beyond the CEO side walls remain solid on the main shell.
     const ceo = WORLD_ROOMS.find((room) => room.id === "ceo-office")!;
+    // South boundary glass: inside the boundary band z=[-9.5,-9.2]
+    // AND within the CEO office's x span [-8, 8] (excludes the
+    // east garden glass, which also reaches z=-9.5).
     const southGlass = ceo.walls.filter(
-      (wall) => wall.id === "glass" && wall.maxZ <= -9.2,
+      (wall) => wall.id === "glass" && wall.maxZ <= -9.2 && wall.minX >= -8 && wall.maxX <= 8,
     );
     expect(southGlass).toHaveLength(2);
     expect(MAIN_OFFICE_WALLS.some((wall) => wall.id === "main-north-far-west")).toBe(true);

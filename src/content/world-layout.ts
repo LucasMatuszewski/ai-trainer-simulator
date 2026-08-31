@@ -153,10 +153,13 @@ export const WORLD_ROOMS: WorldRoom[] = [
     walls: [
       // Accent wall: dark navy inner face (L-2026-08-31-04 #6).
       wall("ceo-north", -8, 8, -19.5, -19, 0x1a1f3a),
-      wall("ceo-west", -8.5, -8, -19, -9),
+      // The side walls stop at z=-9.5 so they never share a
+      // volume with the main office's corner strips (which own
+      // the z=[-9.5, -9] band at x=[-9, -8] and [8, 9]).
+      wall("ceo-west", -8.5, -8, -19, -9.5),
       // East glass: the internal garden view (#9). On the right
       // when entering the office from the main office.
-      wall("glass", 8, 8.5, -19, -9),
+      wall("glass", 8, 8.5, -19, -9.5),
       // South glass facing the main office, split around the
       // doorway. This is now the ONLY wall on the boundary (the
       // main office's solid north wall was removed, #5).
@@ -203,15 +206,23 @@ export const WORLD_ROOMS: WorldRoom[] = [
     name: "Kitchen / Coffee Room",
     floor: { minX: 9, maxX: 19, minZ: -7, maxZ: 7 },
     walls: [
-      wall("kitchen-north", 9, 19, -7.5, -7),
-      wall("kitchen-south", 9, 19, 7, 7.5),
-      // C-35: the kitchen's east wall is solid only south of the
-      // training-room doorway (z=[-7, -3]); north of z=-7 the
-      // kitchen north wall closes the corner.
-      wall("kitchen-east", 19, 19.5, -3, 7),
-      // Offset shared walls into the kitchen, away from the main-office shell.
-      wall("kitchen-west-north", 9.22, 9.5, -7, -1.25),
-      wall("kitchen-west-south", 9.22, 9.5, 1.25, 7),
+      // x starts at 9.5, east of the main office's east-wall band
+      // (x=[9, 9.5]), so the two shells never share a volume.
+      wall("kitchen-north", 9.5, 19, -7.5, -7),
+      wall("kitchen-south", 9.5, 19, 7, 7.5),
+      // L-2026-08-31 (#47): the kitchen's east wall used to start
+      // at z=-3, volumetrically overlapping the training room's
+      // south wall in the corner cube x=[19,19.5] z=[-3,-2.5]
+      // (the blue/green z-fight Lucas screenshotted). It now
+      // starts at z=-2.5 so the corner belongs to the training
+      // room's green wall alone.
+      wall("kitchen-east", 19, 19.5, -2.5, 7),
+      // Offset shared walls into the kitchen (east of the main
+      // office's east wall band x=[9, 9.5]) so the two shells
+      // never overlap. The old x=[9.22, 9.5] sat INSIDE the
+      // main-office wall band - same overlap bug class as #47.
+      wall("kitchen-west-north", 9.5, 9.78, -7, -1.25),
+      wall("kitchen-west-south", 9.5, 9.78, 1.25, 7),
     ],
     doorways: [
       MAIN_OFFICE_DOORWAYS[1]!,
@@ -306,11 +317,14 @@ export const WORLD_ROOMS: WorldRoom[] = [
     floor: { minX: -6, maxX: 6, minZ: 9, maxZ: 19 },
     walls: [
       wall("meeting-south", -6, 6, 19, 19.5),
-      wall("meeting-west", -6.5, -6, 9, 19),
-      wall("meeting-east", 6, 6.5, 9, 19),
-      // Offset shared walls into the meeting room, away from the office shell.
-      wall("meeting-north-west", -6, -1.25, 9.22, 9.5),
-      wall("meeting-north-east", 1.25, 6, 9.22, 9.5),
+      // L-2026-08-31 (#47 class): the side walls start at z=9.5
+      // (south of the main office's south-wall band z=[9, 9.5])
+      // and the north walls sit inside the meeting room at
+      // z=[9.5, 9.78], so no wall pair ever shares a volume.
+      wall("meeting-west", -6.5, -6, 9.5, 19),
+      wall("meeting-east", 6, 6.5, 9.5, 19),
+      wall("meeting-north-west", -6, -1.25, 9.5, 9.78),
+      wall("meeting-north-east", 1.25, 6, 9.5, 9.78),
     ],
     doorways: [MAIN_OFFICE_DOORWAYS[2]!],
     floorColor: 0x76543d,
@@ -336,8 +350,10 @@ export const WORLD_ROOMS: WorldRoom[] = [
     walls: [
       wall("toilet-west", -19.5, -19, 9, 19),
       wall("toilet-north", -19, -9, 19, 19.5),
-      wall("toilet-east-north", -9, -8.78, 19, 17.75),
-      wall("toilet-east-south", -9, -8.78, 10.25, 9),
+      wall("toilet-east-north", -9, -8.78, 17.75, 19),
+      // Starts at z=9.5, south of the toilet's own south wall
+      // band (z=[9, 9.5]), so the pair never shares a volume.
+      wall("toilet-east-south", -9, -8.78, 9.5, 10.25),
       // The south wall sits inside the toilet at z=[9, 9.5]. There
       // is a doorway gap at x=[-9, -8.5], z=[9, 9.5] so the player
       // can pass from the main office to the toilet.

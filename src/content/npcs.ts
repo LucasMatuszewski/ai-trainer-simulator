@@ -204,7 +204,10 @@ export const NPCS: NPC[] = [
     role: "The CEO",
     emoji: "👔",
     gender: "male",
-    position: { x: 0, y: 0, z: -17.5 },
+    // L-2026-08-31: z=-17.0 sits him between the chair (z=-17.15)
+    // and the desk's back edge (z=-16.7) so he reads as sitting
+    // AT the desk, not inside the chair back.
+    position: { x: 0, y: 0, z: -17 },
     rotationY: 0,
     triggerRadius: 1.8,
     dialogues: {

@@ -98,8 +98,8 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
   // main office can see him at his desk through the glass wall.
   // He does not random-walk.
   dawid: {
-    morning: { position: { x: 0, y: 0, z: -17.5 }, face: 0, state: "at-desk" },
-    afternoon: { position: { x: 0, y: 0, z: -17.5 }, face: 0, state: "at-desk" },
+    morning: { position: { x: 0, y: 0, z: -17 }, face: 0, state: "at-desk" },
+    afternoon: { position: { x: 0, y: 0, z: -17 }, face: 0, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
   },
 };
@@ -144,15 +144,14 @@ export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
   // Meeting room: by the meeting table (center of room).
   // The table is in the center; just stand there.
   { position: { x: 0, y: 0, z: 14 }, face: 0, state: "meeting" },
-  // Training room (new location: east of the kitchen, x=19..27,
-  // z=-13..-3). The lectern is at x=23, z=-10.7; the audience
-  // chairs are south of the lectern at z=-8 and z=-7.4. The
-  // speaker stands at the lectern and faces south (face=0 in
-  // this convention means facing +Z = south); the audience
-  // members face north (face=PI) to look at the speaker.
-  { position: { x: 23, y: 0, z: -10.7 }, face: 0, state: "training" },
-  { position: { x: 21, y: 0, z: -8 }, face: Math.PI, state: "training" },
-  { position: { x: 25, y: 0, z: -7.4 }, face: Math.PI, state: "training" },
+  // Training room (C-44: elongated, z=[-19, -3]). The lectern
+  // stands at x=23, z=-17 in front of the projector screen; the
+  // audience rows are at z=-15, -13.2, -11.4. The speaker faces
+  // south (face 0) toward the audience; students face north
+  // (face PI) toward the lectern.
+  { position: { x: 23, y: 0, z: -16.4 }, face: 0, state: "training" },
+  { position: { x: 21, y: 0, z: -15 }, face: Math.PI, state: "training" },
+  { position: { x: 25.2, y: 0, z: -13.2 }, face: Math.PI, state: "training" },
 ];
 
 /** Pick a random destination for the given NPC, weighted by role.
