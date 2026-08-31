@@ -79,6 +79,8 @@ export interface NPC {
    * "face the monitor which sits on the -Z side of the desk" layout.
    */
   rotationY?: number;
+  /** Movement speed in world metres per second. */
+  walkSpeed: number;
   triggerRadius: number;
   /**
    * Visual gender. Drives the silhouette in the 3D scene (a future

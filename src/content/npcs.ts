@@ -27,6 +27,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     position: { x: -7.7, y: 0, z: -5 },
     rotationY: Math.PI / 2,
+    walkSpeed: 1.2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.bartek!.default!,
@@ -42,6 +43,7 @@ export const NPCS: NPC[] = [
     gender: "female",
     position: { x: -7.7, y: 0, z: 5.5 },
     rotationY: Math.PI / 2,
+    walkSpeed: 1.2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.klaudia!.default!,
@@ -55,6 +57,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     position: { x: 7.7, y: 0, z: -5 },
     rotationY: -Math.PI / 2,
+    walkSpeed: 1.4,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.marek!.default!,
@@ -68,6 +71,7 @@ export const NPCS: NPC[] = [
     gender: "female",
     position: { x: 3, y: 0, z: 7.7 },
     rotationY: Math.PI,
+    walkSpeed: 1,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.zosia!.default!,
@@ -81,6 +85,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     position: { x: -3, y: 0, z: 7.7 },
     rotationY: Math.PI,
+    walkSpeed: 1.2,
     triggerRadius: 1.6,
     dialogues: {
       default: DIALOGUES.pawel!.default!,
@@ -94,6 +99,7 @@ export const NPCS: NPC[] = [
     gender: "female",
     position: { x: 7.7, y: 0, z: 5.5 },
     rotationY: -Math.PI / 2,
+    walkSpeed: 1.2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.kasia!.default!,
@@ -107,6 +113,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     position: { x: -7.7, y: 0, z: -1.5 },
     rotationY: Math.PI / 2,
+    walkSpeed: 1.4,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.tomek!.default!,
@@ -120,6 +127,7 @@ export const NPCS: NPC[] = [
     gender: "female",
     position: { x: 7.7, y: 0, z: -2.5 },
     rotationY: -Math.PI / 2,
+    walkSpeed: 1.2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.ania!.default!,
@@ -133,6 +141,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     position: { x: -7.7, y: 0, z: 2 },
     rotationY: Math.PI / 2,
+    walkSpeed: 1.2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.janusz!.default!,
@@ -146,6 +155,7 @@ export const NPCS: NPC[] = [
     gender: "dog",
     position: { x: -5, y: 0, z: 4 },
     rotationY: 0,
+    walkSpeed: 1.6,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.burek!.default!,
@@ -159,6 +169,7 @@ export const NPCS: NPC[] = [
     gender: "female",
     position: { x: 7.7, y: 0, z: 2 },
     rotationY: -Math.PI / 2,
+    walkSpeed: 1.2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.grazyna!.default!,
@@ -172,6 +183,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     position: { x: -3, y: 0, z: -7.7 },
     rotationY: 0,
+    walkSpeed: 1.4,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.maciek!.default!,
@@ -185,6 +197,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     position: { x: 3, y: 0, z: -7.7 },
     rotationY: 0,
+    walkSpeed: 1.2,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.przemek!.default!,
@@ -209,6 +222,7 @@ export const NPCS: NPC[] = [
     // AT the desk, not inside the chair back.
     position: { x: 0, y: 0, z: -17 },
     rotationY: 0,
+    walkSpeed: 1,
     triggerRadius: 1.8,
     dialogues: {
       default: DIALOGUES.dawid!.default!,

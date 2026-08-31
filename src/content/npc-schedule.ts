@@ -1,4 +1,5 @@
 import type { NPC, NpcId } from "../types";
+import type { GameState } from "../types";
 import { NPCS } from "./npcs";
 
 export type Period = "morning" | "afternoon" | "evening";
@@ -19,6 +20,109 @@ export interface ScheduleEntry {
   position: { x: number; y: number; z: number };
   face: number;
   state: NpcState;
+}
+
+export type KitchenStopId = "fridge" | "coffee" | "microwave" | "sink" | "table";
+
+export const KITCHEN_MICRO_STOPS: Readonly<Record<KitchenStopId, ScheduleEntry>> = {
+  // Standing spots ~0.5 m south of each appliance AABB, facing it
+  // (Math.PI = face -Z = toward the counter on the north wall).
+  // Corrected per PRD C-45 amendment (j): the sketched z = -6.2 row
+  // sits inside the C-36 counter/fridge AABBs, and (14, 2.5) was on
+  // the table itself.
+  fridge: { position: { x: 10.6, y: 0, z: -5.5 }, face: Math.PI, state: "kitchen" },
+  coffee: { position: { x: 13.0, y: 0, z: -5.3 }, face: Math.PI, state: "kitchen" },
+  microwave: { position: { x: 15.2, y: 0, z: -5.3 }, face: Math.PI, state: "kitchen" },
+  sink: { position: { x: 17.5, y: 0, z: -5.3 }, face: Math.PI, state: "kitchen" },
+  table: { position: { x: 14.0, y: 0, z: 1.2 }, face: Math.PI, state: "kitchen" },
+};
+
+export const KITCHEN_STOP_DWELL: Readonly<Record<KitchenStopId, number>> = {
+  fridge: 5,
+  coffee: 8,
+  microwave: 4,
+  sink: 6,
+  table: 10,
+};
+
+export const KITCHEN_STOP_JITTER_RADIUS = 0.4;
+
+export interface KitchenSequenceStop {
+  id: KitchenStopId;
+  entry: ScheduleEntry;
+  dwellSeconds: number;
+}
+
+const KITCHEN_STOP_IDS: readonly KitchenStopId[] = [
+  "fridge",
+  "coffee",
+  "microwave",
+  "sink",
+  "table",
+];
+
+function npcJitterAngle(npcId: NpcId): number {
+  let hash = 0;
+  for (const char of npcId) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return (hash / 0x1_0000_0000) * Math.PI * 2;
+}
+
+export function pickKitchenSequence(
+  npcId: NpcId,
+  rng: () => number,
+): KitchenSequenceStop[] {
+  const ids = [...KITCHEN_STOP_IDS];
+  for (let i = ids.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [ids[i], ids[j]] = [ids[j]!, ids[i]!];
+  }
+
+  const count = rng() < 0.5 ? 3 : 4;
+  const angleSalt = npcJitterAngle(npcId);
+  return ids.slice(0, count).map((id) => {
+    const base = KITCHEN_MICRO_STOPS[id];
+    const angle = rng() * Math.PI * 2 + angleSalt;
+    const radius = Math.sqrt(rng()) * KITCHEN_STOP_JITTER_RADIUS;
+    return {
+      id,
+      entry: {
+        ...base,
+        position: {
+          x: base.position.x + Math.cos(angle) * radius,
+          y: base.position.y,
+          z: base.position.z + Math.sin(angle) * radius,
+        },
+      },
+      dwellSeconds: KITCHEN_STOP_DWELL[id],
+    };
+  });
+}
+
+export const LUNCH_OUTSIDERS: ReadonlySet<NpcId> = new Set(["maciek", "marek"]);
+
+export const SOCIAL_LUNCHERS: ReadonlySet<NpcId> = new Set(
+  NPCS.filter(
+    (npc) => (npc.gender !== "dog" || npc.id === "burek") && !LUNCH_OUTSIDERS.has(npc.id),
+  ).map((npc) => npc.id),
+);
+
+export const LUNCH_WINDOW_SECONDS = 120;
+
+export interface LunchContext {
+  period: GameState["timeOfDay"];
+  periodElapsed: number;
+}
+
+export function isLunchWindow(ctx: LunchContext): boolean {
+  return ctx.period === "afternoon" && ctx.periodElapsed < LUNCH_WINDOW_SECONDS;
+}
+
+export function LUNCH_STAGGER_OFFSET(
+  _npcId: NpcId,
+  _day: number,
+  rng: () => number,
+): number {
+  return rng() * 2;
 }
 
 export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
@@ -130,10 +234,14 @@ export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
   // side), the NPC needs yaw = -PI/2. But the machine is on
   // the +X (east) wall. So NPC should look at +X = east. Yaw=PI/2.
   // face: Math.PI / 2,
-  { position: { x: 11, y: 0, z: -6.2 }, face: -Math.PI / 2, state: "coffee" },
-  // Kitchen table: mid-room, facing west (table is on the +X
-  // side, so NPC looks -X back toward the office).
-  { position: { x: 14, y: 0, z: 2.5 }, face: -Math.PI / 2, state: "kitchen" },
+  // Corrected per C-45 amendment (j): (11, -6.2) is inside the
+  // fridge AABB (x [10.1, 11.1], z [-7, -6.1]); stand south of the
+  // counter at the coffee-machine x instead, facing the counter
+  // (Math.PI = face -Z = north).
+  { position: { x: 13.0, y: 0, z: -5.3 }, face: Math.PI, state: "coffee" },
+  // Kitchen table: stand south of it (the old (14, 2.5) was ON the
+  // table), facing north toward it.
+  { position: { x: 14.0, y: 0, z: 1.2 }, face: Math.PI, state: "kitchen" },
   // Toilet: stand in front of the first stall (toilet stalls
   // are at z=16, the NPC at z=14.5 faces +Z (north) toward them).
   { position: { x: -16, y: 0, z: 14.5 }, face: 0, state: "toilet" },
@@ -170,13 +278,31 @@ export function pickRandomDestination(
   npcId: NpcId,
   rng: () => number,
   _day: number,
+  ctx?: LunchContext,
 ): ScheduleEntry | null {
+  const lunchWindow = ctx !== undefined && isLunchWindow(ctx);
+  if (lunchWindow) {
+    if (npcId === "burek") return pickKitchenSequence(npcId, rng)[0]!.entry;
+    if (LUNCH_OUTSIDERS.has(npcId)) {
+      return rng() < 0.3 ? null : pickKitchenSequence(npcId, rng)[0]!.entry;
+    }
+    if (SOCIAL_LUNCHERS.has(npcId)) {
+      return rng() < 0.6 ? pickKitchenSequence(npcId, rng)[0]!.entry : null;
+    }
+  }
+
   // 90% chance to stay at the desk for everyone except the
   // manager (Zosia) who has meetings more often, and the dog
   // (Burek) who wanders the most.
   const r = rng();
   const stay = npcId === "burek" ? 0.5 : npcId === "zosia" ? 0.7 : 0.9;
   if (r < stay) return null;
+  if (npcId === "burek" && rng() < 0.6) {
+    return pickKitchenSequence(npcId, rng)[0]!.entry;
+  }
+  if (LUNCH_OUTSIDERS.has(npcId) && rng() < 0.3) {
+    return pickKitchenSequence(npcId, rng)[0]!.entry;
+  }
   // 20% of walks: visit a colleague at their desk.
   if (rng() < 0.2) {
     return pickColleagueDesk(npcId, rng);

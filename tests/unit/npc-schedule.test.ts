@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  isLunchWindow,
+  LUNCH_OUTSIDERS,
+  LUNCH_STAGGER_OFFSET,
   NPC_SCHEDULES,
   pickRandomDestination,
   RANDOM_DESTINATIONS,
+  SOCIAL_LUNCHERS,
   type Period,
 } from "../../src/content/npc-schedule";
 import { NPCS, OFFICE_BOUNDS } from "../../src/content/npcs";
@@ -14,6 +18,17 @@ const PERIODS: readonly Period[] = ["morning", "afternoon", "evening"];
 const getScheduleFor = (npcId: NpcId, period: Period) => NPC_SCHEDULES[npcId][period];
 
 describe("NPC schedules", () => {
+  it("gives every NPC a positive finite walk speed", () => {
+    for (const npc of NPCS) {
+      expect(Number.isFinite(npc.walkSpeed)).toBe(true);
+      expect(npc.walkSpeed).toBeGreaterThan(0);
+    }
+  });
+
+  it("gives Burek the mandated 1.6 m/s walk speed", () => {
+    expect(NPCS.find((npc) => npc.id === "burek")?.walkSpeed).toBe(1.6);
+  });
+
   it("returns an entry for every NPC and period", () => {
     for (const npc of NPCS) {
       for (const period of PERIODS) {
@@ -109,6 +124,60 @@ describe("NPC schedules", () => {
 });
 
 describe("Random walk destinations (L-2026-08-30-01)", () => {
+  it("classifies every human and Burek as social lunchers except the two outsiders", () => {
+    const expectedSocialLunchers = NPCS
+      .filter((npc) => npc.gender !== "dog" || npc.id === "burek")
+      .map((npc) => npc.id)
+      .filter((id) => id !== "maciek" && id !== "marek");
+
+    expect([...SOCIAL_LUNCHERS].sort()).toEqual(expectedSocialLunchers.sort());
+    expect([...LUNCH_OUTSIDERS].sort()).toEqual(["maciek", "marek"]);
+  });
+
+  it("opens lunch only during the first 120 seconds of the afternoon", () => {
+    expect(isLunchWindow({ period: "afternoon", periodElapsed: 0 })).toBe(true);
+    expect(isLunchWindow({ period: "afternoon", periodElapsed: 119.9 })).toBe(true);
+    expect(isLunchWindow({ period: "afternoon", periodElapsed: 120 })).toBe(false);
+    expect(isLunchWindow({ period: "morning", periodElapsed: 0 })).toBe(false);
+    expect(isLunchWindow({ period: "evening", periodElapsed: 0 })).toBe(false);
+  });
+
+  it("always sends Burek to a jittered kitchen stop during lunch", () => {
+    for (const value of [0, 0.25, 0.5, 0.99]) {
+      const result = pickRandomDestination(
+        "burek",
+        () => value,
+        1,
+        { period: "afternoon", periodElapsed: 30 },
+      );
+      expect(result?.state).toBe("kitchen");
+      expect(result?.position.x).toBeGreaterThanOrEqual(10.2);
+      expect(result?.position.x).toBeLessThanOrEqual(17.9);
+      expect(result?.position.z).toBeGreaterThanOrEqual(-6.6);
+      expect(result?.position.z).toBeLessThanOrEqual(2.9);
+    }
+  });
+
+  it("sends a social human to the kitchen when the lunch roll is below 60%", () => {
+    const result = pickRandomDestination(
+      "bartek",
+      () => 0.5,
+      1,
+      { period: "afternoon", periodElapsed: 30 },
+    );
+    expect(result?.state).toBe("kitchen");
+  });
+
+  it("preserves the old 90% stay behavior when no lunch context is supplied", () => {
+    expect(pickRandomDestination("bartek", () => 0.5, 1)).toBeNull();
+  });
+
+  it("returns lunch stagger offsets in the inclusive 0 to 2 second range", () => {
+    expect(LUNCH_STAGGER_OFFSET("bartek", 1, () => 0)).toBe(0);
+    expect(LUNCH_STAGGER_OFFSET("bartek", 1, () => 0.5)).toBe(1);
+    expect(LUNCH_STAGGER_OFFSET("bartek", 1, () => 1)).toBe(2);
+  });
+
   it("defines destinations for kitchen, toilet, meeting, and training", () => {
     const states = new Set(RANDOM_DESTINATIONS.map((d) => d.state));
     expect(states.has("coffee")).toBe(true);
