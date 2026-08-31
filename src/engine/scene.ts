@@ -249,6 +249,15 @@ export function buildOfficeScene(
       scene.add(makeCoffeeMachine(cx, cz, w, d));
     } else if (obs.id === "vending") {
       const r = makeVendingMachine(cx, cz, w, d);
+      // L-2026-08-30 (Lucas): "Turn around this dark-blue machine
+      // in the office corner, it is facing the wall, should be in
+      // the corner and facing the room". The vending machine is
+      // authored with the front (screen, cans) on the +Z side.
+      // At the SE corner the +Z direction points AT the south wall
+      // (wall is at z=9, machine front is at z=8+d/2=8.5). Rotate
+      // the whole group 180° so the front faces -Z (into the
+      // room, toward the player's natural approach path).
+      r.mesh.rotation.y = Math.PI;
       scene.add(r.mesh);
       updatables.push(r.update);
     }
