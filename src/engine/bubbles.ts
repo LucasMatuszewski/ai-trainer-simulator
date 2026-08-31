@@ -21,7 +21,7 @@ export const INTER_NPC_LINES: string[] = [
   "I guess it's some bat-complex",
   "Did the deploy go out?",
   "The wifi is being weird today.",
-  "$#%#$@$%!!!",
+  "!!! $#%#$@$% !!!",
   "Is he still staring at me?",
   "Shh... They are watching...",
   "Have you seen my pierogi?",
