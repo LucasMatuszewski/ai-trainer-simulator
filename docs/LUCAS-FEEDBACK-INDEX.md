@@ -20,6 +20,12 @@ nothing is lost again.
 - **Intros with dialogue explaining the game, goal, and rules** — where are they? Add a real intro cinematic that explains who the player is, what the goal is (survive 30 days, don't go bankrupt, run training sessions), and the rules (talk to people, work the contracts, etc).
 - **Cutscenes and events** — the game has none. Add a real morning walk-in cutscene, the CEO entering his office cutscene, and at least one random in-game event with its own little cutscene.
 
+**ID: L-2026-08-31-03 — CEO office + training room swap refinement (2026-08-31)**
+- The training room must connect to the KITCHEN, not to the main office, so the training facility is "off the back" of the office (kitchen → training).
+- The training room has huge windows on its east wall facing OUTSIDE: trees, sun, and sky are visible through the glass. The trees and sun are pixel-art decoration; the sun moves slowly across the sky with the in-game time of day.
+- The CEO office (which now sits where the training room was) keeps the glass wall to the main office and the Batman sign.
+- The main office, kitchen, and training room are now physically separated; the player goes through the kitchen to reach a class.
+
 **Already implemented in earlier commits (2026-08-31):**
 - L-2026-08-31-01: chest rectangle removed (commit 2a2dd27). Done.
 - Desk rotation / NPC sitting position / window frame: commit 980100d. Done.
