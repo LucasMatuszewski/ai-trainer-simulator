@@ -93,11 +93,19 @@ describe("createNpcController", () => {
     controller.update(0.2); expect(object.position.distanceTo(before)).toBeGreaterThan(0);
   });
 
-  it("never bobs a stationary NPC whose morning and afternoon entries match", () => {
-    let period: Period = "morning";
+  it("never bobs a stationary NPC that has arrived at its desk", () => {
+    // C-45 morning entry: NPCs spawn at the door and WALK to the desk,
+    // so the walk bob is legitimate until arrival. The invariant under
+    // test is: once settled, the controller pins the ROOT y to baseY
+    // (idle animations live on child bones only, never on the root).
     const object = makeObject("bartek");
-    const controller = createNpcController([npc("bartek")], { bartek: object } as Record<NpcId, THREE.Object3D>, () => period, () => 1, () => 0);
-    controller.update(0); period = "afternoon"; controller.update(0.2); controller.update(1);
+    const controller = createNpcController([npc("bartek")], { bartek: object } as Record<NpcId, THREE.Object3D>, () => "morning", () => 1, () => 0);
+    controller.update(0);
+    // 50 s at 0.25 s steps: comfortably longer than the door -> desk walk.
+    for (let step = 0; step < 200; step += 1) controller.update(0.25);
+    expect(object.userData.npcState).toBe("at-desk");
+    expect(object.position.y).toBe(0);
+    controller.update(0.5); controller.update(1);
     expect(object.position.y).toBe(0);
     expect(object.userData.npcState).toBe("at-desk");
   });

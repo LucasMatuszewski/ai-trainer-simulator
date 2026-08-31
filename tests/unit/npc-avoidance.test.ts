@@ -7,8 +7,11 @@ function agent(id: string, x: number, z: number, vx = 1, vz = 0, priority = 3): 
 
 describe("computeAvoidancePush", () => {
   it("pushes perpendicular to travel away from a nearby moving agent", () => {
+    // pushMeters default dropped 0.4 -> 0.3 (commit 441357f: a smaller
+    // push avoids the collision-jitter deadlock); magnitude at 0.5 m of
+    // a 1 m radius is 0.3 * (1 - 0.5/1) = 0.15.
     const push = computeAvoidancePush(agent("self", 0, 0), [agent("other", 0, 0.5)]);
-    expect(push.x).toBeCloseTo(0); expect(push.z).toBeCloseTo(-0.2);
+    expect(push.x).toBeCloseTo(0); expect(push.z).toBeCloseTo(-0.15);
   });
   it("returns zero outside the avoidance radius", () => {
     expect(computeAvoidancePush(agent("self", 0, 0), [agent("other", 0, 2)])).toEqual({ x: 0, z: 0 });
