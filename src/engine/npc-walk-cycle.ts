@@ -14,10 +14,13 @@ export interface WalkCycleOutput {
 }
 
 export const DEFAULT_WALK_SPEED_MPS = 1.2;
-export const GAIT_HZ_AT_DEFAULT = 4;
-export const LEG_SWING_AMPLITUDE = 0.6;
-export const ARM_SWING_AMPLITUDE = 0.35;
-export const BOB_AMPLITUDE = 0.05;
+// C-45 amendment (l)(3): real human walking is ~0.9 Hz per full
+// gait cycle, not 4 Hz. Drop the rate, halve the swing and bob
+// so the NPCs read as walking instead of "broken robots".
+export const GAIT_HZ_AT_DEFAULT = 1.6;
+export const LEG_SWING_AMPLITUDE = 0.3;
+export const ARM_SWING_AMPLITUDE = 0.18;
+export const BOB_AMPLITUDE = 0.025;
 export const RADIANS_PER_METRE = (
   2 * Math.PI * GAIT_HZ_AT_DEFAULT / DEFAULT_WALK_SPEED_MPS
 );
