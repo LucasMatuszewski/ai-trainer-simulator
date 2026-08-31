@@ -33,12 +33,26 @@ nothing is lost again.
 - Vending machine rotation: commit 65df90a. Done.
 - Visit-colleague random-walk destination: commit 0033ca8. Done.
 
+**ID: L-2026-08-31-04 — CEO office premium pass (9 specific issues)**
+Lucas looked at the new CEO office from the inside (screenshot #45). 9 specific issues to fix:
+1. Desk too high (like a reception desk) — lower it.
+2. Add laptop + 2nd monitor + premium decorative elements for a modern CEO of an IT company.
+3. Remove the stool (the chair is a simple blue block and the CEO looks like he's INSIDE it) — use a real executive chair.
+4. BATMAN emblem: make it huge on the WHOLE wall, in a black background, identical to the real Batman logo. Lucas could not see it from his current position.
+5. Remove the solid wall that covers the glass wall — the existing south glass wall is being hidden by a normal wall in front of it.
+6. The wall opposite the door should have a different (premium) color on the inner side — accent wall.
+7. Make the ceiling light fixture visible (currently invisible) — and add 2 light sources.
+8. Add premium furniture: sofa, small table for meetings, posters on the walls, pictures. Something funny (delegate to GLM for ideas).
+9. **Second big glass wall with an internal garden view** — keep the existing south glass wall (CEO sees employees), ADD a new glass wall on the RIGHT side of the entrance (the west wall of the CEO office). Through this wall the CEO sees trees + grass. On the OTHER side of this garden, the conference/training room has its own glass wall facing the same garden. The training room is bigger: the projector screen wall moves back (north) and the east/west walls extend.
+
 **Cross-references (pending update in PRD/plan):**
 - L-2026-08-31-02 → PRD §13 new entry C-34 (dog behavior) + C-35 (CEO office relocation + glass wall) + C-36 (kitchen detailed pixelart) + C-37 (per-NPC unique speech bubbles) + C-38 (new CEO character + dialogues) + C-39 (NPC animated face-to-player + post-dialogue return) + C-40 (women arm width) + C-41 (intro cinematic explaining game/goal) + C-42 (cutscenes and events).
+- L-2026-08-31-04 → PRD §13 new entry C-44 (CEO office premium pass: 9 items above).
 - L-2026-08-31-02 → New ADR ADR-0016 (3D model library: one .ts per object, reusable across rooms and cutscenes).
 - L-2026-08-31-02 → New ADR ADR-0017 (kitchen equipment content list).
-- L-2026-08-31-02 → New ADR ADR-0018 (CEO character + dialogue policy).
+- L-2026-08-31-04 → New ADR ADR-0019 (CEO office premium content list: GLM-authored premium furniture, posters, accent color).
 - L-2026-08-31-02 → Plan §Phase 11 (dog life) + Phase 12 (CEO office relocation) + Phase 13 (kitchen equipment) + Phase 14 (per-NPC bubbles + CEO dialogues via GLM) + Phase 15 (animated NPC rotation + women arms) + Phase 16 (intro cinematic + cutscenes).
+- L-2026-08-31-04 → Plan §Phase 12.1 (CEO office premium pass: C-44) + Phase 12.2 (internal garden: glass wall on CEO west + training room extension).
 
 ## 2026-08-30 — feedback captured (this message)
 
