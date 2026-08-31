@@ -31,9 +31,9 @@ describe("createNpcMesh", () => {
     expect(boxDimensions(femaleBody).width).toBeLessThan(boxDimensions(maleBody).width);
   });
 
-  it("adds a chest only to female NPCs", () => {
-    expect(createNpcMesh("male", 0, "bartek").getObjectByName("chest")).toBeUndefined();
-    expect(namedMesh(createNpcMesh("female", 0, "klaudia"), "chest")).toBeDefined();
+  it("adds a breast only to female NPCs (part of the body model, L-2026-08-30 / L-2026-08-31-01)", () => {
+    expect(createNpcMesh("male", 0, "bartek").getObjectByName("breast")).toBeUndefined();
+    expect(namedMesh(createNpcMesh("female", 0, "klaudia"), "breast")).toBeDefined();
   });
 
   it("gives both humanoid silhouettes a head, body, two legs, and two eyes", () => {

@@ -6,13 +6,10 @@ const BODY_COLORS = [0x884422, 0x224488, 0x448822, 0x882244, 0x886622];
 const HAIR_COLORS = [0x442211, 0xccaa22, 0x222222];
 const SKIN_COLOR = 0xffd0a8;
 const DARK_CLOTHING = 0x222244;
-const SHIRT_COLORS = [0x3b82f6, 0xef4444, 0x22c55e, 0xf59e0b, 0x8b5cf6];
 
 export interface NpcClothing {
-  shirt: boolean;
   lowerBody: "none" | "trousers" | "skirt";
   shoes: boolean;
-  shirtColor: number;
 }
 
 function hashNpcId(id: string): number {
@@ -29,10 +26,8 @@ export function clothingForNpc(id: string, gender: Exclude<NpcMeshGender, "dog">
   const hash = hashNpcId(id);
   const lowerBodyIndex = (hash >>> 8) % 3;
   return {
-    shirt: (hash & 1) === 0,
     lowerBody: lowerBodyIndex === 0 ? "none" : lowerBodyIndex === 1 ? "trousers" : gender === "female" ? "skirt" : "none",
     shoes: ((hash >>> 16) & 1) === 0,
-    shirtColor: SHIRT_COLORS[(hash >>> 24) % SHIRT_COLORS.length]!,
   };
 }
 
@@ -99,60 +94,30 @@ function createMaleMesh(bodyColor: number, hairColor: number): THREE.Group {
   return group;
 }
 
-function chestRadiusForNpc(id: string): number {
-  const variation = 0.7 + ((hashNpcId(id) >>> 12) & 0xff) / 255 * 0.6;
-  return 0.08 * variation;
-}
-
-function createFemaleMesh(bodyColor: number, hairColor: number, shirtColor: number, npcId: string): THREE.Group {
+function createFemaleMesh(bodyColor: number, hairColor: number): THREE.Group {
   const group = new THREE.Group();
   const bodyMaterial = new THREE.MeshLambertMaterial({ color: bodyColor });
-  // The "shirt" color and the "body" color are the SAME for the
-  // female mesh. Earlier the chest was rendered in a darker
-  // shade of the shirt, but Lucas explicitly asked for the
-  // chest to be the EXACT same color as the rest of the body/
-  // shirt so it does not look like a clipping glitch. We keep
-  // the chest sphere for body-shape, but it wears the same
-  // material as the body box. The clothing-shirt (in
-  // addClothing) is a separate, brighter shirt color so the
-  // NPC can still show a "shirt" visually; when addClothing is
-  // present it covers the chest, so the chest color is only
-  // visible for NPCs without a shirt (or as a fallback when
-  // the shirt color == body color).
-  const shirtMaterial = new THREE.MeshLambertMaterial({ color: shirtColor });
   group.add(
     box("body", [0.5, 0.85, 0.4], bodyMaterial, [0, 0.575, 0]),
     createHumanoidHead(hairColor, true),
   );
-  const chest = new THREE.Mesh(
-    new THREE.SphereGeometry(chestRadiusForNpc(npcId), 8, 6),
-    shirtMaterial,
-  );
-  chest.name = "chest";
-  chest.position.set(0, 0.78, 0.22);
-  chest.scale.set(1.35, 0.7, 0.55);
-  group.add(chest);
+  const breastGeo = new THREE.SphereGeometry(0.13, 12, 10);
+  const leftBreast = new THREE.Mesh(breastGeo, bodyMaterial);
+  leftBreast.name = "breast";
+  leftBreast.position.set(-0.13, 0.84, 0.21);
+  leftBreast.scale.set(1, 0.85, 0.7);
+  group.add(leftBreast);
+  const rightBreast = new THREE.Mesh(breastGeo, bodyMaterial);
+  rightBreast.name = "breast";
+  rightBreast.position.set(0.13, 0.84, 0.21);
+  rightBreast.scale.set(1, 0.85, 0.7);
+  group.add(rightBreast);
   addHumanoidLegs(group);
   addHumanoidArms(group, bodyColor, 0.22);
   return group;
 }
 
-/** Darken a 24-bit RGB color by `factor` (0..1). Factor 1 = unchanged.
- *  Kept for future use (was used for the chest two-tone effect,
- *  which Lucas explicitly asked to undo: "should be exact same
- *  color as the rest of the body/shirt"). */
-function darkenColor(rgb: number, factor: number): number {
-  const r = Math.round(((rgb >> 16) & 0xff) * factor);
-  const g = Math.round(((rgb >> 8) & 0xff) * factor);
-  const b = Math.round((rgb & 0xff) * factor);
-  return (r << 16) | (g << 8) | b;
-}
-void darkenColor; // silence unused-warning until next use
-
 function addClothing(group: THREE.Group, clothing: NpcClothing): void {
-  if (clothing.shirt) {
-    group.add(box("clothing-shirt", [0.42, 0.3, 0.3], new THREE.MeshLambertMaterial({ color: clothing.shirtColor }), [0, 0.75, 0.21]));
-  }
   if (clothing.lowerBody === "trousers") {
     group.add(box("clothing-trousers", [0.3, 0.4, 0.3], new THREE.MeshLambertMaterial({ color: DARK_CLOTHING }), [0, 0.28, 0]));
   } else if (clothing.lowerBody === "skirt") {
@@ -212,7 +177,7 @@ export function createNpcMesh(gender: NpcMeshGender, paletteIndex = 0, npcId = S
   const hairColor = HAIR_COLORS[normalizedIndex % HAIR_COLORS.length]!;
   const clothing = clothingForNpc(npcId, gender);
   const group = gender === "female"
-    ? createFemaleMesh(bodyColor, hairColor, clothing.shirtColor, npcId)
+    ? createFemaleMesh(bodyColor, hairColor)
     : createMaleMesh(bodyColor, hairColor);
   group.userData.clothing = clothing;
   addClothing(group, clothing);

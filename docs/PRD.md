@@ -398,7 +398,7 @@ Per the corrected build:
 - **NPC walk animation:** while `state === "walking"`, a sine-wave bob on Y (±0.05m, 4Hz) plus an arm-swing.
 - **NPCs are not in identical positions.** Each NPC's chair is offset by a small random amount in the X/Z plane (e.g. ±0.05m), so they don't look like clones. The desk positions are also randomized slightly per-NPC.
 - **Desks are not exact clones.** Each desk has a random tint of wood color (warm, dark, or light), a random mug color (red, blue, green, yellow, white), and a random set of items on it (mug, laptop, notebook, sticky notes, plant, family photo). Procedurally varied at scene-build time, not hand-placed.
-- **NPC body color is varied per-NPC.** The shirt, hair color, and skin color differ per NPC. The user mentioned wanting a "feel" of individuality.
+- **NPC body color is varied per-NPC.** The body color, hair color, and skin color differ per NPC. The user mentioned wanting a "feel" of individuality.
 
 ### 11.4 Day-1 intro cinematic
 
@@ -800,6 +800,14 @@ A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
   8. **Iterate until perfect.** "Do not stop untill you all agree that this game is perfect." This is the long-term commitment. Each phase is an iteration toward the perfect game; the agent reports progress, shows screenshots, and waits for Lucas's review before the next phase.
 - **Reason:** Lucas said this verbatim. It is the project definition. Every decision in this PRD, ADR, plan, and AGENTS.md serves this mandate.
 - **Status:** always-on rule. The agent checks every phase against this mandate before declaring it "done."
+
+### L-2026-08-31-01 — Remove the NPC chest "clothing-shirt" rectangle (2026-08-31)
+
+- **Section changed:** `src/engine/npc-mesh.ts`.
+- **Was:** a 0.42 × 0.3 × 0.3 BoxGeometry named `clothing-shirt` was added on top of the NPC torso for ~50% of NPCs. The material was one of `SHIRT_COLORS = [0x3b82f6, 0xef4444, 0x22c55e, 0xf59e0b, 0x8b5cf6]`, which read on the chest as a flat colored rectangle against the brown body. Lucas called it out and asked for the rectangle removed entirely.
+- **Now:** the `clothing-shirt` box, the `SHIRT_COLORS` palette, the `clothing.shirt` flag, the `clothing.shirtColor` field, the `chestRadiusForNpc` helper, the `darkenColor` helper, and the `shirtColor` / `npcId` parameters on `createFemaleMesh` are all gone. The NPC torso is the bare `body` box in the NPC's `bodyColor` for both male and female NPCs. The breast is two `bodyMaterial` spheres of the same color as the body, so the chest reads as part of the same mesh. Per-NPC individuality comes from `bodyColor`, `hairColor`, the male `belt` + `tie`, the lower-body clothing, and the per-id lower-body / shoes flags.
+- **Why:** the colored shirt-rectangle was a low-poly hack that made the chest look like a clipping glitch. The breast is already part of the body model, so the shirt box had no visual job. Removing it cleans up the silhouette and makes the body color the dominant readable color of the NPC.
+- **Implementation:** `src/engine/npc-mesh.ts` (deletions only — no new code); `tests/unit/npc-mesh-parenting.test.ts` (new "no clothing-shirt object" regression test); `tests/unit/npc-mesh.test.ts` and `tests/unit/female-body.test.ts` updated to look for `breast` (the new mesh name) instead of the old `chest` (which was a per-NPC-radius single sphere, replaced by a fixed-radius pair of body-color spheres on L-2026-08-30). Build version bumped to `v2026.08.31-01`.
 
 ---
 

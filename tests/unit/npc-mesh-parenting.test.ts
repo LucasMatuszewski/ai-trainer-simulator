@@ -27,15 +27,23 @@ describe("humanoid head parenting", () => {
     expect(after.y - before.y).toBeCloseTo(0.1);
   });
 
-  it("does not add a chest to a male NPC", () => {
-    expect(createNpcMesh("male", 0, "bartek").getObjectByName("chest")).toBeUndefined();
+  it("does not add a separate breast object to a male NPC", () => {
+    expect(createNpcMesh("male", 0, "bartek").getObjectByName("breast")).toBeUndefined();
   });
 
-  it("adds exactly one chest to a female NPC", () => {
-    const chests: THREE.Object3D[] = [];
+  it("adds two breasts to a female NPC (left + right)", () => {
+    const breasts: THREE.Object3D[] = [];
     createNpcMesh("female", 0, "klaudia").traverse((child) => {
-      if (child.name === "chest") chests.push(child);
+      if (child.name === "breast") breasts.push(child);
     });
-    expect(chests).toHaveLength(1);
+    expect(breasts).toHaveLength(2);
+  });
+
+  it("does not add a clothing-shirt object to a female NPC", () => {
+    const shirts: THREE.Object3D[] = [];
+    createNpcMesh("female", 0, "klaudia").traverse((child) => {
+      if (child.name === "clothing-shirt") shirts.push(child);
+    });
+    expect(shirts).toHaveLength(0);
   });
 });
