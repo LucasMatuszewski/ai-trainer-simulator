@@ -41,6 +41,7 @@ import { SECONDS_PER_PERIOD } from "./game/pacing";
 import { mountQuestLog, type QuestLogHandle } from "./ui/quest-log";
 import { mountHelpModal, type HelpModalHandle } from "./ui/help-modal";
 import { ndcFromMouse, pickFromCamera } from "./engine/interaction-raycaster";
+import { getMouseSensitivity, setMouseSensitivity } from "./engine/controls";
 import { yawToFace } from "./engine/npc-face";
 import { createBubbleSystem } from "./engine/bubbles";
 
@@ -910,6 +911,9 @@ declare global {
       isMouseLook: () => boolean;
       getFocus: () => string | null;
       getScreen: () => string;
+      /** C-48 live mouse-feel knobs (rad per raw mouse count; persisted). */
+      setSensitivity: (radPerPixel: number) => void;
+      getSensitivity: () => number;
       getSceneObjects: () => { keys: string[]; hasPlayerGroup: boolean } | null;
       inspectNpcs: () => Array<{ npcId: string; position: { x: number; z: number }; childNames: string[]; state: unknown | null }> | null;
       inspectFurniture: () => Array<{ name: string; position: { x: number; y: number; z: number }; size?: readonly [number, number, number] }> | null;
@@ -936,6 +940,12 @@ window.__aitrainer = {
     return { keys: Object.keys(sceneObjects), hasPlayerGroup: false };
   },
   getScreen: () => screen,
+  setSensitivity: (radPerPixel: number): void => {
+    setMouseSensitivity(radPerPixel);
+    // eslint-disable-next-line no-console
+    console.info(`[mouse] sensitivity = ${getMouseSensitivity()} rad/count`);
+  },
+  getSensitivity: () => getMouseSensitivity(),
   // Debug helper: returns the gender + child-mesh kinds of every
   // NPC group in the scene. Used by the gender-bug triage script
   // (see `.agent-briefs/agy-gender-qa-brief.md`).

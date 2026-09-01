@@ -31,11 +31,34 @@ import { applyWithCollision } from "./collision";
 const WALK_SPEED = 4.5; // units per second
 const SPRINT_MULT = 1.8;
 const PLAYER_RADIUS = 0.3; // half-width for AABB collision
-// 0.0025 rad/px is the calibrated baseline feel. The "too hot" spins
-// were the OS acceleration multiplying flicks, not this constant -
-// with unadjustedMovement: true the input is raw, so the original
-// value is right again (halving it made rotation crawl, per Lucas).
-const MOUSE_SENSITIVITY = 0.0025;
+// Mouse feel (C-48). The spins were NOT this constant: they were OS
+// acceleration (now bypassed via unadjustedMovement) plus clamps
+// sized too tight for high-DPI mice (whose raw movementX/Y counts per
+// event reach hundreds - a 25 px/event cap ate ~90% of a swipe,
+// Lucas: "3-4 full mouse movements for 90-120 degrees"). Sensitivity
+// is a LIVE knob: __aitrainer.setSensitivity(v) at runtime, persisted
+// in localStorage, so the feel is tuned in seconds, not commits.
+const MOUSE_SENSITIVITY_DEFAULT = 0.0025;
+const MOUSE_SENSITIVITY_MIN = 0.0005;
+const MOUSE_SENSITIVITY_MAX = 0.01;
+let mouseSensitivity = MOUSE_SENSITIVITY_DEFAULT;
+try {
+  const stored = window.localStorage?.getItem("mouse-sensitivity");
+  if (stored !== null && Number.isFinite(Number(stored))) {
+    mouseSensitivity = Math.max(MOUSE_SENSITIVITY_MIN, Math.min(MOUSE_SENSITIVITY_MAX, Number(stored)));
+  }
+} catch { /* storage unavailable (private window etc.) - use default */ }
+
+export function setMouseSensitivity(radPerPixel: number): void {
+  mouseSensitivity = Math.max(MOUSE_SENSITIVITY_MIN, Math.min(MOUSE_SENSITIVITY_MAX, radPerPixel));
+  try {
+    window.localStorage?.setItem("mouse-sensitivity", String(mouseSensitivity));
+  } catch { /* non-persistent environments still keep the runtime value */ }
+}
+
+export function getMouseSensitivity(): number {
+  return mouseSensitivity;
+}
 const PITCH_MIN = -0.6; // can look slightly down at the floor
 const PITCH_MAX = 0.4; // can look up at a standing NPC's head
 const EYE_HEIGHT = 1.65; // C-01: 1.65m, standard eye height for FPS-RPG
@@ -71,8 +94,8 @@ export function stepControls(
   if (state.mouseLook !== "free") {
     const d = consumeMouseDelta();
     if (d) {
-      state.yaw -= d.x * MOUSE_SENSITIVITY;
-      state.pitch -= d.y * MOUSE_SENSITIVITY;
+      state.yaw -= d.x * mouseSensitivity;
+      state.pitch -= d.y * mouseSensitivity;
       state.pitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, state.pitch));
     }
   } else {
@@ -414,8 +437,8 @@ export function createControls(opts: ControlsOptions): Controls {
   // mice (hundreds of px/frame => constant max-rate spin) - while a
   // single glitch event (lock transition, OS hiccup) can still never
   // whip the camera.
-  const MOUSE_EVENT_MAX_DELTA = 25;
-  const MOUSE_FRAME_MAX_DELTA = 80;
+  const MOUSE_EVENT_MAX_DELTA = 250;
+  const MOUSE_FRAME_MAX_DELTA = 1000;
   const clampTo = (limit: number, v: number): number =>
     Math.max(-limit, Math.min(limit, v));
   const onMouseMove = (e: MouseEvent): void => {
