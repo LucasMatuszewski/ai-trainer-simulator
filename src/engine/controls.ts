@@ -176,30 +176,64 @@ export function createControls(opts: ControlsOptions): Controls {
   const onContextMenu = (e: MouseEvent): void => e.preventDefault();
   canvas.addEventListener("contextmenu", onContextMenu);
 
+  // C-48: two mouse modes, the standard game pattern.
+  //  - FREE mouse (default): the OS cursor is visible; hover labels
+  //    and LMB click-to-talk work; HUD is interactive.
+  //  - MOUSE-LOOK (RMB hold or Space toggle): the cursor is captured
+  //    with the POINTER LOCK API, so it cannot leave the window, hit
+  //    the roster, or pop the OS context menu - rotation keeps running
+  //    no matter where the (now invisible) pointer would drift.
+  // If pointer lock is unavailable or rejected (iframes, some
+  // browsers), we degrade gracefully to the old cursor-hidden look.
+  const syncMouseLook = (mouseLook: ControlsState["mouseLook"]): void => {
+    state = { ...state, mouseLook };
+    canvas.style.cursor = mouseLook === "free" ? "" : "none";
+  };
+  const requestLookLock = (): void => {
+    const candidate = (canvas as HTMLCanvasElement & {
+      requestPointerLock?: () => Promise<void> | void;
+    }).requestPointerLock?.();
+    if (candidate && typeof (candidate as Promise<void>).catch === "function") {
+      (candidate as Promise<void>).catch(() => { /* cursor-only fallback */ });
+    }
+  };
+  const releaseLookLock = (): void => {
+    if (typeof document !== "undefined" && document.pointerLockElement === canvas) {
+      document.exitPointerLock();
+    }
+  };
+  // The browser can exit pointer lock on its own (Esc). Re-sync our
+  // state so the player is not stuck in a look mode with no lock.
+  const onPointerLockChange = (): void => {
+    if (document.pointerLockElement !== canvas && state.mouseLook !== "free") {
+      syncMouseLook("free");
+    }
+  };
+  document.addEventListener("pointerlockchange", onPointerLockChange);
+
   // RMB hold: engage mouse-look. RMB release: return to free.
   // We use mousedown/mouseup with button === 2 on the canvas.
   // The OS contextmenu is preventDefault-ed above.
   const onMouseDown = (e: MouseEvent): void => {
     if (e.button === 2) {
-      state = { ...state, mouseLook: "hold" };
-      canvas.style.cursor = "none";
+      syncMouseLook("hold");
+      requestLookLock();
     }
   };
   const onMouseUp = (e: MouseEvent): void => {
     if (e.button === 2) {
       if (state.mouseLook === "hold") {
-        state = { ...state, mouseLook: "free" };
-        canvas.style.cursor = "";
+        syncMouseLook("free");
+        releaseLookLock();
       }
     }
   };
-  // If the cursor leaves the canvas mid-RMB-hold, release the hold so
-  // the player is not stuck in mouse-look when the cursor goes to the
-  // HUD.
+  // If the cursor leaves the canvas mid-RMB-hold (pointer lock
+  // unavailable), release the hold so the player is not stuck in
+  // mouse-look when the cursor goes to the HUD.
   const onMouseLeave = (): void => {
     if (state.mouseLook === "hold") {
-      state = { ...state, mouseLook: "free" };
-      canvas.style.cursor = "";
+      syncMouseLook("free");
     }
   };
   canvas.addEventListener("mousedown", onMouseDown);
@@ -218,16 +252,16 @@ export function createControls(opts: ControlsOptions): Controls {
       if (isTextEntryTarget(e.target)) return;
       e.preventDefault();
       if (state.mouseLook === "free") {
-        state = { ...state, mouseLook: "toggle" };
-        canvas.style.cursor = "none";
+        syncMouseLook("toggle");
+        requestLookLock();
       } else if (state.mouseLook === "toggle") {
-        state = { ...state, mouseLook: "free" };
-        canvas.style.cursor = "";
+        syncMouseLook("free");
+        releaseLookLock();
       }
     } else if (k === "escape") {
       if (state.mouseLook === "toggle" || state.mouseLook === "hold") {
-        state = { ...state, mouseLook: "free" };
-        canvas.style.cursor = "";
+        syncMouseLook("free");
+        releaseLookLock();
       }
     }
   };
@@ -351,13 +385,13 @@ export function createControls(opts: ControlsOptions): Controls {
   document.addEventListener("visibilitychange", onVisibilityChange);
   window.addEventListener("pagehide", onClearInput);
 
-  // Mouse delta: the browser provides movementX/Y when pointer-locked,
-  // but we are not using pointer lock (Pattern D uses a free OS cursor
-  // by default). We therefore compute deltas from clientX/Y for both
-  // the "free" and "look" states, but only CONSUME the delta in
-  // stepControls() when mouseLook != "free". The tracking variable
-  // lastClient is only updated when in mouse-look, so free-mouse
-  // movement does not accumulate spurious deltas.
+  // Mouse delta: under POINTER LOCK the cursor position freezes, so
+  // clientX/Y deltas would be zero - use movementX/Y there (C-48).
+  // Without a lock we compute deltas from clientX/Y for the look
+  // states, but only CONSUME the delta in stepControls() when
+  // mouseLook != "free". The tracking variable lastClient is only
+  // updated when in mouse-look, so free-mouse movement does not
+  // accumulate spurious deltas.
   let lastClient = { x: 0, y: 0, valid: false };
   const onMouseMove = (e: MouseEvent): void => {
     if (state.mouseLook === "free") {
@@ -366,6 +400,12 @@ export function createControls(opts: ControlsOptions): Controls {
       lastClient.x = e.clientX;
       lastClient.y = e.clientY;
       lastClient.valid = true;
+      return;
+    }
+    if (document.pointerLockElement === canvas) {
+      pendingMouseDelta.x += e.movementX;
+      pendingMouseDelta.y += e.movementY;
+      lastClient.valid = false;
       return;
     }
     if (!lastClient.valid) {
@@ -443,8 +483,10 @@ export function createControls(opts: ControlsOptions): Controls {
       pendingMouseDelta.y += dy;
     },
     setMouseLookActive: (active) => {
-      state = { ...state, mouseLook: active ? "hold" : "free" };
-      canvas.style.cursor = active ? "none" : "";
+      // Synthetic/external switch (tests, WebMCP): never grab the
+      // pointer lock here - it requires a user gesture anyway. The
+      // cursor fallback keeps the state machine consistent.
+      syncMouseLook(active ? "hold" : "free");
     },
     toggleMouseLook: () => {
       if (state.mouseLook === "free") {
@@ -478,6 +520,7 @@ export function createControls(opts: ControlsOptions): Controls {
       canvas.removeEventListener("mousedown", onMouseDown);
       canvas.removeEventListener("mouseup", onMouseUp);
       canvas.removeEventListener("mouseleave", onMouseLeave);
+      document.removeEventListener("pointerlockchange", onPointerLockChange);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       document.removeEventListener("mousemove", onMouseMove);
     },
