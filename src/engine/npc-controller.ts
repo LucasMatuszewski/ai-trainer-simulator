@@ -5,6 +5,8 @@ import {
   buildWaypointEdges,
 } from "../content/corridor-waypoints";
 import { BUREK_LINES } from "../content/dog-dialogues";
+import { LUNCH_CHATTER } from "../content/lunch-dialogues";
+import { OFFICE_CHATTER } from "../content/office-chatter";
 import {
   KITCHEN_STOP_DWELL,
   LUNCH_STAGGER_OFFSET,
@@ -15,13 +17,21 @@ import {
   type ScheduleEntry,
 } from "../content/npc-schedule";
 import type { NPC, NpcId } from "../types";
+import { createBubbleSystem, pickLine } from "./bubbles";
 import {
-  createBubbleSystem,
-  findClosestPair,
-  pickLine,
-  resolveBubblePool,
-  shouldShowBubble,
-} from "./bubbles";
+  CHATTER_RADIUS,
+  MAX_CONVERSATIONS,
+  PAIR_COOLDOWN_S,
+  RESPONSE_DELAY_S,
+  candidatePairs,
+  pairKey,
+  pickExchange,
+  pickPair,
+  pickStarter,
+  roomAt,
+  shouldStartExchange,
+  type RoomId,
+} from "./chatter";
 import { computeAvoidancePush, type AvoidanceAgent } from "./npc-avoidance";
 import { createInitialIdleState, updateIdle, type IdleState } from "./npc-idle";
 import { planNpcPath } from "./npc-path";
@@ -33,11 +43,20 @@ import {
 } from "./npc-spawn-validator";
 import { updateWalkCycle, type WalkCycleState } from "./npc-walk-cycle";
 
+export interface ActiveConversationView {
+  a: string;
+  b: string;
+  /** Seconds until the partner's response bubble fires. */
+  responseIn: number;
+}
+
 export interface NpcController {
   update: (dt: number) => void;
   destroy: () => void;
   setOverride: (npcId: NpcId, entry: ScheduleEntry | null) => void;
   getNpcIds: () => readonly NpcId[];
+  /** C-46 debug/test hook: the conversations currently in flight. */
+  getActiveConversations: () => readonly ActiveConversationView[];
 }
 
 export interface PathAdvanceResult {
@@ -128,8 +147,13 @@ function priorityFor(id: NpcId): number {
   return 4;
 }
 
-function isKitchenState(state: unknown): boolean {
-  return state === "kitchen" || state === "dwelling";
+/** An exchange in flight between two NPCs (C-46). The starter's line
+ *  is already on screen; `response` is what the partner will say. */
+interface ActiveConversation {
+  aId: NpcId;
+  bId: NpcId;
+  response: string;
+  starterAt: number;
 }
 
 export function createNpcController(
@@ -138,6 +162,7 @@ export function createNpcController(
   getCurrentPeriod: () => Period,
   getDay: () => number = () => 1,
   rng: () => number = Math.random,
+  isLunchActive: () => boolean = () => false,
 ): NpcController {
   const obstacles = getNpcObstacles();
   const edges = buildWaypointEdges(CORRIDOR_WAYPOINTS, obstacles, DEFAULT_MAX_EDGE_LENGTH);
@@ -145,6 +170,11 @@ export function createNpcController(
   const idleStates = new Map<NpcId, IdleState>();
   const overrides = new Map<NpcId, ScheduleEntry>();
   const validatedDestinations = new Map<NpcId, ScheduleEntry>();
+  // C-46 conversation state. Keyed by pairKey so a pair cannot hold
+  // two conversations with itself, and cooled down after finishing so
+  // the same two NPCs do not monopolize the office chatter.
+  const conversations = new Map<string, ActiveConversation>();
+  const pairCooldowns = new Map<string, number>();
   let lastPeriod: Period | null = null;
   let destroyed = false;
   let idleElapsed = 0;
@@ -253,6 +283,9 @@ export function createNpcController(
     lastPeriod = period;
     overrides.clear();
     validatedDestinations.clear();
+    // Everyone re-plans across the office, so any in-flight exchange
+    // would end up as bubbles over NPCs walking away from each other.
+    conversations.clear();
     for (const npc of npcs) {
       const state = runtime.get(npc.id)!;
       state.path = null; state.kitchenStops = null; state.dwellRemaining = 0; state.returnEntry = null;
@@ -390,25 +423,91 @@ export function createNpcController(
       idleStates.set(npc.id, updateIdle(idle, safeDt, object.position, object.rotation.y, object, idleElapsed, rng));
     }
 
+    // --- C-46 conversation manager ---------------------------------
+    // Responses: each frame, deliver the partner's reply when the
+    // starter's bubble has had its moment. The pair then cools down so
+    // the NEXT exchange belongs to a different pair.
+    for (const [key, conversation] of [...conversations]) {
+      if (controllerElapsed - conversation.starterAt < RESPONSE_DELAY_S) continue;
+      conversations.delete(key);
+      pairCooldowns.set(key, controllerElapsed + PAIR_COOLDOWN_S);
+      const responder = npcObjects[conversation.bId];
+      if (responder === undefined || !responder.visible || responder.userData.npcState === "gone-home") continue;
+      bubbleSystem?.show(responder.position, conversation.response);
+      if (conversation.bId === "burek") lastBurekBubbleAt = controllerElapsed;
+    }
+
     if (bubbleElapsed >= 1) {
       bubbleElapsed = 0;
-      const visible = npcs.filter((npc) => npcObjects[npc.id].visible).map((npc) => ({ id: npc.id, position: npcObjects[npc.id].position }));
-      const pair = findClosestPair(visible, 2.5);
-      if (pair !== null) {
-        const firstId = pair[0] as NpcId; const secondId = pair[1] as NpcId;
-        const first = npcObjects[firstId]; const second = npcObjects[secondId];
-        const distance = Math.hypot(first.position.x - second.position.x, first.position.z - second.position.z);
-        if (shouldShowBubble(distance, timeSinceLastBubble, rng)) {
-          const speakerId = firstId === "burek" || secondId !== "burek" ? firstId : secondId;
-          const speaker = npcObjects[speakerId];
-          const bothInKitchen = isKitchenState(first.userData.npcState) && isKitchenState(second.userData.npcState);
-          bubbleSystem?.show(speaker.position, pickLine(resolveBubblePool(speakerId === "burek", bothInKitchen), rng));
-          timeSinceLastBubble = 0;
-          if (speakerId === "burek") lastBurekBubbleAt = controllerElapsed;
+      if (conversations.size < MAX_CONVERSATIONS) {
+        // Candidates: everyone visible, out of home, not already mid-
+        // conversation. The room comes from the position so the
+        // second simultaneous conversation lands in a different room.
+        const busy = new Set<string>();
+        for (const conversation of conversations.values()) {
+          busy.add(conversation.aId); busy.add(conversation.bId);
         }
-        if (distance < 2.5) {
-          const dx = second.position.x - first.position.x; const dz = second.position.z - first.position.z;
-          first.rotation.y = Math.atan2(dx, dz); second.rotation.y = Math.atan2(-dx, -dz);
+        const candidates = npcs
+          .filter((npc) => {
+            const object = npcObjects[npc.id];
+            return object.visible && object.userData.npcState !== "gone-home" && !busy.has(npc.id);
+          })
+          .map((npc) => {
+            const object = npcObjects[npc.id];
+            return { id: npc.id, x: object.position.x, z: object.position.z, room: roomAt(object.position.x, object.position.z) };
+          });
+        const activeRooms = new Set<RoomId>();
+        for (const conversation of conversations.values()) {
+          const a = npcObjects[conversation.aId];
+          const b = npcObjects[conversation.bId];
+          activeRooms.add(roomAt(a.position.x, a.position.z));
+          activeRooms.add(roomAt(b.position.x, b.position.z));
+        }
+        const pairs = candidatePairs(candidates, CHATTER_RADIUS, {
+          cooldowns: pairCooldowns,
+          now: controllerElapsed,
+          activeRooms,
+        });
+        const pair = pickPair(pairs, rng);
+        const first = pair === null ? undefined : npcObjects[pair.a as NpcId];
+        const second = pair === null ? undefined : npcObjects[pair.b as NpcId];
+        // candidatePairs already enforces CHATTER_RADIUS on every pair;
+        // shouldStartExchange is the pacing gate (50% chance + interval,
+        // shortened for a second simultaneous conversation).
+        if (pair !== null && first !== undefined && second !== undefined && shouldStartExchange(conversations.size, timeSinceLastBubble, rng)) {
+          // C-46: the STARTER is a chattiness-weighted coin flip
+          // inside the pair - this is what stops "only one person
+          // talks all the time".
+          const starterId = pickStarter(pair.a, pair.b, rng) as NpcId;
+          const responderId = (starterId === pair.a ? pair.b : pair.a) as NpcId;
+          // C-46 (Lucas): lunch lines are TIME-gated, not
+          // location-gated - during the lunch window every human pair
+          // sounds like lunch, wherever they stand.
+          const exchange = pickExchange(isLunchActive() ? LUNCH_CHATTER : OFFICE_CHATTER, rng);
+          // Burek cannot do small talk: as a starter he just barks
+          // (one turn); as a responder he barks back.
+          const starterLine = starterId === "burek"
+            ? pickLine(BUREK_LINES, rng)
+            : exchange.starter;
+          const responseLine = starterId === "burek"
+            ? null
+            : responderId === "burek"
+              ? pickLine(BUREK_LINES, rng)
+              : pickLine(exchange.responses, rng);
+          bubbleSystem?.show(npcObjects[starterId].position, starterLine);
+          // Face each other for the exchange.
+          const dx = second.position.x - first.position.x;
+          const dz = second.position.z - first.position.z;
+          first.rotation.y = Math.atan2(dx, dz);
+          second.rotation.y = Math.atan2(-dx, -dz);
+          timeSinceLastBubble = 0;
+          if (starterId === "burek") lastBurekBubbleAt = controllerElapsed;
+          const key = pairKey(pair.a, pair.b);
+          if (responseLine === null) {
+            pairCooldowns.set(key, controllerElapsed + PAIR_COOLDOWN_S);
+          } else {
+            conversations.set(key, { aId: starterId, bId: responderId, response: responseLine, starterAt: controllerElapsed });
+          }
         }
       }
     }
@@ -429,6 +528,11 @@ export function createNpcController(
     update,
     destroy: () => { destroyed = true; bubbleSystem?.destroy(); },
     getNpcIds: () => npcs.map((npc) => npc.id),
+    getActiveConversations: () => [...conversations.values()].map((conversation) => ({
+      a: conversation.aId,
+      b: conversation.bId,
+      responseIn: Math.max(0, RESPONSE_DELAY_S - (controllerElapsed - conversation.starterAt)),
+    })),
     setOverride: (npcId, entry) => {
       const period = getCurrentPeriod();
       if (lastPeriod !== null && period !== lastPeriod) synchronizePeriod(period);

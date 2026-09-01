@@ -109,4 +109,124 @@ describe("createNpcController", () => {
     expect(object.position.y).toBe(0);
     expect(object.userData.npcState).toBe("at-desk");
   });
+
+  // --- C-46: rotating chatter pairs --------------------------------
+
+  interface Harness {
+    controller: ReturnType<typeof createNpcController>;
+    objects: Record<NpcId, THREE.Object3D>;
+    setRoll: (value: number) => void;
+  }
+
+  /** Mount a controller whose conversation gate is scriptable: roll
+   *  >= 0.5 never passes the shouldStartExchange chance, roll = 0
+   *  always does (after the interval has elapsed). */
+  function mountHarness(ids: NpcId[], rng = (): number => 0): Harness {
+    let roll = rng();
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ids) objects[id] = makeObject(id);
+    const controller = createNpcController(
+      ids.map((id) => npc(id)),
+      objects,
+      () => "morning",
+      () => 1,
+      () => roll,
+    );
+    return { controller, objects, setRoll: (value: number) => { roll = value; } };
+  }
+
+  /** Teleport-free settle: run the morning entry until every NPC is
+   *  at-desk at the given position (they walk there from the door). */
+  function settleAt(harness: Harness, id: NpcId, x: number, z: number): void {
+    harness.controller.setOverride(id, { position: { x, y: 0, z }, face: 0, state: "at-desk" });
+  }
+
+  function settled(harness: Harness): boolean {
+    return harness.controller.getNpcIds().every((id) => harness.objects[id].userData.npcState === "at-desk");
+  }
+
+  it("starts a two-turn exchange and then cools the pair down", () => {
+    const harness = mountHarness(["przemek", "ania"]);
+    harness.controller.update(0);
+    settleAt(harness, "przemek", 0, 0);
+    settleAt(harness, "ania", 0.6, 0);
+    harness.setRoll(0.6); // gate closed while they walk in
+    for (let step = 0; step < 200 && !settled(harness); step += 1) harness.controller.update(0.25);
+    expect(settled(harness)).toBe(true);
+    expect(harness.controller.getActiveConversations()).toHaveLength(0);
+
+    // 6 s of quiet satisfies the 3-6 s interval; then force one roll.
+    harness.controller.update(1); harness.controller.update(1); harness.controller.update(1);
+    harness.controller.update(1); harness.controller.update(1); harness.controller.update(1);
+    harness.setRoll(0);
+    harness.controller.update(1);
+    const active = harness.controller.getActiveConversations();
+    expect(active).toHaveLength(1);
+    expect([active[0]!.a, active[0]!.b].sort()).toEqual(["ania", "przemek"]);
+    expect(active[0]!.responseIn).toBeGreaterThan(0);
+
+    // The partner answers after ~2.2 s: the exchange ends, total turns
+    // were at most 2 (starter + response).
+    harness.setRoll(0.6);
+    for (let step = 0; step < 12; step += 1) harness.controller.update(0.25);
+    expect(harness.controller.getActiveConversations()).toHaveLength(0);
+
+    // Cooldown: the same pair may NOT immediately talk again even with
+    // a passing roll.
+    harness.setRoll(0);
+    for (let step = 0; step < 8; step += 1) harness.controller.update(1);
+    expect(harness.controller.getActiveConversations()).toHaveLength(0);
+  });
+
+  it("allows two simultaneous conversations only in different rooms", () => {
+    const harness = mountHarness(["bartek", "zosia", "klaudia", "kasia"]);
+    harness.controller.update(0);
+    // Office pair + kitchen pair (floors per world-layout.ts).
+    settleAt(harness, "bartek", 0, 0);
+    settleAt(harness, "zosia", 1, 0);
+    settleAt(harness, "klaudia", 13, -5);
+    settleAt(harness, "kasia", 14, -5);
+    harness.setRoll(0.6);
+    for (let step = 0; step < 250 && !settled(harness); step += 1) harness.controller.update(0.25);
+    expect(settled(harness)).toBe(true);
+
+    harness.controller.update(1); harness.controller.update(1); harness.controller.update(1);
+    harness.controller.update(1); harness.controller.update(1); harness.controller.update(1);
+    // First roll: the first enumerated pair (bartek+zosia, office).
+    harness.setRoll(0);
+    harness.controller.update(1);
+    expect(harness.controller.getActiveConversations()).toHaveLength(1);
+    // Second roll one second later: the kitchen pair is allowed
+    // because the active conversation is in a DIFFERENT room.
+    harness.setRoll(0.6);
+    harness.controller.update(1);
+    harness.setRoll(0);
+    harness.controller.update(1);
+    const active = harness.controller.getActiveConversations();
+    expect(active).toHaveLength(2);
+    const pairIds = active.map((conversation) => [conversation.a, conversation.b].sort().join("+")).sort();
+    expect(pairIds).toEqual(["bartek+zosia", "kasia+klaudia"]);
+
+    // Both exchanges end after their responses.
+    harness.setRoll(0.6);
+    for (let step = 0; step < 16; step += 1) harness.controller.update(0.25);
+    expect(harness.controller.getActiveConversations()).toHaveLength(0);
+  });
+
+  it("burek exchanges are one turn (a bark has no response)", () => {
+    const harness = mountHarness(["burek", "ania"]);
+    harness.controller.update(0);
+    settleAt(harness, "burek", 0, 0);
+    settleAt(harness, "ania", 0.6, 0);
+    harness.setRoll(0.6);
+    for (let step = 0; step < 200 && !settled(harness); step += 1) harness.controller.update(0.25);
+    expect(settled(harness)).toBe(true);
+    harness.controller.update(1); harness.controller.update(1); harness.controller.update(1);
+    harness.controller.update(1); harness.controller.update(1); harness.controller.update(1);
+    harness.setRoll(0);
+    harness.controller.update(1);
+    // Burek starts (rng 0 lands on his share of the weighted coin), so
+    // the exchange is a single bark: nothing is awaiting a response.
+    expect(harness.controller.getActiveConversations()).toHaveLength(0);
+  });
 });

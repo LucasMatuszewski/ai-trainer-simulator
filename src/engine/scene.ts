@@ -134,6 +134,10 @@ export function buildOfficeScene(
   scene: THREE.Scene,
   getCurrentPeriod: () => Period = () => "morning",
   getDay: () => number = () => 1,
+  // C-46: the lunch dialogue window is TIME-gated from the game's
+  // period clock (main.ts owns it); injected so the chatter system
+  // can switch to lunch lines wherever the NPCs happen to stand.
+  isLunchActive: () => boolean = () => false,
 ): SceneObjects {
   const updatables: Array<(dt: number) => void> = [];
 
@@ -299,7 +303,7 @@ export function buildOfficeScene(
     npcObjects[npc.id] = m;
   });
 
-  const npcController = createNpcController(NPCS, npcObjects, getCurrentPeriod, getDay);
+  const npcController = createNpcController(NPCS, npcObjects, getCurrentPeriod, getDay, Math.random, isLunchActive);
   updatables.push(npcController.update);
 
   const multiRoom = buildMultiRoomMeshes(scene, WORLD_ROOMS);
