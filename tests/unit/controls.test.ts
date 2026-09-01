@@ -147,16 +147,16 @@ describe("stepControls (pure state machine)", () => {
   it("applies mouse delta to yaw + pitch when mouseLook is 'hold'", () => {
     const consume = () => ({ x: 100, y: 50 });
     const next = stepControls(baseState({ mouseLook: "hold" }), 0.016, new Set(), consume);
-    // 100 * 0.0025 = 0.25 rad yaw decrease (mouse-right rotates camera-left)
-    expect(next.yaw).toBeCloseTo(-0.25, 5);
-    expect(next.pitch).toBeCloseTo(-0.125, 5);
+    // 100 * 0.00375 = 0.375 rad yaw decrease (mouse-right rotates camera-left)
+    expect(next.yaw).toBeCloseTo(-0.375, 5);
+    expect(next.pitch).toBeCloseTo(-0.1875, 5);
   });
 
   it("applies mouse delta when mouseLook is 'toggle' (same as hold)", () => {
     const consume = () => ({ x: 100, y: 50 });
     const next = stepControls(baseState({ mouseLook: "toggle" }), 0.016, new Set(), consume);
-    expect(next.yaw).toBeCloseTo(-0.25, 5);
-    expect(next.pitch).toBeCloseTo(-0.125, 5);
+    expect(next.yaw).toBeCloseTo(-0.375, 5);
+    expect(next.pitch).toBeCloseTo(-0.1875, 5);
   });
 
   it("clamps pitch to [PITCH_MIN, PITCH_MAX] = [-0.6, 0.4]", () => {
