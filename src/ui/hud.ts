@@ -204,18 +204,16 @@ export function showPrompt(hud: HudElements, text: string | null): void {
 }
 
 /**
- * Toast duration in milliseconds. Default 7.5s (3x the previous 2.5s).
- * Lucas reported that 1-2s was too short to read; the toast
- * disappears before the player can finish reading the line. 7.5s is
- * still short enough to not feel intrusive, and long enough to read
- * a one-sentence hint.
+ * Toast duration in milliseconds. 15s (Lucas, 2026-09-01: toasts
+ * "disappear too fast").
+ * History: 2.5s was unreadable, 7.5s still not enough, 15s is the current comfortable read time.
  *
  * Toasts STACK: when a new toast comes in, the previous one is not
  * replaced. They are appended to the toast-stack container and each
  * has its own timer. The new toast is placed ABOVE the old one (at
  * the top of the stack). The player can read both.
  */
-const TOAST_DURATION_MS = 7500;
+const TOAST_DURATION_MS = 15000;
 
 export function showToast(hud: HudElements, message: string, type: "info" | "success" | "warning" | "error" = "info"): void {
   const el = document.createElement("div");
