@@ -31,7 +31,10 @@ import { applyWithCollision } from "./collision";
 const WALK_SPEED = 4.5; // units per second
 const SPRINT_MULT = 1.8;
 const PLAYER_RADIUS = 0.3; // half-width for AABB collision
-const MOUSE_SENSITIVITY = 0.0025;
+// 0.0025 rad/px made a medium flick swing the view wildly once OS
+// acceleration multiplied the deltas (Lucas: "rotation accelerates
+// suddenly"). 0.0014 keeps slow pans precise and flicks bounded.
+const MOUSE_SENSITIVITY = 0.0014;
 const PITCH_MIN = -0.6; // can look slightly down at the floor
 const PITCH_MAX = 0.4; // can look up at a standing NPC's head
 const EYE_HEIGHT = 1.65; // C-01: 1.65m, standard eye height for FPS-RPG
@@ -190,11 +193,26 @@ export function createControls(opts: ControlsOptions): Controls {
     canvas.style.cursor = mouseLook === "free" ? "" : "none";
   };
   const requestLookLock = (): void => {
-    const candidate = (canvas as HTMLCanvasElement & {
-      requestPointerLock?: () => Promise<void> | void;
-    }).requestPointerLock?.();
-    if (candidate && typeof (candidate as Promise<void>).catch === "function") {
-      (candidate as Promise<void>).catch(() => { /* cursor-only fallback */ });
+    const canvasWithLock = canvas as HTMLCanvasElement & {
+      requestPointerLock?: (options?: { unadjustedMovement?: boolean }) => Promise<void> | void;
+    };
+    // unadjustedMovement: true bypasses the OS mouse-acceleration
+    // curve ("Enhance pointer precision"); without it, fast flicks
+    // arrive multiplied 2-3x and the camera suddenly spins (Lucas).
+    // Falls back to the plain request, then to cursor-only look.
+    try {
+      const raw = canvasWithLock.requestPointerLock?.({ unadjustedMovement: true });
+      if (raw && typeof (raw as Promise<void>).catch === "function") {
+        (raw as Promise<void>).catch(() => {
+          const plain = canvasWithLock.requestPointerLock?.();
+          if (plain && typeof (plain as Promise<void>).catch === "function") {
+            (plain as Promise<void>).catch(() => { /* cursor-only fallback */ });
+          }
+        });
+      }
+    } catch {
+      // Browser without the options overload: plain request.
+      canvasWithLock.requestPointerLock?.();
     }
   };
   const releaseLookLock = (): void => {
@@ -389,26 +407,31 @@ export function createControls(opts: ControlsOptions): Controls {
   // they work identically pointer-locked and unlocked, and never
   // produce the stale-client "jump" the previous clientX/Y tracker
   // could inject on lock exit/re-enter (Lucas: rotation suddenly
-  // "spins like crazy"). The per-frame CONSUMED delta is additionally
-  // clamped in consumeMouseDelta() so a single glitch event (lock
-  // transition, OS hiccup) can never whip the camera.
+  // "spins like crazy"). Each EVENT is clamped (not the per-frame
+  // sum): clamping per event keeps rotation proportional to real
+  // hand speed - a per-frame cap would saturate with high-polling
+  // mice (hundreds of px/frame => constant max-rate spin) - while a
+  // single glitch event (lock transition, OS hiccup) can still never
+  // whip the camera.
+  const MOUSE_EVENT_MAX_DELTA = 25;
+  const MOUSE_FRAME_MAX_DELTA = 80;
+  const clampTo = (limit: number, v: number): number =>
+    Math.max(-limit, Math.min(limit, v));
   const onMouseMove = (e: MouseEvent): void => {
     if (state.mouseLook === "free") return;
-    pendingMouseDelta.x += e.movementX ?? 0;
-    pendingMouseDelta.y += e.movementY ?? 0;
+    pendingMouseDelta.x += clampTo(MOUSE_EVENT_MAX_DELTA, e.movementX ?? 0);
+    pendingMouseDelta.y += clampTo(MOUSE_EVENT_MAX_DELTA, e.movementY ?? 0);
   };
   document.addEventListener("mousemove", onMouseMove);
 
-  /** A single mouse event may never rotate the camera more than this
-   *  many pixels' worth (at MOUSE_SENSITIVITY 0.0025 rad/px this is
-   *  ~0.15 rad per frame per axis) - guards against the huge
-   *  reposition deltas browsers emit on pointer-lock transitions. */
-  const MAX_DELTA_PER_FRAME = 60;
-
   function consumeMouseDelta(): { x: number; y: number } | null {
     if (pendingMouseDelta.x === 0 && pendingMouseDelta.y === 0) return null;
-    const clamp = (v: number): number => Math.max(-MAX_DELTA_PER_FRAME, Math.min(MAX_DELTA_PER_FRAME, v));
-    const d = { x: clamp(pendingMouseDelta.x), y: clamp(pendingMouseDelta.y) };
+    // Events are clamped at accumulation time; this second, generous
+    // per-frame cap only trims pathological frames (lock transitions).
+    const d = {
+      x: clampTo(MOUSE_FRAME_MAX_DELTA, pendingMouseDelta.x),
+      y: clampTo(MOUSE_FRAME_MAX_DELTA, pendingMouseDelta.y),
+    };
     pendingMouseDelta.x = 0;
     pendingMouseDelta.y = 0;
     return d;
