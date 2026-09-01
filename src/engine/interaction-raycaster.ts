@@ -57,11 +57,39 @@ export type InteractionHit =
   | { kind: "none" };
 
 /**
+ * Resolve which entry (NPC group / interactable) a hit belongs to.
+ * NPCs are GROUPS of body-part meshes (head, torso, limbs) since the
+ * mesh-NPC rework, so a hit lands on a CHILD: walk up the parent
+ * chain until we reach the entry itself or an object carrying the
+ * entry's id in `userData.npcId`.
+ */
+function resolveOwner(
+  object: THREE.Object3D,
+  entries: ReadonlyMap<string, THREE.Object3D>,
+): string | null {
+  let current: THREE.Object3D | null = object;
+  while (current !== null) {
+    for (const [id, entry] of entries) {
+      if (entry === current) return id;
+    }
+    const npcId = (current.userData as { npcId?: string } | undefined)?.npcId;
+    if (npcId !== undefined && entries.has(npcId)) return npcId;
+    current = current.parent;
+  }
+  return null;
+}
+
+/**
  * Pick the first object (or NPC) under the cursor. We check NPCs
  * first because in Pattern D the roster card and the 3D click are
  * equivalent — but in the 3D view, an NPC is almost always more
  * "interesting" than a wall or a coffee machine, so NPC-wins is the
  * right priority.
+ *
+ * The raycast is RECURSIVE: the npcMeshes/interactableMeshes maps
+ * hold GROUPS, and a non-recursive ray against a group hits nothing
+ * (the "clicking an NPC does nothing" regression from the mesh-NPC
+ * rework).
  *
  * The raycaster is mutated by `setFromCamera` and `intersectObjects`
  * in three.js; we do not clone it.
@@ -78,14 +106,12 @@ export function pickFromCamera(args: {
   // NPCs first.
   const npcArr = Array.from(npcMeshes.values());
   if (npcArr.length > 0) {
-    const hits = raycaster.intersectObjects(npcArr, false);
+    const hits = raycaster.intersectObjects(npcArr, true);
     const first = hits.find((h) => h.distance <= max);
     if (first) {
-      // Find the NPC id whose mesh is this hit's `object`.
-      for (const [id, mesh] of npcMeshes) {
-        if (mesh === first.object) {
-          return { kind: "npc", npcId: id, point: first.point, distance: first.distance };
-        }
+      const npcId = resolveOwner(first.object, npcMeshes as ReadonlyMap<string, THREE.Object3D>);
+      if (npcId !== null) {
+        return { kind: "npc", npcId, point: first.point, distance: first.distance };
       }
     }
   }
@@ -93,13 +119,12 @@ export function pickFromCamera(args: {
   // Then interactable objects.
   const objArr = Array.from(interactableMeshes.values());
   if (objArr.length > 0) {
-    const hits = raycaster.intersectObjects(objArr, false);
+    const hits = raycaster.intersectObjects(objArr, true);
     const first = hits.find((h) => h.distance <= max);
     if (first) {
-      for (const [id, mesh] of interactableMeshes) {
-        if (mesh === first.object) {
-          return { kind: "object", objectId: id, point: first.point, distance: first.distance };
-        }
+      const objectId = resolveOwner(first.object, interactableMeshes as ReadonlyMap<string, THREE.Object3D>);
+      if (objectId !== null) {
+        return { kind: "object", objectId, point: first.point, distance: first.distance };
       }
     }
   }

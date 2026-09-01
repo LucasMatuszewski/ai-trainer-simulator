@@ -166,4 +166,25 @@ describe("pickFromCamera", () => {
       expect(hit.npcId).toBe("npc-a");
     }
   });
+
+  it("resolves a hit on a CHILD mesh to the owning NPC group", () => {
+    // Regression guard for the mesh-NPC rework: npcMeshes holds
+    // GROUPS (head/torso/limb children carry the geometry), so the
+    // raycast must be recursive and the hit must resolve to the
+    // group's owner via the parent chain / userData.npcId.
+    const group = new THREE.Group();
+    group.userData.npcId = "bartek";
+    const head = new THREE.Mesh();
+    group.add(head);
+    const raycaster = makeStubRaycaster([
+      { object: head, point: new THREE.Vector3(), distance: 3 } as THREE.Intersection,
+    ]);
+    const hit = pickFromCamera({
+      raycaster,
+      npcMeshes: new Map([["bartek", group as unknown as THREE.Mesh]]),
+      interactableMeshes: new Map(),
+    });
+    expect(hit.kind).toBe("npc");
+    if (hit.kind === "npc") expect(hit.npcId).toBe("bartek");
+  });
 });

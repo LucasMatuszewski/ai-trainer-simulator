@@ -337,7 +337,9 @@ function startOffice(playIntro = false): void {
         raycaster: raycaster!,
         npcMeshes: sceneObjects.npcMeshes,
         interactableMeshes: sceneObjects.interactableMeshes,
-        maxDistance: 12,
+        // C-46: 25 m so NPCs at the far desks (12.5 m+ from the wide
+        // shot) and the CEO behind his glass are hoverable/clickable.
+        maxDistance: 25,
       });
       if (hit.kind === "npc") {
         // C-46: an NPC who is not in the office (gone-home) cannot be
@@ -590,7 +592,8 @@ function updateHoverLabel(): void {
     raycaster,
     npcMeshes: sceneObjects.npcMeshes,
     interactableMeshes: sceneObjects.interactableMeshes,
-    maxDistance: 12,
+    // Same reach as the click so hover and click always agree.
+    maxDistance: 25,
   });
   let id: NpcId | null = null;
   if (hit.kind === "npc") {
@@ -1004,7 +1007,7 @@ frame();
 // Bump after every commit so the console line in the browser
 // confirms the user is on the right build. See AGENTS.md
 // "Verify the build you are testing" section.
-const BUILD_VERSION = "v2026.08.31-09";
+const BUILD_VERSION = "v2026.09.01-01";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,
