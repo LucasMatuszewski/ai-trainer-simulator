@@ -24,10 +24,11 @@ import { runDailyTick, publishCashflow } from "./game/economy";
 import { runPeriodEvent, registerNpcController } from "./game/events";
 import { registerPlayerActions } from "./webmcp/tools";
 import { NPCS } from "./content/npcs";
+import { LUNCH_WINDOW_SECONDS } from "./content/npc-schedule";
 import type { GameState, NPC, NpcId } from "./types";
 import { mountHud, renderHud, showToast, type HudElements } from "./ui/hud";
 import { mountTitleScreen, mountCharacterCreate, showDailySummary, showGameOver } from "./ui/title";
-import { mountOfficeRoster, type OfficeRosterHandle } from "./ui/office-roster";
+import { mountOfficeRoster, rosterStatusFor, type OfficeRosterHandle } from "./ui/office-roster";
 import {
   closeDialogueForScreenTransition,
   createDialogue,
@@ -65,6 +66,18 @@ let unsubscribeGame: (() => void) | null = null;
 let focusedNpcId: NpcId | null = null;
 let officeStartedAt = 0;
 let lastTime = performance.now();
+// C-46: seconds elapsed inside the CURRENT period, updated each frame
+// from the same clock the period advancement uses. The lunch window
+// is the first LUNCH_WINDOW_SECONDS of the afternoon.
+let currentPeriodElapsed = 0;
+// C-46 hover label state: the last pointer position over the canvas
+// (the raycast itself runs once per frame in updateHoverLabel so the
+// label tracks NPCs that move under a still cursor).
+let hoverLabel: HTMLDivElement | null = null;
+let pointerClientX = 0;
+let pointerClientY = 0;
+let pointerInsideCanvas = false;
+let lastRosterRefreshAt = 0;
 /**
  * True while the day-1 intro cinematic is animating the camera. While
  * set, the controls do not write to the camera (their default would
@@ -208,6 +221,16 @@ function focusNpc(id: NpcId | null): void {
   cameraDirector.panTo(target, offset);
 }
 
+/**
+ * C-46: the lunch dialogue window is the first LUNCH_WINDOW_SECONDS
+ * of the afternoon period, measured on the same wall clock the period
+ * advancement uses. Injected into the NPC controller so lunch lines
+ * fire by TIME - wherever the NPCs happen to be standing.
+ */
+function isLunchActive(): boolean {
+  return game.get().timeOfDay === "afternoon" && currentPeriodElapsed < LUNCH_WINDOW_SECONDS;
+}
+
 function startOffice(playIntro = false): void {
   setScreen("office");
   if (!engine) {
@@ -216,6 +239,7 @@ function startOffice(playIntro = false): void {
       engine.scene,
       () => game.get().timeOfDay,
       () => game.get().day,
+      isLunchActive,
     );
     sceneObjects = built;
     // L-2026-08-30-01: register the NPC controller with the events
@@ -316,11 +340,29 @@ function startOffice(playIntro = false): void {
         maxDistance: 12,
       });
       if (hit.kind === "npc") {
-        const npc = NPCS.find((n) => n.id === hit.npcId);
-        if (npc) openDialogueWith(npc);
+        // C-46: an NPC who is not in the office (gone-home) cannot be
+        // talked to - same rule as the disabled roster card.
+        const target = NPCS.find((n) => n.id === hit.npcId);
+        const targetObject = sceneObjects.npcObjects[hit.npcId as NpcId];
+        if (target && targetObject && !targetObject.visible) {
+          if (hud) showToast(hud, `${target.name} is not in the office right now.`, "info");
+          return;
+        }
+        if (target) openDialogueWith(target);
       }
       // hit.kind === "object" -> activate it (Phase 4)
       // hit.kind === "none"   -> no-op
+    });
+    // C-46 hover labels: remember where the pointer is; the per-frame
+    // updateHoverLabel() does the (cheap) raycast so the label keeps
+    // tracking an NPC that walks under a still cursor.
+    canvas.addEventListener("pointermove", (e) => {
+      pointerClientX = e.clientX;
+      pointerClientY = e.clientY;
+      pointerInsideCanvas = true;
+    });
+    canvas.addEventListener("pointerleave", () => {
+      pointerInsideCanvas = false;
     });
     focusNpc(null);
   }
@@ -340,6 +382,12 @@ function startOffice(playIntro = false): void {
   );
   questLog = mountQuestLog(uiRoot);
   helpModal = mountHelpModal(uiRoot);
+  // C-46: the NPC hover label lives in uiRoot so it is wiped with the
+  // rest of the office UI on screen transitions and remounted here.
+  hoverLabel = document.createElement("div");
+  hoverLabel.className = "npc-hover-label";
+  hoverLabel.hidden = true;
+  uiRoot.appendChild(hoverLabel);
   // Wire the "?" button in the quest log to open the help modal.
   // The handle exposes the button directly to avoid a circular import
   // between quest-log and help-modal.
@@ -497,15 +545,82 @@ async function playIntroCinematic(): Promise<void> {
 function refreshRoster(): void {
   if (!roster) return;
   const state = game.get();
-  const map = new Map<NpcId, { relationship: number; available: boolean }>();
+  // C-46: the roster tells the truth. Read each NPC's LIVE state from
+  // the controller-maintained userData (the same source the debug
+  // inspector uses) and map it to a real location label via the pure
+  // rosterStatusFor(). Called on game updates AND at ~2 Hz from the
+  // frame loop, because NPCs move between dispatches.
+  const map = new Map<NpcId, { relationship: number; available: boolean; status: string }>();
   for (const npc of NPCS) {
+    const liveState = sceneObjects !== null
+      ? (sceneObjects.npcObjects[npc.id]?.userData.npcState as string | undefined) ?? "at-desk"
+      : "at-desk";
+    const status = rosterStatusFor(liveState);
     map.set(npc.id, {
       relationship: state.npcRelationships[npc.id] ?? 0,
-      available: true, // MVP: everyone is in. Random absences come later.
+      available: status.available,
+      status: status.label,
     });
   }
   roster.refresh(map);
   roster.setFocus(focusedNpcId);
+}
+
+/**
+ * C-46: hover label over the NPC's head - "Name - Role", no borders,
+ * just text. Runs once per frame while the office is on screen: the
+ * raycast uses the last pointer position, and the label is positioned
+ * by projecting the NPC head into screen space so it tracks an NPC
+ * that walks under a still cursor. Same pick path as the click, so
+ * hover and click always agree.
+ */
+function updateHoverLabel(): void {
+  if (
+    !hoverLabel || !engine || !sceneObjects || !controls || raycaster === null ||
+    screen !== "office" || dialogue?.isOpen() || cinematicPlaying ||
+    controls.isMouseLookActive() || !pointerInsideCanvas
+  ) {
+    if (hoverLabel) hoverLabel.hidden = true;
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  const ndc = ndcFromMouse(pointerClientX, pointerClientY, rect);
+  raycaster.setFromCamera(new THREE.Vector2(ndc.x, ndc.y), engine.camera);
+  const hit = pickFromCamera({
+    raycaster,
+    npcMeshes: sceneObjects.npcMeshes,
+    interactableMeshes: sceneObjects.interactableMeshes,
+    maxDistance: 12,
+  });
+  let id: NpcId | null = null;
+  if (hit.kind === "npc") {
+    const object = sceneObjects.npcObjects[hit.npcId as NpcId];
+    // Invisible (gone-home) NPCs are not hoverable - matches the
+    // disabled roster card and the click guard.
+    if (object?.visible) id = hit.npcId as NpcId;
+  }
+  if (id === null) {
+    hoverLabel.hidden = true;
+    return;
+  }
+  const npc = NPCS.find((candidate) => candidate.id === id);
+  const object = sceneObjects.npcObjects[id];
+  if (npc === undefined || object === undefined) {
+    hoverLabel.hidden = true;
+    return;
+  }
+  const head = new THREE.Vector3(object.position.x, object.position.y + 2.1, object.position.z);
+  head.project(engine.camera);
+  // head.z > 1 means the point is behind / clipped by the far plane.
+  if (head.z > 1 || head.z < -1) {
+    hoverLabel.hidden = true;
+    return;
+  }
+  const x = (head.x * 0.5 + 0.5) * rect.width;
+  const y = (-head.y * 0.5 + 0.5) * rect.height;
+  hoverLabel.textContent = `${npc.name} - ${npc.role}`;
+  hoverLabel.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
+  hoverLabel.hidden = false;
 }
 
 function endDay(): void {
@@ -697,6 +812,15 @@ function frame(): void {
   const dt = Math.min(0.1, (now - lastTime) / 1000);
   lastTime = now;
 
+  // C-46: keep the in-period clock fresh for the lunch window. The
+  // office-start timestamp is rebased on day change and advanced by
+  // whole periods, so the remainder IS the current period's elapsed
+  // time (time "pauses" only because period advancement pauses).
+  if (officeStartedAt !== 0) {
+    const totalElapsed = (now - officeStartedAt) / 1000;
+    currentPeriodElapsed = totalElapsed % SECONDS_PER_PERIOD;
+  }
+
   if (engine) {
     engine.update(dt);
     if (sceneObjects) {
@@ -746,6 +870,15 @@ function frame(): void {
   }
 
   if (engine) engine.render();
+
+  // C-46: hover label every frame (cheap: one raycast + one DOM write)
+  // and the roster at ~2 Hz, so locations stay truthful between
+  // game-state dispatches while NPCs wander.
+  updateHoverLabel();
+  if (screen === "office" && now - lastRosterRefreshAt >= 500) {
+    lastRosterRefreshAt = now;
+    refreshRoster();
+  }
 
   // Time tick: each real second is some fraction of an in-game period.
   // Time pauses while a dialogue is open (no one likes reading a punchline
@@ -871,7 +1004,7 @@ frame();
 // Bump after every commit so the console line in the browser
 // confirms the user is on the right build. See AGENTS.md
 // "Verify the build you are testing" section.
-const BUILD_VERSION = "v2026.08.31-07";
+const BUILD_VERSION = "v2026.08.31-09";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,

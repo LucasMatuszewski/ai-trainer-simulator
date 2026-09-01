@@ -14,6 +14,34 @@
 
 import type { NPC, NpcId } from "../types";
 
+/**
+ * C-46: map the controller's live `userData.npcState` to the truth the
+ * roster shows - a room name (where the NPC IS) or "Not in office"
+ * (where the player cannot reach them). Pure so it is unit-testable.
+ */
+export function rosterStatusFor(npcState: string): { label: string; available: boolean } {
+  switch (npcState) {
+    case "gone-home":
+      return { label: "Not in office", available: false };
+    case "walking":
+      return { label: "Walking", available: true };
+    case "kitchen":
+    case "dwelling":
+    case "coffee":
+    case "lunch":
+    case "break-room":
+      return { label: "Kitchen", available: true };
+    case "toilet":
+      return { label: "Toilet", available: true };
+    case "meeting":
+      return { label: "Meeting room", available: true };
+    case "training":
+      return { label: "Training room", available: true };
+    default:
+      return { label: "At desk", available: true };
+  }
+}
+
 export interface OfficeRosterHandle {
   root: HTMLElement;
   /** Re-render the relationship numbers / availability state. */
@@ -52,7 +80,7 @@ export function mountOfficeRoster(
   root.appendChild(wrap);
 
   const list = wrap.querySelector<HTMLElement>("[data-list]")!;
-  const cards: Map<NpcId, HTMLElement> = new Map();
+  const cards: Map<NpcId, HTMLButtonElement> = new Map();
 
   for (const npc of npcs) {
     const card = document.createElement("button");
@@ -67,7 +95,12 @@ export function mountOfficeRoster(
       </div>
       <div class="roster-status" data-status></div>
     `;
-    card.addEventListener("click", () => onPick(npc));
+    card.addEventListener("click", () => {
+      // C-46: away NPCs are not talkable; the disabled attribute is
+      // the primary gate, this guard keeps the callback honest.
+      if (card.disabled) return;
+      onPick(npc);
+    });
     list.appendChild(card);
     cards.set(npc.id, card);
   }
@@ -89,25 +122,18 @@ export function mountOfficeRoster(
         relEl.textContent = relationshipLabel(s.relationship);
         relEl.dataset.mood = relationshipMood(s.relationship);
         const statusEl = card.querySelector<HTMLElement>("[data-status]")!;
-        // C-45 amendment (l)(5): surface the live NPC state (kitchen,
-        // dwelling, walking, gone-home) instead of the always-lying
-        // "At desk". gone-home = unavailable (evening / away); the
-        // other states remain clickable so the player can still
-        // approach a luncher or a mid-walk NPC.
+        // C-46: the caller passes the LIVE location label (see
+        // rosterStatusFor). Away NPCs get a disabled card - they
+        // cannot be talked to while not in the office.
+        card.disabled = !s.available;
         if (!s.available) {
-          statusEl.textContent = "Not in office";
+          statusEl.textContent = s.status ?? "Not in office";
           statusEl.dataset.state = "away";
-        } else if (s.status === "kitchen" || s.status === "dwelling") {
-          statusEl.textContent = s.status === "dwelling" ? "At kitchen" : "Walking to kitchen";
-          statusEl.dataset.state = "available";
-        } else if (s.status === "walking") {
-          statusEl.textContent = "Walking";
-          statusEl.dataset.state = "available";
         } else if (currentFocus === npc.id) {
           statusEl.textContent = "Talking...";
           statusEl.dataset.state = "talking";
         } else {
-          statusEl.textContent = "At desk";
+          statusEl.textContent = s.status ?? "At desk";
           statusEl.dataset.state = "available";
         }
         card.classList.toggle("focused", currentFocus === npc.id);

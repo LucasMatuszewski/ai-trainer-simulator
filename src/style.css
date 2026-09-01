@@ -1193,3 +1193,45 @@ html, body {
 .intro-fade.fade-out {
   opacity: 0;
 }
+
+/* C-46: NPC hover label - name + role over the head, no borders,
+   just text with a shadow so it reads over any background. */
+.npc-hover-label {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 60;
+  pointer-events: none;
+  white-space: nowrap;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: #fff7d6;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.8);
+}
+
+/* C-46: an away (gone-home) NPC is not talkable. Disabled card gets a
+   slightly different background plus the existing away dimming, and
+   never shows the hover accent. */
+.roster-card:disabled {
+  cursor: not-allowed;
+  background: color-mix(in srgb, var(--panel) 80%, #000);
+  border-color: var(--panel-border);
+}
+
+.roster-card:disabled:hover {
+  background: color-mix(in srgb, var(--panel) 80%, #000);
+  border-color: var(--panel-border);
+  transform: none;
+  color: var(--fg);
+}
+
+.roster-card:disabled:hover .roster-portrait {
+  background: var(--bg);
+  border-color: var(--panel-border);
+}
+
+.roster-card:disabled:hover .roster-role,
+.roster-card:disabled:hover .roster-rel {
+  color: var(--text-dim);
+}
