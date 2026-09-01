@@ -167,14 +167,16 @@ describe("toilet stall (C-57)", () => {
     expect(namedChildren(group)).toContain("stall-partition-right");
     expect(namedChildren(group)).toContain("stall-partition-left-frame-top");
     expect(namedChildren(group)).toContain("stall-partition-right-frame-top");
-    // Door panel + frame.
+    // Door panel + SIDE frame pieces. No top lintel: Lucas removed it
+    // (2026-09-01) - the doorway is open at the top by design.
     expect(namedChildren(group)).toContain("stall-door");
-    expect(namedChildren(group)).toContain("stall-door-frame-top");
-    // Toilet bowl + cistern + lid + seat + paper.
+    expect(namedChildren(group)).toContain("stall-door-frame-left");
+    expect(namedChildren(group)).toContain("stall-door-frame-right");
+    // Toilet bowl + cistern + seat + paper. No lid: removed by design
+    // (Lucas, 2026-09-01).
     expect(namedChildren(group)).toContain("toilet-base");
     expect(namedChildren(group)).toContain("toilet-cistern");
     expect(namedChildren(group)).toContain("toilet-cistern-top");
-    expect(namedChildren(group)).toContain("toilet-lid");
     expect(namedChildren(group)).toContain("toilet-seat");
     expect(namedChildren(group)).toContain("toilet-paper-roll");
     expect(namedChildren(group)).toContain("toilet-paper-holder");

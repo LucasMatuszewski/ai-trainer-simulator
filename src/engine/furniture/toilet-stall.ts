@@ -20,7 +20,6 @@ const HANDLE = 0x444a4f;
 const TOILET_BOWL = 0xfafafa;
 const TOILET_BOWL_SHADOW = 0xc8c8c8;
 const TOILET_SEAT = 0xb6b0a4;
-const TOILET_LID = 0xa39e8e;
 const CISTERN = 0xf2f2f2;
 const BUTTON = 0x7c7c7c;
 const PIPE = 0xc8ccd1;
@@ -87,8 +86,8 @@ export function makeToiletStall(): THREE.Group {
   const doorMat = new THREE.MeshLambertMaterial({ color: DOOR });
   group.add(box("stall-door", [1.2, 1.5, 0.04], doorMat, [0, 0.3 + 0.75, 0.85]));
 
-  // Door frame (top + sides). Unchanged from the previous layout
-  // so the frame is still on the partition's +Z face.
+  // Door frame (sides only, per Lucas 2026-09-01: NO top lintel). On
+  // the partition's +Z face, same as before.
   group.add(box("stall-door-frame-left", [0.04, 1.5, 0.05], frameMat, [-0.62, 0.3 + 0.75, 0.85]));
   group.add(box("stall-door-frame-right", [0.04, 1.5, 0.05], frameMat, [0.625, 0.3 + 0.75, 0.85]));
 
