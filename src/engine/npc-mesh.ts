@@ -173,12 +173,16 @@ function createDogMesh(): THREE.Group {
   group.add(
     box("body", [0.4, 0.5, 1], fur, [0, 0.4, 0]),
     head,
-    box("front-left-leg", [0.1, 0.4, 0.1], darkFur, [-0.15, 0.2, 0.3]),
-    box("front-right-leg", [0.1, 0.4, 0.1], darkFur, [0.15, 0.2, 0.3]),
-    box("back-left-leg", [0.1, 0.4, 0.1], darkFur, [-0.15, 0.2, -0.3]),
-    box("back-right-leg", [0.1, 0.4, 0.1], darkFur, [0.15, 0.2, -0.3]),
+    // C-53: legs in the body fur color - the two-tone read as artifacts
+    // (Lucas, 2026-09-01).
+    box("front-left-leg", [0.1, 0.4, 0.1], fur, [-0.15, 0.2, 0.3]),
+    box("front-right-leg", [0.1, 0.4, 0.1], fur, [0.15, 0.2, 0.3]),
+    box("back-left-leg", [0.1, 0.4, 0.1], fur, [-0.15, 0.2, -0.3]),
+    box("back-right-leg", [0.1, 0.4, 0.1], fur, [0.15, 0.2, -0.3]),
     box("tail", [0.1, 0.1, 0.3], darkFur, [0, 0.55, -0.65]),
-    box("collar", [0.52, 0.08, 0.08], new THREE.MeshLambertMaterial({ color: 0xcc2222 }), [0, 0.48, 0.22]),
+    // C-53: the old red collar sat mid-body and was wider than the
+    // torso, so both ends poked out of the flanks as floating red
+    // squares. Removed; the dark ears and snout carry the silhouette.
   );
   return group;
 }

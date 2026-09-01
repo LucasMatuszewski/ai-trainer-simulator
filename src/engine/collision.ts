@@ -89,3 +89,59 @@ function overlapsAny(x: number, z: number, radius: number, obstacles: readonly A
   }
   return false;
 }
+
+/**
+ * C-54: place a point safely for a teleport-style placement (the
+ * conversation spot). Bounds clamp first (bounds always win, same as
+ * applyWithCollision). Any overlapping obstacle is escaped through the
+ * cheapest face whose landing spot is clear of EVERY obstacle - the
+ * naive nearest-face push oscillates forever when two obstacles sit
+ * closer together than 2x the radius. A fully fenced-in point falls
+ * back to the plain nearest-face push.
+ */
+export function pushOutOfObstacles(
+  pos: XZ,
+  radius: number,
+  bounds: AABB,
+  obstacles: readonly AABB[],
+): XZ {
+  const clamp = (p: XZ): XZ => ({
+    x: Math.max(bounds.minX + radius, Math.min(bounds.maxX - radius, p.x)),
+    z: Math.max(bounds.minZ + radius, Math.min(bounds.maxZ - radius, p.z)),
+  });
+  const overlaps = (p: XZ, o: AABB): boolean =>
+    p.x + radius > o.minX && p.x - radius < o.maxX &&
+    p.z + radius > o.minZ && p.z - radius < o.maxZ;
+  const clearOfAll = (p: XZ): boolean => obstacles.every((o) => !overlaps(p, o));
+
+  const start = clamp(pos);
+  if (clearOfAll(start)) return start;
+
+  /** Face pushes for one obstacle, cheapest first. */
+  const facePushes = (o: AABB): Array<{ cost: number; p: XZ }> => {
+    const west = start.x - (o.minX - radius);
+    const east = o.maxX + radius - start.x;
+    const north = start.z - (o.minZ - radius);
+    const south = o.maxZ + radius - start.z;
+    return [
+      { cost: west, p: { x: o.minX - radius, z: start.z } },
+      { cost: east, p: { x: o.maxX + radius, z: start.z } },
+      { cost: north, p: { x: start.x, z: o.minZ - radius } },
+      { cost: south, p: { x: start.x, z: o.maxZ + radius } },
+    ].sort((a, b) => a.cost - b.cost);
+  };
+
+  const touching = obstacles.filter((o) => overlaps(start, o));
+  for (const o of touching) {
+    for (const candidate of facePushes(o)) {
+      const p = clamp(candidate.p);
+      if (clearOfAll(p)) return p;
+    }
+  }
+  // Fenced in on every side: take the cheapest local escape so the
+  // point at least ends up on an obstacle boundary, not inside it.
+  const cheapest = touching
+    .flatMap((o) => facePushes(o))
+    .sort((a, b) => a.cost - b.cost)[0]!;
+  return clamp(cheapest.p);
+}

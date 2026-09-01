@@ -23,3 +23,27 @@ describe("dog mesh orientation and parenting", () => {
     }
   });
 });
+
+describe("dog mesh C-53 fixes", () => {
+  it("has no red collar poking through the flanks", () => {
+    const dog = createNpcMesh("dog");
+    let sawRed = false;
+    dog.traverse((child) => {
+      const material = (child as { material?: { color?: { getHex(): number } } }).material;
+      if (material?.color?.getHex() === 0xcc2222) sawRed = true;
+    });
+    expect(sawRed).toBe(false);
+  });
+
+  it("colors all four legs with the body fur material", () => {
+    const dog = createNpcMesh("dog");
+    const body = dog.getObjectByName("body");
+    expect(body).toBeDefined();
+    const fur = (body as unknown as { material: { color: { getHex(): number } } }).material;
+    for (const leg of ["front-left-leg", "front-right-leg", "back-left-leg", "back-right-leg"]) {
+      const mesh = dog.getObjectByName(leg) as unknown as { material: { color: { getHex(): number } } };
+      expect(mesh, leg).toBeDefined();
+      expect(mesh.material.color.getHex(), leg).toBe(fur.color.getHex());
+    }
+  });
+});

@@ -18,3 +18,13 @@
  */
 export const SECONDS_PER_PERIOD = 180;
 export const SECONDS_PER_DAY = SECONDS_PER_PERIOD * 3;
+
+/**
+ * C-52: how many `advance-time` dispatches it takes to reach the next
+ * day's morning from a given period. The reducer steps morning ->
+ * afternoon -> evening -> next-day morning, so ending the day early
+ * from the morning costs all three remaining periods.
+ */
+export function periodsUntilDayEnd(timeOfDay: "morning" | "afternoon" | "evening"): number {
+  return 3 - ["morning", "afternoon", "evening"].indexOf(timeOfDay);
+}
