@@ -210,3 +210,8 @@ Lucas looked at the new CEO office from the inside (screenshot #45). 9 specific 
 - NPCs should ALWAYS say hello when they enter the room in the morning - the arrival is currently unnatural, strange, and dead.
 - Create an array/objects with greetings, varied by specialization: IT people greet differently than the CEO, CTO, marketing, or accounting. Variety and a nice character element.
 - (Side benefit Lucas named: more bubbles on screen to test the speech-bubble font with.)
+
+**ID: L-2026-09-01-03 — Toilet relocation (C-57)**
+- Move the toilet so that it will be next to kitchen / dining room, and door to Toilet should be on the right from "Menu: Caffee" sign. Now these door are in the corner of the office and I can't access the corner.
+- (Per Lucas 2026-09-01: "Use GLM to cemerate ideas, do QA check of these audio files with agy in permiisions allowed mode if needed, I agree to do this. it should be able to read audio files, and decide if it is good or not.")
+- Branch `feat/c57-toilet-relocate-next-to-kitchen`, 4 commits (599638e feat, d53d5b3 QA fixes, 6d62003 fixture tests, dbb52b7 stall facing). Done on master.
