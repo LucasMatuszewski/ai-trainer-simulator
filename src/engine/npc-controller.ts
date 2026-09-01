@@ -91,6 +91,8 @@ export interface NpcController {
    */
   setBubblesVisible: (visible: boolean) => void;
   clearBubbles: () => void;
+  /** C-61 fix: the real engine camera for DOM bubble projection. */
+  setBubblesCamera: (camera: THREE.Camera | null) => void;
 }
 
 export interface PathAdvanceResult {
@@ -888,8 +890,12 @@ export function createNpcController(
     const safeDt = Number.isFinite(dt) ? Math.max(0, dt) : 0;
     idleElapsed += safeDt; bubbleElapsed += safeDt; controllerElapsed += safeDt;
     if (bubbleSystem !== null && sceneRoot !== null) {
-      const camera = sceneRoot.getObjectByProperty("isCamera", true) as THREE.Camera | undefined;
-      bubbleSystem.update(safeDt, camera ?? fallbackCamera);
+      // C-61 fix: projection uses the camera set via setBubblesCamera
+      // (main.ts wires engine.camera). The old scene-graph sniffing
+      // never found it - the engine camera is not added to the scene -
+      // and the sprite renderer ignored the camera anyway; DOM
+      // projection from the fallback rendered from a phantom camera.
+      bubbleSystem.update(safeDt, fallbackCamera);
     }
 
     // C-51: period + day bookkeeping, then release anyone whose
@@ -1375,6 +1381,7 @@ export function createNpcController(
     },
     setBubblesVisible: (visible) => bubbleSystem?.setVisible(visible),
     clearBubbles: () => bubbleSystem?.clear(),
+    setBubblesCamera: (camera) => bubbleSystem?.setCamera(camera),
     getActiveConversations: () => [...conversations.values()].map((conversation) => ({
       a: conversation.aId,
       b: conversation.bId,

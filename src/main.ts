@@ -247,6 +247,10 @@ function startOffice(playIntro = false): void {
       isLunchActive,
     );
     sceneObjects = built;
+    // C-61 fix: hand the REAL engine camera to the bubble system. DOM
+    // bubbles project with it every frame - the sprite renderer ignored
+    // cameras, so nothing needed this wiring before.
+    built.npcController.setBubblesCamera(engine.camera);
     // L-2026-08-30-01: register the NPC controller with the events
     // dispatcher so every period transition can roll a random
     // destination (kitchen, toilet, meeting, training) and install
@@ -1154,7 +1158,7 @@ frame();
 // Bump after every commit so the console line in the browser
 // confirms the user is on the right build. See AGENTS.md
 // "Verify the build you are testing" section.
-const BUILD_VERSION = "v2026.09.01-08";
+const BUILD_VERSION = "v2026.09.01-09";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,

@@ -51,9 +51,11 @@ test("C-61: inter-NPC bubble renders as sharp DOM text", async ({ page }) => {
   await page.click('[data-action="continue"]');
   await expect(page.locator(".hud")).toBeVisible();
 
-  // Wide view of the office interior: chatter pairs and morning
-  // greets at the desks all land in frame from here.
-  await page.evaluate(() => window.__aitrainer!.teleport(0, 6.5, 0));
+  // Vantage far from the old phantom camera's frame (origin, -Z):
+  // east side, facing WEST across the office at the desk columns.
+  // With the C-61 camera bug, bubbles projected from a fixed camera at
+  // the origin and were unreadable/absent from anywhere else.
+  await page.evaluate(() => window.__aitrainer!.teleport(6, 3, Math.PI / 2));
 
   // Poll until a bubble with text is visible AND inside the viewport
   // (its projected position lives in the transform). Exchanges last

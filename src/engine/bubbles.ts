@@ -10,6 +10,15 @@ export interface BubbleHandle {
    * the sprite version hid behind those panels naturally.
    */
   setVisible: (visible: boolean) => void;
+  /**
+   * C-61 fix: the camera to project with. The sprite renderer ignored
+   * its camera argument (three.js placed sprites in world space), but
+   * DOM projection NEEDS the real engine camera - the controller's
+   * old scene-graph lookup returned nothing (the camera is never
+   * added to the scene), so bubbles projected from a phantom default
+   * camera at the origin and were only readable near it.
+   */
+  setCamera: (camera: THREE.Camera | null) => void;
   destroy: () => void;
 }
 
@@ -58,6 +67,10 @@ export function fitLine(line: string): string {
 
 interface BubbleSlot {
   el: HTMLDivElement;
+  /** Slot busy flag - deliberately NOT el.hidden, which now toggles
+   *  every frame with the view (behind-camera bubbles hide but stay
+   *  busy, exactly like the old invisible sprites did). */
+  active: boolean;
   speakerPosition: THREE.Vector3 | null;
   elapsed: number;
   lifetime: number;
@@ -69,7 +82,7 @@ function pickRecyclableSlot(slots: readonly BubbleSlot[]): BubbleSlot {
   let chosen = slots[0]!;
   let leastRemaining = Number.POSITIVE_INFINITY;
   for (const slot of slots) {
-    if (slot.el.hidden) return slot;
+    if (!slot.active) return slot;
     const remaining = slot.lifetime - slot.elapsed;
     if (remaining < leastRemaining) {
       leastRemaining = remaining;
@@ -99,15 +112,17 @@ export function createBubbleSystem(
     el.className = "npc-bubble";
     el.hidden = true;
     layer.appendChild(el);
-    slots.push({ el, speakerPosition: null, elapsed: 0, lifetime: 0 });
+    slots.push({ el, active: false, speakerPosition: null, elapsed: 0, lifetime: 0 });
   }
   parent?.appendChild(layer);
 
   let destroyed = false;
   let layerVisible = true;
+  let projectionCamera: THREE.Camera | null = null;
   const projected = new THREE.Vector3();
 
   const clearSlot = (slot: BubbleSlot): void => {
+    slot.active = false;
     slot.speakerPosition = null;
     slot.elapsed = 0;
     slot.el.hidden = true;
@@ -117,9 +132,10 @@ export function createBubbleSystem(
     update: (dt, camera) => {
       if (destroyed) return;
       const safeDt = Math.max(0, dt);
+      const effectiveCamera = projectionCamera ?? camera;
       const rect = canvas?.getBoundingClientRect?.() ?? null;
       for (const slot of slots) {
-        if (slot.speakerPosition === null) continue;
+        if (!slot.active || slot.speakerPosition === null) continue;
         slot.elapsed += safeDt;
         if (slot.elapsed >= slot.lifetime) {
           clearSlot(slot);
@@ -133,7 +149,7 @@ export function createBubbleSystem(
           slot.speakerPosition.x,
           slot.speakerPosition.y + ANCHOR_HEIGHT,
           slot.speakerPosition.z,
-        ).project(camera);
+        ).project(effectiveCamera);
         // Behind / clipped by the far plane - same guard as the label.
         if (projected.z > 1 || projected.z < -1) {
           slot.el.hidden = true;
@@ -149,6 +165,7 @@ export function createBubbleSystem(
     show: (position, line) => {
       if (destroyed) return;
       const slot = pickRecyclableSlot(slots);
+      slot.active = true;
       slot.speakerPosition = position;
       slot.elapsed = 0;
       // 6-8 s: long enough that the starter is still readable when the
@@ -169,6 +186,9 @@ export function createBubbleSystem(
       if (!visible) {
         for (const slot of slots) slot.el.hidden = true;
       }
+    },
+    setCamera: (camera) => {
+      projectionCamera = camera;
     },
     destroy: () => {
       if (destroyed) return;
