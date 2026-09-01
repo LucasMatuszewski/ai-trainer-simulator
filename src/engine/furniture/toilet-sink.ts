@@ -67,38 +67,38 @@ export function makeToiletSink(): THREE.Group {
 
   // -- Faucet ----------------------------------------------------------
   // Faucet base.
-  group.add(box("toilet-sink-faucet-base", [0.08, 0.04, 0.08], new THREE.MeshLambertMaterial({ color: STEEL_DARK }), [-0.45, 0.9, -0.2]));
+  group.add(box("toilet-sink-faucet-base", [0.08, 0.04, 0.08], new THREE.MeshLambertMaterial({ color: STEEL_DARK }), [-0.10, 0.9, -0.25]));
 
   // Faucet body (vertical post).
-  group.add(box("toilet-sink-faucet-post", [0.05, 0.18, 0.05], new THREE.MeshLambertMaterial({ color: STEEL }), [-0.45, 1.01, -0.2]));
+  group.add(box("toilet-sink-faucet-post", [0.05, 0.18, 0.05], new THREE.MeshLambertMaterial({ color: STEEL }), [-0.10, 1.01, -0.25]));
 
   // Faucet spout (horizontal arm).
-  group.add(box("toilet-sink-faucet-spout", [0.04, 0.04, 0.18], new THREE.MeshLambertMaterial({ color: STEEL }), [-0.45, 1.12, -0.1]));
+  group.add(box("toilet-sink-faucet-spout", [0.04, 0.04, 0.18], new THREE.MeshLambertMaterial({ color: STEEL }), [-0.10, 1.12, -0.15]));
 
   // Spout tip.
-  group.add(box("toilet-sink-faucet-tip", [0.04, 0.04, 0.04], new THREE.MeshLambertMaterial({ color: STEEL_DARK }), [-0.45, 1.1, 0]));
+  group.add(box("toilet-sink-faucet-tip", [0.04, 0.04, 0.04], new THREE.MeshLambertMaterial({ color: STEEL_DARK }), [-0.10, 1.1, -0.06]));
 
   // Faucet handle (a small knob on the side of the post).
-  group.add(box("toilet-sink-faucet-handle", [0.04, 0.05, 0.04], new THREE.MeshLambertMaterial({ color: STEEL_DARK }), [-0.39, 1.03, -0.2]));
+  group.add(box("toilet-sink-faucet-handle", [0.04, 0.05, 0.04], new THREE.MeshLambertMaterial({ color: STEEL_DARK }), [-0.06, 1.03, -0.25]));
 
   // -- Mirror on the wall above the sink -------------------------------
   // Mirror frame.
-  group.add(box("toilet-sink-mirror-frame", [1.0, 0.6, 0.04], new THREE.MeshLambertMaterial({ color: MIRROR_FRAME }), [0, 1.7, 0.1]));
+  group.add(box("toilet-sink-mirror-frame", [1.0, 0.6, 0.04], new THREE.MeshLambertMaterial({ color: MIRROR_FRAME }), [0, 1.7, -0.30]));
 
   // Mirror glass.
-  group.add(box("toilet-sink-mirror-glass", [0.92, 0.52, 0.005], new THREE.MeshBasicMaterial({ color: MIRROR_GLASS }), [0, 1.7, 0.13]));
+  group.add(box("toilet-sink-mirror-glass", [0.92, 0.52, 0.005], new THREE.MeshBasicMaterial({ color: MIRROR_GLASS }), [0, 1.7, -0.26]));
 
   // -- Soap dispenser on the right side of the sink -------------------
-  group.add(box("toilet-sink-soap-body", [0.1, 0.16, 0.08], new THREE.MeshLambertMaterial({ color: SOAP_BODY }), [0.4, 0.97, 0.1]));
-  group.add(box("toilet-sink-soap-neck", [0.04, 0.03, 0.04], new THREE.MeshLambertMaterial({ color: SOAP_PUMP }), [0.4, 1.06, 0.1]));
-  group.add(box("toilet-sink-soap-pump", [0.08, 0.04, 0.04], new THREE.MeshLambertMaterial({ color: SOAP_PUMP }), [0.4, 1.07, 0.1]));
+  group.add(box("toilet-sink-soap-body", [0.1, 0.16, 0.08], new THREE.MeshLambertMaterial({ color: SOAP_BODY }), [0.4, 0.97, -0.10]));
+  group.add(box("toilet-sink-soap-neck", [0.04, 0.03, 0.04], new THREE.MeshLambertMaterial({ color: SOAP_PUMP }), [0.4, 1.06, -0.10]));
+  group.add(box("toilet-sink-soap-pump", [0.08, 0.04, 0.04], new THREE.MeshLambertMaterial({ color: SOAP_PUMP }), [0.38, 1.10, -0.10]));
 
   // -- Paper towel dispenser on the wall to the right ----------------
   // (a small white cabinet).
-  group.add(box("toilet-sink-paper-cabinet", [0.35, 0.45, 0.18], new THREE.MeshLambertMaterial({ color: PAPER_TOWEL }), [0.45, 1.5, 0.05]));
+  group.add(box("toilet-sink-paper-cabinet", [0.35, 0.45, 0.18], new THREE.MeshLambertMaterial({ color: PAPER_TOWEL }), [0.75, 1.5, -0.25]));
 
   // Paper slot (a dark slit at the bottom front of the cabinet).
-  group.add(box("toilet-sink-paper-slot", [0.28, 0.02, 0.005], new THREE.MeshBasicMaterial({ color: PAPER_TOWEL_HOLE }), [0.45, 1.28, 0.14]));
+  group.add(box("toilet-sink-paper-slot", [0.28, 0.02, 0.005], new THREE.MeshBasicMaterial({ color: PAPER_TOWEL_HOLE }), [0.75, 1.28, -0.16]));
 
   return group;
 }

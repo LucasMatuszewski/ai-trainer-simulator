@@ -45,12 +45,20 @@ export const CORRIDOR_WAYPOINTS: readonly Waypoint[] = [
   // thread the route: the kitchen side of the door, the toilet
   // side of the door, the basin by the door, the urinal on the
   // east wall, and a stop in front of each stall.
+  //
+  // After Lucas's 2026-09-01 re-layout: stall 1 at [20.6, 0, 2.9]
+  // (west) and stall 2 at [21.6, 0, 2.9] (east), with 1.0m
+  // between centers (walls touch with a 0.14m visible gap). The
+  // urinal moved from z=5 to z=2 (back-east corner, on the south
+  // wall). Stops in front of the stall doors (which are at z=3.7,
+  // the front of each stall, +Z) are placed at z=4.2 so the NPC
+  // stands just south of the door looking +Z into the stall.
   { id: "door-kitchen-toilet", position: { x: 19.25, y: 0, z: 6 } },
   { id: "toilet-entry", position: { x: 20.5, y: 0, z: 6 } },
   { id: "toilet-basin", position: { x: 22, y: 0, z: 5.5 } },
-  { id: "toilet-urinal", position: { x: 22.8, y: 0, z: 5 } },
-  { id: "toilet-stall-west", position: { x: 21, y: 0, z: 4.2 } },
-  { id: "toilet-stall-east", position: { x: 23, y: 0, z: 4.2 } },
+  { id: "toilet-urinal", position: { x: 23.0, y: 0, z: 2.5 } },
+  { id: "toilet-stall-west", position: { x: 20.6, y: 0, z: 4.2 } },
+  { id: "toilet-stall-east", position: { x: 21.6, y: 0, z: 4.2 } },
 
   { id: "desk-bartek", position: { x: -7.7, y: 0, z: -5 } },
   { id: "desk-tomek", position: { x: -7.7, y: 0, z: -1.5 } },

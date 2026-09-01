@@ -214,6 +214,7 @@ function drawPoster(
   height: number,
   text: string,
   accentColor: number,
+  fontSize: number = 46
 ): void {
   // Deep charcoal tinted ~15% toward the accent color.
   const accent = new THREE.Color(accentColor);
@@ -240,7 +241,6 @@ function drawPoster(
   // fits in at most 3 lines inside the frame.
   const maxWidth = width - 100;
   const words = text.split(/\s+/).filter((word) => word.length > 0);
-  let fontSize = 46;
   let lines: string[] = [];
   for (; fontSize >= 22; fontSize -= 4) {
     context.font = `bold ${fontSize}px monospace`;
@@ -319,4 +319,3 @@ function makeFurniture(item: WorldFurniture): THREE.Object3D {
   mesh.receiveShadow = true;
   return mesh;
 }
-

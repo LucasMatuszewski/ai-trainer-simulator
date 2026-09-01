@@ -90,14 +90,25 @@ export const ROOM_FURNITURE_AABBS: readonly AABB[] = [
   { minX: 14.78, maxX: 15.22, minZ: 2.28, maxZ: 2.72 },
   { minX: 13.78, maxX: 14.22, minZ: 3.38, maxZ: 3.82 },
   // ---- TOILET (C-57, x=[19, 24], z=[2, 7]) ----
-  // Two stalls against the south wall (z=3, +/-0.6m). Each stall is
-  // 1.2m wide, 1.6m deep.
-  { minX: 19.4, maxX: 20.6, minZ: 2.2, maxZ: 3.8 },
-  { minX: 22.4, maxX: 23.6, minZ: 2.2, maxZ: 3.8 },
+  // Two stalls against the south wall, next to each other. Stalls
+  // are 1.2m wide, 1.6m deep. After the user's 2026-09-01 re-layout
+  // the stalls are at world centers [20.6, 0, 2.9] and
+  // [21.6, 0, 2.9] (centers 1.0m apart, walls touch with a 0.14m
+  // visible gap). The west stall's right wall is at x=[21.17,
+  // 21.23]; the east stall's left wall is at x=[20.97, 21.03].
+  { minX: 20.0, maxX: 21.2, minZ: 2.1, maxZ: 3.7 },
+  { minX: 21.0, maxX: 22.2, minZ: 2.1, maxZ: 3.7 },
   // Washbasin on the north wall (z=6.7, depth 0.55m, width 1.2m).
+  // After the 2026-09-01 re-layout the basin is still at world
+  // [22, 0, 6.7] but with rotationY = Math.PI (the mirror now
+  // faces -Z, into the room). The AABB is unchanged.
   { minX: 21.4, maxX: 22.6, minZ: 6.15, maxZ: 6.7 },
-  // Urinal on the east wall (x=23.5, +/- 0.25m, z=5 +/- 0.2m).
-  { minX: 23.25, maxX: 23.7, minZ: 4.8, maxZ: 5.2 },
+  // Urinal in the back-east corner (south wall + east wall) after
+  // the 2026-09-01 re-layout. Now at world [23.5, -0.4, 2], mounted
+  // on the south wall. The bowl is at local z=0.18-0.34 which
+  // projects to world z=1.82-2.16 (sticking out from the south
+  // wall at z=2 toward the room center).
+  { minX: 23.25, maxX: 23.75, minZ: 1.75, maxZ: 2.2 },
   // ---- MEETING ROOM (x=[-6, 6], z=[9, 19]) ----
   // The big table.
   { minX: -1.5, maxX: 1.5, minZ: 11.25, maxZ: 16.75 },

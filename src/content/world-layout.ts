@@ -34,6 +34,7 @@ export interface WorldSign {
   face: number;
   color: number;
   size?: readonly [number, number];
+  fontSize?: number;
 }
 
 export interface WorldRoom {
@@ -503,10 +504,15 @@ export const WORLD_ROOMS: WorldRoom[] = [
       // the kitchen so the player sees it from inside the kitchen).
       // Position is on the toilet's north wall face to keep the
       // sign visible from the kitchen.
-      { text: "WC", position: [20.4, 2.2, 6.85], face: Math.PI, color: 0x4477aa, size: [0.5, 0.5] },
+      { text: "WC", position: [20.4, 2.2, 6.85], face: Math.PI, color: 0x4477aa, size: [0.5, 0.5], fontSize: 16 },
       // "OUT OF ORDER" sign on the west stall's door panel - the
-      // classic IT Crowd homage.
-      { text: "OUT OF ORDER", position: [20.5, 1.4, 3.74], face: 0, color: 0xaa3322, size: [0.9, 0.25] },
+      // classic IT Crowd homage. Per Lucas 2026-09-01: the door
+      // is now pushed forward (panel z=0.85, world z=3.75 for stall
+      // 1 at z=2.9) so the sign sits on the door's front face
+      // (z=0.85 - 0.02 = 0.83 in local coords = 3.73 in world, but
+      // the sign is 0.02m in front of the door to avoid z-fight, so
+      // world z=3.78 - 0.02 = 3.76 is on the door's front face).
+      { text: "OUT OF ORDER", position: [20.5, 1.4, 3.76], face: 0, color: 0xaa3322, size: [0.9, 0.25] },
       // A second stall mirror "Please wash your hands" sign on the
       // north wall to the right of the basin.
       { text: "WASH YOUR HANDS", position: [22, 2.4, 6.85], face: Math.PI, color: 0x2e6e3a, size: [1.2, 0.3] },

@@ -75,16 +75,27 @@ export function makeToiletStall(): THREE.Group {
   // -- Front door panel (the "door" of the stall) ----------------------
   // A panel at +Z (the front), height 1.8m, with a 0.3m gap
   // underneath. Filled only between x=[-0.6, 0.6] of the stall.
+  //
+  // Per Lucas 2026-09-01: the door is pushed forward (z=0.78 ->
+  // 0.83) so it sits in front of the door frame instead of being
+  // coplanar with it. The previous position had the door panel
+  // INSIDE the door-frame mesh (panel z range [0.76, 0.80],
+  // frame z range [0.75, 0.825]) and the panel's back face
+  // z-fought with the frame's interior. With the door at z=0.83
+  // (panel z range [0.81, 0.85]) it clears the frame (z range
+  // [0.75, 0.825]) cleanly.
   const doorMat = new THREE.MeshLambertMaterial({ color: DOOR });
-  group.add(box("stall-door", [1.2, 1.5, 0.04], doorMat, [0, 0.3 + 0.75, 0.8 - 0.02]));
+  group.add(box("stall-door", [1.2, 1.5, 0.04], doorMat, [0, 0.3 + 0.75, 0.85]));
 
-  // Door frame (top + sides).
+  // Door frame (top + sides). Unchanged from the previous layout
+  // so the frame is still on the partition's +Z face.
   group.add(box("stall-door-frame-top", [1.2, 0.04, 0.05], frameMat, [0, 0.3 + 1.5 + 0.02, 0.8 - 0.025]));
   group.add(box("stall-door-frame-left", [0.04, 1.5, 0.05], frameMat, [-0.6 + 0.02, 0.3 + 0.75, 0.8 - 0.025]));
   group.add(box("stall-door-frame-right", [0.04, 1.5, 0.05], frameMat, [0.6 - 0.02, 0.3 + 0.75, 0.8 - 0.025]));
 
   // Door handle (a small horizontal bar on the +X side, dark).
-  group.add(box("stall-door-handle", [0.04, 0.04, 0.18], new THREE.MeshLambertMaterial({ color: HANDLE }), [0.45, 0.3 + 0.75, 0.8 - 0.01]));
+  // Also pushed forward to match the new door z.
+  group.add(box("stall-door-handle", [0.04, 0.04, 0.18], new THREE.MeshLambertMaterial({ color: HANDLE }), [0.45, 0.3 + 0.75, 0.86]));
 
   // -- The toilet itself -----------------------------------------------
   // Sit on the back wall (-Z) facing +Z. Bowl centered at z=-0.4.

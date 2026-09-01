@@ -387,20 +387,23 @@ export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
   // C-57 (Lucas, 2026-09-01): the toilet moved east of the kitchen.
   // The new room is x=[19, 24], z=[2, 7]. The user enters from the
   // north (doorway z=[5, 7]) and the stalls are against the south
-  // wall. The stall door panel is at the front of the stall,
-  // facing +Z (south, away from the back wall). NPCs stand just
-  // south of each stall door (z=2.8, door at z=3.78) and face
-  // into the stall (+Z). Per the world-layout yaw convention,
-  // `face: 0` faces +Z (south), so the NPCs at the stalls look
-  // at their own stall entrance.
-  { position: { x: 20, y: 0, z: 2.8 }, face: 0, state: "toilet" },
-  { position: { x: 23, y: 0, z: 2.8 }, face: 0, state: "toilet" },
-  // Toilet: at the urinal (on the east wall, x=23.5). The NPC
-  // stands 0.5m west of the urinal facing east.
-  { position: { x: 22.5, y: 0, z: 5 }, face: Math.PI / 2, state: "toilet" },
-  // Toilet: at the basin (on the north wall, z=6.7). The NPC
-  // stands 0.5m south of the basin (z=6.0) and faces the basin
-  // (north, -Z direction, Math.PI per convention).
+  // wall. After Lucas's 2026-09-01 re-layout the stalls are at
+  // [20.6, 0, 2.9] (west) and [21.6, 0, 2.9] (east), with the
+  // door panel at z=3.78 (front of the stall, +Z). NPCs stand
+  // just south of each stall door (z=2.8) and face into the
+  // stall (+Z). Per the world-layout yaw convention, `face: 0`
+  // faces +Z (south), so the NPCs look at their own stall entrance.
+  { position: { x: 20.6, y: 0, z: 2.8 }, face: 0, state: "toilet" },
+  { position: { x: 21.6, y: 0, z: 2.8 }, face: 0, state: "toilet" },
+  // Toilet: at the urinal. After Lucas's 2026-09-01 re-layout the
+  // urinal moved from z=5 to z=2 (back-east corner, on the south
+  // wall). The NPC stands 0.5m west of the urinal at (23.5, -0.4, 2),
+  // facing east toward it.
+  { position: { x: 22.8, y: 0, z: 2 }, face: Math.PI / 2, state: "toilet" },
+  // Toilet: at the basin (on the north wall, z=6.7). The basin
+  // was rotated 180° in Lucas's re-layout, so the mirror now faces
+  // -Z (into the room). The NPC still stands 0.7m south of the
+  // basin and faces north (-Z, Math.PI) toward the basin.
   { position: { x: 22, y: 0, z: 6.0 }, face: Math.PI, state: "toilet" },
   // Meeting room: by the meeting table (center of room).
   // The table is in the center; just stand there.
