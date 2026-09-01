@@ -18,6 +18,16 @@ export const CORRIDOR_WAYPOINTS: readonly Waypoint[] = [
   { id: "main-east", position: { x: 4.5, y: 0, z: 0 } },
   { id: "main-north", position: { x: 0, y: 0, z: -5 } },
   { id: "main-south", position: { x: 0, y: 0, z: 5 } },
+  // C-57: a waypoint in the SW corner of the main office,
+  // OUTSIDE the server rack (which is at x=[-8.5, -7.5],
+  // z=[7.5, 8.5]). x=-8.7 is between the west wall (-9.5..-9)
+  // and the server rack. z=8.6 is north of the server rack
+  // (z>8.5). The line from here to the W-wall desk column
+  // (x=-7.7) goes diagonally through the SW corner, clearing
+  // the server rack (the line at z=8 is at x=-8.7 + (8-8.6)/
+  // (any_z-8.6) * delta_x, and as long as the line stays west
+  // of the server rack at z=8, it doesn't cross).
+  { id: "desk-aisle-west", position: { x: -8.7, y: 0, z: 8.6 } },
   { id: "door-main-kitchen", position: { x: 9.65, y: 0, z: 0 } },
   { id: "door-main-ceo", position: { x: 0, y: 0, z: -9.8 } },
   { id: "door-main-meeting", position: { x: 0, y: 0, z: 9.9 } },
@@ -28,18 +38,19 @@ export const CORRIDOR_WAYPOINTS: readonly Waypoint[] = [
   // into the meeting room before turning back - measured as a 23.7 s
   // pacing loop for Klaudia on the C-51 morning probe.
   { id: "door-main-entry", position: { x: 0, y: 0, z: 8.4 } },
-  // The toilet is entered through the narrow door at the main
-  // office's SW corner (gap x [-9, -8.5], z [9, 9.5]), then north
-  // through the antechamber strip east of the toilet-east-south
-  // sliver (x [-9, -8.78], z [9.5, 10.25]), then west through the
-  // toilet's open east side (z [10.25, 17.75]). Four waypoints
-  // thread it: office-side approach, both sides of the door, and
-  // the antechamber.
-  { id: "door-main-toilet", position: { x: -7.2, y: 0, z: 8.6 } },
-  { id: "toilet-door-west", position: { x: -8.7, y: 0, z: 8.75 } },
-  { id: "toilet-door-north", position: { x: -8.7, y: 0, z: 9.7 } },
-  { id: "toilet-antechamber", position: { x: -8.64, y: 0, z: 11.5 } },
-  { id: "toilet-entry", position: { x: -9.4, y: 0, z: 12 } },
+  // C-57 (Lucas, 2026-09-01): the toilet moved from the back-SW
+  // corner of the main office to a new room east of the kitchen.
+  // The doorway is in the kitchen's east wall at z=[5, 7] (the
+  // south end of the kitchen, under the menu sign). Six waypoints
+  // thread the route: the kitchen side of the door, the toilet
+  // side of the door, the basin by the door, the urinal on the
+  // east wall, and a stop in front of each stall.
+  { id: "door-kitchen-toilet", position: { x: 19.25, y: 0, z: 6 } },
+  { id: "toilet-entry", position: { x: 20.5, y: 0, z: 6 } },
+  { id: "toilet-basin", position: { x: 22, y: 0, z: 5.5 } },
+  { id: "toilet-urinal", position: { x: 22.8, y: 0, z: 5 } },
+  { id: "toilet-stall-west", position: { x: 21, y: 0, z: 4.2 } },
+  { id: "toilet-stall-east", position: { x: 23, y: 0, z: 4.2 } },
 
   { id: "desk-bartek", position: { x: -7.7, y: 0, z: -5 } },
   { id: "desk-tomek", position: { x: -7.7, y: 0, z: -1.5 } },
@@ -60,6 +71,12 @@ export const CORRIDOR_WAYPOINTS: readonly Waypoint[] = [
   { id: "kitchen-microwave", position: { x: 15.2, y: 0, z: -5.3 } },
   { id: "kitchen-sink", position: { x: 17.5, y: 0, z: -5.3 } },
   { id: "kitchen-table", position: { x: 14, y: 0, z: 1.2 } },
+  // C-57: a waypoint in the south-east of the kitchen, in front
+  // of the new toilet doorway. Bridges the route from
+  // kitchen-table (14, 1.2) to door-kitchen-toilet (19.25, 6) -
+  // the direct line passes through both kitchen tables, so the
+  // graph needs this intermediate stop to thread the path.
+  { id: "kitchen-toilet-corner", position: { x: 17, y: 0, z: 4 } },
   { id: "door-kitchen-training", position: { x: 19.8, y: 0, z: -5 } },
 
   { id: "meeting-table", position: { x: -2.2, y: 0, z: 14 } },
@@ -69,8 +86,6 @@ export const CORRIDOR_WAYPOINTS: readonly Waypoint[] = [
   // aisle to reach the door or the table waypoint.
   { id: "meeting-west-north", position: { x: -3, y: 0, z: 17 } },
   { id: "meeting-west-south", position: { x: -3, y: 0, z: 10.5 } },
-  { id: "toilet-sink", position: { x: -14, y: 0, z: 10.7 } },
-  { id: "toilet-stall", position: { x: -16, y: 0, z: 14.5 } },
   { id: "training-row-front", position: { x: 20, y: 0, z: -10 } },
   { id: "training-row-back", position: { x: 26, y: 0, z: -14 } },
   { id: "training-speaker", position: { x: 21.5, y: 0, z: -17 } },

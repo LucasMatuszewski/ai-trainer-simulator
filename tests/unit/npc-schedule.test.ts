@@ -190,13 +190,14 @@ describe("Random walk destinations (L-2026-08-30-01)", () => {
   });
 
   it("places the toilet destinations inside the toilet room bounds", () => {
-    // Toilet floor: x:[-19, -9], z:[9, 19].
+    // C-57 (2026-09-01): toilet moved east of the kitchen. New
+    // bounds: x [19, 24], z [2, 7].
     for (const dest of RANDOM_DESTINATIONS) {
       if (dest.state === "toilet") {
-        expect(dest.position.x).toBeGreaterThanOrEqual(-19);
-        expect(dest.position.x).toBeLessThanOrEqual(-9);
-        expect(dest.position.z).toBeGreaterThanOrEqual(9);
-        expect(dest.position.z).toBeLessThanOrEqual(19);
+        expect(dest.position.x).toBeGreaterThanOrEqual(19);
+        expect(dest.position.x).toBeLessThanOrEqual(24);
+        expect(dest.position.z).toBeGreaterThanOrEqual(2);
+        expect(dest.position.z).toBeLessThanOrEqual(7);
       }
     }
   });

@@ -91,12 +91,13 @@ export const MAIN_OFFICE_WALLS: WorldWall[] = [
   wall("main-north-far-east", 8, 9, -9.5, -9),
   wall("main-east-north", 9, 9.5, -9, -1.25),
   wall("main-east-south", 9, 9.5, 1.25, 9),
-  // L-2026-08-30-01: south wall split to leave a doorway into the
-  // toilet room (gap from x=-9 to x=-8.5 at z=9..9.5). The toilet
-  // room's own south wall (inside the toilet) doubles as the main
-  // office's south wall for that x range, so the main office does
-  // not need a separate wall segment there.
-  wall("main-south-west", -8.5, -1.25, 9, 9.5),
+  // C-57 (Lucas, 2026-09-01): the toilet moved from the back-
+  // south-west corner of the main office (off the south wall at
+  // x=[-9, -8.5]) to its new home east of the kitchen (door
+  // opens off the kitchen's east wall). The main office's south
+  // wall is now SOLID end to end - no gap. The old gap segment
+  // (-9 to -8.5) is gone.
+  wall("main-south-west", -9, -1.25, 9, 9.5),
   wall("main-south-east", 1.25, 9, 9, 9.5),
   wall("main-west", -9.5, -9, -9, 9),
 ];
@@ -123,14 +124,11 @@ export const MAIN_OFFICE_DOORWAYS: WorldDoorway[] = [
     { minX: -1.25, maxX: 1.25, minZ: 9, maxZ: 9.5 },
     { minX: -1.25, maxX: 1.25, minZ: 8.5, maxZ: 9 },
   ),
-  // L-2026-08-30-01: doorway to the new toilet room off the
-  // south-west corner of the main office. The main office's south
-  // wall has a gap here for the door.
-  gap(
-    "main-to-toilet",
-    { minX: -9, maxX: -8.5, minZ: 9, maxZ: 9.5 },
-    { minX: -8.5, maxX: -9, minZ: 9, maxZ: 9.5 },
-  ),
+  // C-57: the toilet door moved off the main office entirely.
+  // The new door is a kitchen-level doorway (kitchen-to-toilet)
+  // and the main office no longer has a 4th doorway. Index
+  // layout stays: [0]=main-to-ceo, [1]=main-to-kitchen,
+  // [2]=main-to-meeting.
 ];
 
 export const WORLD_ROOMS: WorldRoom[] = [
@@ -220,7 +218,12 @@ export const WORLD_ROOMS: WorldRoom[] = [
       // (the blue/green z-fight Lucas screenshotted). It now
       // starts at z=-2.5 so the corner belongs to the training
       // room's green wall alone.
-      wall("kitchen-east", 19, 19.5, -2.5, 7),
+      //
+      // C-57 (2026-09-01): a doorway gap at z=[5, 7] opens the
+      // new toilet on the right of the "TODAY'S MENU: COFFEE"
+      // sign. The wall stops at z=5; the toilet's own west
+      // wall (in WORLD_ROOMS) takes over for z=[2, 5].
+      wall("kitchen-east", 19, 19.5, -2.5, 5),
       // Offset shared walls into the kitchen (east of the main
       // office's east wall band x=[9, 9.5]) so the two shells
       // never overlap. The old x=[9.22, 9.5] sat INSIDE the
@@ -237,6 +240,17 @@ export const WORLD_ROOMS: WorldRoom[] = [
         "kitchen-to-training",
         { minX: 19, maxX: 19.5, minZ: -7, maxZ: -3 },
         { minX: 19.5, maxX: 20, minZ: -7, maxZ: -3 },
+      ),
+      // C-57: 2m doorway from the kitchen's east wall into the
+      // new toilet. z=[5, 7] is the south end of the kitchen's
+      // east wall, directly under and to the right of the
+      // "TODAY'S MENU: COFFEE" sign at (14, 2.1, 6.72) - a
+      // player standing in the kitchen facing the south wall
+      // sees the toilet door on the right.
+      gap(
+        "kitchen-to-toilet",
+        { minX: 19, maxX: 19.5, minZ: 5, maxZ: 7 },
+        { minX: 19.5, maxX: 20, minZ: 5, maxZ: 7 },
       ),
     ],
     floorColor: 0xc7b98b,
@@ -411,49 +425,91 @@ export const WORLD_ROOMS: WorldRoom[] = [
     signs: [{ text: "NEXT MEETING: 5 MIN AGO", position: [4, 2.2, 9.28], face: 0, color: 0xaa3322 }],
   },
   {
-    // L-2026-08-30-01: "NPCs should RANDOMLY walk to: the toilet (a new
-    // room to be added)." The toilet is a small back-corner room off
-    // the main office, south-west, with two stalls, a sink, and the
-    // mandatory "OUT OF ORDER" sign (IT Crowd homage).
+    // C-57 (Lucas, 2026-09-01): the toilet moved from the back-
+    // south-west corner of the main office to a new room east of
+    // the kitchen. Doorway is on the kitchen's east wall (z=[5, 7]),
+    // which is the right side of the "TODAY'S MENU: COFFEE" sign
+    // (the sign is at (14, 2.1, 6.72), the player in the kitchen
+    // facing south sees the toilet door on the right).
+    //
+    // Layout: 5m wide (x=[19, 24]), 5m deep (z=[2, 7]). The door
+    // is in the west wall (x=19, z=[5, 7]) leading into the kitchen.
+    // The washbasin is on the wall by the door (north wall, the
+    // shared boundary with the kitchen), the urinal is on the east
+    // wall, and the two stalls sit against the south wall.
+    //
+    // 3D models: the C-57 stall, urinal, and basin are detailed
+    // pixelart (partition walls with tile rows, porcelain toilet
+    // bowl + cistern, chrome flush pipe, mirror + soap dispenser),
+    // matching the kitchen premium-pass quality.
     id: "toilet",
     name: "Toilet",
-    floor: { minX: -19, maxX: -6.5, minZ: 9, maxZ: 19 },
+    floor: { minX: 19, maxX: 24, minZ: 2, maxZ: 7 },
     walls: [
-      wall("toilet-west", -19.5, -19, 9, 19),
-      wall("toilet-north", -19, -9, 19, 19.5),
-      wall("toilet-east-north", -9, -8.78, 17.75, 19),
-      // Starts at z=9.5, south of the toilet's own south wall
-      // band (z=[9, 9.5]), so the pair never shares a volume.
-      wall("toilet-east-south", -9, -8.78, 9.5, 10.25),
-      // The south wall sits inside the toilet at z=[9, 9.5]. There
-      // is a doorway gap at x=[-9, -8.5], z=[9, 9.5] so the player
-      // can pass from the main office to the toilet. C-45
-      // amendment (k): this wall used to end at x=-8.5, sealing
-      // the very gap the comment describes (the toilet was
-      // unreachable - NPCs only "entered" it because the old 2 s
-      // lerp ignored collision). It now ends at x=-9, leaving the
-      // gap open. The floor below extends to x=-6.5 to cover the
-      // antechamber strip between the toilet and the meeting room
-      // (the toilet's east side is open at z=[10.25, 17.75]).
-      wall("toilet-south", -19, -9, 9, 9.5),
+      // North wall - shared with the kitchen's south wall (z=7, the
+      // shared boundary). This is the toilet's back wall, the one
+      // the washbasin mounts to.
+      wall("toilet-north", 19, 24, 7, 7.5),
+      // East wall - the outer wall of the world. The urinal mounts
+      // on this wall.
+      wall("toilet-east", 24, 24.5, 2, 7),
+      // South wall - the back wall where the stalls stand. Starts
+      // at x=19.5 (the outer face of the kitchen's east wall band)
+      // so it does not share a volume with the kitchen-east wall.
+      wall("toilet-south", 19.5, 24, 1.5, 2),
+      // West wall - south of the doorway. The wall on the north
+      // side of the doorway is the north wall (toilet-north)
+      // which already covers z=[7, 7.5]. This segment covers
+      // z=[2, 5] (south of the doorway, on the toilet's side of
+      // the shared boundary at x=[19.5, 20]).
+      wall("toilet-west-south", 19.5, 20, 2, 5),
     ],
     doorways: [
+      // C-57: the doorway between kitchen and toilet, in the shared
+      // east-west wall. The kitchen's doorway (kitchen-to-toilet) is
+      // the canonical one; the toilet references it for symmetry.
       gap(
-        "toilet-to-main",
-        { minX: -9, maxX: -8.5, minZ: 9, maxZ: 9.5 },
-        { minX: -9, maxX: -8.5, minZ: 9, maxZ: 9.5 },
+        "toilet-to-kitchen",
+        { minX: 19, maxX: 19.5, minZ: 5, maxZ: 7 },
+        { minX: 19.5, maxX: 20, minZ: 5, maxZ: 7 },
       ),
     ],
-    floorColor: 0xb0b6c0,
-    wallColor: 0xd6dee5,
+    floorColor: 0xc4cad0,
+    wallColor: 0xe2e8ee,
+    // Two visible ceiling lights, centred on the room (x=21.5, z=4.5).
+    lightPositions: [
+      [21.5, 4.5],
+    ],
     furniture: [
-      { type: "toilet-stall", position: [-16, 0.5, 16], size: [1.2, 1.6, 1.6] },
-      { type: "toilet-stall", position: [-12, 0.5, 16], size: [1.2, 1.6, 1.6] },
-      { type: "sink", position: [-14, 0.55, 11.5], size: [2, 1.1, 0.6] },
+      // Two stalls against the south wall. The user sits facing
+      // NORTH (toward the door / washbasin). Stall at x=20 (west
+      // side of the room) and x=23 (east side), both 0.5m off the
+      // south wall. The stalls are 1.2m wide so the east one is
+      // shifted slightly east to fit (the room is 5m wide).
+      { type: "toilet-stall", position: [20, 0, 3] },
+      { type: "toilet-stall", position: [23, 0, 3] },
+      // Washbasin on the NORTH wall (z=7), right by the door so
+      // you wash your hands on the way out. The basin faces -Z
+      // (toward the user standing in the room).
+      { type: "toilet-sink", position: [22, 0, 6.7] },
+      // Urinal on the EAST wall (x=24), facing the user. Sits
+      // against the wall, between the two stalls (z=3) and the
+      // washbasin (z=6.7). Mounted at y=0.4-1.1, faces -X.
+      { type: "urinal", position: [23.5, 0, 5], rotationY: Math.PI / 2 },
     ],
     signs: [
-      { text: "WC", position: [-12, 2.2, 8.86], face: 0, color: 0x4477aa },
-      { text: "OUT OF ORDER (just the one with the good vibes)", position: [-16, 1.7, 14.8], face: Math.PI, color: 0xaa3322, size: [2, 0.6] },
+      // "WC" sign on the kitchen side of the doorway (mounted on
+      // the kitchen's east wall, just above the door, facing into
+      // the kitchen so the player sees it from inside the kitchen).
+      // Position is on the toilet's north wall face to keep the
+      // sign visible from the kitchen.
+      { text: "WC", position: [20.5, 2.2, 6.85], face: Math.PI, color: 0x4477aa, size: [0.5, 0.5] },
+      // "OUT OF ORDER" sign on the west stall's door panel - the
+      // classic IT Crowd homage.
+      { text: "OUT OF ORDER", position: [20, 1.4, 3.78], face: 0, color: 0xaa3322, size: [0.9, 0.25] },
+      // A second stall mirror "Please wash your hands" sign on the
+      // north wall to the right of the basin.
+      { text: "WASH YOUR HANDS", position: [22, 2.4, 6.85], face: Math.PI, color: 0x2e6e3a, size: [1.2, 0.3] },
     ],
   },
 ];

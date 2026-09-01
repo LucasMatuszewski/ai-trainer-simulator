@@ -45,9 +45,10 @@ describe("roomAt", () => {
     expect(roomAt(-5, -12)).toBe("ceo");
   });
 
-  it("classifies the toilet and meeting room (z >= 9)", () => {
-    expect(roomAt(-16, 14.5)).toBe("toilet");
-    expect(roomAt(-14, 11.5)).toBe("toilet");
+  it("classifies the toilet (C-57: now east of the kitchen, x [19,24], z [2,7]) and meeting room (z >= 9)", () => {
+    expect(roomAt(22, 4)).toBe("toilet");
+    expect(roomAt(22, 6)).toBe("toilet");
+    expect(roomAt(20, 2.5)).toBe("toilet");
     expect(roomAt(0, 14)).toBe("meeting");
   });
 

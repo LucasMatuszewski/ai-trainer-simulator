@@ -89,12 +89,15 @@ export const ROOM_FURNITURE_AABBS: readonly AABB[] = [
   { minX: 12.78, maxX: 13.22, minZ: 2.28, maxZ: 2.72 },
   { minX: 14.78, maxX: 15.22, minZ: 2.28, maxZ: 2.72 },
   { minX: 13.78, maxX: 14.22, minZ: 3.38, maxZ: 3.82 },
-  // ---- TOILET (x=[-19, -9], z=[9, 19]) ----
-  // Two stalls.
-  { minX: -16.6, maxX: -15.4, minZ: 15.2, maxZ: 16.8 },
-  { minX: -12.6, maxX: -11.4, minZ: 15.2, maxZ: 16.8 },
-  // Sink.
-  { minX: -14.95, maxX: -13.05, minZ: 11.2, maxZ: 11.8 },
+  // ---- TOILET (C-57, x=[19, 24], z=[2, 7]) ----
+  // Two stalls against the south wall (z=3, +/-0.6m). Each stall is
+  // 1.2m wide, 1.6m deep.
+  { minX: 19.4, maxX: 20.6, minZ: 2.2, maxZ: 3.8 },
+  { minX: 22.4, maxX: 23.6, minZ: 2.2, maxZ: 3.8 },
+  // Washbasin on the north wall (z=6.7, depth 0.55m, width 1.2m).
+  { minX: 21.4, maxX: 22.6, minZ: 6.15, maxZ: 6.7 },
+  // Urinal on the east wall (x=23.5, +/- 0.25m, z=5 +/- 0.2m).
+  { minX: 23.25, maxX: 23.7, minZ: 4.8, maxZ: 5.2 },
   // ---- MEETING ROOM (x=[-6, 6], z=[9, 19]) ----
   // The big table.
   { minX: -1.5, maxX: 1.5, minZ: 11.25, maxZ: 16.75 },

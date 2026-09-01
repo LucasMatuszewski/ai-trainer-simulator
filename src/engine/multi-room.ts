@@ -21,6 +21,9 @@ import { makePlantCounter } from "./furniture/plant-counter";
 import { makeSink } from "./furniture/sink";
 import { makeSoapDispenser } from "./furniture/soap-dispenser";
 import { makeSofa } from "./furniture/sofa";
+import { makeToiletStall } from "./furniture/toilet-stall";
+import { makeToiletSink } from "./furniture/toilet-sink";
+import { makeUrinal } from "./furniture/urinal";
 
 /**
  * Furniture types rendered by dedicated 3D-model factories
@@ -49,6 +52,10 @@ const FURNITURE_FACTORIES: Record<string, () => THREE.Group> = {
   "coffee-machine-kitchen": makeCoffeeMachineKitchen,
   "kitchen-table": makeKitchenTable,
   "kitchen-chair": makeKitchenChair,
+  // Toilet (C-57)
+  "toilet-stall": makeToiletStall,
+  "toilet-sink": makeToiletSink,
+  urinal: makeUrinal,
 };
 
 const WALL_HEIGHT = 3;

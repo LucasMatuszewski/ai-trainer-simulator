@@ -65,10 +65,16 @@ export const MAX_CONVERSATIONS = 2;
  * Classify a world position into a room, matching the floor AABBs in
  * `src/content/world-layout.ts` (training x [19,27] z [-19,-3]; CEO
  * office x [-8,8] z [-19,-9]; kitchen x [9,19] z [-7,7]; toilet
- * x [-19,-6.5] z [9,19]; meeting x [-6,6] z [9,19]; the main office
+ * x [19,24] z [2,7] C-57; meeting x [-6,6] z [9,19]; the main office
  * fills the rest of the central block; anything else is corridor).
  */
 export function roomAt(x: number, z: number): RoomId {
+  // C-57: the toilet moved from the back-SW corner of the office to
+  // a new room east of the kitchen. Check it BEFORE the training /
+  // kitchen ranges so an NPC standing at (22, 5) is in the toilet,
+  // not the corridor. The toilet boundary is x > 19 (strict, so the
+  // x=19 boundary line stays classified as kitchen) and z in [2, 7].
+  if (x > 19 && z >= 2 && z <= 7) return "toilet";
   if (x >= 19 && z <= -3) return "training";
   if (z <= -9) return "ceo";
   if (x >= 9 && z >= -7 && z <= 7) return "kitchen";

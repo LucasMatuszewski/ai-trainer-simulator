@@ -68,13 +68,15 @@ describe("WORLD_ROOMS", () => {
     }
   });
 
-  it("places the main office doorways on its north, east, south, and south-toilet edges", () => {
-    expect(MAIN_OFFICE_DOORWAYS).toHaveLength(4);
+  it("places the main office doorways on its north, east, and south edges", () => {
+    // C-57 (2026-09-01): the toilet door moved off the main office.
+    // The main office now has only 3 doorways: CEO (north), kitchen
+    // (east), and meeting room (south). The toilet is reached from
+    // the kitchen, not the main office.
+    expect(MAIN_OFFICE_DOORWAYS).toHaveLength(3);
     expect(MAIN_OFFICE_DOORWAYS[0]!.from).toEqual({ minX: -1.25, maxX: 1.25, minZ: -9.5, maxZ: -9 });
     expect(MAIN_OFFICE_DOORWAYS[1]!.from).toEqual({ minX: 9, maxX: 9.5, minZ: -1.25, maxZ: 1.25 });
     expect(MAIN_OFFICE_DOORWAYS[2]!.from).toEqual({ minX: -1.25, maxX: 1.25, minZ: 9, maxZ: 9.5 });
-    // L-2026-08-30-01: south-west corner doorway into the new toilet.
-    expect(MAIN_OFFICE_DOORWAYS[3]!.from).toEqual({ minX: -9, maxX: -8.5, minZ: 9, maxZ: 9.5 });
   });
 
   it("marks the CEO glass walls and Batman sign", () => {

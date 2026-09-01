@@ -384,13 +384,19 @@ export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
   // Kitchen table: stand south of it (the old (14, 2.5) was ON the
   // table), facing north toward it.
   { position: { x: 14.0, y: 0, z: 1.2 }, face: Math.PI, state: "kitchen" },
-  // Toilet: stand in front of the first stall (toilet stalls
-  // are at z=16, the NPC at z=14.5 faces +Z (north) toward them).
-  { position: { x: -16, y: 0, z: 14.5 }, face: 0, state: "toilet" },
-  // Toilet: at the sink (sink at z=11.5). The NPC IS at z=11.5
-  // so just face the sink — but it's on the same plane. Sink
-  // is on the south wall, so face -Z (Math.PI).
-  { position: { x: -14, y: 0, z: 11.5 }, face: Math.PI, state: "toilet" },
+  // C-57 (Lucas, 2026-09-01): the toilet moved east of the kitchen.
+  // The new room is x=[19, 24], z=[2, 7]. The user enters from the
+  // north (doorway z=[5, 7]) and the stalls are against the south
+  // wall (z=3). NPCs at the stalls face +Z (north) - away from the
+  // stalls, toward the door / washbasin.
+  { position: { x: 20, y: 0, z: 2.8 }, face: 0, state: "toilet" },
+  { position: { x: 23, y: 0, z: 2.8 }, face: 0, state: "toilet" },
+  // Toilet: at the urinal (on the east wall, x=23.5). The NPC
+  // stands 0.5m west of the urinal facing east.
+  { position: { x: 22.5, y: 0, z: 5 }, face: Math.PI / 2, state: "toilet" },
+  // Toilet: at the basin (on the north wall, z=6.7). The NPC
+  // stands 0.5m south facing north.
+  { position: { x: 22, y: 0, z: 6.0 }, face: Math.PI, state: "toilet" },
   // Meeting room: by the meeting table (center of room).
   // The table is in the center; just stand there.
   { position: { x: 0, y: 0, z: 14 }, face: 0, state: "meeting" },
