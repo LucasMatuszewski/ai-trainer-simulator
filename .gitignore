@@ -48,3 +48,9 @@ tests/**/*.js.map
 .env
 .env.local
 .normalized/
+
+# Stray verification screenshots dropped in the repo root by agents
+# (Lucas: "do not commit all these png! ignore them in git, but don't
+# delete"). Tracked screenshots under tests/e2e/screenshots/ and
+# screenshots/ are unaffected - root-level patterns only.
+/*.png
