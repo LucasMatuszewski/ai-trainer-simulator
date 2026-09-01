@@ -35,9 +35,17 @@
  *  0.7 clusters read as "hugging"). */
 export const MIN_SEPARATION = 0.8;
 
-/** How far ahead of the walker the blocked capsule reaches: stop HERE,
- *  face the blocker, and talk - do not press up to their face. */
-export const BLOCKED_LOOKAHEAD = 1.1;
+/** How far ahead of the walker the blocked capsule reaches.
+ *
+ *  This MUST stay under MIN_SEPARATION. At 1.1 m (the v2/v3 value) an
+ *  NPC halted before it was ever close enough for the separation
+ *  constraint to engage, so the mechanism that slides two people past
+ *  each other could never fire and every encounter became a standstill
+ *  plus an escape-ladder negotiation. Below the separation floor,
+ *  ordinary passing traffic resolves itself: they close, separation
+ *  slides them apart along the line between them, and they walk on. A
+ *  full stop is then reserved for a genuine nose-to-nose deadlock. */
+export const BLOCKED_LOOKAHEAD = 0.75;
 
 /** Half-width of the walk-line capsule (NPC radius 0.3 + margin). */
 export const BLOCKED_HALF_WIDTH = 0.5;
@@ -60,6 +68,18 @@ export const ESCAPE_TURNS: readonly number[] = [
 /** Escape step lengths, nearest first. */
 export const ESCAPE_DISTANCES: readonly number[] = [1, 1.5];
 
+/** How close an escape candidate may come to a spot this NPC just
+ *  retreated from. Walking straight back into the place that was
+ *  blocked is what produced the back-and-forth pacing (Lucas,
+ *  2026-09-01: "they just should avoid going back to the same place").
+ */
+export const RETURN_BLOCK_RADIUS = 0.7;
+
+/** Only the single most recent retreat is off-limits, and only
+ *  briefly: a long forbidden list starves the candidate fan and can
+ *  strand an NPC that has nowhere left it is allowed to step. */
+export const RETURN_MEMORY_SPOTS = 1;
+
 /** Clearance required along an escape leg - tighter than the stop
  *  capsule, because an escape is deliberately a squeeze-out move. */
 export const ESCAPE_HALF_WIDTH = 0.4;
@@ -71,6 +91,15 @@ export interface XZPoint {
 
 export interface IdentifiedPoint extends XZPoint {
   id: string;
+}
+
+export interface EscapeOptions {
+  /** Which retry this is; rotates the fan when no rng is supplied. */
+  attempt: number;
+  /** Supplied by the controller so each NPC shuffles its own way. */
+  rng?: () => number;
+  /** Spots this NPC just retreated from - never step back into them. */
+  forbidden?: readonly XZPoint[];
 }
 
 export interface SeparationCorrection {
@@ -214,26 +243,45 @@ export function escapeWaypoint(
   self: XZPoint,
   forwardX: number,
   forwardZ: number,
-  attempt: number,
   others: readonly XZPoint[],
   isBlockedAt: (x: number, z: number) => boolean,
+  options: EscapeOptions,
 ): XZPoint | null {
   const length = Math.hypot(forwardX, forwardZ);
   if (length <= 1e-6) return null;
   const unitX = forwardX / length;
   const unitZ = forwardZ / length;
-  const rotation = ((Math.trunc(attempt) % ESCAPE_TURNS.length) + ESCAPE_TURNS.length) % ESCAPE_TURNS.length;
+  const attempt = Math.trunc(options.attempt);
+  const rotation = ((attempt % ESCAPE_TURNS.length) + ESCAPE_TURNS.length) % ESCAPE_TURNS.length;
+  // Deterministic rotation by default; a supplied rng SHUFFLES the fan
+  // instead, so two NPCs meeting head-on never pick mirrored moves in
+  // lockstep (Lucas: "NPC could always use random sequence of moves,
+  // not in the same order (higher chance to go in oposite direction,
+  // not in sync)").
+  const turns = ESCAPE_TURNS.map((_, index) => ESCAPE_TURNS[(index + rotation) % ESCAPE_TURNS.length]!);
+  const rng = options.rng;
+  if (rng !== undefined) {
+    for (let i = turns.length - 1; i > 0; i -= 1) {
+      const j = Math.min(i, Math.max(0, Math.floor(rng() * (i + 1))));
+      const swap = turns[i]!;
+      turns[i] = turns[j]!;
+      turns[j] = swap;
+    }
+  }
+  const forbidden = options.forbidden ?? [];
   const clearOfEveryone = (point: XZPoint): boolean =>
     others.every((other) => Math.hypot(other.x - point.x, other.z - point.z) >= MIN_SEPARATION);
+  const isReturn = (point: XZPoint): boolean =>
+    forbidden.some((spot) => Math.hypot(spot.x - point.x, spot.z - point.z) < RETURN_BLOCK_RADIUS);
 
   for (const distance of ESCAPE_DISTANCES) {
-    for (let i = 0; i < ESCAPE_TURNS.length; i += 1) {
-      const turn = ESCAPE_TURNS[(i + rotation) % ESCAPE_TURNS.length]!;
+    for (const turn of turns) {
       const direction = rotateXZ(unitX, unitZ, turn);
       const point: XZPoint = {
         x: self.x + direction.x * distance,
         z: self.z + direction.z * distance,
       };
+      if (isReturn(point)) continue;
       if (isBlockedAt(point.x, point.z)) continue;
       if (!clearOfEveryone(point)) continue;
       if (capsuleBlocked(self, point, others, ESCAPE_HALF_WIDTH)) continue;

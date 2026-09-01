@@ -7,6 +7,7 @@ import {
   ESCAPE_HALF_WIDTH,
   ESCAPE_TURNS,
   MIN_SEPARATION,
+  RETURN_BLOCK_RADIUS,
   arrivalClearOf,
   blockerAhead,
   capsuleBlocked,
@@ -24,7 +25,14 @@ const neverBlocked = (): boolean => false;
 
 describe("walkBlockedAhead (C-48 v2 stop-at-distance)", () => {
   it("sees a walker dead ahead inside the lookahead", () => {
-    expect(walkBlockedAhead(point(0, 0), 0, 1, [point(0, 1)])).toBe(true);
+    expect(walkBlockedAhead(point(0, 0), 0, 1, [point(0, 0.6)])).toBe(true);
+  });
+
+  it("does not stop for someone still further off than the separation floor", () => {
+    // The stop distance sits UNDER MIN_SEPARATION on purpose: at 1 m
+    // the two have not met yet, and stopping there denies the
+    // separation constraint the chance to slide them past each other.
+    expect(walkBlockedAhead(point(0, 0), 0, 1, [point(0, 1)])).toBe(false);
   });
 
   it("ignores a clear line, side traffic, and people behind", () => {
@@ -75,22 +83,22 @@ describe("capsuleBlocked (straight-line clearance)", () => {
 
 describe("escapeWaypoint (C-48 v3 loop that never gives up)", () => {
   it("leads with the walker's own right when the way is clear", () => {
-    const escape = escapeWaypoint(point(0, 0), 0, 1, 0, [], neverBlocked);
+    const escape = escapeWaypoint(point(0, 0), 0, 1, [], neverBlocked, { attempt: 0 });
     expect(escape).not.toBeNull();
     expect(escape!.x).toBeGreaterThan(0);
     expect(escape!.z).toBeGreaterThan(0);
   });
 
   it("leads elsewhere on the next attempt (the fan rotates)", () => {
-    const first = escapeWaypoint(point(0, 0), 0, 1, 0, [], neverBlocked)!;
-    const second = escapeWaypoint(point(0, 0), 0, 1, 1, [], neverBlocked)!;
+    const first = escapeWaypoint(point(0, 0), 0, 1, [], neverBlocked, { attempt: 0 })!;
+    const second = escapeWaypoint(point(0, 0), 0, 1, [], neverBlocked, { attempt: 1 })!;
     expect(second.x).toBeLessThan(0);
     expect(Math.hypot(second.x - first.x, second.z - first.z)).toBeGreaterThan(0.5);
   });
 
   it("goes BACKWARD when everything forward and sideways is blocked", () => {
     // Lucas: "movement in new direction, even opposite direction if needed".
-    const escape = escapeWaypoint(point(0, 0), 0, 1, 0, [], (_x, z) => z > -0.1);
+    const escape = escapeWaypoint(point(0, 0), 0, 1, [], (_x, z) => z > -0.1, { attempt: 0 });
     expect(escape).not.toBeNull();
     expect(escape!.z).toBeLessThan(0);
   });
@@ -102,7 +110,7 @@ describe("escapeWaypoint (C-48 v3 loop that never gives up)", () => {
       const angle = (i / 8) * Math.PI * 2;
       return point(Math.cos(angle) * 0.85, Math.sin(angle) * 0.85);
     });
-    const escape = escapeWaypoint(point(0, 0), 0, 1, 0, ring, neverBlocked);
+    const escape = escapeWaypoint(point(0, 0), 0, 1, ring, neverBlocked, { attempt: 0 });
     expect(escape).not.toBeNull();
     // Dead centre of a symmetric ring: back the way it came.
     expect(escape!.z).toBeLessThan(0);
@@ -110,15 +118,45 @@ describe("escapeWaypoint (C-48 v3 loop that never gives up)", () => {
 
   it("steps away from the crowd centroid when jammed off-centre", () => {
     const crowd = [point(0.5, 0.2), point(0.6, -0.3), point(0.55, 0.7), point(0.2, 0.5)];
-    const escape = escapeWaypoint(point(0, 0), 0, 1, 0, crowd, neverBlocked);
+    const escape = escapeWaypoint(point(0, 0), 0, 1, crowd, neverBlocked, { attempt: 0 });
     expect(escape).not.toBeNull();
     // Every candidate leads away from the mass on its right/front.
     expect(escape!.x).toBeLessThanOrEqual(0.05);
   });
 
+  it("never steps back into a spot it just retreated from", () => {
+    // Lucas: "they go back, and going forth in the same place should be
+    // blocked, npc need to rotate in different angle."
+    const open = escapeWaypoint(point(0, 0), 0, 1, [], neverBlocked, { attempt: 0 })!;
+    const avoided = escapeWaypoint(point(0, 0), 0, 1, [], neverBlocked, {
+      attempt: 0,
+      forbidden: [open],
+    })!;
+    expect(avoided).not.toBeNull();
+    expect(Math.hypot(avoided.x - open.x, avoided.z - open.z)).toBeGreaterThanOrEqual(RETURN_BLOCK_RADIUS);
+  });
+
+  it("shuffles the fan per NPC so two of them cannot mirror each other", () => {
+    // Lucas: "NPC could always use random sequence of moves, not in the
+    // same order (higher chance to go in oposite direction, not in sync)".
+    const roll = (seed: number) => {
+      let s = seed >>> 0;
+      return () => {
+        s = (s * 1664525 + 1013904223) >>> 0;
+        return s / 0x1_0000_0000;
+      };
+    };
+    const picks = new Set<string>();
+    for (let seed = 1; seed <= 12; seed += 1) {
+      const escape = escapeWaypoint(point(0, 0), 0, 1, [], neverBlocked, { attempt: 1, rng: roll(seed) })!;
+      picks.add(`${escape.x.toFixed(2)},${escape.z.toFixed(2)}`);
+    }
+    expect(picks.size).toBeGreaterThan(1);
+  });
+
   it("returns null only when even the last resort is furniture", () => {
-    expect(escapeWaypoint(point(0, 0), 0, 1, 0, [point(0.4, 0.4)], () => true)).toBeNull();
-    expect(escapeWaypoint(point(0, 0), 0, 0, 0, [], neverBlocked)).toBeNull();
+    expect(escapeWaypoint(point(0, 0), 0, 1, [point(0.4, 0.4)], () => true, { attempt: 0 })).toBeNull();
+    expect(escapeWaypoint(point(0, 0), 0, 0, [], neverBlocked, { attempt: 0 })).toBeNull();
   });
 });
 
@@ -166,7 +204,10 @@ describe("arrivalClearOf (C-48 arrival placement)", () => {
 describe("C-48 v3 constants", () => {
   it("exposes the tuned policy values", () => {
     expect(MIN_SEPARATION).toBe(0.8);
-    expect(BLOCKED_LOOKAHEAD).toBe(1.1);
+    expect(BLOCKED_LOOKAHEAD).toBe(0.75);
+    // The stop distance must stay under the separation floor, or NPCs
+    // halt before sliding past each other can ever engage.
+    expect(BLOCKED_LOOKAHEAD).toBeLessThan(MIN_SEPARATION);
     expect(BLOCKED_HALF_WIDTH).toBe(0.5);
     expect(ESCAPE_HALF_WIDTH).toBe(0.4);
     expect(BLOCKED_PROGRESS_RATIO).toBe(0.25);
