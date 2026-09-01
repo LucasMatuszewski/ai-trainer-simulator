@@ -486,16 +486,16 @@ export const WORLD_ROOMS: WorldRoom[] = [
       // side of the room) and x=23 (east side), both 0.5m off the
       // south wall. The stalls are 1.2m wide so the east one is
       // shifted slightly east to fit (the room is 5m wide).
-      { type: "toilet-stall", position: [20, 0, 3] },
-      { type: "toilet-stall", position: [23, 0, 3] },
+      { type: "toilet-stall", position: [20.6, 0, 2.9] },
+      { type: "toilet-stall", position: [21.6, 0, 2.9] },
       // Washbasin on the NORTH wall (z=7), right by the door so
       // you wash your hands on the way out. The basin faces -Z
       // (toward the user standing in the room).
-      { type: "toilet-sink", position: [22, 0, 6.7] },
+      { type: "toilet-sink", position: [22, 0, 6.7], rotationY: Math.PI  },
       // Urinal on the EAST wall (x=24), facing the user. Sits
       // against the wall, between the two stalls (z=3) and the
       // washbasin (z=6.7). Mounted at y=0.4-1.1, faces -X.
-      { type: "urinal", position: [23.5, 0, 5], rotationY: Math.PI / 2 },
+      { type: "urinal", position: [23.5, -0.4, 2] },
     ],
     signs: [
       // "WC" sign on the kitchen side of the doorway (mounted on
@@ -503,10 +503,10 @@ export const WORLD_ROOMS: WorldRoom[] = [
       // the kitchen so the player sees it from inside the kitchen).
       // Position is on the toilet's north wall face to keep the
       // sign visible from the kitchen.
-      { text: "WC", position: [20.5, 2.2, 6.85], face: Math.PI, color: 0x4477aa, size: [0.5, 0.5] },
+      { text: "WC", position: [20.4, 2.2, 6.85], face: Math.PI, color: 0x4477aa, size: [0.5, 0.5] },
       // "OUT OF ORDER" sign on the west stall's door panel - the
       // classic IT Crowd homage.
-      { text: "OUT OF ORDER", position: [20, 1.4, 3.78], face: 0, color: 0xaa3322, size: [0.9, 0.25] },
+      { text: "OUT OF ORDER", position: [20.5, 1.4, 3.74], face: 0, color: 0xaa3322, size: [0.9, 0.25] },
       // A second stall mirror "Please wash your hands" sign on the
       // north wall to the right of the basin.
       { text: "WASH YOUR HANDS", position: [22, 2.4, 6.85], face: Math.PI, color: 0x2e6e3a, size: [1.2, 0.3] },
