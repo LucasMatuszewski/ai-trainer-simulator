@@ -36,9 +36,10 @@ import {
   BLOCKED_PROGRESS_RATIO,
   MIN_SEPARATION,
   arrivalClearOf,
+  blockerAhead,
   escapeWaypoint,
+  givesWayTo,
   separationCorrection,
-  walkBlockedAhead,
 } from "./npc-avoidance";
 import { createInitialIdleState, updateIdle, type IdleState } from "./npc-idle";
 import { planNpcPath } from "./npc-path";
@@ -96,6 +97,15 @@ interface NpcRuntime {
   escapeAttempt: number;
   /** C-48 v3: `blockedFor` value at which the next escape fires. */
   nextEscapeAt: number;
+  /** C-48 v3: who is standing in this NPC's walk line right now. */
+  blockedBy: NpcId | null;
+  /** C-48 v3: seconds of unblocked walking. The escape ladder's memory
+   *  survives short bursts of progress, so repeated collisions with the
+   *  same NPC escalate instead of restarting from rung one. */
+  clearFor: number;
+  /** C-48 v3: how many times this NPC has stood aside for a standoff
+   *  partner. Capped so a stalled partner cannot freeze it forever. */
+  yieldWaits: number;
   /** C-48 v3: where this NPC settled, so a crowd that parted to let a
    *  stuck walker through closes back up afterwards. */
   anchor: { x: number; z: number } | null;
@@ -118,8 +128,19 @@ interface NpcRuntime {
 // real progress.
 const BLOCKED_ARRIVAL_RADIUS = 1.2;
 const BLOCKED_SETTLE_AFTER_S = 1;
-const FIRST_ESCAPE_AFTER_S = 1.2;
+// How long a stopped NPC stands before it tries to get around. This is
+// also the "stop and chat like friends" beat (Lucas, 2026-09-01: "they
+// stop for too short, not natural for a chat with friends, could be
+// just 3-5s longer to finish one dialogue"), so it comfortably covers
+// a full starter + response exchange.
+const CHAT_PAUSE_S = 5;
 const ESCAPE_RETRY_S = 1.5;
+// Sustained clear walking needed before the escape ladder forgets what
+// it already tried. Without this, a pair that bumps, backs off and
+// re-approaches resets to rung one every cycle and oscillates forever.
+const ESCAPE_MEMORY_S = 3;
+// A standoff partner only gets to hold the lane for so long.
+const MAX_YIELD_WAITS = 2;
 const REPLAN_EVERY_ATTEMPTS = 3;
 // C-48 v3: MIN_SEPARATION alone fences a crowd in - passing between two
 // NPCs needs a 2 x MIN_SEPARATION gap, which a real cluster never has,
@@ -244,8 +265,8 @@ export function createNpcController(
       walkCycle: { distanceTraveled: 0, amplitude: 1 }, target: null, departureDelay: 0,
       kitchenStops: null, kitchenIndex: 0, dwellRemaining: 0, returnEntry: null,
       baseY: npcObjects[npc.id].position.y, velocity: { x: 0, z: 0 },
-      blockedFor: 0, escapeAttempt: 0, nextEscapeAt: FIRST_ESCAPE_AFTER_S, escapeIndex: -1,
-      anchor: null,
+      blockedFor: 0, escapeAttempt: 0, nextEscapeAt: CHAT_PAUSE_S, escapeIndex: -1,
+      anchor: null, blockedBy: null, clearFor: 0, yieldWaits: 0,
     });
   }
 
@@ -360,9 +381,12 @@ export function createNpcController(
     state.velocity = { x: 0, z: 0 };
     state.blockedFor = 0;
     state.escapeAttempt = 0;
-    state.nextEscapeAt = FIRST_ESCAPE_AFTER_S;
+    state.nextEscapeAt = CHAT_PAUSE_S;
     state.escapeIndex = -1;
     state.anchor = null;
+    state.blockedBy = null;
+    state.clearFor = 0;
+    state.yieldWaits = 0;
     object.visible = entry.state !== "gone-home";
     object.userData.npcState = "walking";
     return true;
@@ -504,13 +528,13 @@ export function createNpcController(
     const walkFrames: WalkFrame[] = [];
     // Positions at the start of the frame - the straight-line (capsule)
     // stop check and the detour selector read these.
-    const snapshot = new Map<NpcId, { x: number; z: number }>();
+    const snapshot = new Map<NpcId, { id: NpcId; x: number; z: number }>();
     for (const npc of npcs) {
       const object = npcObjects[npc.id];
-      if (object.visible) snapshot.set(npc.id, { x: object.position.x, z: object.position.z });
+      if (object.visible) snapshot.set(npc.id, { id: npc.id, x: object.position.x, z: object.position.z });
     }
-    const othersOf = (npcId: NpcId): { x: number; z: number }[] => {
-      const others: { x: number; z: number }[] = [];
+    const othersOf = (npcId: NpcId): { id: NpcId; x: number; z: number }[] => {
+      const others: { id: NpcId; x: number; z: number }[] = [];
       for (const [id, point] of snapshot) {
         if (id !== npcId) others.push(point);
       }
@@ -543,17 +567,17 @@ export function createNpcController(
       // each other and chat instead of pressing together - and the
       // blocked ladder in pass 4 re-routes afterwards.
       const nextWaypoint = state.path[state.segmentIndex + 1];
+      state.blockedBy = nextWaypoint === undefined ? null : blockerAhead(
+        { x: object.position.x, z: object.position.z },
+        nextWaypoint.x - object.position.x,
+        nextWaypoint.z - object.position.z,
+        othersOf(npc.id),
+      ) as NpcId | null;
       // While an escape leg is pending, the stop check is suspended for
       // this NPC: the escape exists precisely to break a jam, and the
       // rule that triggered it must not freeze it. Hard separation
       // still keeps everyone MIN_SEPARATION apart.
-      const blockedByCapsule = state.escapeIndex < 0 && nextWaypoint !== undefined &&
-        walkBlockedAhead(
-          { x: object.position.x, z: object.position.z },
-          nextWaypoint.x - object.position.x,
-          nextWaypoint.z - object.position.z,
-          othersOf(npc.id),
-        );
+      const blockedByCapsule = state.escapeIndex < 0 && state.blockedBy !== null;
       if (blockedByCapsule) {
         state.velocity = { x: 0, z: 0 };
         walkFrames.push({ npc, before: object.position.clone(), movementDt });
@@ -590,7 +614,7 @@ export function createNpcController(
     const isEscaping = (npcId: NpcId): boolean => {
       const state = runtime.get(npcId)!;
       return state.path !== null &&
-        (state.escapeIndex >= 0 || state.blockedFor >= FIRST_ESCAPE_AFTER_S);
+        (state.escapeIndex >= 0 || state.blockedFor >= CHAT_PAUSE_S);
     };
     for (let iteration = 0; iteration < 2; iteration += 1) {
       for (let i = 0; i < npcs.length; i += 1) {
@@ -668,12 +692,21 @@ export function createNpcController(
       const blocked = expected > 0 && moved < expected * BLOCKED_PROGRESS_RATIO;
       if (!blocked) {
         state.blockedFor = 0;
-        state.escapeAttempt = 0;
-        state.nextEscapeAt = FIRST_ESCAPE_AFTER_S;
+        state.nextEscapeAt = CHAT_PAUSE_S;
+        // The ladder REMEMBERS across short bursts of movement: only
+        // sustained clear walking wipes it. Resetting on any progress
+        // is what let a pair bump, back off, re-approach and repeat the
+        // identical rung forever.
+        state.clearFor += frame.movementDt;
+        if (state.clearFor >= ESCAPE_MEMORY_S) {
+          state.escapeAttempt = 0;
+          state.yieldWaits = 0;
+        }
         // The escape leg is done once the NPC has walked past it.
         if (state.escapeIndex >= 0 && state.segmentIndex >= state.escapeIndex) state.escapeIndex = -1;
         continue;
       }
+      state.clearFor = 0;
       state.blockedFor += frame.movementDt;
       const target = state.path[state.path.length - 1]!;
       const distanceToTarget = Math.hypot(target.x - object.position.x, target.z - object.position.z);
@@ -683,6 +716,21 @@ export function createNpcController(
         continue;
       }
       if (state.blockedFor < state.nextEscapeAt) continue;
+      // Head-on standoff: exactly one of the pair steps aside. Both
+      // acting at once is a perfect mirror - they retreat together and
+      // re-approach together, forever. The other one holds the lane
+      // (and keeps chatting), capped so a stalled partner cannot freeze
+      // it for good.
+      const blockerId = state.blockedBy;
+      const partner = blockerId === null ? undefined : runtime.get(blockerId);
+      if (
+        blockerId !== null && partner?.blockedBy === frame.npc.id &&
+        !givesWayTo(frame.npc.id, blockerId) && state.yieldWaits < MAX_YIELD_WAITS
+      ) {
+        state.yieldWaits += 1;
+        state.nextEscapeAt = state.blockedFor + ESCAPE_RETRY_S;
+        continue;
+      }
       // The loop that never gives up. The attempt counter advances
       // whether or not the attempt succeeds, so a failed escape can
       // never swallow the escalation (v2's deadlock), and the retry is

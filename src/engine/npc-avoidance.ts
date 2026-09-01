@@ -69,6 +69,10 @@ export interface XZPoint {
   z: number;
 }
 
+export interface IdentifiedPoint extends XZPoint {
+  id: string;
+}
+
 export interface SeparationCorrection {
   /** Unit axis pointing FROM a TOWARD b. */
   nx: number;
@@ -105,9 +109,38 @@ export function capsuleBlocked(
   return false;
 }
 
-/** True when the straight walk line from `self` along (forwardX, forwardZ)
- *  is occupied within BLOCKED_LOOKAHEAD. Only NPCs actually in front
- *  (positive projection) count. */
+/** The NEAREST NPC standing in the straight walk line from `self`
+ *  along (forwardX, forwardZ), within `lookahead`. Only NPCs actually
+ *  in front (positive projection) count. */
+function nearestBlocker<T extends XZPoint>(
+  self: XZPoint,
+  forwardX: number,
+  forwardZ: number,
+  others: readonly T[],
+  lookahead: number,
+  halfWidth: number,
+): T | null {
+  const length = Math.hypot(forwardX, forwardZ);
+  if (length <= 1e-6) return null;
+  const unitX = forwardX / length;
+  const unitZ = forwardZ / length;
+  let best: T | null = null;
+  let bestAlong = Infinity;
+  for (const other of others) {
+    const dx = other.x - self.x;
+    const dz = other.z - self.z;
+    const along = dx * unitX + dz * unitZ;
+    if (along <= 0.01 || along > lookahead) continue;
+    if (Math.abs(dx * unitZ - dz * unitX) >= halfWidth) continue;
+    if (along < bestAlong) {
+      bestAlong = along;
+      best = other;
+    }
+  }
+  return best;
+}
+
+/** True when the straight walk line from `self` is occupied. */
 export function walkBlockedAhead(
   self: XZPoint,
   forwardX: number,
@@ -116,22 +149,39 @@ export function walkBlockedAhead(
   lookahead: number = BLOCKED_LOOKAHEAD,
   halfWidth: number = BLOCKED_HALF_WIDTH,
 ): boolean {
-  const length = Math.hypot(forwardX, forwardZ);
-  if (length <= 1e-6) return false;
-  const unitX = forwardX / length;
-  const unitZ = forwardZ / length;
-  const inFront = others.filter((other) => {
-    const dx = other.x - self.x;
-    const dz = other.z - self.z;
-    return dx * unitX + dz * unitZ > 0.01;
-  });
-  if (inFront.length === 0) return false;
-  return capsuleBlocked(
-    self,
-    { x: self.x + unitX * lookahead, z: self.z + unitZ * lookahead },
-    inFront,
-    halfWidth,
-  );
+  return nearestBlocker(self, forwardX, forwardZ, others, lookahead, halfWidth) !== null;
+}
+
+/** WHO is standing in the walk line - the controller needs the id to
+ *  spot a mutual standoff (I am blocked by you, you are blocked by
+ *  me), which is the case that needs a tie-break rather than two
+ *  identical escapes. */
+export function blockerAhead(
+  self: XZPoint,
+  forwardX: number,
+  forwardZ: number,
+  others: readonly IdentifiedPoint[],
+  lookahead: number = BLOCKED_LOOKAHEAD,
+  halfWidth: number = BLOCKED_HALF_WIDTH,
+): string | null {
+  return nearestBlocker(self, forwardX, forwardZ, others, lookahead, halfWidth)?.id ?? null;
+}
+
+/**
+ * Head-on tie-break: which of a blocked pair steps aside.
+ *
+ * Two NPCs blocking each other are a perfect mirror - identical rule,
+ * identical timing - so both escape at the same instant, both come
+ * back, and they oscillate in sync forever (Lucas, 2026-09-01: "they
+ * loop over and over by getting back few steps, stopping, and getting
+ * back again to the exact same place ... both do the same in the loop,
+ * almost in sync"). Exactly ONE of the pair must move, so the rule is
+ * antisymmetric by construction: `givesWayTo(a, b) !== givesWayTo(b, a)`
+ * for any two distinct ids. The one that gives way steps aside; the
+ * other holds still (and keeps chatting) until the lane clears.
+ */
+export function givesWayTo(selfId: string, otherId: string): boolean {
+  return selfId.localeCompare(otherId) > 0;
 }
 
 /** Rotate (x, z) by `turn` radians; positive turns toward the walker's

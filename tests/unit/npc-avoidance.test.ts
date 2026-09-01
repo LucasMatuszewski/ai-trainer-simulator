@@ -8,8 +8,10 @@ import {
   ESCAPE_TURNS,
   MIN_SEPARATION,
   arrivalClearOf,
+  blockerAhead,
   capsuleBlocked,
   escapeWaypoint,
+  givesWayTo,
   separationCorrection,
   walkBlockedAhead,
   type XZPoint,
@@ -37,6 +39,22 @@ describe("walkBlockedAhead (C-48 v2 stop-at-distance)", () => {
 
   it("does not block a stationary walker", () => {
     expect(walkBlockedAhead(point(0, 0), 0, 0, [point(0, 0.5)])).toBe(false);
+  });
+});
+
+describe("blockerAhead / givesWayTo (C-48 v3 standoff tie-break)", () => {
+  it("names the nearest NPC in the walk line, and nobody when clear", () => {
+    const others = [{ id: "far", x: 0, z: 1 }, { id: "near", x: 0.1, z: 0.5 }];
+    expect(blockerAhead(point(0, 0), 0, 1, others)).toBe("near");
+    expect(blockerAhead(point(0, 0), 0, 1, [{ id: "aside", x: 2, z: 1 }])).toBeNull();
+    expect(blockerAhead(point(0, 0), 0, 1, [{ id: "behind", x: 0, z: -1 }])).toBeNull();
+  });
+
+  it("is antisymmetric, so exactly one of a pair steps aside", () => {
+    // Both acting is the mirror that made them oscillate in sync.
+    for (const [a, b] of [["bartek", "kasia"], ["ania", "zosia"], ["burek", "dawid"]]) {
+      expect(givesWayTo(a!, b!)).not.toBe(givesWayTo(b!, a!));
+    }
   });
 });
 

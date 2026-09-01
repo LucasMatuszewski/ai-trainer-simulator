@@ -158,7 +158,10 @@ export function createBubbleSystem(scene: THREE.Scene): BubbleHandle {
       slot.material.needsUpdate = true;
       slot.speakerPosition = position;
       slot.elapsed = 0;
-      slot.lifetime = 4 + Math.random() * 2;
+      // 6-8 s: long enough that the starter is still readable when the
+      // reply lands at RESPONSE_DELAY_S (3.8 s) and the pair reads as
+      // one exchange (Lucas, 2026-09-01).
+      slot.lifetime = 6 + Math.random() * 2;
       slot.sprite.position.set(position.x, position.y + 1.7, position.z);
       slot.sprite.visible = true;
     },

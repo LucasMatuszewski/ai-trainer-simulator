@@ -5,7 +5,7 @@ import { LUNCH_DIALOGUES_HUMAN } from "../../src/content/lunch-dialogues";
 import { KITCHEN_STOP_DWELL, type Period } from "../../src/content/npc-schedule";
 import { NPCS } from "../../src/content/npcs";
 import { advanceAlongPath, createNpcController, nextBarkDelay } from "../../src/engine/npc-controller";
-import { PAIR_COOLDOWN_S, roomAt } from "../../src/engine/chatter";
+import { PAIR_COOLDOWN_S, RESPONSE_DELAY_S, roomAt } from "../../src/engine/chatter";
 import { MIN_SEPARATION } from "../../src/engine/npc-avoidance";
 import type { NPC, NpcId } from "../../src/types";
 
@@ -418,6 +418,86 @@ describe("createNpcController", () => {
         expect(distance).toBeGreaterThanOrEqual(MIN_SEPARATION - 0.05);
       }
     }
+  });
+
+  it("a head-on pair in a narrow lane resolves without oscillating (C-48 v3)", () => {
+    // Reported: "they loop over and over by getting back few steps,
+    // stopping, and getting back again to the exact same place they
+    // come from ... both do the same in the loop, almost in sync".
+    // Two flanking NPCs make the lane too narrow to sidestep, so the
+    // only escape is backwards - which both used to take at the same
+    // instant, forever.
+    const ids: NpcId[] = ["bartek", "kasia", "zosia", "pawel"];
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ids) objects[id] = makeObject(id);
+    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, lcg(5));
+    controller.update(0);
+    for (const [id, z] of [["zosia", 1], ["pawel", -1]] as [NpcId, number][]) {
+      objects[id]!.position.set(14, 0, z);
+      controller.setOverride(id, { position: { x: 14, y: 0, z }, face: 0, state: "at-desk" });
+    }
+    for (let step = 0; step < 400; step += 1) controller.update(0.25);
+    objects.bartek.position.set(11.5, 0, 0);
+    objects.kasia.position.set(16.5, 0, 0);
+    controller.setOverride("bartek", { position: { x: 16.5, y: 0, z: 0 }, face: 0, state: "at-desk" });
+    controller.setOverride("kasia", { position: { x: 11.5, y: 0, z: 0 }, face: 0, state: "at-desk" });
+
+    const walkers: NpcId[] = ["bartek", "kasia"];
+    const reversals: Record<string, number> = { bartek: 0, kasia: 0 };
+    const lastDirection: Record<string, number> = { bartek: 0, kasia: 0 };
+    const previousX: Record<string, number> = { bartek: 11.5, kasia: 16.5 };
+    for (let step = 0; step < 5400; step += 1) {
+      controller.update(1 / 30);
+      for (const id of walkers) {
+        const x = objects[id]!.position.x;
+        const direction = Math.sign(Math.round((x - previousX[id]!) * 1000));
+        if (direction !== 0 && lastDirection[id] !== 0 && direction !== lastDirection[id]) reversals[id]! += 1;
+        if (direction !== 0) lastDirection[id] = direction;
+        previousX[id] = x;
+      }
+    }
+
+    // Both get where they were going...
+    expect(objects.bartek.userData.npcState).toBe("at-desk");
+    expect(objects.kasia.userData.npcState).toBe("at-desk");
+    expect(objects.bartek.position.x).toBeGreaterThan(16);
+    expect(objects.kasia.position.x).toBeLessThan(12);
+    // ...and they pass each other instead of pacing back and forth.
+    // One of the pair gives way, so its couple of steps back are
+    // expected; the pair total was 18 before the tie-break.
+    expect(reversals.bartek! + reversals.kasia!).toBeLessThanOrEqual(6);
+  });
+
+  it("holds the stop long enough to finish a starter + response exchange (C-48 v3)", () => {
+    // Lucas: "they stop for too short, not natural for a chat with
+    // friends, could be just 3-5s longer to finish one dialogue".
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ["bartek", "kasia"] as NpcId[]) objects[id] = makeObject(id);
+    const controller = createNpcController(
+      (["bartek", "kasia"] as NpcId[]).map((id) => npc(id)), objects, () => "morning", () => 1, lcg(2),
+    );
+    controller.update(0);
+    objects.kasia.position.set(14, 0, 0);
+    controller.setOverride("kasia", { position: { x: 14, y: 0, z: 0 }, face: 0, state: "at-desk" });
+    for (let step = 0; step < 400; step += 1) controller.update(0.25);
+    objects.bartek.position.set(11.5, 0, 0);
+    controller.setOverride("bartek", { position: { x: 17, y: 0, z: 0 }, face: 0, state: "at-desk" });
+
+    // Walk up to her, then measure the longest continuous standstill.
+    let longestPause = 0;
+    let currentPause = 0;
+    let previous = objects.bartek.position.clone();
+    for (let step = 0; step < 900; step += 1) {
+      controller.update(1 / 30);
+      const moved = objects.bartek.position.distanceTo(previous);
+      previous = objects.bartek.position.clone();
+      if (objects.bartek.userData.npcState !== "walking") break;
+      currentPause = moved < 1e-4 ? currentPause + 1 / 30 : 0;
+      longestPause = Math.max(longestPause, currentPause);
+    }
+    // A full exchange is the starter plus a reply RESPONSE_DELAY_S
+    // later; the stop must outlast it rather than cutting it off.
+    expect(longestPause).toBeGreaterThan(RESPONSE_DELAY_S + 0.5);
   });
 
   it("a fully surrounded NPC still gets out - the crowd parts, then closes (C-48 v3)", () => {

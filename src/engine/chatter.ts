@@ -39,8 +39,12 @@ export type RoomId =
 /** Max distance between two NPCs for a conversation to fire. */
 export const CHATTER_RADIUS = 2.5;
 
-/** Seconds between the starter bubble and the partner's response. */
-export const RESPONSE_DELAY_S = 2.2;
+/** Seconds between the starter bubble and the partner's response.
+ *  Raised 2.2 -> 3.8 on 2026-09-01 (Lucas: "response is displayed also
+ *  too fast, we should delay 1-2s more, so that user manage to read
+ *  first message"). The bubble lifetime in bubbles.ts is longer than
+ *  this, so the starter is still on screen when the reply lands. */
+export const RESPONSE_DELAY_S = 3.8;
 
 /** Seconds a finished pair waits before it may talk again. */
 export const PAIR_COOLDOWN_S = 40;
