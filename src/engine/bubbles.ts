@@ -32,11 +32,25 @@ export interface BubbleHandle {
  * the distance", the bubbles must use the same method. No frame or
  * background: just the text (Lucas allowed dropping them), set apart
  * from the ivory labels by a pale-blue tint.
+ *
+ * C-61 amendment (Lucas): one bubble per speaker (a new line replaces
+ * the speaker's previous one - Sims/UO style) and screen-space
+ * push-apart: when two bubbles would overlap, the newer one lifts
+ * above the older for as long as the overlap lasts, then settles back
+ * down. That is the classic MMO overhead-chat solution.
  */
-const BUBBLE_POOL_SIZE = 4;
+const BUBBLE_POOL_SIZE = 6;
 
 /** Bubble anchor above the speaker's feet (hover label sits at 2.1). */
 const ANCHOR_HEIGHT = 1.7;
+
+/** Text metrics for the push-apart estimate. VT323 at 26px advances
+ *  ~11.5px per glyph; lines are 29px tall. Estimates only - the rects
+ *  exist to keep bubbles apart, not to be pixel-perfect. */
+const CHAR_PX = 11.5;
+const LINE_PX = 29;
+const GAP_PX = 6;
+const MAX_LIFT_PX = 140;
 
 export function pickLine(lines: ReadonlyArray<string>, rng: () => number): string {
   if (lines.length === 0) return "";
@@ -71,6 +85,8 @@ interface BubbleSlot {
    *  every frame with the view (behind-camera bubbles hide but stay
    *  busy, exactly like the old invisible sprites did). */
   active: boolean;
+  /** The speaker this slot belongs to (their live position vector).
+   *  A speaker's next line reuses their slot - one bubble per head. */
   speakerPosition: THREE.Vector3 | null;
   elapsed: number;
   lifetime: number;
@@ -99,6 +115,13 @@ function defaultCanvas(): HTMLCanvasElement | null {
   return document.querySelector<HTMLCanvasElement>("#game-canvas");
 }
 
+/** Estimated on-screen size of a fitted bubble (see CHAR_PX/LINE_PX). */
+function estimateRect(text: string): { w: number; h: number } {
+  const rows = text.split("\n");
+  const widest = Math.max(...rows.map((row) => row.length));
+  return { w: widest * CHAR_PX, h: rows.length * LINE_PX };
+}
+
 export function createBubbleSystem(
   _scene: THREE.Scene,
   parent: HTMLElement | null = typeof document === "undefined" ? null : document.body,
@@ -120,9 +143,11 @@ export function createBubbleSystem(
   let layerVisible = true;
   let projectionCamera: THREE.Camera | null = null;
   const projected = new THREE.Vector3();
+  const slotBySpeaker = new WeakMap<THREE.Vector3, BubbleSlot>();
 
   const clearSlot = (slot: BubbleSlot): void => {
     slot.active = false;
+    if (slot.speakerPosition !== null) slotBySpeaker.delete(slot.speakerPosition);
     slot.speakerPosition = null;
     slot.elapsed = 0;
     slot.el.hidden = true;
@@ -134,6 +159,7 @@ export function createBubbleSystem(
       const safeDt = Math.max(0, dt);
       const effectiveCamera = projectionCamera ?? camera;
       const rect = canvas?.getBoundingClientRect?.() ?? null;
+      const placed: Array<{ slot: BubbleSlot; x: number; y: number; w: number; h: number }> = [];
       for (const slot of slots) {
         if (!slot.active || slot.speakerPosition === null) continue;
         slot.elapsed += safeDt;
@@ -157,14 +183,61 @@ export function createBubbleSystem(
         }
         const x = (projected.x * 0.5 + 0.5) * rect.width;
         const y = (-projected.y * 0.5 + 0.5) * rect.height;
-        slot.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
-        slot.el.style.opacity = String(Math.min(1, Math.max(0, (slot.lifetime - slot.elapsed) / 0.5)));
-        slot.el.hidden = false;
+        const size = estimateRect(slot.el.textContent ?? "");
+        placed.push({ slot, x, y, w: size.w, h: size.h });
+      }
+
+      // Push-apart: older bubbles keep their place, newer ones lift
+      // above any overlap (UO-style stacking). Offsets are recomputed
+      // every frame, so a lifted bubble settles back down as soon as
+      // the crowd clears. Horizontal proximity gates the lift - two
+      // bubbles at opposite ends of the office never touch.
+      placed.sort((a, b) => b.slot.elapsed - a.slot.elapsed);
+      const lifts = new Map<BubbleSlot, number>();
+      for (let i = 1; i < placed.length; i += 1) {
+        const current = placed[i]!;
+        let lift = 0;
+        for (let iter = 0; iter < 4; iter += 1) {
+          let need = 0;
+          for (let j = 0; j < i; j += 1) {
+            const other = placed[j]!;
+            const otherLift = lifts.get(other.slot) ?? 0;
+            const horizontalOverlap =
+              Math.abs(current.x - other.x) < (current.w + other.w) / 2 + GAP_PX;
+            if (!horizontalOverlap) continue;
+            const otherTop = other.y - otherLift - other.h;
+            const currentBottom = current.y - lift;
+            if (currentBottom < otherTop - GAP_PX) continue;
+            need = Math.max(need, currentBottom - otherTop + GAP_PX);
+          }
+          if (need <= 0) break;
+          lift = Math.min(lift + need, MAX_LIFT_PX);
+        }
+        if (lift > 0) lifts.set(current.slot, lift);
+      }
+
+      for (const entry of placed) {
+        const lift = lifts.get(entry.slot) ?? 0;
+        entry.slot.el.style.transform =
+          `translate(${entry.x}px, ${entry.y - lift}px) translate(-50%, -100%)`;
+        entry.slot.el.style.opacity = String(
+          Math.min(1, Math.max(0, (entry.slot.lifetime - entry.slot.elapsed) / 0.5)),
+        );
+        entry.slot.el.hidden = false;
       }
     },
     show: (position, line) => {
       if (destroyed) return;
-      const slot = pickRecyclableSlot(slots);
+      // One bubble per speaker: their new line replaces the old one.
+      const owned = slotBySpeaker.get(position);
+      const slot = owned ?? pickRecyclableSlot(slots);
+      if (owned === undefined) {
+        slotBySpeaker.set(position, slot);
+        // The recycled slot may still belong to another speaker.
+        if (slot.speakerPosition !== null && slot.speakerPosition !== position) {
+          slotBySpeaker.delete(slot.speakerPosition);
+        }
+      }
       slot.active = true;
       slot.speakerPosition = position;
       slot.elapsed = 0;

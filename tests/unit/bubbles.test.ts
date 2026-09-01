@@ -167,4 +167,57 @@ describe("bubble system DOM (C-61)", () => {
     expect(texts).toEqual(["three", "four"]);
     system.destroy();
   });
+
+  it("a speaker's new line replaces their previous bubble (one per head)", () => {
+    const system = createBubbleSystem(new THREE.Scene(), parent, makeCanvas());
+    const camera = makeCamera();
+    const speaker = new THREE.Vector3(0, 0, -5);
+    system.show(speaker, "first line");
+    system.show(speaker, "second line");
+    system.update(0.016, camera);
+    const visible = [...parent.querySelectorAll<HTMLElement>(".npc-bubble")]
+      .filter((el) => !el.hidden);
+    expect(visible.length).toBe(1);
+    expect(visible[0]!.textContent).toBe("second line");
+    system.destroy();
+  });
+
+  it("two speakers at the same spot push apart vertically (newer lifts)", () => {
+    const system = createBubbleSystem(new THREE.Scene(), parent, makeCanvas());
+    const camera = makeCamera();
+    // Oldest bubble first (low elapsed = shown first), then a crowd at
+    // the same projected spot - each newer one must land ABOVE the
+    // older ones, not on top of them.
+    system.show(new THREE.Vector3(0, 0, -5), "oldest");
+    system.update(0.1, camera);
+    system.show(new THREE.Vector3(0, 0, -5), "second");
+    system.update(0.1, camera);
+    system.show(new THREE.Vector3(0, 0, -5), "newest");
+    system.update(0.016, camera);
+    const ys = [...parent.querySelectorAll<HTMLElement>(".npc-bubble")]
+      .filter((el) => !el.hidden)
+      .map((el) => Number(/translate\(-?[\d.]+px,\s*(-?[\d.]+)px\)/.exec(el.style.transform)![1]));
+    expect(ys.length).toBe(3);
+    // Newest is furthest up (smallest y), oldest stays at the anchor.
+    expect(ys[2]!).toBeLessThan(ys[1]!);
+    expect(ys[1]!).toBeLessThan(ys[0]!);
+    system.destroy();
+  });
+
+  it("distant bubbles do not lift each other (no false push)", () => {
+    const system = createBubbleSystem(new THREE.Scene(), parent, makeCanvas());
+    const camera = makeCamera();
+    // Same projected row but far apart horizontally (one of them
+    // projects off-screen left, x < 0): both keep their base anchor y.
+    system.show(new THREE.Vector3(-6, 0, -5), "left speaker");
+    system.update(0.1, camera);
+    system.show(new THREE.Vector3(6, 0, -5), "right speaker");
+    system.update(0.016, camera);
+    const ys = [...parent.querySelectorAll<HTMLElement>(".npc-bubble")]
+      .filter((el) => !el.hidden)
+      .map((el) => Number(/translate\(-?[\d.]+px,\s*(-?[\d.]+)px\)/.exec(el.style.transform)![1]));
+    expect(ys.length).toBe(2);
+    expect(ys[1]!).toBeCloseTo(ys[0]!, 0);
+    system.destroy();
+  });
 });

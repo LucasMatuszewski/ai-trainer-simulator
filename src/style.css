@@ -1213,11 +1213,13 @@ html, body {
 /* C-61: inter-NPC speech bubbles are DOM text positioned exactly like
    the hover label above (native-resolution raster, constant size), so
    they stay sharp on any screen. Pale blue tint differentiates them
-   from the ivory labels; no frame or background by design. */
+   from the ivory labels; no frame or background by design. Layer sits
+   UNDER the HUD panels (roster 10 / quest log 11 / prompt 12) so
+   bubbles near a screen edge never cover them. */
 .npc-bubble-layer {
   position: fixed;
   inset: 0;
-  z-index: 55;
+  z-index: 5;
   pointer-events: none;
   overflow: hidden;
 }
