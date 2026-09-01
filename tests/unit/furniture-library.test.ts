@@ -10,6 +10,9 @@ import { makeExecutiveDesk } from "../../src/engine/furniture/executive-desk";
 import { makeGarden, GARDEN_BOUNDS, makeOutdoorScenery } from "../../src/engine/furniture/garden";
 import { makeSofa } from "../../src/engine/furniture/sofa";
 import { makeBookshelf } from "../../src/engine/furniture/bookshelf";
+import { makeToiletStall } from "../../src/engine/furniture/toilet-stall";
+import { makeToiletSink } from "../../src/engine/furniture/toilet-sink";
+import { makeUrinal } from "../../src/engine/furniture/urinal";
 
 function namedChildren(group: THREE.Object3D): string[] {
   return group.children.flatMap((child) =>
@@ -153,5 +156,74 @@ describe("batman emblem (C-44 #4)", () => {
     expect(vi.mocked(context.lineTo)).toHaveBeenCalledTimes(28);
     expect(vi.mocked(context.closePath)).toHaveBeenCalled();
     expect(vi.mocked(context.fill)).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("toilet stall (C-57)", () => {
+  it("builds a stall with partitions, bowl, cistern, and toilet paper", () => {
+    const group = makeToiletStall();
+    // Partitions: left + right + their frame top + bottom.
+    expect(namedChildren(group)).toContain("stall-partition-left");
+    expect(namedChildren(group)).toContain("stall-partition-right");
+    expect(namedChildren(group)).toContain("stall-partition-left-frame-top");
+    expect(namedChildren(group)).toContain("stall-partition-right-frame-top");
+    // Door panel + frame.
+    expect(namedChildren(group)).toContain("stall-door");
+    expect(namedChildren(group)).toContain("stall-door-frame-top");
+    // Toilet bowl + cistern + lid + seat + paper.
+    expect(namedChildren(group)).toContain("toilet-base");
+    expect(namedChildren(group)).toContain("toilet-cistern");
+    expect(namedChildren(group)).toContain("toilet-cistern-top");
+    expect(namedChildren(group)).toContain("toilet-lid");
+    expect(namedChildren(group)).toContain("toilet-seat");
+    expect(namedChildren(group)).toContain("toilet-paper-roll");
+    expect(namedChildren(group)).toContain("toilet-paper-holder");
+    // Sanity: the cistern sits at typical tank height (0.3-0.8m).
+    const cistern = group.getObjectByName("toilet-cistern") as THREE.Mesh;
+    expect(cistern.position.y + 0.3).toBeGreaterThan(0.4);
+    expect(cistern.position.y + 0.3).toBeLessThan(0.9);
+  });
+});
+
+describe("toilet sink (C-57)", () => {
+  it("builds a wall-mounted basin with a mirror, soap dispenser, and paper-towel cabinet", () => {
+    const group = makeToiletSink();
+    // Counter + basin.
+    expect(namedChildren(group)).toContain("toilet-sink-counter");
+    expect(namedChildren(group)).toContain("toilet-sink-bowl");
+    expect(namedChildren(group)).toContain("toilet-sink-bowl-inner");
+    // Faucet: base + post + spout + tip + handle.
+    expect(namedChildren(group)).toContain("toilet-sink-faucet-base");
+    expect(namedChildren(group)).toContain("toilet-sink-faucet-post");
+    expect(namedChildren(group)).toContain("toilet-sink-faucet-spout");
+    // Mirror.
+    expect(namedChildren(group)).toContain("toilet-sink-mirror-frame");
+    expect(namedChildren(group)).toContain("toilet-sink-mirror-glass");
+    // Soap dispenser + paper-towel cabinet.
+    expect(namedChildren(group)).toContain("toilet-sink-soap-body");
+    expect(namedChildren(group)).toContain("toilet-sink-paper-cabinet");
+    // Mirror sits at eye level (1.5-1.9m).
+    const mirror = group.getObjectByName("toilet-sink-mirror-frame") as THREE.Mesh;
+    expect(mirror.position.y).toBeGreaterThan(1.4);
+    expect(mirror.position.y).toBeLessThan(2.0);
+  });
+});
+
+describe("urinal (C-57)", () => {
+  it("builds a wall-mounted urinal with a chrome pipe, rim, drain, and privacy screen", () => {
+    const group = makeUrinal();
+    expect(namedChildren(group)).toContain("urinal-plate");
+    expect(namedChildren(group)).toContain("urinal-bowl-upper");
+    expect(namedChildren(group)).toContain("urinal-bowl-mid");
+    expect(namedChildren(group)).toContain("urinal-bowl-lower");
+    expect(namedChildren(group)).toContain("urinal-rim-front");
+    expect(namedChildren(group)).toContain("urinal-drain");
+    expect(namedChildren(group)).toContain("urinal-pipe-vertical");
+    expect(namedChildren(group)).toContain("urinal-pipe-spout");
+    expect(namedChildren(group)).toContain("urinal-screen");
+    // Bowl is at a realistic height (0.4-1.0m off the floor).
+    const bowl = group.getObjectByName("urinal-bowl-upper") as THREE.Mesh;
+    expect(bowl.position.y).toBeGreaterThan(0.4);
+    expect(bowl.position.y).toBeLessThan(1.0);
   });
 });
