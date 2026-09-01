@@ -91,8 +91,8 @@ function addHumanoidArms(group: THREE.Group, bodyColor: number, x = 0.38): void 
   // rotation pivots the shoulder joint instead of the box's center
   // (was rotating the arm around its waist, looking like a flail).
   group.add(
-    box("arm-left", [0.14, 0.65, 0.16], material, [-x, 1.05, 0], true),
-    box("arm-right", [0.14, 0.65, 0.16], material, [x, 1.05, 0], true),
+    box("arm-left", [0.14, 0.65, 0.16], material, [-x, 0.95, 0], true),
+    box("arm-right", [0.14, 0.65, 0.16], material, [x, 0.95, 0], true),
   );
 }
 
@@ -119,16 +119,16 @@ function createFemaleMesh(bodyColor: number, hairColor: number): THREE.Group {
   const breastGeo = new THREE.SphereGeometry(0.13, 12, 10);
   const leftBreast = new THREE.Mesh(breastGeo, bodyMaterial);
   leftBreast.name = "breast";
-  leftBreast.position.set(-0.13, 0.84, 0.21);
+  leftBreast.position.set(-0.09, 0.84, 0.18);
   leftBreast.scale.set(1, 0.85, 0.7);
   group.add(leftBreast);
   const rightBreast = new THREE.Mesh(breastGeo, bodyMaterial);
   rightBreast.name = "breast";
-  rightBreast.position.set(0.13, 0.84, 0.21);
+  rightBreast.position.set(0.09, 0.84, 0.18);
   rightBreast.scale.set(1, 0.85, 0.7);
   group.add(rightBreast);
   addHumanoidLegs(group);
-  addHumanoidArms(group, bodyColor, 0.22);
+  addHumanoidArms(group, bodyColor, 0.28);
   return group;
 }
 
