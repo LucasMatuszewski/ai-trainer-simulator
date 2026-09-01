@@ -31,10 +31,11 @@ import { applyWithCollision } from "./collision";
 const WALK_SPEED = 4.5; // units per second
 const SPRINT_MULT = 1.8;
 const PLAYER_RADIUS = 0.3; // half-width for AABB collision
-// 0.0025 rad/px made a medium flick swing the view wildly once OS
-// acceleration multiplied the deltas (Lucas: "rotation accelerates
-// suddenly"). 0.0014 keeps slow pans precise and flicks bounded.
-const MOUSE_SENSITIVITY = 0.0014;
+// 0.0025 rad/px is the calibrated baseline feel. The "too hot" spins
+// were the OS acceleration multiplying flicks, not this constant -
+// with unadjustedMovement: true the input is raw, so the original
+// value is right again (halving it made rotation crawl, per Lucas).
+const MOUSE_SENSITIVITY = 0.0025;
 const PITCH_MIN = -0.6; // can look slightly down at the floor
 const PITCH_MAX = 0.4; // can look up at a standing NPC's head
 const EYE_HEIGHT = 1.65; // C-01: 1.65m, standard eye height for FPS-RPG
