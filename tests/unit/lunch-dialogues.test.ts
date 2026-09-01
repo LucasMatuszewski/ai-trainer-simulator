@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { LUNCH_DIALOGUES_HUMAN } from "../../src/content/lunch-dialogues";
+import { LUNCH_CHATTER, LUNCH_DIALOGUES_HUMAN } from "../../src/content/lunch-dialogues";
 import { BUREK_LINES } from "../../src/content/dog-dialogues";
-import { INTER_NPC_LINES } from "../../src/engine/bubbles";
+import { INTER_NPC_LINES } from "../../src/content/office-chatter";
 
 const ASCII = /^[\x20-\x7E]+$/;
 const MAX_HUMAN_LENGTH = 60;
@@ -44,5 +44,17 @@ describe("LUNCH_DIALOGUES_HUMAN", () => {
     for (const line of LUNCH_DIALOGUES_HUMAN) {
       expect(dogPool.has(line)).toBe(false);
     }
+  });
+});
+
+describe("LUNCH_CHATTER (C-46 starter+response exchanges)", () => {
+  it("derives exchanges from the flat pool without dropping lines", () => {
+    const flattened = LUNCH_CHATTER.flatMap((exchange) => [exchange.starter, ...exchange.responses]);
+    expect(flattened).toEqual(LUNCH_DIALOGUES_HUMAN);
+  });
+
+  it("gives most starters 2 responses for randomness", () => {
+    const withTwoResponses = LUNCH_CHATTER.filter((exchange) => exchange.responses.length >= 2);
+    expect(withTwoResponses.length).toBeGreaterThanOrEqual(LUNCH_CHATTER.length - 1);
   });
 });

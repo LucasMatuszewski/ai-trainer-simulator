@@ -1,8 +1,13 @@
 /**
  * Lunch-time kitchen dialogues (PRD C-45, Phase 3.6).
  *
- * Said by human NPCs when both members of a bubble pair are in the
- * "kitchen" state. Authored by a 4-way model contest (2026-08-31):
+ * C-46 (Lucas, 2026-08-31): the pool is now TIME-gated, not
+ * location-gated - during the lunch window all human pairs use these
+ * lines wherever they stand. They are also served as starter +
+ * response exchanges (LUNCH_CHATTER below) so the conversation
+ * system can run its max-2-turns format at lunch too.
+ *
+ * Authored by a 4-way model contest (2026-08-31):
  * grok-4.5, agy / sonnet 4.6, a sonnet subagent, and GLM-5.2 via the
  * opencode CLI (which also contributed the hunger bonus section) -
  * merged quality-first by the orchestrator. Counts follow the relaxed
@@ -13,6 +18,8 @@
  * - plain ASCII only
  * - no duplicates, no overlap with INTER_NPC_LINES or BUREK_LINES
  */
+import type { ChatterExchange } from "./office-chatter";
+
 export const LUNCH_DIALOGUES_HUMAN: string[] = [
   // grok-4.5
   "Works on my machine. That's my lunch too.",
@@ -90,3 +97,19 @@ export const LUNCH_DIALOGUES_HUMAN: string[] = [
   "Skip lunch? I don't have the bandwidth.",
   "Hunger level: production incident.",
 ];
+
+/**
+ * The same lunch pool as starter + response exchanges (C-46): each
+ * flat line becomes either a starter or a response line. Chunking is
+ * deterministic (groups of 3 = starter + 2 responses; a trailing pair
+ * = starter + 1 response) so every authored line is still used
+ * exactly once and the pool-separation tests stay valid.
+ */
+export const LUNCH_CHATTER: readonly ChatterExchange[] = (() => {
+  const exchanges: ChatterExchange[] = [];
+  for (let i = 0; i < LUNCH_DIALOGUES_HUMAN.length; i += 3) {
+    const group = LUNCH_DIALOGUES_HUMAN.slice(i, i + 3);
+    exchanges.push({ starter: group[0]!, responses: group.slice(1) });
+  }
+  return exchanges;
+})();

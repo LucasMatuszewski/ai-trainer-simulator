@@ -1,0 +1,162 @@
+import { describe, expect, it } from "vitest";
+import {
+  PAIR_COOLDOWN_S,
+  pairKey,
+  candidatePairs,
+  pickExchange,
+  pickPair,
+  pickStarter,
+  roomAt,
+  shouldStartExchange,
+  type ChatterCandidate,
+} from "../../src/engine/chatter";
+import { OFFICE_CHATTER } from "../../src/content/office-chatter";
+
+function candidate(id: string, x: number, z: number): ChatterCandidate {
+  return { id, x, z, room: roomAt(x, z) };
+}
+
+describe("roomAt", () => {
+  // Bounds mirror the floor AABBs in src/content/world-layout.ts.
+  it("classifies the main office block", () => {
+    expect(roomAt(0, 0)).toBe("main-office");
+    expect(roomAt(-7.7, -5)).toBe("main-office");
+    expect(roomAt(7.7, 5.5)).toBe("main-office");
+  });
+
+  it("classifies the kitchen (x [9,19], z [-7,7])", () => {
+    expect(roomAt(13, -5.3)).toBe("kitchen");
+    expect(roomAt(14, 1.2)).toBe("kitchen");
+    expect(roomAt(9, -7)).toBe("kitchen");
+    expect(roomAt(19, 7)).toBe("kitchen");
+  });
+
+  it("classifies the training room (x [19,27], z [-19,-3])", () => {
+    expect(roomAt(23, -16.4)).toBe("training");
+    expect(roomAt(21, -15)).toBe("training");
+  });
+
+  it("classifies the CEO office (z < -9, west of the training room)", () => {
+    expect(roomAt(0, -17)).toBe("ceo");
+    expect(roomAt(-5, -12)).toBe("ceo");
+  });
+
+  it("classifies the toilet and meeting room (z >= 9)", () => {
+    expect(roomAt(-16, 14.5)).toBe("toilet");
+    expect(roomAt(-14, 11.5)).toBe("toilet");
+    expect(roomAt(0, 14)).toBe("meeting");
+  });
+
+  it("keeps conversation rooms distinct across the kitchen doorway", () => {
+    expect(roomAt(8, -5)).toBe("main-office");
+    expect(roomAt(10, -5)).toBe("kitchen");
+  });
+});
+
+describe("pairKey", () => {
+  it("is order-independent", () => {
+    expect(pairKey("ania", "bartek")).toBe(pairKey("bartek", "ania"));
+    expect(pairKey("ania", "bartek")).toBe("ania|bartek");
+  });
+});
+
+describe("candidatePairs", () => {
+  const options = (cooldowns: ReadonlyMap<string, number> = new Map(), activeRooms: ReadonlySet<string> = new Set()) => ({
+    cooldowns,
+    now: 100,
+    activeRooms: activeRooms as ReadonlySet<never>,
+  });
+
+  it("returns every pair within the radius, not only the nearest", () => {
+    const candidates = [candidate("a", 0, 0), candidate("b", 1, 0), candidate("c", 2, 0)];
+    const pairs = candidatePairs(candidates, 2.5, options());
+    expect(pairs.map((p) => [p.a, p.b].sort().join("+")).sort()).toEqual(["a+b", "a+c", "b+c"]);
+  });
+
+  it("excludes pairs beyond the radius", () => {
+    const pairs = candidatePairs([candidate("a", 0, 0), candidate("b", 3, 0)], 2.5, options());
+    expect(pairs).toEqual([]);
+  });
+
+  it("excludes pairs that are still cooling down", () => {
+    const candidates = [candidate("a", 0, 0), candidate("b", 1, 0)];
+    const cooldowns = new Map([[pairKey("a", "b"), 100 + PAIR_COOLDOWN_S]]);
+    expect(candidatePairs(candidates, 2.5, options(cooldowns))).toEqual([]);
+    const expired = new Map([[pairKey("a", "b"), 100]]);
+    expect(candidatePairs(candidates, 2.5, options(expired)).length).toBe(1);
+  });
+
+  it("excludes pairs in a room that already hosts a conversation", () => {
+    // a+b in the main office (busy), c+d in the kitchen (free).
+    const candidates = [candidate("a", 0, 0), candidate("b", 1, 0), candidate("c", 13, -5), candidate("d", 14, -5)];
+    const busy = new Set(["main-office"]);
+    expect(candidatePairs(candidates, 2.5, options(new Map(), busy)).map((p) => `${p.a}+${p.b}`)).toEqual(["c+d"]);
+  });
+});
+
+describe("pickPair", () => {
+  it("picks uniformly (rng drives the index)", () => {
+    const pairs = ["first", "second", "third"];
+    expect(pickPair(pairs, () => 0)).toBe("first");
+    expect(pickPair(pairs, () => 0.99)).toBe("third");
+    expect(pickPair([], () => 0.5)).toBeNull();
+  });
+
+  it("does not always return the first pair across the rng space (C-46: not always-nearest)", () => {
+    const pairs = ["first", "second"];
+    const seen = new Set<string>();
+    for (let i = 0; i < 20; i += 1) {
+      const picked = pickPair(pairs, () => i / 20);
+      if (picked !== null) seen.add(picked);
+    }
+    expect(seen.size).toBe(2);
+  });
+});
+
+describe("pickStarter", () => {
+  it("tilts the starter toward the chattier NPC (C-46 weights)", () => {
+    // maciek (CTO, 0.3) vs przemek (Sales, 1.8): with rng -> 0.99 the
+    // roll lands past maciek's 0.3/(0.3+1.8) share, so Sales starts.
+    expect(pickStarter("maciek", "przemek", () => 0.99)).toBe("przemek");
+    // A zero roll always lands on the first NPC's share.
+    expect(pickStarter("maciek", "przemek", () => 0)).toBe("maciek");
+  });
+
+  it("is a fair coin between equal weights", () => {
+    expect(pickStarter("tomek", "bartek", () => 0.49)).toBe("tomek");
+    expect(pickStarter("tomek", "bartek", () => 0.51)).toBe("bartek");
+  });
+});
+
+describe("shouldStartExchange", () => {
+  it("keeps the office-wide 3-6 s rhythm for the FIRST conversation", () => {
+    // rng 0: chance passes, interval = 3 s.
+    expect(shouldStartExchange(0, 3, () => 0)).toBe(true);
+    expect(shouldStartExchange(0, 2, () => 0)).toBe(false);
+    // rng 0.99: chance roll fails first.
+    expect(shouldStartExchange(0, 100, () => 0.99)).toBe(false);
+  });
+
+  it("lets a SECOND simultaneous conversation start sooner (C-46)", () => {
+    // rng 0 with one active conversation: interval = 1 s.
+    expect(shouldStartExchange(1, 1, () => 0)).toBe(true);
+    expect(shouldStartExchange(1, 0.5, () => 0)).toBe(false);
+  });
+
+  it("honours the 50% chance gate in both modes", () => {
+    expect(shouldStartExchange(1, 100, () => 0.75)).toBe(false);
+    expect(shouldStartExchange(0, 100, () => 0.75)).toBe(false);
+  });
+});
+
+describe("pickExchange", () => {
+  it("never repeats the previous exchange", () => {
+    const seen: number[] = [];
+    for (let i = 0; i < 50; i += 1) {
+      seen.push(OFFICE_CHATTER.indexOf(pickExchange(OFFICE_CHATTER, () => i / 50)));
+    }
+    for (let i = 1; i < seen.length; i += 1) {
+      expect(seen[i]).not.toBe(seen[i - 1]);
+    }
+  });
+});

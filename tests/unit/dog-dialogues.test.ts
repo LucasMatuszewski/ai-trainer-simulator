@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { BUREK_LINES } from "../../src/content/dog-dialogues";
 import { LUNCH_DIALOGUES_HUMAN } from "../../src/content/lunch-dialogues";
-import { INTER_NPC_LINES } from "../../src/engine/bubbles";
+import { INTER_NPC_LINES } from "../../src/content/office-chatter";
 
 const ASCII = /^[\x20-\x7E]+$/;
 const MAX_DOG_LENGTH = 25;

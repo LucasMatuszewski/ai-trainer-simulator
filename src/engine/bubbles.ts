@@ -1,6 +1,4 @@
 import * as THREE from "three";
-import { BUREK_LINES } from "../content/dog-dialogues";
-import { LUNCH_DIALOGUES_HUMAN } from "../content/lunch-dialogues";
 
 export interface BubbleHandle {
   update: (dt: number, camera: THREE.Camera) => void;
@@ -9,48 +7,13 @@ export interface BubbleHandle {
   destroy: () => void;
 }
 
-export const INTER_NPC_LINES: string[] = [
-  "Did you restart it?",
-  "The printer is jammed again.",
-  "Standup in 5, be ready.",
-  "At 5?! Am or Pm?",
-  "I'll merge it after lunch.",
-  "Chat Bot is down again.",
-  "Who broke the build? Again!",
-  "Coffee? I just had 4.",
-  "Can you review my PR?",
-  "What Freud would say about that bat?",
-  "I guess it's some bat-complex",
-  "Did the deploy go out?",
-  "The wifi is being weird today.",
-  "!!! $#%#$@$% !!!",
-  "Is he still staring at me?",
-  "Shh... They are watching...",
-  "Have you seen my pierogi?",
-  "Just KISS, ok?",
-  // General-office additions from the 2026-08-31 dialogue contest
-  // (non-food lines promoted from the contest union per Lucas).
-  "I have 47 tabs open and one fear.",
-  "The intern pushed to main. We're so proud.",
-  "I asked AI to fix it. Now there are two bugs.",
-  "My rubber duck got upgraded to an LLM. It lies.",
-  "I left a TODO in 2019. It's load-bearing now.",
-  "The standup ran 40 minutes. Nobody stood.",
-  "Kubernetes is just astrology for sysadmins.",
-  "We don't need tests, our users test in prod for free.",
-  "I recycle bugs. It's called QA.",
-  "I'm not asleep, I'm doing deep mental architecture.",
-];
-
-export function resolveBubblePool(
-  speakerIsBurek: boolean,
-  bothInKitchen: boolean,
-): ReadonlyArray<string> {
-  if (speakerIsBurek) return BUREK_LINES;
-  return bothInKitchen ? LUNCH_DIALOGUES_HUMAN : INTER_NPC_LINES;
-}
-
-const lastLineByList = new WeakMap<ReadonlyArray<string>, number>();
+/**
+ * C-46: up to MAX_CONVERSATIONS (=2) exchanges can run at once (plus
+ * Burek's ambient bark), so the system keeps a small pool of bubble
+ * sprites instead of the single sprite the old locked-pair design
+ * could get away with.
+ */
+const BUBBLE_POOL_SIZE = 4;
 
 export function pickLine(lines: ReadonlyArray<string>, rng: () => number): string {
   if (lines.length === 0) return "";
@@ -62,47 +25,7 @@ export function pickLine(lines: ReadonlyArray<string>, rng: () => number): strin
   return lines[index]!;
 }
 
-export function shouldShowBubble(
-  distance: number,
-  dtSinceLastCheck: number,
-  rng: () => number,
-  nearByCount = 2,
-): boolean {
-  if (distance > 2.5) return false;
-  // C-45 amendment (l)/Lucas 2026-08-31: NPCs should NOT talk to
-  // themselves - chatter is a social thing. A solo NPC (nearByCount
-  // = 1, just the speaker pair) gets a heavy penalty; a 3+ crowd
-  // gets the normal fire rate. Interval stays 3-6 s, base fire
-  // rate is 50% in a crowd and 5% solo.
-  const interval = 3 + rng() * 3;
-  const solo = nearByCount <= 1;
-  const chance = solo ? 0.05 : 0.5;
-  return dtSinceLastCheck >= interval && rng() < chance;
-}
-
-export function findClosestPair(
-  npcs: ReadonlyArray<{ id: string; position: { x: number; z: number } }>,
-  threshold: number,
-): [string, string] | null {
-  let closest: [string, string] | null = null;
-  let closestDistanceSquared = threshold * threshold;
-
-  for (let first = 0; first < npcs.length; first += 1) {
-    for (let second = first + 1; second < npcs.length; second += 1) {
-      const a = npcs[first]!;
-      const b = npcs[second]!;
-      const dx = a.position.x - b.position.x;
-      const dz = a.position.z - b.position.z;
-      const distanceSquared = dx * dx + dz * dz;
-      if (distanceSquared <= closestDistanceSquared) {
-        closestDistanceSquared = distanceSquared;
-        closest = [a.id, b.id];
-      }
-    }
-  }
-
-  return closest;
-}
+const lastLineByList = new WeakMap<ReadonlyArray<string>, number>();
 
 function fitLine(line: string): string[] {
   const maximumCharacters = 32;
@@ -152,60 +75,106 @@ function makeTexture(line: string): THREE.CanvasTexture {
   return texture;
 }
 
-export function createBubbleSystem(scene: THREE.Scene): BubbleHandle {
-  const material = new THREE.SpriteMaterial({
-    transparent: true,
-    depthTest: false,
-    sizeAttenuation: false,
-  });
-  const sprite = new THREE.Sprite(material);
-  sprite.visible = false;
-  sprite.scale.set(0.42, 0.105, 1);
-  sprite.renderOrder = 1000;
-  scene.add(sprite);
+interface BubbleSlot {
+  sprite: THREE.Sprite;
+  material: THREE.SpriteMaterial;
+  texture: THREE.CanvasTexture | null;
+  speakerPosition: THREE.Vector3 | null;
+  elapsed: number;
+  lifetime: number;
+}
 
-  let speakerPosition: THREE.Vector3 | null = null;
-  let elapsed = 0;
-  let lifetime = 0;
-  let texture: THREE.CanvasTexture | null = null;
+/** For a new bubble: any invisible slot, else the one with the LEAST
+ *  remaining lifetime, so bursts recycle the oldest bubbles first. */
+function pickRecyclableSlot(slots: readonly BubbleSlot[]): BubbleSlot {
+  let chosen = slots[0]!;
+  let leastRemaining = Number.POSITIVE_INFINITY;
+  for (const slot of slots) {
+    if (!slot.sprite.visible) return slot;
+    const remaining = slot.lifetime - slot.elapsed;
+    if (remaining < leastRemaining) {
+      leastRemaining = remaining;
+      chosen = slot;
+    }
+  }
+  return chosen;
+}
+
+export function createBubbleSystem(scene: THREE.Scene): BubbleHandle {
+  const slots: BubbleSlot[] = [];
+  for (let i = 0; i < BUBBLE_POOL_SIZE; i += 1) {
+    const material = new THREE.SpriteMaterial({
+      transparent: true,
+      depthTest: false,
+      sizeAttenuation: false,
+    });
+    const sprite = new THREE.Sprite(material);
+    sprite.visible = false;
+    sprite.scale.set(0.42, 0.105, 1);
+    sprite.renderOrder = 1000;
+    scene.add(sprite);
+    slots.push({
+      sprite,
+      material,
+      texture: null,
+      speakerPosition: null,
+      elapsed: 0,
+      lifetime: 0,
+    });
+  }
+
   let destroyed = false;
 
-  const clear = (): void => {
-    sprite.visible = false;
-    speakerPosition = null;
-    elapsed = 0;
+  const clearSlot = (slot: BubbleSlot): void => {
+    slot.sprite.visible = false;
+    slot.speakerPosition = null;
+    slot.elapsed = 0;
   };
 
   return {
     update: (dt, camera) => {
       void camera;
-      if (destroyed || !sprite.visible || speakerPosition === null) return;
-      elapsed += Math.max(0, dt);
-      sprite.position.set(speakerPosition.x, speakerPosition.y + 1.7, speakerPosition.z);
-      material.opacity = Math.min(1, Math.max(0, (lifetime - elapsed) / 0.5));
-      if (elapsed >= lifetime) clear();
+      if (destroyed) return;
+      const safeDt = Math.max(0, dt);
+      for (const slot of slots) {
+        if (!slot.sprite.visible || slot.speakerPosition === null) continue;
+        slot.elapsed += safeDt;
+        slot.sprite.position.set(
+          slot.speakerPosition.x,
+          slot.speakerPosition.y + 1.7,
+          slot.speakerPosition.z,
+        );
+        slot.material.opacity = Math.min(1, Math.max(0, (slot.lifetime - slot.elapsed) / 0.5));
+        if (slot.elapsed >= slot.lifetime) clearSlot(slot);
+      }
     },
     show: (position, line) => {
       if (destroyed) return;
-      texture?.dispose();
-      texture = makeTexture(line);
-      material.map = texture;
-      material.opacity = 1;
-      material.needsUpdate = true;
-      speakerPosition = position;
-      elapsed = 0;
-      lifetime = 4 + Math.random() * 2;
-      sprite.position.set(position.x, position.y + 1.7, position.z);
-      sprite.visible = true;
+      const slot = pickRecyclableSlot(slots);
+      slot.texture?.dispose();
+      slot.texture = makeTexture(line);
+      slot.material.map = slot.texture;
+      slot.material.opacity = 1;
+      slot.material.needsUpdate = true;
+      slot.speakerPosition = position;
+      slot.elapsed = 0;
+      slot.lifetime = 4 + Math.random() * 2;
+      slot.sprite.position.set(position.x, position.y + 1.7, position.z);
+      slot.sprite.visible = true;
     },
-    clear,
+    clear: () => {
+      if (destroyed) return;
+      for (const slot of slots) clearSlot(slot);
+    },
     destroy: () => {
       if (destroyed) return;
       destroyed = true;
-      clear();
-      scene.remove(sprite);
-      texture?.dispose();
-      material.dispose();
+      for (const slot of slots) {
+        clearSlot(slot);
+        scene.remove(slot.sprite);
+        slot.texture?.dispose();
+        slot.material.dispose();
+      }
     },
   };
 }
