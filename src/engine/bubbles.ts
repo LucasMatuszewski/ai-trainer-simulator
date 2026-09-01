@@ -47,19 +47,19 @@ function makeTexture(line: string): THREE.CanvasTexture {
   const context = canvas.getContext("2d");
   if (context === null) throw new Error("Unable to create speech bubble canvas");
 
-  context.fillStyle = "#171528";
+  context.fillStyle = "#17152880";
   context.fillRect(0, 0, canvas.width, canvas.height - 8);
-  context.fillStyle = "#171528";
+  context.fillStyle = "#17152899";
   context.beginPath();
   context.moveTo(112, 56);
   context.lineTo(128, 64);
   context.lineTo(144, 56);
   context.fill();
-  context.strokeStyle = "#f4d35e";
+  context.strokeStyle = "#f4d35e80";
   context.lineWidth = 3;
   context.strokeRect(1.5, 1.5, canvas.width - 3, canvas.height - 11);
   context.fillStyle = "#fff7d6";
-  context.font = "bold 15px monospace";
+  context.font = "16px monospace";
   context.textAlign = "center";
   context.textBaseline = "middle";
   const lines = fitLine(line);
