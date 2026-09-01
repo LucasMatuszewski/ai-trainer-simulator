@@ -38,7 +38,10 @@ const PLAYER_RADIUS = 0.3; // half-width for AABB collision
 // Lucas: "3-4 full mouse movements for 90-120 degrees"). Sensitivity
 // is a LIVE knob: __aitrainer.setSensitivity(v) at runtime, persisted
 // in localStorage, so the feel is tuned in seconds, not commits.
-const MOUSE_SENSITIVITY_DEFAULT = 0.0025;
+// 0.00375 = 1.5x the original 0.0025: one full mouse movement should
+// cover ~180 degrees (Lucas measured ~120 at 0.0025). Fine-tune at
+// runtime with __aitrainer.setSensitivity(v); persisted per browser.
+const MOUSE_SENSITIVITY_DEFAULT = 0.00375;
 const MOUSE_SENSITIVITY_MIN = 0.0005;
 const MOUSE_SENSITIVITY_MAX = 0.01;
 let mouseSensitivity = MOUSE_SENSITIVITY_DEFAULT;
