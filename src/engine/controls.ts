@@ -385,45 +385,30 @@ export function createControls(opts: ControlsOptions): Controls {
   document.addEventListener("visibilitychange", onVisibilityChange);
   window.addEventListener("pagehide", onClearInput);
 
-  // Mouse delta: under POINTER LOCK the cursor position freezes, so
-  // clientX/Y deltas would be zero - use movementX/Y there (C-48).
-  // Without a lock we compute deltas from clientX/Y for the look
-  // states, but only CONSUME the delta in stepControls() when
-  // mouseLook != "free". The tracking variable lastClient is only
-  // updated when in mouse-look, so free-mouse movement does not
-  // accumulate spurious deltas.
-  let lastClient = { x: 0, y: 0, valid: false };
+  // Mouse delta (C-48): mouse-look consumes RAW movementX/Y deltas -
+  // they work identically pointer-locked and unlocked, and never
+  // produce the stale-client "jump" the previous clientX/Y tracker
+  // could inject on lock exit/re-enter (Lucas: rotation suddenly
+  // "spins like crazy"). The per-frame CONSUMED delta is additionally
+  // clamped in consumeMouseDelta() so a single glitch event (lock
+  // transition, OS hiccup) can never whip the camera.
   const onMouseMove = (e: MouseEvent): void => {
-    if (state.mouseLook === "free") {
-      // Prime / re-prime the tracker so the first frame after
-      // entering mouse-look does not jump.
-      lastClient.x = e.clientX;
-      lastClient.y = e.clientY;
-      lastClient.valid = true;
-      return;
-    }
-    if (document.pointerLockElement === canvas) {
-      pendingMouseDelta.x += e.movementX;
-      pendingMouseDelta.y += e.movementY;
-      lastClient.valid = false;
-      return;
-    }
-    if (!lastClient.valid) {
-      lastClient.x = e.clientX;
-      lastClient.y = e.clientY;
-      lastClient.valid = true;
-      return;
-    }
-    pendingMouseDelta.x += e.clientX - lastClient.x;
-    pendingMouseDelta.y += e.clientY - lastClient.y;
-    lastClient.x = e.clientX;
-    lastClient.y = e.clientY;
+    if (state.mouseLook === "free") return;
+    pendingMouseDelta.x += e.movementX ?? 0;
+    pendingMouseDelta.y += e.movementY ?? 0;
   };
   document.addEventListener("mousemove", onMouseMove);
 
+  /** A single mouse event may never rotate the camera more than this
+   *  many pixels' worth (at MOUSE_SENSITIVITY 0.0025 rad/px this is
+   *  ~0.15 rad per frame per axis) - guards against the huge
+   *  reposition deltas browsers emit on pointer-lock transitions. */
+  const MAX_DELTA_PER_FRAME = 60;
+
   function consumeMouseDelta(): { x: number; y: number } | null {
     if (pendingMouseDelta.x === 0 && pendingMouseDelta.y === 0) return null;
-    const d = { x: pendingMouseDelta.x, y: pendingMouseDelta.y };
+    const clamp = (v: number): number => Math.max(-MAX_DELTA_PER_FRAME, Math.min(MAX_DELTA_PER_FRAME, v));
+    const d = { x: clamp(pendingMouseDelta.x), y: clamp(pendingMouseDelta.y) };
     pendingMouseDelta.x = 0;
     pendingMouseDelta.y = 0;
     return d;
