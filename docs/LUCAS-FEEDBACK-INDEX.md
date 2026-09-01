@@ -8,33 +8,17 @@ nothing is lost again.
 ## 2026-08-31 — feedback captured (this message)
 
 **ID: L-2026-08-31-02 — Make the game perfect, playable, and fun**
-- **Dog (Burek) should move around the office** — either laying or playing, interacting with people. Right now the dog is a static marker.
-- **NPCs have walk animations but they do not actually walk** — they sit at their desk and "teleport" between schedule positions. The walk cycle needs to be visible.
 - **Toilet door location** — the toilet exists as a back-corner room with no real door. The door should be in the kitchen (kitchen must have direct access to the toilet).
-- **All NPCs should say something in a speech bubble from time to time** — unique to them, connected to their profession and character. Not just generic "Did you restart it?" lines.
+
 - **NPC rotation on dialogue** — when we start a conversation, the NPC should always rotate in our direction so we talk to their face, not to their back. After the conversation the NPC should get back to the previous position. The rotation should be animated (slerp), not instant.
 - **Women arms/shoulders** — too close to the body, almost inside. Make them a little bit wider.
 - **Intros with dialogue explaining the game, goal, and rules** — where are they? Add a real intro cinematic that explains who the player is, what the goal is (survive 30 days, don't go bankrupt, run training sessions), and the rules (talk to people, work the contracts, etc).
 - **Cutscenes and events** — the game has none. Add a real morning walk-in cutscene, the CEO entering his office cutscene, and at least one random in-game event with its own little cutscene.
 
-**ID: L-2026-08-31-07 — NPC real walking, path-following, kitchen micro-sequence, lunch dialogues (2026-08-31)**
-Lucas reported that NPCs "walk but at the same place, bouncing with animation". He wants:
-- **Path-following** with **obstacle avoidance** while NPCs walk (currently they teleport through walls in a 2 s linear lerp).
-- **Walk animation** that's tied to actual movement, not to wall-clock (currently the bob/sway runs on stationary meshes when morning.position === afternoon.position).
-- **Sub-state sequencing inside the kitchen** — work → fridge → coffee / sink / microwave / table (random order) → desk. Same template for every NPC; the order is randomised per walk. Some NPCs go outside lunch time ("outsiders" who eat alone).
-- **Lunch window** — at lunch time multiple people go to the kitchen together, staggered by **0-2 s per NPC** so they don't all start at once. The order of kitchen stops is randomised so they don't walk the same path. If they avoid obstacles (including other NPCs) they "walk together and stand together, like they are talking". Window length: **120 s** (≈ 2 min, 20% of the 10-min afternoon at 5/10/5).
-- **A separate `LUNCH_DIALOGUES` pool** for in-kitchen chatter. **50 lines total** (~45 human + 5-8 dog). Funny lines about: IT jokes, startup jokes, gaming, AI, coffee, dinner, farting, diet, fat, beer, pizza, vege, eco, and work. The lunch pool must not be mixed with the work pool (`INTER_NPC_LINES`).
-- **Outsiders (confirmed 2026-08-31):** **Maciek — the CTO** and **Marek — the DevOps** eat alone 30% of the time outside the lunch window and skip lunch 30% of the time.
-- **Burek always joins the lunch, no exceptions** (Lucas, 2026-08-31: "Where is food there is Burek!"). He's in the social-lunchers set with 100% probability during the window and 60% outside. He has his own dog-sound dialogue pool (`LUNCH_DIALOGUES_DOG`).
-- **Lunch dialogue contest** (Lucas, 2026-08-31): run the brief against both **grok-4.5** and **agy / sonnet 4.6** in parallel, pick the funniest / sharpest / most specific lines, and merge.
-- **Cross-references:** PRD §13 new entry C-45 (NPC real walking). Plan new section "Phase 3.6 — NPC real walking: A* pathfinding, walk cycle, kitchen micro-sequence (PRD C-45)".
 
 ## 2026-08-30 — feedback captured
 
 **ID: L-2026-08-30-01**
-- NPCs must have walk-cycle animations while moving (not just
-  slide/teleport between schedule entries).
-- NPCs should mostly look at their screens (work posture).
 - NPCs should RANDOMLY walk to:
   - the toilet (a new room to be added)
   - the kitchen
@@ -65,6 +49,8 @@ Lucas reported that NPCs "walk but at the same place, bouncing with animation". 
 - Dialogues: more speech (TTS) for intros, important dialogue
   nodes, and possibly background.
 
+
+---
 
 ## Cross-references (pending update in PRD/plan)
 
@@ -110,6 +96,28 @@ be added before any more code work happens.
 ---
 
 These items are done or outdated and no longer need to be addressed.
+
+
+- NPCs must have walk-cycle animations while moving (not just
+  slide/teleport between schedule entries).
+- NPCs should mostly look at their screens (work posture).
+
+- **Dog (Burek) should move around the office** — either laying or playing, interacting with people. Right now the dog is a static marker.
+- **NPCs have walk animations but they do not actually walk** — they sit at their desk and "teleport" between schedule positions. The walk cycle needs to be visible.
+- **All NPCs should say something in a speech bubble from time to time** — unique to them, connected to their profession and character. Not just generic "Did you restart it?" lines.
+- 
+**ID: L-2026-08-31-07 — NPC real walking, path-following, kitchen micro-sequence, lunch dialogues (2026-08-31)**
+Lucas reported that NPCs "walk but at the same place, bouncing with animation". He wants:
+- **Path-following** with **obstacle avoidance** while NPCs walk (currently they teleport through walls in a 2 s linear lerp).
+- **Walk animation** that's tied to actual movement, not to wall-clock (currently the bob/sway runs on stationary meshes when morning.position === afternoon.position).
+- **Sub-state sequencing inside the kitchen** — work → fridge → coffee / sink / microwave / table (random order) → desk. Same template for every NPC; the order is randomised per walk. Some NPCs go outside lunch time ("outsiders" who eat alone).
+- **Lunch window** — at lunch time multiple people go to the kitchen together, staggered by **0-2 s per NPC** so they don't all start at once. The order of kitchen stops is randomised so they don't walk the same path. If they avoid obstacles (including other NPCs) they "walk together and stand together, like they are talking". Window length: **120 s** (≈ 2 min, 20% of the 10-min afternoon at 5/10/5).
+- **A separate `LUNCH_DIALOGUES` pool** for in-kitchen chatter. **50 lines total** (~45 human + 5-8 dog). Funny lines about: IT jokes, startup jokes, gaming, AI, coffee, dinner, farting, diet, fat, beer, pizza, vege, eco, and work. The lunch pool must not be mixed with the work pool (`INTER_NPC_LINES`).
+- **Outsiders (confirmed 2026-08-31):** **Maciek — the CTO** and **Marek — the DevOps** eat alone 30% of the time outside the lunch window and skip lunch 30% of the time.
+- **Burek always joins the lunch, no exceptions** (Lucas, 2026-08-31: "Where is food there is Burek!"). He's in the social-lunchers set with 100% probability during the window and 60% outside. He has his own dog-sound dialogue pool (`LUNCH_DIALOGUES_DOG`).
+- **Lunch dialogue contest** (Lucas, 2026-08-31): run the brief against both **grok-4.5** and **agy / sonnet 4.6** in parallel, pick the funniest / sharpest / most specific lines, and merge.
+- **Cross-references:** PRD §13 new entry C-45 (NPC real walking). Plan new section "Phase 3.6 — NPC real walking: A* pathfinding, walk cycle, kitchen micro-sequence (PRD C-45)".
+
 
 - **Kitchen equipment is too low quality** — random blocks. Make a high-quality detailed pixelart kitchen: fridge, microwave, bin, sink, dishwasher, funny stickers and details. 3D models in separate files, reusable.
 - **CEO office location** — the CEO office should be where the Training Room is right now (i.e. north of the main office, with a glass wall looking into the main office). The Batman sign on the wall should be visible through this glass wall from the office so everybody knows the bat is there.
