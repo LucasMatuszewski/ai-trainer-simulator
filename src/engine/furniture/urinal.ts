@@ -75,9 +75,9 @@ export function makeUrinal(): THREE.Group {
   group.add(box("urinal-pipe-spout", [0.05, 0.05, 0.1], new THREE.MeshLambertMaterial({ color: PIPE_DARK }), [0, 1.12, 0.1]));
 
   // -- Splash guard (privacy screen on the left side) -----------------
-  group.add(box("urinal-screen", [0.04, 0.7, 0.4], new THREE.MeshLambertMaterial({ color: SCREEN }), [-0.35, 0.95, 0.25]));
-  group.add(box("urinal-screen-frame-top", [0.05, 0.04, 0.4], new THREE.MeshLambertMaterial({ color: SCREEN_FRAME }), [-0.36, 1.32, 0.25]));
-  group.add(box("urinal-screen-frame-bot", [0.05, 0.04, 0.4], new THREE.MeshLambertMaterial({ color: SCREEN_FRAME }), [-0.36, 0.62, 0.25]));
+  group.add(box("urinal-screen", [0.04, 0.7, 0.4], new THREE.MeshLambertMaterial({ color: SCREEN }), [-0.35, 1.05, 0.25]));
+  group.add(box("urinal-screen-frame-top", [0.05, 0.04, 0.4], new THREE.MeshLambertMaterial({ color: SCREEN_FRAME }), [-0.354, 1.43, 0.255]));
+  group.add(box("urinal-screen-frame-bot", [0.05, 0.04, 0.4], new THREE.MeshLambertMaterial({ color: SCREEN_FRAME }), [-0.354, 0.71, 0.255]));
 
   return group;
 }

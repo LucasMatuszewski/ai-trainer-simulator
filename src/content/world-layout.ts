@@ -488,7 +488,7 @@ export const WORLD_ROOMS: WorldRoom[] = [
       // south wall. The stalls are 1.2m wide so the east one is
       // shifted slightly east to fit (the room is 5m wide).
       { type: "toilet-stall", position: [20.6, 0, 2.9] },
-      { type: "toilet-stall", position: [21.6, 0, 2.9] },
+      { type: "toilet-stall", position: [21.8, 0, 2.9] },
       // Washbasin on the NORTH wall (z=7), right by the door so
       // you wash your hands on the way out. The basin faces -Z
       // (toward the user standing in the room).
@@ -504,7 +504,7 @@ export const WORLD_ROOMS: WorldRoom[] = [
       // the kitchen so the player sees it from inside the kitchen).
       // Position is on the toilet's north wall face to keep the
       // sign visible from the kitchen.
-      { text: "WC", position: [20.4, 2.2, 6.85], face: Math.PI, color: 0x4477aa, size: [0.5, 0.5], fontSize: 16 },
+      { text: "WC", position: [20.4, 2.2, 6.85], face: Math.PI, color: 0x4477aa, size: [1, 0.6], fontSize: 16 },
       // "OUT OF ORDER" sign on the west stall's door panel - the
       // classic IT Crowd homage. Per Lucas 2026-09-01: the door
       // is now pushed forward (panel z=0.85, world z=3.75 for stall

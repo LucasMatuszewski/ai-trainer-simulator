@@ -52,13 +52,13 @@ export function makeToiletStall(): THREE.Group {
 
   // Left partition.
   group.add(box("stall-partition-left", [0.06, 2.0, 1.6], wallMat, [-0.6 + 0.03, 1.0, 0]));
-  group.add(box("stall-partition-left-frame-top", [0.07, 0.04, 1.6], frameMat, [-0.6 + 0.035, 2.0 - 0.02, 0]));
-  group.add(box("stall-partition-left-frame-bot", [0.07, 0.04, 1.6], frameMat, [-0.6 + 0.035, 0.02, 0]));
+  group.add(box("stall-partition-left-frame-top", [0.07, 0.04, 1.61], frameMat, [-0.6 + 0.036, 2.0, 0]));
+  group.add(box("stall-partition-left-frame-bot", [0.07, 0.04, 1.61], frameMat, [-0.6 + 0.036, 0.02, 0]));
 
   // Right partition.
   group.add(box("stall-partition-right", [0.06, 2.0, 1.6], wallMat, [0.6 - 0.03, 1.0, 0]));
-  group.add(box("stall-partition-right-frame-top", [0.07, 0.04, 1.6], frameMat, [0.6 - 0.035, 2.0 - 0.02, 0]));
-  group.add(box("stall-partition-right-frame-bot", [0.07, 0.04, 1.6], frameMat, [0.6 - 0.035, 0.02, 0]));
+  group.add(box("stall-partition-right-frame-top", [0.07, 0.04, 1.61], frameMat, [0.6 - 0.036, 2.0, 0]));
+  group.add(box("stall-partition-right-frame-bot", [0.07, 0.04, 1.61], frameMat, [0.6 - 0.036, 0.02, 0]));
 
   // A vertical line on each partition to suggest tile rows.
   for (const side of [-0.6 + 0.03, 0.6 - 0.03]) {
@@ -89,9 +89,8 @@ export function makeToiletStall(): THREE.Group {
 
   // Door frame (top + sides). Unchanged from the previous layout
   // so the frame is still on the partition's +Z face.
-  group.add(box("stall-door-frame-top", [1.2, 0.04, 0.05], frameMat, [0, 0.3 + 1.5 + 0.02, 0.8 - 0.025]));
-  group.add(box("stall-door-frame-left", [0.04, 1.5, 0.05], frameMat, [-0.6 + 0.02, 0.3 + 0.75, 0.8 - 0.025]));
-  group.add(box("stall-door-frame-right", [0.04, 1.5, 0.05], frameMat, [0.6 - 0.02, 0.3 + 0.75, 0.8 - 0.025]));
+  group.add(box("stall-door-frame-left", [0.04, 1.5, 0.05], frameMat, [-0.62, 0.3 + 0.75, 0.85]));
+  group.add(box("stall-door-frame-right", [0.04, 1.5, 0.05], frameMat, [0.625, 0.3 + 0.75, 0.85]));
 
   // Door handle (a small horizontal bar on the +X side, dark).
   // Also pushed forward to match the new door z.
@@ -126,16 +125,6 @@ export function makeToiletStall(): THREE.Group {
   seat.position.set(0, 0.52, -0.35);
   group.add(seat);
 
-  // Toilet lid (open, leaning against the cistern).
-  const lid = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.19, 0.19, 0.02, 16),
-    new THREE.MeshLambertMaterial({ color: TOILET_LID }),
-  );
-  lid.name = "toilet-lid";
-  lid.position.set(0, 0.78, -0.55);
-  lid.rotation.x = -Math.PI / 8;
-  group.add(lid);
-
   // Cistern (the tank on the back wall).
   const cisternMat = new THREE.MeshLambertMaterial({ color: CISTERN });
   group.add(box("toilet-cistern", [0.45, 0.6, 0.18], cisternMat, [0, 0.55, -0.72]));
@@ -164,6 +153,7 @@ export function makeToiletStall(): THREE.Group {
   );
   roll.name = "toilet-paper-roll";
   roll.rotation.z = Math.PI / 2;
+  roll.rotation.y = Math.PI / 2;
   roll.position.set(-0.45, 0.95, 0.1);
   group.add(roll);
 
@@ -174,6 +164,7 @@ export function makeToiletStall(): THREE.Group {
   );
   core.name = "toilet-paper-core";
   core.rotation.z = Math.PI / 2;
+  core.rotation.y = Math.PI / 2;
   core.position.set(-0.45, 0.95, 0.1);
   group.add(core);
 
