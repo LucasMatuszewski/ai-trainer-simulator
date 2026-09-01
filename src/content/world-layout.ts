@@ -394,7 +394,7 @@ export const WORLD_ROOMS: WorldRoom[] = [
     signs: [
       // Room sign just east of the kitchen-to-training doorway,
       // mounted on the KITCHEN side of the south wall .
-      { text: "TRAINING ROOM", position: [20, 2.2, -3.05], face: Math.PI, color: 0x2255aa, size: [1.6, 0.6] },
+      { text: "TRAINING ROOM", position: [19, 2.2, -1.5], face: -Math.PI / 2, color: 0x2255aa, size: [1.6, 0.6] },
     ],
   },
   {
@@ -504,7 +504,7 @@ export const WORLD_ROOMS: WorldRoom[] = [
       // the kitchen so the player sees it from inside the kitchen).
       // Position is on the toilet's north wall face to keep the
       // sign visible from the kitchen.
-      { text: "WC", position: [20.4, 2.2, 6.85], face: Math.PI, color: 0x4477aa, size: [1, 0.6], fontSize: 16 },
+      { text: "WC", position: [18, 2.2, 6.85], face: Math.PI, color: 0x4477aa, size: [1, 0.6], fontSize: 16 },
       // "OUT OF ORDER" sign on the west stall's door panel - the
       // classic IT Crowd homage. Per Lucas 2026-09-01: the door
       // is now pushed forward (panel z=0.85, world z=3.75 for stall
