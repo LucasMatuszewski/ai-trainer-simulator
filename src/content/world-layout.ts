@@ -328,7 +328,7 @@ export const WORLD_ROOMS: WorldRoom[] = [
       { type: "kitchen-chair", position: [12, 0, 4.1], rotationY: Math.PI },
     ],
     signs: [
-      { text: "TODAY'S MENU: COFFEE", position: [14, 2.1, 6.72], face: Math.PI, color: 0x9b3f2f },
+      { text: "TODAY'S MENU: COFFEE", position: [14, 2.1, 7], face: Math.PI, color: 0x9b3f2f },
       // CLEAN AS YOU GO poster: above the counter, against the back
       // wall (z=-6.95, the wall inner face is at z=-7). Face 0 so it
       // faces the room (toward the player walking in).
