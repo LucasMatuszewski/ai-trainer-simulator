@@ -107,6 +107,14 @@ export const SHIP_IT_SIGN_MOUNT = {
   face: Math.PI,
 };
 
+// C-60: door labels on the office side of each doorway, to the player's
+// RIGHT when facing the door (east wall south of the kitchen gap, south
+// wall west of the meeting gap) so they read on approach.
+export const DOOR_SIGN_MOUNTS = {
+  kitchen: { position: [OFFICE_BOUNDS.maxX - 0.16, 2.1, 2.3] as const, face: -Math.PI / 2, text: "Kitchen", color: 0xb0602a },
+  meeting: { position: [-2.4, 2.1, OFFICE_BOUNDS.maxZ - 0.16] as const, face: Math.PI, text: "Meeting Room", color: 0x2f5d8a },
+};
+
 const SCREEN_COLORS = [
   COLORS.monitorScreen1,
   COLORS.monitorScreen2,
@@ -228,6 +236,10 @@ export function buildOfficeScene(
   // Keep the motivational sign on the south wall section to the right of the
   // meeting-room doorway, rather than floating across the doorway opening.
   addMotivationalSign(scene, ...SHIP_IT_SIGN_MOUNT.position, SHIP_IT_SIGN_MOUNT.face);
+
+  // C-60: "Kitchen" / "Meeting Room" labels next to their doorways.
+  addDoorSign(scene, DOOR_SIGN_MOUNTS.kitchen);
+  addDoorSign(scene, DOOR_SIGN_MOUNTS.meeting);
 
   // ---- Window on east wall: a blue rectangle with a "sky" gradient.
   addWindow(scene, OFFICE_BOUNDS.maxX - 0.16, 1.6, -6.5, -Math.PI / 2);
@@ -582,6 +594,43 @@ function addMotivationalSign(scene: THREE.Scene, x: number, y: number, z: number
   );
   m.position.set(x, y, z);
   m.rotation.y = rotY;
+  scene.add(m);
+}
+
+// C-60: doorway label in the same retro canvas style. The text is
+// shrunk to fit so "Meeting Room" does not clip.
+function addDoorSign(
+  scene: THREE.Scene,
+  mount: { position: readonly [number, number, number]; face: number; text: string; color: number },
+): void {
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 96;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#" + mount.color.toString(16).padStart(6, "0");
+  ctx.fillRect(0, 0, 256, 96);
+  ctx.strokeStyle = "#ffee00";
+  ctx.lineWidth = 6;
+  ctx.strokeRect(3, 3, 250, 90);
+  ctx.fillStyle = "#ffee00";
+  ctx.textAlign = "center";
+  let fontSize = 34;
+  ctx.font = `bold ${fontSize}px monospace`;
+  while (ctx.measureText(mount.text).width > 228 && fontSize > 12) {
+    fontSize -= 2;
+    ctx.font = `bold ${fontSize}px monospace`;
+  }
+  ctx.fillText(mount.text, 128, 60);
+  const tex = new THREE.CanvasTexture(c);
+  tex.magFilter = THREE.NearestFilter;
+  tex.minFilter = THREE.NearestFilter;
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.6, 0.6),
+    new THREE.MeshBasicMaterial({ map: tex }),
+  );
+  m.name = "door-sign";
+  m.position.set(...mount.position);
+  m.rotation.y = mount.face;
   scene.add(m);
 }
 

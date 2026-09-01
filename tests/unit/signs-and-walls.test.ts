@@ -5,7 +5,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { OFFICE_BOUNDS } from "../../src/content/npcs";
 import { MAIN_OFFICE_DOORWAYS } from "../../src/content/world-layout";
 import { makeWallTexture } from "../../src/engine/multi-room";
-import { SHIP_IT_SIGN_MOUNT } from "../../src/engine/scene";
+import { DOOR_SIGN_MOUNTS, SHIP_IT_SIGN_MOUNT } from "../../src/engine/scene";
 
 beforeAll(() => {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
@@ -33,5 +33,27 @@ describe("sign and wall artifact fixes", () => {
     expect(texture.repeat.x).toBeGreaterThan(0);
     expect(texture.repeat.y).toBeGreaterThan(0);
     expect(texture.colorSpace).toBe(THREE.SRGBColorSpace);
+  });
+
+  it("mounts the Kitchen sign on the east wall right of the doorway (C-60)", () => {
+    const mount = DOOR_SIGN_MOUNTS.kitchen;
+    const doorway = MAIN_OFFICE_DOORWAYS[1]!.from;
+
+    expect(mount.text).toBe("Kitchen");
+    expect(mount.position[0]).toBeCloseTo(OFFICE_BOUNDS.maxX - 0.16);
+    // Right of the door when facing it (south side), clear of the gap.
+    expect(mount.position[2] - 0.8).toBeGreaterThan(doorway.maxZ);
+    expect(mount.face).toBeCloseTo(-Math.PI / 2);
+  });
+
+  it("mounts the Meeting Room sign on the south wall right of the doorway (C-60)", () => {
+    const mount = DOOR_SIGN_MOUNTS.meeting;
+    const doorway = MAIN_OFFICE_DOORWAYS[2]!.from;
+
+    expect(mount.text).toBe("Meeting Room");
+    expect(mount.position[2]).toBeCloseTo(OFFICE_BOUNDS.maxZ - 0.16);
+    // Right of the door when facing it (west side), clear of the gap.
+    expect(mount.position[0] + 0.8).toBeLessThan(doorway.minX);
+    expect(mount.face).toBeCloseTo(Math.PI);
   });
 });
