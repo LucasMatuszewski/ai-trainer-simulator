@@ -973,6 +973,8 @@ declare global {
       inspectNpcs: () => Array<{ npcId: string; position: { x: number; z: number }; childNames: string[]; state: unknown | null }> | null;
       inspectFurniture: () => Array<{ name: string; position: { x: number; y: number; z: number }; size?: readonly [number, number, number] }> | null;
       debugSkipPeriod: () => void;
+      /** Dev/QA hook: teleport the player to (x, z) with a yaw (radians). */
+      teleport: (x: number, z: number, yaw: number) => void;
     };
   }
 }
@@ -1001,6 +1003,14 @@ window.__aitrainer = {
     console.info(`[mouse] sensitivity = ${getMouseSensitivity()} rad/count`);
   },
   getSensitivity: () => getMouseSensitivity(),
+  // Dev/QA hook: teleport the player to (x, z) with a yaw (radians).
+  // Used by the Playwright e2e / QA scripts to inspect specific rooms
+  // without fighting the keyboard focus in the UI overlay. Production
+  // builds keep this in place (it is harmless without console access).
+  teleport: (x: number, z: number, yaw: number): void => {
+    if (!controls) return;
+    controls.setPlayerPose(x, z, yaw);
+  },
   // Debug helper: returns the gender + child-mesh kinds of every
   // NPC group in the scene. Used by the gender-bug triage script
   // (see `.agent-briefs/agy-gender-qa-brief.md`).

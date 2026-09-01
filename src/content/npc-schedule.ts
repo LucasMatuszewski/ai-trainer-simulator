@@ -387,15 +387,20 @@ export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
   // C-57 (Lucas, 2026-09-01): the toilet moved east of the kitchen.
   // The new room is x=[19, 24], z=[2, 7]. The user enters from the
   // north (doorway z=[5, 7]) and the stalls are against the south
-  // wall (z=3). NPCs at the stalls face +Z (north) - away from the
-  // stalls, toward the door / washbasin.
-  { position: { x: 20, y: 0, z: 2.8 }, face: 0, state: "toilet" },
-  { position: { x: 23, y: 0, z: 2.8 }, face: 0, state: "toilet" },
+  // wall (z=3, the stall door is at z=3.8 facing +Z). The NPCs
+  // stand just south of each stall door (z=2.8) and face into
+  // the stall (-Z = away from the south wall = toward the
+  // washbasin / door, which is the same direction as the stall
+  // interior). Per the world-layout yaw convention, `face: Math.PI`
+  // faces -Z (north). So the NPCs at the stalls look at their
+  // own stall entrance.
+  { position: { x: 20, y: 0, z: 2.8 }, face: Math.PI, state: "toilet" },
+  { position: { x: 23, y: 0, z: 2.8 }, face: Math.PI, state: "toilet" },
   // Toilet: at the urinal (on the east wall, x=23.5). The NPC
   // stands 0.5m west of the urinal facing east.
   { position: { x: 22.5, y: 0, z: 5 }, face: Math.PI / 2, state: "toilet" },
   // Toilet: at the basin (on the north wall, z=6.7). The NPC
-  // stands 0.5m south facing north.
+  // stands 0.5m south facing the basin (north).
   { position: { x: 22, y: 0, z: 6.0 }, face: Math.PI, state: "toilet" },
   // Meeting room: by the meeting table (center of room).
   // The table is in the center; just stand there.

@@ -78,7 +78,10 @@ export function roomAt(x: number, z: number): RoomId {
   if (x >= 19 && z <= -3) return "training";
   if (z <= -9) return "ceo";
   if (x >= 9 && z >= -7 && z <= 7) return "kitchen";
-  if (z >= 9) return x <= -6.5 ? "toilet" : "meeting";
+  // The old back-SW toilet (x <= -6.5, z >= 9) is gone - C-57. The
+  // space at x < -6, z >= 9 is the meeting room. The fallthrough
+  // below returns "meeting" for z >= 9.
+  if (z >= 9) return "meeting";
   return "main-office";
 }
 
