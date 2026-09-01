@@ -202,6 +202,37 @@ describe("Random walk destinations (L-2026-08-30-01)", () => {
     }
   });
 
+  it("orients the toilet NPCs at their fixtures (C-57 yaw convention)", () => {
+    // Per the world-layout yaw convention (C-45 amendment j):
+    //   - face: 0 faces +Z (south)
+    //   - face: Math.PI faces -Z (north)
+    //   - face: Math.PI / 2 faces +X (east)
+    // Stalls are at z=3 (door faces +Z at z=3.78); the NPC stands
+    // south of the door (z=2.8) and must look +Z toward the door.
+    // Basin is at z=6.7 on the north wall; the NPC stands south
+    // of it (z=6.0) and must look -Z toward the basin.
+    // Urinal is at x=23.5 on the east wall; the NPC stands west
+    // of it (x=22.5) and must look +X (east) toward the urinal.
+    const byPos = (z: number) =>
+      RANDOM_DESTINATIONS.filter(
+        (d) => d.state === "toilet" && Math.abs(d.position.z - z) < 0.1,
+      );
+    // Two stalls at z=2.8: face must be 0 (toward +Z).
+    for (const d of byPos(2.8)) {
+      expect(d.face).toBe(0);
+    }
+    // Basin at z=6.0: face must be Math.PI (toward -Z).
+    for (const d of byPos(6.0)) {
+      expect(d.face).toBe(Math.PI);
+    }
+    // Urinal at x=22.5: face must be Math.PI / 2 (toward +X).
+    for (const d of RANDOM_DESTINATIONS) {
+      if (d.state === "toilet" && Math.abs(d.position.x - 22.5) < 0.1) {
+        expect(d.face).toBe(Math.PI / 2);
+      }
+    }
+  });
+
   it("places the training destinations inside the training room bounds", () => {
     // C-44: the training room was elongated north (the projector
     // wall moved from z=-13 to z=-19). New bounds: x=[19, 27],
