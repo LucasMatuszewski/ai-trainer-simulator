@@ -294,10 +294,35 @@ function startOffice(playIntro = false): void {
     // director is still used for the intro cinematic and any
     // future scripted camera moves (but is cancelled by the first
     // controls.update() call).
+    //
+    // C-58: Continue (a returning save after a page load) restores the
+    // last persisted pose instead - position + view yaw/pitch. A fresh
+    // game has no saved pose (the reset dispatch drops it) and falls
+    // through to the door spawn. pushOutOfObstacles nudges a stale
+    // coordinate out of furniture that moved since the save (layouts
+    // change between builds - e.g. the C-57 toilet relocation), so a
+    // saved spot can never trap the player inside a desk.
+    const savedPose = game.get().playerPose;
+    const startPose = sceneObjects.playerStart.clone();
+    let startYaw = 0;
+    let startPitch = 0;
+    if (savedPose && Number.isFinite(savedPose.x) && Number.isFinite(savedPose.z)) {
+      const spot = pushOutOfObstacles(
+        { x: savedPose.x, z: savedPose.z },
+        PLAYER_RADIUS,
+        WORLD_BOUNDS,
+        [...OBSTACLES, ...WORLD_COLLISION_WALLS],
+      );
+      startPose.set(spot.x, startPose.y, spot.z);
+      if (Number.isFinite(savedPose.yaw)) startYaw = savedPose.yaw;
+      if (Number.isFinite(savedPose.pitch)) startPitch = savedPose.pitch;
+    }
     controls = createControls({
       canvas,
       camera: engine.camera,
-      initialPlayer: sceneObjects.playerStart,
+      initialPlayer: startPose,
+      initialYaw: startYaw,
+      initialPitch: startPitch,
     });
     raycaster = new THREE.Raycaster();
     // Phase 3.3: inter-NPC speech bubbles. The system is parented
@@ -850,6 +875,53 @@ function mountOfficeRosterFresh(): void {
 
 // --- Main loop ---
 
+// C-58: persist the player pose while it changes, so a page reload +
+// Continue resumes in place (title screen restore; see startOffice).
+// Throttled to 1 Hz AND change-gated: an idle player costs zero
+// localStorage writes and zero store dispatches. Runs even while a
+// dialogue is open - the C-54 conversation spot IS the player's
+// position and is what a reload should restore.
+const POSE_SAVE_INTERVAL_MS = 1000;
+let lastPoseSaveAt = 0;
+let lastSavedPoseKey = "";
+
+function poseKey(x: number, z: number, yaw: number, pitch: number): string {
+  // Quantized: sub-centimetre jitter / sub-milliradian drift from the
+  // walk math must not count as a change.
+  return `${x.toFixed(2)}|${z.toFixed(2)}|${yaw.toFixed(3)}|${pitch.toFixed(3)}`;
+}
+
+function maybeSavePlayerPose(now: number): void {
+  if (!controls || screen !== "office") return;
+  if (now - lastPoseSaveAt < POSE_SAVE_INTERVAL_MS) return;
+  const p = controls.getPlayerPosition();
+  const yaw = controls.getYaw();
+  const pitch = controls.getPitch();
+  const key = poseKey(p.x, p.z, yaw, pitch);
+  if (key === lastSavedPoseKey) return;
+  lastPoseSaveAt = now;
+  lastSavedPoseKey = key;
+  game.dispatch({ type: "set-player-pose", pose: { x: p.x, z: p.z, yaw, pitch } });
+}
+
+// C-58: flush the exact pose when the tab goes away. The RAF loop
+// pauses on hidden tabs, so the last 1 Hz save can be up to a second
+// stale exactly when it matters most (closing / switching the tab).
+function flushPlayerPose(): void {
+  if (!controls || screen !== "office") return;
+  const p = controls.getPlayerPosition();
+  const yaw = controls.getYaw();
+  const pitch = controls.getPitch();
+  const key = poseKey(p.x, p.z, yaw, pitch);
+  if (key === lastSavedPoseKey) return;
+  lastSavedPoseKey = key;
+  game.dispatch({ type: "set-player-pose", pose: { x: p.x, z: p.z, yaw, pitch } });
+}
+window.addEventListener("pagehide", flushPlayerPose);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") flushPlayerPose();
+});
+
 function advanceOfficePeriods(periodCount: number, now: number): void {
   const prevDay = game.get().day;
   for (let i = 0; i < periodCount; i++) {
@@ -927,6 +999,10 @@ function frame(): void {
   ) {
     controls.update(dt);
   }
+  // C-58: persist the live pose (throttled + change-gated; see
+  // maybeSavePlayerPose). Deliberately OUTSIDE the update guard above so
+  // a dialogue's staged conversation spot is saved too.
+  maybeSavePlayerPose(now);
 
   if (engine) engine.render();
 
@@ -1082,7 +1158,7 @@ frame();
 // Bump after every commit so the console line in the browser
 // confirms the user is on the right build. See AGENTS.md
 // "Verify the build you are testing" section.
-const BUILD_VERSION = "v2026.09.01-03";
+const BUILD_VERSION = "v2026.09.01-04";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,

@@ -67,6 +67,40 @@ describe("createControls", () => {
     expect(p.z).toBe(6);
   });
 
+  it("accepts an initial yaw + pitch and places the camera (C-58 save restore)", () => {
+    const camera = makeCamera();
+    const c = createControls({
+      canvas: makeCanvas(),
+      camera,
+      initialPlayer: new THREE.Vector3(3, 0, -2),
+      initialYaw: 1.5,
+      initialPitch: -0.25,
+    });
+    // State carries the restored view angles...
+    expect(c.getYaw()).toBe(1.5);
+    expect(c.getPitch()).toBe(-0.25);
+    // ...and the camera is placed immediately: eye height above the
+    // player, rotation (pitch, yaw, 0) YXZ - same contract as
+    // setPlayerPose, so the first office frame already shows the
+    // restored view instead of one frame of the default spawn view.
+    expect(camera.position.x).toBe(3);
+    expect(camera.position.z).toBe(-2);
+    expect(camera.position.y).toBeCloseTo(1.65, 5);
+    expect(camera.rotation.x).toBeCloseTo(-0.25, 5);
+    expect(camera.rotation.y).toBeCloseTo(1.5, 5);
+    expect(camera.rotation.order).toBe("YXZ");
+  });
+
+  it("defaults yaw and pitch to 0 when no restore angles are given", () => {
+    const c = createControls({
+      canvas: makeCanvas(),
+      camera: makeCamera(),
+      initialPlayer: new THREE.Vector3(0, 0, 6),
+    });
+    expect(c.getYaw()).toBe(0);
+    expect(c.getPitch()).toBe(0);
+  });
+
   it("does not move the player when no keys are held", () => {
     const c = createControls({
       canvas: makeCanvas(),

@@ -21,7 +21,7 @@ vi.hoisted(() => {
   });
 });
 import { initialGameState } from "../../src/game/initial";
-import { reduce } from "../../src/game/state";
+import { game, reduce } from "../../src/game/state";
 
 const baseState = () => initialGameState();
 
@@ -105,5 +105,43 @@ describe("reducer: totals", () => {
     const s = baseState();
     const next = reduce(s, { type: "increment-total", key: "miniGamesWon" });
     expect(next.totals.miniGamesWon).toBe(1);
+  });
+});
+
+describe("reducer: player pose (C-58)", () => {
+  it("set-player-pose stores the pose", () => {
+    const pose = { x: 12.5, z: -3.25, yaw: 1.2, pitch: -0.1 };
+    const next = reduce(baseState(), { type: "set-player-pose", pose });
+    expect(next.playerPose).toEqual(pose);
+  });
+
+  it("set-player-pose leaves the rest of the state untouched", () => {
+    const s = baseState();
+    const next = reduce(s, { type: "set-player-pose", pose: { x: 1, z: 2, yaw: 0, pitch: 0 } });
+    expect(next.cash).toBe(s.cash);
+    expect(next.day).toBe(s.day);
+    expect(next.stats).toEqual(s.stats);
+  });
+
+  it("a fresh game state has no playerPose (new games start at the door)", () => {
+    expect(baseState().playerPose).toBeUndefined();
+  });
+});
+
+describe("store: pose persistence (C-58)", () => {
+  it("set-player-pose persists to localStorage WITHOUT notifying UI listeners", () => {
+    // The pose tracker dispatches ~1 Hz while walking. No UI renders
+    // the pose, so the store must persist it silently - otherwise the
+    // HUD / roster / quest log would re-render every second for no
+    // visible change.
+    let notified = 0;
+    const unsub = game.subscribe(() => {
+      notified += 1;
+    });
+    game.dispatch({ type: "set-player-pose", pose: { x: 5, z: 6, yaw: 0.5, pitch: 0 } });
+    unsub();
+    expect(notified).toBe(0);
+    const saved = JSON.parse(localStorage.getItem("aitrainer:save:v1")!) as { playerPose?: unknown };
+    expect(saved.playerPose).toEqual({ x: 5, z: 6, yaw: 0.5, pitch: 0 });
   });
 });

@@ -33,7 +33,13 @@ class GameStore {
     const next = reduce(this.state, action);
     if (next === this.state) return; // no-op
     this.state = next;
-    this.emit();
+    // C-58: pose updates are persistence-only - no UI renders the player
+    // pose, and the tracker dispatches ~1 Hz while walking, so emitting
+    // would re-render the HUD / roster / quest log every second for no
+    // visible change. Everything else notifies as usual.
+    if (action.type !== "set-player-pose") {
+      this.emit();
+    }
     if (action.type !== "load" && action.type !== "reset") {
       this.save();
     }
@@ -160,6 +166,8 @@ export function reduce(state: GameState, action: Action): GameState {
         },
       };
     }
+    case "set-player-pose":
+      return { ...state, playerPose: action.pose };
     case "load":
       return action.state;
     case "reset":

@@ -180,6 +180,13 @@ export interface ControlsOptions {
   canvas: HTMLCanvasElement;
   camera: THREE.PerspectiveCamera;
   initialPlayer: THREE.Vector3;
+  /**
+   * C-58: initial view yaw in radians (restore-from-save). Default 0 -
+   * the historic "spawn at the office door looking into the office".
+   */
+  initialYaw?: number;
+  /** C-58: initial view pitch in radians (restore-from-save). Default 0. */
+  initialPitch?: number;
 }
 
 export function createControls(opts: ControlsOptions): Controls {
@@ -190,11 +197,16 @@ export function createControls(opts: ControlsOptions): Controls {
   // ControlsState and runs stepControls() each frame.
   let state: ControlsState = {
     player: { x: player.x, y: player.y, z: player.z },
-    yaw: 0,
-    pitch: 0,
+    yaw: opts.initialYaw ?? 0,
+    pitch: opts.initialPitch ?? 0,
     mouseLook: "free",
     mouseDelta: { x: 0, y: 0 },
   };
+  // C-58: apply the (possibly restored) pose to the camera right away -
+  // same contract as setPlayerPose. The first office frame must already
+  // show the restored view, not one frame of the default spawn view.
+  camera.position.set(player.x, player.y + EYE_HEIGHT, player.z);
+  camera.rotation.set(state.pitch, state.yaw, 0, "YXZ");
 
   let keys: Set<string> = new Set();
   // Press order. When a key is pressed we append to this list;

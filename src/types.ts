@@ -102,6 +102,20 @@ export interface EasterEgg {
   available?: (state: Readonly<GameState>) => boolean;
 }
 
+/**
+ * C-58: the player's last world position + view rotation, persisted with the
+ * save so Continue (after a page reload) drops the player where they stood.
+ * y is omitted - the player always walks the floor (playerStart.y).
+ */
+export interface PlayerPose {
+  x: number;
+  z: number;
+  /** View yaw in radians around Y (what the player sees, horizontal). */
+  yaw: number;
+  /** View pitch in radians (what the player sees, up/down tilt). */
+  pitch: number;
+}
+
 export interface GameState {
   saveVersion: 1;
   cash: number;
@@ -121,6 +135,12 @@ export interface GameState {
     miniGamesLost: number;
     dialoguesFinished: number;
   };
+  /**
+   * C-58: present in saves once the player has moved; absent in fresh and
+   * pre-C-58 saves (old saves stay valid under saveVersion 1). A fresh game
+   * (reset) has no pose, so New Game always spawns at the office door.
+   */
+  playerPose?: PlayerPose;
 }
 
 export type Action =
@@ -134,5 +154,7 @@ export type Action =
   | { type: "advance-time" }
   | { type: "start-bankruptcy-countdown" }
   | { type: "increment-total"; key: keyof GameState["totals"] }
+  /** C-58: persist the player's live pose (throttled by the frame loop). */
+  | { type: "set-player-pose"; pose: PlayerPose }
   | { type: "load"; state: GameState }
   | { type: "reset" };
