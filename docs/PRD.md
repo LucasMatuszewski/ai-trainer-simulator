@@ -444,6 +444,20 @@ The NPC controller is a small A* path-follower, not a 2-second linear lerp. The 
 
 The walk cycle is intentionally minimal (no leg-mesh swap, no IK, no ragdoll). It is a procedural sine animation on the existing children of the NPC group; the `npc-mesh.ts` builder is unchanged. If a future pass wants full leg-mesh swaps, that's a separate ADR.
 
+### 11.7 Morning arrivals - a staggered office, not a factory gate (C-51)
+
+An IT company does not open a gate at 9:00 and let everyone in at once. People trickle in over the first hour: a few are already at their desks before you get there, most arrive over the morning, and one is reliably late. The arrival profile is pure data in `src/content/npc-schedule.ts` (`NPC_ARRIVALS`, `planMorningArrivals`), fully unit-testable, and the controller only executes it.
+
+- **Two arrival modes per NPC.** `already-in` means the NPC is placed directly on their morning schedule entry at day start - no door, no walk, they were here before the player. `arrives` means the NPC is invisible and parked off-scene until their arrival moment, then placed at the front door (0, 8.4) and given a normal path to their morning destination.
+- **Who is already in** (5, per Lucas 2026-09-01 and PRD 11.4's fade-in description): **Bartek** and **Marek** (named in 11.4 as already at their desks), **Maciek** the CTO (11.1: "only appears in the morning", so he opens the office), **Dawid** the CEO (he is in his own office behind glass), and **Burek** the dog (he sleeps here).
+- **Who arrives, and when.** The other 8 humans arrive across the first ~110 s of the 180 s morning period. **Janusz** the janitor is the designated late arrival at ~150 s - this implements 11.1's "arrives late (10am)" without changing his schedule STATE, which stays `at-desk` in all three periods (L-2026-08-31-02 is unaffected: that correction is about where he stands, not when he gets there).
+- **Minimum inter-arrival gap is the actual crowd fix.** Offsets are sorted and then pushed forward so consecutive arrivals are at least `MIN_ARRIVAL_GAP_S` (4 s) apart. At a 1.2 m/s walk that is ~4.8 m of clearance, so the previous arrival is well out of the doorway before the next one appears. The door crowd is prevented at the source, in data, instead of being handed to the C-48/C-50 avoidance system to untangle.
+- **At most one body in the doorway.** An NPC that has not arrived yet is `visible = false` and parked off-scene; it is moved to the door only on the frame it starts walking. The old behaviour placed all 13 humans on the single door point on frame 0 and let them stand there stacked for up to 9.5 s.
+- **Stable personality, varied day.** The base offset is a hash of the NPC id (Bartek is always early, Janusz is always last), plus a per-day seeded rng jitter and a small lateral door offset (x in [-0.8, 0.8]) so no two mornings replay identically and consecutive arrivals do not retrace one point.
+- **Every day, not just day 1.** The arrival runs on every transition into a new day's morning, keyed on the day counter - not once per controller lifetime. Before this, `gone-home` parked NPCs at (0, 0, 0) and the day-2 morning re-plan made the entire company pop into existence in the middle of the office.
+
+**Acceptance criteria:** (1) At day start the player sees several colleagues already working and several walking in through the door behind them. (2) No more than a small handful of NPCs are ever near the door at once. (3) Janusz arrives visibly later than everyone else. (4) Day 2 and later mornings arrive through the door exactly like day 1 - nobody materializes in the middle of the office. (5) The measured morning door-jam metrics stay under the ceilings in `tests/unit/npc-morning-arrivals.test.ts`.
+
 ### 11.5 The "real playable game" promise
 
 The user's mandate: "Remember, your goal is to make this game perfect, real playable game, best game in this category on the market!" and "Continue until you make this game perfect!"
