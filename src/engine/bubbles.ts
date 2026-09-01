@@ -28,7 +28,7 @@ export function pickLine(lines: ReadonlyArray<string>, rng: () => number): strin
 const lastLineByList = new WeakMap<ReadonlyArray<string>, number>();
 
 function fitLine(line: string): string[] {
-  const maximumCharacters = 32;
+  const maximumCharacters = 36;
   const maximumTotal = maximumCharacters * 2 - 3;
   const shortened = line.length > maximumTotal
     ? `${line.slice(0, maximumTotal).trimEnd()}...`
@@ -40,37 +40,69 @@ function fitLine(line: string): string[] {
   return [shortened.slice(0, splitAt), shortened.slice(splitAt).trimStart()];
 }
 
+/**
+ * C-55: draw the bubble at 4x the old pixel count with the hover
+ * label's own font (VT323) and linear filtering. The old 256x64
+ * canvas with a 16px monospace font and NearestFilter upscaled into
+ * unreadable blocks - the hover label is plain DOM text at 26px VT323,
+ * which is why it was sharp while the bubbles were mush.
+ */
 function makeTexture(line: string): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
-  canvas.width = 256;
-  canvas.height = 64;
+  canvas.width = 512;
+  canvas.height = 128;
   const context = canvas.getContext("2d");
   if (context === null) throw new Error("Unable to create speech bubble canvas");
 
   context.fillStyle = "#17152880";
-  context.fillRect(0, 0, canvas.width, canvas.height - 8);
+  context.fillRect(0, 0, canvas.width, canvas.height - 16);
   context.fillStyle = "#17152899";
   context.beginPath();
-  context.moveTo(112, 56);
-  context.lineTo(128, 64);
-  context.lineTo(144, 56);
+  context.moveTo(224, 112);
+  context.lineTo(256, 128);
+  context.lineTo(288, 112);
   context.fill();
   context.strokeStyle = "#f4d35e80";
-  context.lineWidth = 3;
-  context.strokeRect(1.5, 1.5, canvas.width - 3, canvas.height - 11);
+  context.lineWidth = 6;
+  context.strokeRect(3, 3, canvas.width - 6, canvas.height - 22);
   context.fillStyle = "#fff7d6";
-  context.font = "16px monospace";
   context.textAlign = "center";
   context.textBaseline = "middle";
   const lines = fitLine(line);
+  // One shared font size for both lines: shrink until the widest
+  // line fits the bubble's inner width.
+  const baseFontPx = 44;
+  const maxTextWidth = canvas.width - 32;
+  let fontPx = baseFontPx;
+  const setFont = (): void => {
+    context.font = `${fontPx}px "VT323", monospace`;
+  };
+  setFont();
+  const widest = (): number => {
+    let max = 0;
+    for (const text of lines) max = Math.max(max, context.measureText(text).width);
+    return max;
+  };
+  const measured = widest();
+  if (measured > maxTextWidth) {
+    fontPx = Math.max(24, Math.floor(baseFontPx * maxTextWidth / measured));
+    setFont();
+  }
   lines.forEach((text, index) => {
-    const y = lines.length === 1 ? 28 : 19 + index * 20;
-    context.fillText(text, 128, y, 248);
+    const y = lines.length === 1 ? 56 : 40 + index * 44;
+    context.fillText(text, canvas.width / 2, y);
   });
 
   const texture = new THREE.CanvasTexture(canvas);
-  texture.magFilter = THREE.NearestFilter;
-  texture.minFilter = THREE.NearestFilter;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  // C-55 amendment (Lucas: "very blurry now, like with some filter"):
+  // NO mipmaps. The sprite renders smaller than the 512px texture at
+  // typical viewports, so mip filtering blended in the half-res mip -
+  // the text was effectively drawn from a 256x64 copy again, i.e. the
+  // old blur. Plain linear sampling always reads the full-res canvas.
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
   texture.needsUpdate = true;
   return texture;
 }
@@ -101,6 +133,13 @@ function pickRecyclableSlot(slots: readonly BubbleSlot[]): BubbleSlot {
 }
 
 export function createBubbleSystem(scene: THREE.Scene): BubbleHandle {
+  // C-55: the canvas can only draw VT323 once the face is loaded; it
+  // is normally in by the first bubble (the DOM uses it everywhere),
+  // but ask for it explicitly so the first texture never falls back
+  // to monospace.
+  if (typeof document !== "undefined") {
+    void document.fonts?.load('44px "VT323"').catch(() => { /* font stays fallback */ });
+  }
   const slots: BubbleSlot[] = [];
   for (let i = 0; i < BUBBLE_POOL_SIZE; i += 1) {
     const material = new THREE.SpriteMaterial({
@@ -110,6 +149,8 @@ export function createBubbleSystem(scene: THREE.Scene): BubbleHandle {
     });
     const sprite = new THREE.Sprite(material);
     sprite.visible = false;
+    // C-55 amendment: back to the original on-screen size - the scale
+    // bump bought nothing and Lucas flagged it as the visible change.
     sprite.scale.set(0.42, 0.105, 1);
     sprite.renderOrder = 1000;
     scene.add(sprite);
