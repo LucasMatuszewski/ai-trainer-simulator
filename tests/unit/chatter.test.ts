@@ -1,13 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
+  CHATTER_GAP_MAX_S,
+  CHATTER_GAP_MIN_S,
+  CHATTER_OVERLAP_GAP_MAX_S,
+  CHATTER_OVERLAP_GAP_MIN_S,
   PAIR_COOLDOWN_S,
   pairKey,
   candidatePairs,
+  nextStartDelay,
   pickExchange,
   pickPair,
   pickStarter,
   roomAt,
-  shouldStartExchange,
   type ChatterCandidate,
 } from "../../src/engine/chatter";
 import { OFFICE_CHATTER } from "../../src/content/office-chatter";
@@ -128,24 +132,37 @@ describe("pickStarter", () => {
   });
 });
 
-describe("shouldStartExchange", () => {
-  it("keeps the office-wide 3-6 s rhythm for the FIRST conversation", () => {
-    // rng 0: chance passes, interval = 3 s.
-    expect(shouldStartExchange(0, 3, () => 0)).toBe(true);
-    expect(shouldStartExchange(0, 2, () => 0)).toBe(false);
-    // rng 0.99: chance roll fails first.
-    expect(shouldStartExchange(0, 100, () => 0.99)).toBe(false);
+describe("nextStartDelay (C-46 amendment: scheduled, even cadence)", () => {
+  it("always stays inside the normal 6-12 s window when idle", () => {
+    for (let i = 0; i < 50; i += 1) {
+      const delay = nextStartDelay(0, () => i / 50);
+      expect(delay).toBeGreaterThanOrEqual(CHATTER_GAP_MIN_S);
+      expect(delay).toBeLessThanOrEqual(CHATTER_GAP_MAX_S);
+    }
   });
 
-  it("lets a SECOND simultaneous conversation start sooner (C-46)", () => {
-    // rng 0 with one active conversation: interval = 1 s.
-    expect(shouldStartExchange(1, 1, () => 0)).toBe(true);
-    expect(shouldStartExchange(1, 0.5, () => 0)).toBe(false);
+  it("with one active conversation, 35% of gaps are short overlaps", () => {
+    let short = 0;
+    let normal = 0;
+    for (let i = 0; i < 100; i += 1) {
+      const delay = nextStartDelay(1, () => i / 100);
+      if (delay < CHATTER_GAP_MIN_S) {
+        short += 1;
+        expect(delay).toBeGreaterThanOrEqual(CHATTER_OVERLAP_GAP_MIN_S);
+        expect(delay).toBeLessThanOrEqual(CHATTER_OVERLAP_GAP_MAX_S);
+      } else {
+        normal += 1;
+      }
+    }
+    // i/100 < 0.35 for i = 0..34 -> exactly 35 short gaps.
+    expect(short).toBe(35);
+    expect(normal).toBe(65);
   });
 
-  it("honours the 50% chance gate in both modes", () => {
-    expect(shouldStartExchange(1, 100, () => 0.75)).toBe(false);
-    expect(shouldStartExchange(0, 100, () => 0.75)).toBe(false);
+  it("never rolls the overlap gap when nothing is active (no bursts)", () => {
+    for (let i = 0; i < 50; i += 1) {
+      expect(nextStartDelay(0, () => i / 50)).toBeGreaterThanOrEqual(CHATTER_GAP_MIN_S);
+    }
   });
 });
 
@@ -157,6 +174,24 @@ describe("pickExchange", () => {
     }
     for (let i = 1; i < seen.length; i += 1) {
       expect(seen[i]).not.toBe(seen[i - 1]);
+    }
+  });
+
+  it("filters starters by the speaker's topic affinities (C-46 amendment)", () => {
+    // Sales (general only) never starts an IT or finance exchange.
+    for (let i = 0; i < 60; i += 1) {
+      const chosen = pickExchange(OFFICE_CHATTER, () => i / 60, "przemek");
+      expect(["it", "finance", "janitor"]).not.toContain(chosen.topic);
+    }
+    // The accountant (finance) never starts IT or janitor ones.
+    for (let i = 0; i < 60; i += 1) {
+      const chosen = pickExchange(OFFICE_CHATTER, () => i / 60, "grazyna");
+      expect(["it", "janitor"]).not.toContain(chosen.topic);
+    }
+    // The CTO (it) never starts finance or janitor ones.
+    for (let i = 0; i < 60; i += 1) {
+      const chosen = pickExchange(OFFICE_CHATTER, () => i / 60, "maciek");
+      expect(["finance", "janitor"]).not.toContain(chosen.topic);
     }
   });
 });

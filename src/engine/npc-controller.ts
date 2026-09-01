@@ -24,12 +24,12 @@ import {
   PAIR_COOLDOWN_S,
   RESPONSE_DELAY_S,
   candidatePairs,
+  nextStartDelay,
   pairKey,
   pickExchange,
   pickPair,
   pickStarter,
   roomAt,
-  shouldStartExchange,
   type RoomId,
 } from "./chatter";
 import { computeAvoidancePush, type AvoidanceAgent } from "./npc-avoidance";
@@ -48,6 +48,8 @@ export interface ActiveConversationView {
   b: string;
   /** Seconds until the partner's response bubble fires. */
   responseIn: number;
+  /** The line the starter said (debug/test/WebMCP visibility). */
+  starterLine: string;
 }
 
 export interface NpcController {
@@ -152,6 +154,7 @@ function priorityFor(id: NpcId): number {
 interface ActiveConversation {
   aId: NpcId;
   bId: NpcId;
+  starterLine: string;
   response: string;
   starterAt: number;
 }
@@ -179,7 +182,10 @@ export function createNpcController(
   let destroyed = false;
   let idleElapsed = 0;
   let bubbleElapsed = 0;
-  let timeSinceLastBubble = 0;
+  // C-46 amendment: the next exchange START is SCHEDULED, not diced
+  // for every second (Lucas: "sometimes too often, other time not
+  // often enough"). The first chatter lands 4-8 s after mount.
+  let nextStartAt = 4 + rng() * 4;
   let controllerElapsed = 0;
   let lastBurekBubbleAt = -Infinity;
   let barkAt = nextBarkDelay(rng);
@@ -320,7 +326,7 @@ export function createNpcController(
   const update = (dt: number): void => {
     if (destroyed) return;
     const safeDt = Number.isFinite(dt) ? Math.max(0, dt) : 0;
-    idleElapsed += safeDt; bubbleElapsed += safeDt; timeSinceLastBubble += safeDt; controllerElapsed += safeDt;
+    idleElapsed += safeDt; bubbleElapsed += safeDt; controllerElapsed += safeDt;
     if (bubbleSystem !== null && sceneRoot !== null) {
       const camera = sceneRoot.getObjectByProperty("isCamera", true) as THREE.Camera | undefined;
       bubbleSystem.update(safeDt, camera ?? fallbackCamera);
@@ -439,7 +445,7 @@ export function createNpcController(
 
     if (bubbleElapsed >= 1) {
       bubbleElapsed = 0;
-      if (conversations.size < MAX_CONVERSATIONS) {
+      if (conversations.size < MAX_CONVERSATIONS && controllerElapsed >= nextStartAt) {
         // Candidates: everyone visible, out of home, not already mid-
         // conversation. The room comes from the position so the
         // second simultaneous conversation lands in a different room.
@@ -472,9 +478,10 @@ export function createNpcController(
         const first = pair === null ? undefined : npcObjects[pair.a as NpcId];
         const second = pair === null ? undefined : npcObjects[pair.b as NpcId];
         // candidatePairs already enforces CHATTER_RADIUS on every pair;
-        // shouldStartExchange is the pacing gate (50% chance + interval,
-        // shortened for a second simultaneous conversation).
-        if (pair !== null && first !== undefined && second !== undefined && shouldStartExchange(conversations.size, timeSinceLastBubble, rng)) {
+        // nextStartAt is the pacing schedule (see nextStartDelay). If
+        // no pair qualifies we simply keep waiting - the schedule stays
+        // due, so chatter resumes the moment two NPCs are nearby.
+        if (pair !== null && first !== undefined && second !== undefined) {
           // C-46: the STARTER is a chattiness-weighted coin flip
           // inside the pair - this is what stops "only one person
           // talks all the time".
@@ -482,8 +489,9 @@ export function createNpcController(
           const responderId = (starterId === pair.a ? pair.b : pair.a) as NpcId;
           // C-46 (Lucas): lunch lines are TIME-gated, not
           // location-gated - during the lunch window every human pair
-          // sounds like lunch, wherever they stand.
-          const exchange = pickExchange(isLunchActive() ? LUNCH_CHATTER : OFFICE_CHATTER, rng);
+          // sounds like lunch, wherever they stand. The starter's
+          // topic affinities filter the pool (C-46 amendment).
+          const exchange = pickExchange(isLunchActive() ? LUNCH_CHATTER : OFFICE_CHATTER, rng, starterId);
           // Burek cannot do small talk: as a starter he just barks
           // (one turn); as a responder he barks back.
           const starterLine = starterId === "burek"
@@ -500,14 +508,16 @@ export function createNpcController(
           const dz = second.position.z - first.position.z;
           first.rotation.y = Math.atan2(dx, dz);
           second.rotation.y = Math.atan2(-dx, -dz);
-          timeSinceLastBubble = 0;
           if (starterId === "burek") lastBurekBubbleAt = controllerElapsed;
           const key = pairKey(pair.a, pair.b);
           if (responseLine === null) {
             pairCooldowns.set(key, controllerElapsed + PAIR_COOLDOWN_S);
           } else {
-            conversations.set(key, { aId: starterId, bId: responderId, response: responseLine, starterAt: controllerElapsed });
+            conversations.set(key, { aId: starterId, bId: responderId, starterLine: starterLine, response: responseLine, starterAt: controllerElapsed });
           }
+          // Schedule the next start AFTER recording this one, so the
+          // 35% overlap gap can fire against the just-started exchange.
+          nextStartAt = controllerElapsed + nextStartDelay(conversations.size, rng);
         }
       }
     }
@@ -518,7 +528,6 @@ export function createNpcController(
       if (object !== undefined && object.visible && object.userData.npcState !== "gone-home" && controllerElapsed - lastBurekBubbleAt >= 60) {
         bubbleSystem?.show(object.position, pickLine(BUREK_LINES, rng));
         lastBurekBubbleAt = controllerElapsed;
-        timeSinceLastBubble = 0;
         barkAt = controllerElapsed + nextBarkDelay(rng);
       } else barkAt = Math.max(barkAt + 1, lastBurekBubbleAt + 60);
     }
@@ -532,6 +541,7 @@ export function createNpcController(
       a: conversation.aId,
       b: conversation.bId,
       responseIn: Math.max(0, RESPONSE_DELAY_S - (controllerElapsed - conversation.starterAt)),
+      starterLine: conversation.starterLine,
     })),
     setOverride: (npcId, entry) => {
       const period = getCurrentPeriod();

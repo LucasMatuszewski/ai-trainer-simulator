@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   INTER_NPC_LINES,
   OFFICE_CHATTER,
+  SPEAKER_TOPICS,
   chatterWeightFor,
 } from "../../src/content/office-chatter";
 import { LUNCH_DIALOGUES_HUMAN } from "../../src/content/lunch-dialogues";
@@ -77,5 +78,45 @@ describe("OFFICE_CHATTER (C-46)", () => {
     expect(chatterWeightFor("kasia")).toBeGreaterThan(1.2); // Recruiter
     // Unlisted NPCs default to 1.
     expect(chatterWeightFor("nobody")).toBe(1);
+  });
+});
+
+describe("OFFICE_CHATTER topic affinities (C-46 amendment)", () => {
+  it("only uses known topics or none (general)", () => {
+    const known = new Set(["it", "finance", "janitor"]);
+    for (const exchange of OFFICE_CHATTER) {
+      if (exchange.topic !== undefined) expect(known.has(exchange.topic)).toBe(true);
+    }
+  });
+
+  it("gives finance jokes to the accountant and manager, janitor jokes to Janusz", () => {
+    const finance = OFFICE_CHATTER.filter((e) => e.topic === "finance");
+    expect(finance.length).toBeGreaterThanOrEqual(3);
+    const janitor = OFFICE_CHATTER.filter((e) => e.topic === "janitor");
+    expect(janitor.length).toBeGreaterThanOrEqual(2);
+    expect(SPEAKER_TOPICS.grazyna).toContain("finance");
+    expect(SPEAKER_TOPICS.zosia).toContain("finance");
+    expect(SPEAKER_TOPICS.janusz).toContain("janitor");
+  });
+
+  it("keeps non-tech roles on general exchanges only", () => {
+    // Lucas: sales, marketing, recruiting don't tell IT jokes.
+    // (grazyna/janusz/zosia have their own affinities tested above.)
+    for (const id of ["przemek", "ania", "kasia", "klaudia"]) {
+      expect(SPEAKER_TOPICS[id]).toBeUndefined();
+    }
+    // Techies + CEO tell IT jokes; zosia gets finance (+it).
+    expect(SPEAKER_TOPICS.bartek).toContain("it");
+    expect(SPEAKER_TOPICS.tomek).toContain("it");
+    expect(SPEAKER_TOPICS.marek).toContain("it");
+    expect(SPEAKER_TOPICS.maciek).toContain("it");
+    expect(SPEAKER_TOPICS.pawel).toContain("it");
+    expect(SPEAKER_TOPICS.dawid).toContain("it");
+    expect(SPEAKER_TOPICS.zosia).toContain("it");
+  });
+
+  it("leaves every speaker a healthy general pool (>= 10 starters)", () => {
+    const generalStarters = OFFICE_CHATTER.filter((e) => e.topic === undefined);
+    expect(generalStarters.length).toBeGreaterThanOrEqual(10);
   });
 });

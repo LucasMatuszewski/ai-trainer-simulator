@@ -20,7 +20,12 @@
  * (active conversations, cooldown clocks) lives in npc-controller.ts.
  */
 
-import { chatterWeightFor, type ChatterExchange } from "../content/office-chatter";
+import {
+  SPEAKER_TOPICS,
+  chatterWeightFor,
+  type ChatterExchange,
+  type ChatterTopic,
+} from "../content/office-chatter";
 
 export type RoomId =
   | "main-office"
@@ -118,25 +123,34 @@ export function pickPair<T>(pairs: readonly T[], rng: () => number): T | null {
 }
 
 /**
- * Pacing gate for STARTING an exchange: a 50% chance roll plus a
- * since-last-start interval. The FIRST conversation keeps the
- * office-wide 3-6 s rhythm; a SECOND simultaneous one may start after
- * only 1-2.5 s, so two pairs can genuinely overlap (C-46: "allow 2
- * pairs talking in the same time") - an exchange only lasts
- * RESPONSE_DELAY_S, so the full 3-6 s rhythm would make concurrency
- * mathematically impossible. Spam is still bounded by MAX_CONVERSATIONS,
- * the per-pair cooldown, and the room rule.
+ * Pacing for STARTING exchanges (C-46 amendment 2026-09-01, Lucas:
+ * "sometimes too often, other time not often enough ... make it more
+ * even"). The controller SCHEDULES the next start instead of rolling
+ * dice every second: after a start, the next one lands 6-12 s out
+ * (uniform). When a conversation is already active there is a 35%
+ * chance the gap is a short 2.5-4 s instead - that is what
+ * occasionally produces the C-46 "two pairs talking at once" overlap
+ * (an exchange only lasts RESPONSE_DELAY_S, so only a short gap can
+ * ever overlap it). With no conversation active the gap is always the
+ * normal 6-12 s, which keeps the office "quite often, but not all the
+ * time" and prevents bursts entirely: there are no chance rolls.
  */
-export function shouldStartExchange(
+export const CHATTER_GAP_MIN_S = 6;
+export const CHATTER_GAP_MAX_S = 12;
+export const CHATTER_OVERLAP_CHANCE = 0.35;
+export const CHATTER_OVERLAP_GAP_MIN_S = 2.5;
+export const CHATTER_OVERLAP_GAP_MAX_S = 4;
+
+export function nextStartDelay(
   activeConversations: number,
-  secondsSinceLastStart: number,
   rng: () => number,
-): boolean {
-  if (rng() >= 0.5) return false;
-  const interval = activeConversations === 0
-    ? 3 + rng() * 3
-    : 1 + rng() * 1.5;
-  return secondsSinceLastStart >= interval;
+): number {
+  if (activeConversations > 0 && rng() < CHATTER_OVERLAP_CHANCE) {
+    const spread = CHATTER_OVERLAP_GAP_MAX_S - CHATTER_OVERLAP_GAP_MIN_S;
+    return CHATTER_OVERLAP_GAP_MIN_S + rng() * spread;
+  }
+  const spread = CHATTER_GAP_MAX_S - CHATTER_GAP_MIN_S;
+  return CHATTER_GAP_MIN_S + rng() * spread;
 }
 
 /**
@@ -150,17 +164,39 @@ export function pickStarter(a: string, b: string, rng: () => number): string {
   return rng() * (weightA + weightB) < weightA ? a : b;
 }
 
-const lastExchangeByPool = new WeakMap<readonly ChatterExchange[], number>();
+const lastExchangeByPool = new WeakMap<readonly ChatterExchange[], ChatterExchange>();
 
-/** Pick an exchange from a pool without repeating the previous pick. */
+/**
+ * Pick an exchange from a pool without repeating the previous pick
+ * (per source pool). With a `speaker` given, the pool is first
+ * filtered by the speaker's topic affinities (C-46 amendment:
+ * non-tech roles do not start IT jokes; finance ones belong to
+ * Grazyna/Zosia, janitor ones to Janusz) - falling back to the full
+ * pool if the filter comes up empty. Responses are unrestricted.
+ */
 export function pickExchange(
   pool: readonly ChatterExchange[],
   rng: () => number,
+  speaker?: string,
 ): ChatterExchange {
   if (pool.length === 0) throw new Error("pickExchange: empty chatter pool");
-  let index = Math.min(pool.length - 1, Math.floor(rng() * pool.length));
+  // null = no speaker given (unfiltered); [] = real speaker with no
+  // affinities, i.e. GENERAL-ONLY (absence in SPEAKER_TOPICS is a
+  // restriction, not a free pass).
+  const allowed: readonly ChatterTopic[] | null = speaker === undefined
+    ? null
+    : SPEAKER_TOPICS[speaker] ?? [];
+  const usable = allowed === null
+    ? pool
+    : pool.filter((exchange) => exchange.topic === undefined || allowed.includes(exchange.topic));
+  const source = usable.length > 0 ? usable : pool;
+
+  let index = Math.min(source.length - 1, Math.floor(rng() * source.length));
   const previous = lastExchangeByPool.get(pool);
-  if (pool.length > 1 && index === previous) index = (index + 1) % pool.length;
-  lastExchangeByPool.set(pool, index);
-  return pool[index]!;
+  if (source.length > 1 && previous !== undefined && source[index] === previous) {
+    index = (index + 1) % source.length;
+  }
+  const chosen = source[index]!;
+  lastExchangeByPool.set(pool, chosen);
+  return chosen;
 }

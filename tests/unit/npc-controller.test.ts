@@ -1,8 +1,11 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
+import { INTER_NPC_LINES, OFFICE_CHATTER } from "../../src/content/office-chatter";
+import { LUNCH_DIALOGUES_HUMAN } from "../../src/content/lunch-dialogues";
 import { KITCHEN_STOP_DWELL, type Period } from "../../src/content/npc-schedule";
 import { NPCS } from "../../src/content/npcs";
 import { advanceAlongPath, createNpcController, nextBarkDelay } from "../../src/engine/npc-controller";
+import { PAIR_COOLDOWN_S, roomAt } from "../../src/engine/chatter";
 import type { NPC, NpcId } from "../../src/types";
 
 function npc(id: NpcId): NPC { return NPCS.find((candidate) => candidate.id === id)!; }
@@ -110,19 +113,23 @@ describe("createNpcController", () => {
     expect(object.userData.npcState).toBe("at-desk");
   });
 
-  // --- C-46: rotating chatter pairs --------------------------------
+  // --- C-46: rotating chatter pairs (invariant simulation) ---------
 
   interface Harness {
     controller: ReturnType<typeof createNpcController>;
     objects: Record<NpcId, THREE.Object3D>;
-    setRoll: (value: number) => void;
   }
 
-  /** Mount a controller whose conversation gate is scriptable: roll
-   *  >= 0.5 never passes the shouldStartExchange chance, roll = 0
-   *  always does (after the interval has elapsed). */
-  function mountHarness(ids: NpcId[], rng = (): number => 0): Harness {
-    let roll = rng();
+  /** Deterministic LCG so long simulations are reproducible. */
+  function lcg(seed: number): () => number {
+    let s = seed >>> 0;
+    return () => {
+      s = (s * 1664525 + 1013904223) >>> 0;
+      return s / 0x1_0000_0000;
+    };
+  }
+
+  function mountHarness(ids: NpcId[], rng: () => number): Harness {
     const objects = {} as Record<NpcId, THREE.Object3D>;
     for (const id of ids) objects[id] = makeObject(id);
     const controller = createNpcController(
@@ -130,103 +137,151 @@ describe("createNpcController", () => {
       objects,
       () => "morning",
       () => 1,
-      () => roll,
+      rng,
     );
-    return { controller, objects, setRoll: (value: number) => { roll = value; } };
+    return { controller, objects };
   }
 
-  /** Teleport-free settle: run the morning entry until every NPC is
-   *  at-desk at the given position (they walk there from the door). */
-  function settleAt(harness: Harness, id: NpcId, x: number, z: number): void {
+  function placeAt(harness: Harness, id: NpcId, x: number, z: number): void {
     harness.controller.setOverride(id, { position: { x, y: 0, z }, face: 0, state: "at-desk" });
   }
 
-  function settled(harness: Harness): boolean {
-    return harness.controller.getNpcIds().every((id) => harness.objects[id].userData.npcState === "at-desk");
+  interface RecordedStart {
+    pair: string;
+    a: string;
+    starterLine: string;
+    at: number;
   }
 
-  it("starts a two-turn exchange and then cools the pair down", () => {
-    const harness = mountHarness(["przemek", "ania"]);
+  /** Simulate `seconds` of office life, recording chatter starts and
+   *  checking the C-46 invariants on every step. */
+  function simulate(harness: Harness, seconds: number): RecordedStart[] {
+    const starts: RecordedStart[] = [];
+    let previousKeys = new Set<string>();
+    const steps = Math.round(seconds / 0.25);
+    for (let step = 0; step < steps; step += 1) {
+      harness.controller.update(0.25);
+      const now = (step + 1) * 0.25;
+      const active = harness.controller.getActiveConversations();
+      // INVARIANT: never more than MAX_CONVERSATIONS at once...
+      if (active.length > 2) throw new Error(`concurrency=${active.length}`);
+      // ...and when two are active, they are in DIFFERENT rooms.
+      if (active.length === 2) {
+        const firstId = active[0]!.a as NpcId;
+        const secondId = active[1]!.a as NpcId;
+        const roomA = roomAt(harness.objects[firstId].position.x, harness.objects[firstId].position.z);
+        const roomB = roomAt(harness.objects[secondId].position.x, harness.objects[secondId].position.z);
+        if (roomA === roomB) throw new Error(`two conversations in ${roomA}`);
+      }
+      const keys = new Set(active.map((c) => [c.a, c.b].sort().join("|")));
+      for (const conversation of active) {
+        const key = [conversation.a, conversation.b].sort().join("|");
+        if (!previousKeys.has(key)) {
+          starts.push({ pair: key, a: conversation.a, starterLine: conversation.starterLine, at: now });
+        }
+      }
+      previousKeys = keys;
+    }
+    return starts;
+  }
+
+  it("keeps chatter even, rotating and room-separated over five minutes", () => {
+    const rng = lcg(42);
+    const harness = mountHarness(["przemek", "maciek", "bartek", "kasia", "zosia", "dawid"], rng);
     harness.controller.update(0);
-    settleAt(harness, "przemek", 0, 0);
-    settleAt(harness, "ania", 0.6, 0);
-    harness.setRoll(0.6); // gate closed while they walk in
-    for (let step = 0; step < 200 && !settled(harness); step += 1) harness.controller.update(0.25);
-    expect(settled(harness)).toBe(true);
-    expect(harness.controller.getActiveConversations()).toHaveLength(0);
+    // Office pair + kitchen pair + two loners far away.
+    placeAt(harness, "przemek", 0, 0);
+    placeAt(harness, "maciek", 0.8, 0);
+    placeAt(harness, "bartek", 13, -5);
+    placeAt(harness, "kasia", 14, -5);
+    placeAt(harness, "zosia", 0, 14);
+    placeAt(harness, "dawid", 0, -17);
+    const starts = simulate(harness, 300);
 
-    // 6 s of quiet satisfies the 3-6 s interval; then force one roll.
-    harness.controller.update(1); harness.controller.update(1); harness.controller.update(1);
-    harness.controller.update(1); harness.controller.update(1); harness.controller.update(1);
-    harness.setRoll(0);
-    harness.controller.update(1);
-    const active = harness.controller.getActiveConversations();
-    expect(active).toHaveLength(1);
-    expect([active[0]!.a, active[0]!.b].sort()).toEqual(["ania", "przemek"]);
-    expect(active[0]!.responseIn).toBeGreaterThan(0);
+    // Chatter happens, steadily: ~one start per 6-12 s plus overlap
+    // gaps, so 5 minutes yield a bounded, non-bursty count.
+    expect(starts.length).toBeGreaterThanOrEqual(15);
+    expect(starts.length).toBeLessThanOrEqual(70);
 
-    // The partner answers after ~2.2 s: the exchange ends, total turns
-    // were at most 2 (starter + response).
-    harness.setRoll(0.6);
-    for (let step = 0; step < 12; step += 1) harness.controller.update(0.25);
-    expect(harness.controller.getActiveConversations()).toHaveLength(0);
+    // Pair rotation: the same pair never starts twice within the
+    // cooldown (cooldown is armed when the exchange resolves, which is
+    // always after the start, so start-to-start >= COOLDOWN is safe).
+    const previousStartByKey = new Map<string, number>();
+    for (const start of starts) {
+      const before = previousStartByKey.get(start.pair);
+      if (before !== undefined) {
+        expect(start.at - before).toBeGreaterThanOrEqual(PAIR_COOLDOWN_S);
+      }
+      previousStartByKey.set(start.pair, start.at);
+    }
 
-    // Cooldown: the same pair may NOT immediately talk again even with
-    // a passing roll.
-    harness.setRoll(0);
-    for (let step = 0; step < 8; step += 1) harness.controller.update(1);
-    expect(harness.controller.getActiveConversations()).toHaveLength(0);
+    // Chattiness weights: Sales (1.8) starts far more often than the
+    // quiet CTO (0.3) when they are the standing office pair.
+    const startsBy = (id: string) => starts.filter((s) => s.a === id).length;
+    expect(startsBy("przemek")).toBeGreaterThan(startsBy("maciek"));
+    // The CEO (0.3, and far away in his office) rarely or never starts.
+    expect(startsBy("dawid")).toBeLessThanOrEqual(2);
   });
 
-  it("allows two simultaneous conversations only in different rooms", () => {
-    const harness = mountHarness(["bartek", "zosia", "klaudia", "kasia"]);
+  it("respects topic affinities: quiet accountant never starts IT or janitor jokes", () => {
+    const rng = lcg(7);
+    const harness = mountHarness(["grazyna", "przemek", "bartek", "janusz"], rng);
     harness.controller.update(0);
-    // Office pair + kitchen pair (floors per world-layout.ts).
-    settleAt(harness, "bartek", 0, 0);
-    settleAt(harness, "zosia", 1, 0);
-    settleAt(harness, "klaudia", 13, -5);
-    settleAt(harness, "kasia", 14, -5);
-    harness.setRoll(0.6);
-    for (let step = 0; step < 250 && !settled(harness); step += 1) harness.controller.update(0.25);
-    expect(settled(harness)).toBe(true);
-
-    harness.controller.update(1); harness.controller.update(1); harness.controller.update(1);
-    harness.controller.update(1); harness.controller.update(1); harness.controller.update(1);
-    // First roll: the first enumerated pair (bartek+zosia, office).
-    harness.setRoll(0);
-    harness.controller.update(1);
-    expect(harness.controller.getActiveConversations()).toHaveLength(1);
-    // Second roll one second later: the kitchen pair is allowed
-    // because the active conversation is in a DIFFERENT room.
-    harness.setRoll(0.6);
-    harness.controller.update(1);
-    harness.setRoll(0);
-    harness.controller.update(1);
-    const active = harness.controller.getActiveConversations();
-    expect(active).toHaveLength(2);
-    const pairIds = active.map((conversation) => [conversation.a, conversation.b].sort().join("+")).sort();
-    expect(pairIds).toEqual(["bartek+zosia", "kasia+klaudia"]);
-
-    // Both exchanges end after their responses.
-    harness.setRoll(0.6);
-    for (let step = 0; step < 16; step += 1) harness.controller.update(0.25);
-    expect(harness.controller.getActiveConversations()).toHaveLength(0);
+    placeAt(harness, "grazyna", 0, 0);
+    placeAt(harness, "przemek", 0.8, 0);
+    placeAt(harness, "bartek", 13, -5);
+    placeAt(harness, "janusz", 14, -5);
+    const starts = simulate(harness, 240);
+    expect(starts.length).toBeGreaterThan(0);
+    const workLines = new Set(INTER_NPC_LINES);
+    for (const start of starts) {
+      expect(workLines.has(start.starterLine)).toBe(true);
+      // grazyna may only start general or finance exchanges.
+      if (start.a === "grazyna") {
+        const exchange = OFFICE_CHATTER.find((candidate) => candidate.starter === start.starterLine);
+        expect(exchange).toBeDefined();
+        expect(["it", "janitor"]).not.toContain(exchange!.topic);
+      }
+    }
   });
 
-  it("burek exchanges are one turn (a bark has no response)", () => {
-    const harness = mountHarness(["burek", "ania"]);
-    harness.controller.update(0);
-    settleAt(harness, "burek", 0, 0);
-    settleAt(harness, "ania", 0.6, 0);
-    harness.setRoll(0.6);
-    for (let step = 0; step < 200 && !settled(harness); step += 1) harness.controller.update(0.25);
-    expect(settled(harness)).toBe(true);
-    harness.controller.update(1); harness.controller.update(1); harness.controller.update(1);
-    harness.controller.update(1); harness.controller.update(1); harness.controller.update(1);
-    harness.setRoll(0);
-    harness.controller.update(1);
-    // Burek starts (rng 0 lands on his share of the weighted coin), so
-    // the exchange is a single bark: nothing is awaiting a response.
-    expect(harness.controller.getActiveConversations()).toHaveLength(0);
+  it("uses lunch lines by TIME and work lines otherwise", () => {
+    const mountWithLunch = (lunch: boolean, seed: number): Harness => {
+      const ids: NpcId[] = ["bartek", "kasia"];
+      const rng = lcg(seed);
+      const objects = {} as Record<NpcId, THREE.Object3D>;
+      for (const id of ids) objects[id] = makeObject(id);
+      const controller = createNpcController(
+        ids.map((id) => npc(id)),
+        objects,
+        () => (lunch ? "afternoon" : "morning"),
+        () => 1,
+        rng,
+        () => lunch,
+      );
+      controller.update(0);
+      placeAt({ controller, objects }, "bartek", 0, 0);
+      placeAt({ controller, objects }, "kasia", 0.8, 0);
+      return { controller, objects };
+    };
+
+    // Lunch clock ON: every starter line comes from the lunch pool.
+    const lunchHarness = mountWithLunch(true, 123);
+    const lunchLines = new Set(LUNCH_DIALOGUES_HUMAN);
+    const lunchStarts = simulate(lunchHarness, 120);
+    expect(lunchStarts.length).toBeGreaterThan(0);
+    for (const start of lunchStarts) {
+      expect(lunchLines.has(start.starterLine)).toBe(true);
+    }
+
+    // Lunch clock OFF: every starter line comes from the work pool,
+    // and none of them are lunch lines.
+    const workHarness = mountWithLunch(false, 124);
+    const workLines = new Set(INTER_NPC_LINES);
+    const workStarts = simulate(workHarness, 120);
+    expect(workStarts.length).toBeGreaterThan(0);
+    for (const start of workStarts) {
+      expect(workLines.has(start.starterLine)).toBe(true);
+    }
   });
 });
