@@ -69,3 +69,12 @@ test("C-60: Meeting Room sign visible facing the meeting room door", async ({ pa
   await page.waitForTimeout(300);
   await page.screenshot({ path: `${SCREENSHOT_DIR}/c60-02-meeting-door-sign.png` });
 });
+
+test("C-60: SHIP IT sign palette", async ({ page }) => {
+  test.setTimeout(60_000);
+  await continueIntoOffice(page);
+  // South wall sign at (4, 2): straight ahead from office center.
+  await page.evaluate(() => window.__aitrainer!.teleport(4, 4.5, Math.PI));
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${SCREENSHOT_DIR}/c60-03-ship-it-palette.png` });
+});

@@ -208,7 +208,7 @@ export function buildMultiRoomMeshes(
  * warm ivory, and the text word-wrapped, auto-fitted and set in
  * the same ivory rather than the loud accent color.
  */
-function drawPoster(
+export function drawPoster(
   context: CanvasRenderingContext2D,
   width: number,
   height: number,

@@ -26,7 +26,7 @@ import {
 import { MAIN_OFFICE_WALLS, WORLD_ROOMS } from "../content/world-layout";
 import { createNpcController, type NpcController } from "./npc-controller";
 import { createNpcMesh } from "./npc-mesh";
-import { buildMultiRoomMeshes } from "./multi-room";
+import { buildMultiRoomMeshes, drawPoster } from "./multi-room";
 import { makeGarden, makeOutdoorScenery } from "./furniture/garden";
 import type { NPC, NpcId } from "../types";
 
@@ -109,10 +109,11 @@ export const SHIP_IT_SIGN_MOUNT = {
 
 // C-60: door labels on the office side of each doorway, to the player's
 // RIGHT when facing the door (east wall south of the kitchen gap, south
-// wall west of the meeting gap) so they read on approach.
+// wall west of the meeting gap) so they read on approach. Color matches
+// the BATCAVE sign (Lucas: keep the room labels in one warm family).
 export const DOOR_SIGN_MOUNTS = {
-  kitchen: { position: [OFFICE_BOUNDS.maxX - 0.16, 2.1, 2.3] as const, face: -Math.PI / 2, text: "Kitchen", color: 0xb0602a },
-  meeting: { position: [-2.4, 2.1, OFFICE_BOUNDS.maxZ - 0.16] as const, face: Math.PI, text: "Meeting Room", color: 0x2f5d8a },
+  kitchen: { position: [OFFICE_BOUNDS.maxX - 0.16, 2.1, 2.3] as const, face: -Math.PI / 2, text: "Kitchen", color: 0x8a6d1f },
+  meeting: { position: [-2.4, 2.1, OFFICE_BOUNDS.maxZ - 0.16] as const, face: Math.PI, text: "Meeting Room", color: 0x8a6d1f },
 };
 
 const SCREEN_COLORS = [
@@ -570,19 +571,26 @@ function addWhiteboard(scene: THREE.Scene, x: number, y: number, z: number, rotY
 }
 
 function addMotivationalSign(scene: THREE.Scene, x: number, y: number, z: number, rotY: number): void {
+  // Palette (Lucas 2026-09-01: the red/yellow was too aggressive -
+  // "more colorful but not pink"): deep teal ground, warm amber frame
+  // and title, pale sage subtitle.
+  const bg = "#17656b";
+  const amber = "#ffc94d";
+  const sage = "#d8e8dc";
   const c = document.createElement("canvas");
   c.width = 256;
   c.height = 96;
   const ctx = c.getContext("2d")!;
-  ctx.fillStyle = "#" + COLORS.poster1.toString(16).padStart(6, "0");
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, 256, 96);
-  ctx.strokeStyle = "#ffee00";
+  ctx.strokeStyle = amber;
   ctx.lineWidth = 6;
   ctx.strokeRect(3, 3, 250, 90);
-  ctx.fillStyle = "#ffee00";
+  ctx.fillStyle = amber;
   ctx.font = "bold 28px monospace";
   ctx.textAlign = "center";
   ctx.fillText("SHIP IT!", 128, 42);
+  ctx.fillStyle = sage;
   ctx.font = "bold 18px monospace";
   ctx.fillText("or don't, your call", 128, 76);
   const tex = new THREE.CanvasTexture(c);
@@ -597,33 +605,21 @@ function addMotivationalSign(scene: THREE.Scene, x: number, y: number, z: number
   scene.add(m);
 }
 
-// C-60: doorway label in the same retro canvas style. The text is
-// shrunk to fit so "Meeting Room" does not clip.
+// C-60: doorway label rendered by the same muted drawPoster style as
+// the other room labels (WC, TRAINING ROOM, BATCAVE).
 function addDoorSign(
   scene: THREE.Scene,
   mount: { position: readonly [number, number, number]; face: number; text: string; color: number },
 ): void {
   const c = document.createElement("canvas");
-  c.width = 256;
-  c.height = 96;
-  const ctx = c.getContext("2d")!;
-  ctx.fillStyle = "#" + mount.color.toString(16).padStart(6, "0");
-  ctx.fillRect(0, 0, 256, 96);
-  ctx.strokeStyle = "#ffee00";
-  ctx.lineWidth = 6;
-  ctx.strokeRect(3, 3, 250, 90);
-  ctx.fillStyle = "#ffee00";
-  ctx.textAlign = "center";
-  let fontSize = 34;
-  ctx.font = `bold ${fontSize}px monospace`;
-  while (ctx.measureText(mount.text).width > 228 && fontSize > 12) {
-    fontSize -= 2;
-    ctx.font = `bold ${fontSize}px monospace`;
+  c.width = 512;
+  c.height = 256;
+  const ctx = c.getContext("2d");
+  if (ctx) {
+    drawPoster(ctx, c.width, c.height, mount.text, mount.color);
   }
-  ctx.fillText(mount.text, 128, 60);
   const tex = new THREE.CanvasTexture(c);
   tex.magFilter = THREE.NearestFilter;
-  tex.minFilter = THREE.NearestFilter;
   const m = new THREE.Mesh(
     new THREE.PlaneGeometry(1.6, 0.6),
     new THREE.MeshBasicMaterial({ map: tex }),

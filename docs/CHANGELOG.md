@@ -739,3 +739,4 @@ A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
 
 - **Source (Lucas, 2026-09-01):** add a sign on the right of the kitchen door ("Kitchen") and the meeting room door ("Meeting Room"), aligned with the walls and visible when looking toward the door.
 - **Now:** `DOOR_SIGN_MOUNTS` + `addDoorSign()` in `src/engine/scene.ts` - retro canvas-texture labels on the office side of each doorway (east wall south of the kitchen gap, south wall west of the meeting gap = the player's right facing the door), pinned by `signs-and-walls.test.ts`; visual spec `c60-door-signs.spec.ts`.
+- **Palette rework (Lucas, same day: "colors are horrible"):** both door signs re-rendered with the muted `drawPoster` style in the BATCAVE gold `0x8a6d1f`; SHIP IT recolored from poster-red/yellow to teal `#17656b` / amber `#ffc94d` / sage.
