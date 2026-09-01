@@ -305,7 +305,7 @@ export const OBSTACLES: Obstacle[] = [
   { id: "desk-pawel", minX: -4, maxX: -2, minZ: 6, maxZ: 7, label: "Desk (Pawel)" },
   { id: "desk-zosia", minX: 2, maxX: 4, minZ: 6, maxZ: 7, label: "Desk (Zosia)" },
   // Server rack
-  { id: "server-rack", minX: -8.5, maxX: -7.5, minZ: 7.5, maxZ: 8.5, label: "Server rack" },
+  { id: "server-rack", minX: -9, maxX: -8, minZ: 7.9, maxZ: 8.9, label: "Server rack" },
   // Coffee machine — moved flush against the east wall (was
   // 0.5m from the wall, which Lucas said was "too far from the
   // wall" 2026-08-30). The collision AABB is 0.5m deep to match
@@ -313,7 +313,7 @@ export const OBSTACLES: Obstacle[] = [
   // by the make* function in scene.ts.
   { id: "coffee-machine", minX: 8.0, maxX: 8.5, minZ: -8.9, maxZ: -8.0, label: "Coffee machine" },
   // Vending machine
-  { id: "vending", minX: 7.5, maxX: 8.5, minZ: 7.5, maxZ: 8.5, label: "Vending machine" },
+  { id: "vending", minX: 7.9, maxX: 8.9, minZ: 8, maxZ: 9, label: "Vending machine" },
   // Filing cabinet — only the south one stays. The north
   // one (z=-5) was the gray box in front of the east-window
   // (Lucas 2026-08-30: "whiteboard in the middle of the window").

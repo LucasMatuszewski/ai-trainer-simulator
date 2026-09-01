@@ -121,9 +121,9 @@ export function makeOutdoorScenery(): THREE.Group {
   // Rolling hills on the horizon (flattened spheres).
   const hillMaterial = new THREE.MeshLambertMaterial({ color: 0x3a7340 });
   const hills: ReadonlyArray<readonly [number, number, number, number]> = [
-    [30.0, -17.0, 3.2, 0.45],
+    [32.5, -15.0, 3.2, 0.45],
     [33.5, -11.0, 2.6, 0.5],
-    [31.0, -5.0, 3.0, 0.4],
+    [33.0, -7.0, 3.0, 0.4],
   ];
   for (const [x, z, radius, squash] of hills) {
     const hill = new THREE.Mesh(new THREE.SphereGeometry(radius, 12, 8), hillMaterial);
