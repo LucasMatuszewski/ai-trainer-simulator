@@ -262,13 +262,15 @@ export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
   { position: { x: 23, y: 0, z: -16.4 }, face: 0, state: "training" },
   { position: { x: 21, y: 0, z: -15 }, face: Math.PI, state: "training" },
   { position: { x: 25.2, y: 0, z: -13.2 }, face: Math.PI, state: "training" },
-  // C-47 revenue corner: stand in front of the Deal Wall (east wall,
-  // between the desk rows) and the Content Booth (west wall, behind
-  // Klaudia's desk), facing the props (face +X = PI/2, face -X =
-  // -PI/2). The affinity weighting in pickRandomDestination sends
-  // sales people to the wall and marketing to the booth.
-  { position: { x: 8.2, y: 0, z: -0.25 }, face: Math.PI / 2, state: "deal-wall" },
-  { position: { x: -8.2, y: 0, z: 5.5 }, face: -Math.PI / 2, state: "content-booth" },
+  // C-47 revenue corner (relocated per Lucas 2026-09-01): gathering
+  // spots in the MEETING ROOM, in front of the Deal Wall (west wall)
+  // and the Content Booth (east wall), facing the props. Spots sit
+  // 1.5m off the walls, clear of the meeting table (x [-1.5, 1.5])
+  // and the chair rows (x = +/-2.4). The affinity weighting in
+  // pickRandomDestination sends sales people to the wall and
+  // marketing to the booth.
+  { position: { x: -4.6, y: 0, z: 12.6 }, face: -Math.PI / 2, state: "deal-wall" },
+  { position: { x: 4.6, y: 0, z: 12.6 }, face: Math.PI / 2, state: "content-booth" },
 ];
 
 /**

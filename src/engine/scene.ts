@@ -998,97 +998,102 @@ function makeFireExtinguisher(x: number, z: number): THREE.Group {
   return g;
 }
 
-// C-47: the Deal Wall - a sales leaderboard whiteboard mounted on the
-// main office's east wall. Sales-affinity NPCs stand at (8.2, -0.25)
-// and start their sales-topic exchanges in front of it.
+// C-47 (relocated per Lucas 2026-09-01): the Deal Wall - a sales
+// leaderboard whiteboard on the MEETING ROOM's west wall. The main
+// office placement sat in the kitchen doorway; the meeting room is
+// the gathering space. Sales-affinity NPCs stand at (-4.6, 12.6) and
+// start their sales-topic exchanges in front of it. Geometry is built
+// facing local +Z (front), so decoration offsets poke into the room.
 function makeDealWall(): THREE.Group {
   const g = new THREE.Group();
   const board = new THREE.Mesh(
-    new THREE.BoxGeometry(0.06, 1.15, 1.7),
+    new THREE.BoxGeometry(1.7, 1.15, 0.06),
     new THREE.MeshLambertMaterial({ color: 0xf5f2e8 }),
   );
   board.position.y = 1.5;
   g.add(board);
   // Frame.
   const frame = new THREE.Mesh(
-    new THREE.BoxGeometry(0.05, 1.23, 1.78),
+    new THREE.BoxGeometry(1.78, 1.23, 0.05),
     new THREE.MeshLambertMaterial({ color: COLORS.deskTrim }),
   );
   frame.position.y = 1.5;
   g.add(frame);
   // "Q3 = $$$" header bar.
   const header = new THREE.Mesh(
-    new THREE.BoxGeometry(0.02, 0.16, 1.4),
+    new THREE.BoxGeometry(1.4, 0.16, 0.02),
     new THREE.MeshLambertMaterial({ color: COLORS.poster4 }),
   );
-  header.position.set(-0.045, 1.93, 0);
+  header.position.set(0, 1.93, 0.045);
   g.add(header);
   // Leaderboard bars: each rep gets a bar whose length is "their number".
   const barColors = [0x00ff7f, 0xffaa00, 0xff77ff, 0x33aaff, 0xcc4444];
   const barLengths = [1.15, 0.9, 0.7, 0.45, 0.25];
   for (let i = 0; i < barLengths.length; i++) {
     const bar = new THREE.Mesh(
-      new THREE.BoxGeometry(0.02, 0.11, barLengths[i]!),
+      new THREE.BoxGeometry(barLengths[i]!, 0.11, 0.02),
       new THREE.MeshLambertMaterial({ color: barColors[i]! }),
     );
-    bar.position.set(-0.045, 1.74 - i * 0.19, 0);
+    bar.position.set(-0.575 + barLengths[i]! / 2, 1.74 - i * 0.19, 0.045);
     g.add(bar);
   }
-  g.position.set(8.88, 0, -0.25);
-  g.rotation.y = -Math.PI / 2;
+  g.position.set(-6.02, 0, 12.6);
+  g.rotation.y = Math.PI / 2; // front (+Z) -> +X, east into the room
   return g;
 }
 
-// C-47: the Content Booth - a purple DevPowers roll-up backdrop with a
-// ring light, on the main office's west wall behind Klaudia's desk.
-// Marketing-affinity NPCs stand at (-8.2, 5.5) and start their
-// marketing-topic exchanges in front of it.
+// C-47 (relocated per Lucas 2026-09-01): the Content Booth - a purple
+// DevPowers roll-up backdrop with a ring light, on the MEETING ROOM's
+// east wall (opposite the Deal Wall; the old west-wall spot beside the
+// server rack had no room to gather). Marketing-affinity NPCs stand
+// at (4.6, 12.6) and start their marketing-topic exchanges in front
+// of it.
 function makeContentBooth(): THREE.Group {
   const g = new THREE.Group();
   // Roll-up backdrop panel.
   const panel = new THREE.Mesh(
-    new THREE.BoxGeometry(0.07, 2.1, 1.5),
+    new THREE.BoxGeometry(1.5, 2.1, 0.07),
     new THREE.MeshLambertMaterial({ color: 0x6b4fa3 }),
   );
   panel.position.y = 1.15;
   g.add(panel);
   // Logo plate on the backdrop.
   const logo = new THREE.Mesh(
-    new THREE.BoxGeometry(0.02, 0.5, 0.9),
+    new THREE.BoxGeometry(0.9, 0.5, 0.02),
     new THREE.MeshLambertMaterial({ color: COLORS.poster4 }),
   );
-  logo.position.set(-0.055, 1.55, 0);
+  logo.position.set(0, 1.55, 0.05);
   g.add(logo);
   // Feet of the roll-up stand.
-  for (const dz of [-0.55, 0.55]) {
+  for (const dx of [-0.55, 0.55]) {
     const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.4, 0.05, 0.08),
+      new THREE.BoxGeometry(0.08, 0.05, 0.4),
       new THREE.MeshLambertMaterial({ color: 0x222222 }),
     );
-    foot.position.set(0.08, 0.025, dz);
+    foot.position.set(dx, 0.025, 0.08);
     g.add(foot);
     const pole = new THREE.Mesh(
       new THREE.CylinderGeometry(0.02, 0.02, 2.1, 8),
       new THREE.MeshLambertMaterial({ color: 0x333333 }),
     );
-    pole.position.set(0.08, 1.05, dz);
+    pole.position.set(dx, 1.05, 0.08);
     g.add(pole);
   }
-  // Ring light on a small tripod, just east of the backdrop.
+  // Ring light on a small tripod, standing into the room.
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(0.22, 0.035, 8, 24),
     new THREE.MeshLambertMaterial({ color: 0xfff2cc, emissive: 0x554422 }),
   );
-  ring.position.set(0.9, 1.5, 0.5);
+  ring.position.set(0.55, 1.5, 1);
   g.add(ring);
   const tripod = new THREE.Mesh(
     new THREE.CylinderGeometry(0.02, 0.02, 1.3, 8),
     new THREE.MeshLambertMaterial({ color: 0x333333 }),
   );
-  tripod.position.set(0.9, 0.65, 0.5);
+  tripod.position.set(0.55, 0.65, 1);
   g.add(tripod);
-  g.position.set(-8.88, 0, 5.5);
-  g.rotation.y = Math.PI / 2;
+  g.position.set(5.75, 0, 12.6);
+  g.rotation.y = -Math.PI / 2; // front (+Z) -> -X, west into the room
   return g;
 }
 
