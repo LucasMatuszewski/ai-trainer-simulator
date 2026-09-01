@@ -25,24 +25,31 @@ describe("updateWalkCycle", () => {
     expect(second.bobAmount).toBe(first.bobAmount);
   });
 
-  it("travels 1.2 metres and completes four gait cycles in one second", () => {
+  it("travels 1.2 metres in one second at the 1.6 Hz gait (C-45 l)(3)", () => {
+    // The old spec was 4 Hz / big swings ("broken robot"). Amendment
+    // (l)(3) shipped 1.6 Hz with halved amplitudes; the phase after
+    // 1 s at 1.2 m/s is 2*pi*1.6 (~10.05 rad), so the swing goes
+    // positive exactly twice inside the first second: immediately
+    // (phase 0, sin rising) and again at phase 2*pi (t ~ 0.625 s).
     let state: WalkCycleState = { distanceTraveled: 0 };
     let positiveZeroCrossings = 0;
-    let previousLegSwing = updateWalkCycle(state, 0, DEFAULT_WALK_SPEED_MPS).legSwing;
+    let maxLegSwing = 0;
     let wasPositive = false;
 
-    for (let step = 0; step < 60; step += 1) {
-      const output = updateWalkCycle(state, 1 / 60, DEFAULT_WALK_SPEED_MPS);
+    for (let step = 0; step < 100; step += 1) {
+      const output = updateWalkCycle(state, 1 / 100, DEFAULT_WALK_SPEED_MPS);
       const isPositive = output.legSwing > 1e-10;
       if (!wasPositive && isPositive) positiveZeroCrossings += 1;
       wasPositive = isPositive;
-      previousLegSwing = output.legSwing;
+      maxLegSwing = Math.max(maxLegSwing, Math.abs(output.legSwing));
       state = output.state;
     }
 
     expect(state.distanceTraveled).toBeCloseTo(DEFAULT_WALK_SPEED_MPS, 10);
-    expect(positiveZeroCrossings).toBe(GAIT_HZ_AT_DEFAULT);
-    expect(previousLegSwing).toBeCloseTo(0, 10);
+    expect(positiveZeroCrossings).toBe(2);
+    // Amplitudes stay within the shipped (l)(3) bounds (4 dp: the
+    // 0.01 s sampling does not land exactly on the swing peak).
+    expect(maxLegSwing).toBeCloseTo(LEG_SWING_AMPLITUDE, 4);
   });
 
   it("resumes from the stored phase without snapping after a freeze", () => {
@@ -91,11 +98,14 @@ describe("updateWalkCycle", () => {
   });
 
   it("exports the specified gait reference values and amplitudes", () => {
+    // C-45 amendment (l)(3): 1.6 Hz / 0.3 rad / 0.18 rad / 0.025 m
+    // matches a real human gait and reads as walking instead of the
+    // original 4 Hz "broken robot" engineering guess.
     expect(DEFAULT_WALK_SPEED_MPS).toBe(1.2);
-    expect(GAIT_HZ_AT_DEFAULT).toBe(4);
-    expect(RADIANS_PER_METRE).toBeCloseTo(2 * Math.PI * 4 / 1.2, 12);
-    expect(LEG_SWING_AMPLITUDE).toBe(0.6);
-    expect(ARM_SWING_AMPLITUDE).toBe(0.35);
-    expect(BOB_AMPLITUDE).toBe(0.05);
+    expect(GAIT_HZ_AT_DEFAULT).toBe(1.6);
+    expect(RADIANS_PER_METRE).toBeCloseTo(2 * Math.PI * 1.6 / 1.2, 12);
+    expect(LEG_SWING_AMPLITUDE).toBe(0.3);
+    expect(ARM_SWING_AMPLITUDE).toBe(0.18);
+    expect(BOB_AMPLITUDE).toBe(0.025);
   });
 });
