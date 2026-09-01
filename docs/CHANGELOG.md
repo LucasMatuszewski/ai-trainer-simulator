@@ -711,3 +711,9 @@ A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
 - **Source (Lucas, 2026-09-01):** "The text in bubbles with dialogues is very low quality and unreadable, even from close! ... labels with 'name - position' on hover are very sharp, nice text. How to fix that and have a nice readable font for the dialogue bubbles? Compare the code with the code of the label."
 - **Was:** `makeTexture` drew 16px monospace onto a 256x64 canvas and set magFilter/minFilter to NearestFilter - the sprite then upscaled that tiny, aliased texture (blocky, blurry). The sharp hover label is plain DOM text at 26px VT323.
 - **Now:** the canvas is 512x128 (4x the pixels), the font is the hover label's own VT323 at 44px canvas units with a measure-and-shrink pass so every line fits, filters are Linear + mipmaps, and the texture carries SRGBColorSpace so the colors match the rest of the renderer (which outputs SRGB). Sprite scale roughly unchanged, so the layout is the same - just readable.
+
+
+### C-56 — Morning arrival greetings (2026-09-01)
+
+- **Source (Lucas, 2026-09-01):** "NPCs should always say hello when they enter the room in the morning! Now it is so unnatural and strange, and dead... create an array/objects with greetings, could be something for specialization, greeting from IT people could different than from CEO, CTO or from marketing or from accounting."
+- **Now:** `src/content/morning-greetings.ts` holds per-NPC greeting pools with a specialization-category fallback (it / management / ceo / cto / marketing / hr / accounting / sales / facilities / intern / dog), all lines <= 72 chars so they fit the bubble's two lines without truncation. The controller greets every NPC that walks in through the door (in `releaseArrival`, C-51's single entrance path) and the already-in colleagues drop staggered hellos (2-12 s after day start) so the office wakes up talking. Every morning, every NPC, randomized line pick.

@@ -197,3 +197,8 @@ Lucas looked at the new CEO office from the inside (screenshot #45). 9 specific 
 - **Skip must not reset the player (C-54)** — the Skip button in the dialogue window teleported the view back to the starting position. The player prefers to stay where they are, next to the person they just talked to.
 - **Conversations must be staged like conversations (C-54)** — starting a conversation often left the player inside a wall or somewhere strange, and the NPC rarely faced the player ("most people keep some eye contact when they talk, so should the NPC"). Fix: place the player at a collision-safe conversation spot facing the NPC, and the NPC turns to the player and holds it (frozen schedule, no chatter stealing) for the whole dialogue.
 - **Speech-bubble text is unreadable (C-55)** — even up close. The hover labels ("name - role") are sharp DOM text; the bubbles are a 256x64 canvas with a 16px monospace font and NearestFilter upscaling. Rebuild the bubble texture at high resolution with the hover-label font and linear filtering.
+
+**ID: L-2026-09-01-02 — Morning greetings (C-56)**
+- NPCs should ALWAYS say hello when they enter the room in the morning - the arrival is currently unnatural, strange, and dead.
+- Create an array/objects with greetings, varied by specialization: IT people greet differently than the CEO, CTO, marketing, or accounting. Variety and a nice character element.
+- (Side benefit Lucas named: more bubbles on screen to test the speech-bubble font with.)
