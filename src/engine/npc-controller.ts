@@ -18,6 +18,7 @@ import {
   type Period,
   type ScheduleEntry,
 } from "../content/npc-schedule";
+import { pickMorningGreeting } from "../content/morning-greetings";
 import type { AABB } from "./collision";
 import type { NPC, NpcId } from "../types";
 import { createBubbleSystem, pickLine } from "./bubbles";
@@ -324,6 +325,12 @@ export interface NpcControllerOptions {
    *  chatter models set this false so they can place NPCs directly
    *  without the arrival schedule moving them. */
   arrivals?: boolean;
+  /** C-57: run the inter-NPC conversation manager. Default true.
+   *  Movement-physics tests set this false for the same reason as
+   *  `arrivals`: the conversation dice share the controller's rng, so
+   *  any chatter tuning would silently reshuffle every escape-jitter
+   *  roll and make jam tests seed-fragile. */
+  chatter?: boolean;
 }
 
 export function createNpcController(
@@ -336,6 +343,7 @@ export function createNpcController(
   options: NpcControllerOptions = {},
 ): NpcController {
   const arrivalsEnabled = options.arrivals ?? true;
+  const chatterEnabled = options.chatter ?? true;
   const obstacles = getNpcObstacles();
   const edges = buildWaypointEdges(CORRIDOR_WAYPOINTS, obstacles, DEFAULT_MAX_EDGE_LENGTH);
   const runtime = new Map<NpcId, NpcRuntime>();
@@ -347,6 +355,31 @@ export function createNpcController(
   // the same two NPCs do not monopolize the office chatter.
   const conversations = new Map<string, ActiveConversation>();
   const pairCooldowns = new Map<string, number>();
+  // C-56: every morning, every NPC that has shown up fires one
+  // random greeting bubble. door-entering NPCs greet on
+  // `releaseArrival`; the already-in crowd is spread across the first
+  // 2-12 s so the office doesn't open with everyone shouting at once.
+  const morningGreeted = new Set<NpcId>();
+  // C-56: order in which the already-in crowd greets. Rebuilt every
+  // morning by beginMorningArrivals (Fisher-Yates with the same rng as
+  // the rest of the system) so two mornings in a row do not greet in
+  // the same order.
+  let alreadyInGreetOrder: NpcId[] = [];
+  let morningGreetIndex = 0;
+  let nextMorningGreetAt = 0;
+  // C-56: per-NPC "next speech allowed" timestamp. Any bubble (door
+  // greet, inter-NPC starter/response, Burek bark) calls
+  // `markSpoke(id)`; the chatter manager then refuses to pick a pair
+  // where either side is still on cooldown. 4 s is short enough to
+  // never kill natural chatter (the cadence is 6-12 s) and long enough
+  // to leave ~2 s silence after a 6-8 s greeting bubble expires.
+  const nextSpeechAt = new Map<NpcId, number>();
+  const SPEECH_COOLDOWN_S = 4;
+  const canSpeak = (npcId: NpcId, now: number): boolean =>
+    (nextSpeechAt.get(npcId) ?? 0) <= now;
+  const markSpoke = (npcId: NpcId, now: number): void => {
+    nextSpeechAt.set(npcId, now + SPEECH_COOLDOWN_S);
+  };
   // C-54: the NPC currently in a player dialogue, if any.
   let playerTalkingTo: NpcId | null = null;
   let lastPeriod: Period | null = null;
@@ -657,6 +690,22 @@ export function createNpcController(
     conversations.clear();
     pendingArrivals.clear();
     const plan = planMorningArrivals(npcs.map((npc) => npc.id), getDay(), rng);
+    // C-56: build the staggered-greeting order for the already-in
+    // crowd. Fisher-Yates with the same rng as the rest of the system,
+    // so a test that seeds with lcg(N) gets a deterministic order.
+    morningGreeted.clear();
+    morningGreetIndex = 0;
+    nextMorningGreetAt = 0;
+    alreadyInGreetOrder = plan
+      .filter((arrival) => arrival.mode === "already-in")
+      .map((arrival) => arrival.npcId);
+    for (let i = alreadyInGreetOrder.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(rng() * (i + 1));
+      [alreadyInGreetOrder[i], alreadyInGreetOrder[j]] = [
+        alreadyInGreetOrder[j]!,
+        alreadyInGreetOrder[i]!,
+      ];
+    }
     for (const arrival of plan) {
       const state = runtime.get(arrival.npcId);
       if (state === undefined) continue;
@@ -719,6 +768,15 @@ export function createNpcController(
     // NPC (which leaves `visible` alone), and someone who walked in
     // must be in the room either way.
     object.visible = true;
+    // C-56: greet on entry. The bubble is positioned by the engine
+    // using the speaker's live position, so even if they're mid-step
+    // the bubble is on top of them. Bubbles are short-lived (6-8 s)
+    // and the pool guarantees a category-flavored greeting. markSpoke
+    // puts the speaker on cooldown so no second bubble fires over the
+    // greeting (Lucas: "still visible the same person should not say
+    // other dialogue").
+    bubbleSystem?.show(object.position, pickMorningGreeting(npcId, rng));
+    markSpoke(npcId, controllerElapsed);
   };
 
   /** C-51: release everyone whose arrival time has come. */
@@ -727,6 +785,23 @@ export function createNpcController(
     arrivalClock += dt;
     for (const [npcId, arrival] of [...pendingArrivals]) {
       if (arrival.at <= arrivalClock) releaseArrival(npcId, period);
+    }
+    // C-56: the already-in crowd greets once each, staggered across
+    // the first 2-12 s of the morning. The list is randomized so two
+    // mornings in a row do not greet in the same order. The bubble is
+    // anchored to the NPC's at-desk position; if they happen to be
+    // mid-conversation when their turn comes, the bubble still fires
+    // (a 6-8 s bubble over a stationary chat is fine).
+    if (controllerElapsed >= nextMorningGreetAt && morningGreetIndex < alreadyInGreetOrder.length) {
+      const npcId = alreadyInGreetOrder[morningGreetIndex] as NpcId;
+      const object = npcObjects[npcId];
+      if (object && object.visible && object.userData.npcState !== "gone-home") {
+        bubbleSystem?.show(object.position, pickMorningGreeting(npcId, rng));
+        markSpoke(npcId, controllerElapsed);
+        morningGreeted.add(npcId);
+      }
+      morningGreetIndex += 1;
+      nextMorningGreetAt = controllerElapsed + 2 + rng() * 10;
     }
   };
 
@@ -1163,10 +1238,11 @@ export function createNpcController(
       const responder = npcObjects[conversation.bId];
       if (responder === undefined || !responder.visible || responder.userData.npcState === "gone-home") continue;
       bubbleSystem?.show(responder.position, conversation.response);
+      markSpoke(conversation.bId, controllerElapsed);
       if (conversation.bId === "burek") lastBurekBubbleAt = controllerElapsed;
     }
 
-    if (bubbleElapsed >= 1) {
+    if (chatterEnabled && bubbleElapsed >= 1) {
       bubbleElapsed = 0;
       if (conversations.size < MAX_CONVERSATIONS && controllerElapsed >= nextStartAt) {
         // Candidates: everyone visible, out of home, not already mid-
@@ -1180,7 +1256,25 @@ export function createNpcController(
           .filter((npc) => {
             const object = npcObjects[npc.id];
             // C-54: an NPC talking to the PLAYER is not a chatter candidate.
-            return object.visible && object.userData.npcState !== "gone-home" && !busy.has(npc.id) && npc.id !== playerTalkingTo;
+            if (!object.visible || object.userData.npcState === "gone-home" || busy.has(npc.id) || npc.id === playerTalkingTo) return false;
+            // C-56: refuse to start a conversation with an NPC whose
+            // bubble is still on screen (greeting, in-flight response,
+            // burek bark). Without this guard the same NPC could chain
+            // a greeting into an immediate chatter line, the visual
+            // overlap Lucas flagged: "the same person should not say
+            // other dialogue" while a greeting is still visible.
+            if (!canSpeak(npc.id, controllerElapsed)) return false;
+            // C-57: never START a conversation with an NPC whose walk is
+            // contested (blocked, escaping, or squeezing past someone).
+            // Chatting freezes the walker, so pairing a jammed NPC
+            // absorbs them into small talk exactly when the escape
+            // ladder needs them moving - the C-48 "still gets around"
+            // contract failed on exactly that. Settled desk pals chat
+            // as before.
+            const state = runtime.get(npc.id)!;
+            const walkContested = state.path !== null &&
+              (state.blockedBy !== null || state.blockedFor > 0 || state.escapeIndex >= 0);
+            return !walkContested;
           })
           .map((npc) => {
             const object = npcObjects[npc.id];
@@ -1227,6 +1321,7 @@ export function createNpcController(
               ? pickLine(BUREK_LINES, rng)
               : pickLine(exchange.responses, rng);
           bubbleSystem?.show(npcObjects[starterId].position, starterLine);
+          markSpoke(starterId, controllerElapsed);
           // Face each other for the exchange.
           const dx = second.position.x - first.position.x;
           const dz = second.position.z - first.position.z;
@@ -1246,7 +1341,7 @@ export function createNpcController(
       }
     }
 
-    if (controllerElapsed >= barkAt) {
+    if (chatterEnabled && controllerElapsed >= barkAt) {
       const burek = npcs.find((npc) => npc.id === "burek");
       const object = burek === undefined ? undefined : npcObjects.burek;
       // C-54: no ambient bark while the player has Burek's attention.
@@ -1254,6 +1349,7 @@ export function createNpcController(
         barkAt = Math.max(barkAt, controllerElapsed + 2);
       } else if (object !== undefined && object.visible && object.userData.npcState !== "gone-home" && controllerElapsed - lastBurekBubbleAt >= 60) {
         bubbleSystem?.show(object.position, pickLine(BUREK_LINES, rng));
+        markSpoke("burek", controllerElapsed);
         lastBurekBubbleAt = controllerElapsed;
         barkAt = controllerElapsed + nextBarkDelay(rng);
       } else barkAt = Math.max(barkAt + 1, lastBurekBubbleAt + 60);
