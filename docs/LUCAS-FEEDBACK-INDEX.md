@@ -188,3 +188,12 @@ Lucas looked at the new CEO office from the inside (screenshot #45). 9 specific 
 - Search the agent's message history for ALL missed ideas and
   feedback — the agent lost 50% of what Lucas said because it
   wasn't written down.
+
+## 2026-09-01 — feedback captured
+
+**ID: L-2026-09-01-01 — Five playability fixes (C-52..C-55)**
+- **End the day must END the day (C-52)** — clicking "End the day" only showed the summary modal; the clock kept the same day going, so the player had to wait until late evening every time anyway. The button must advance the calendar to the next morning (skipping the remaining periods' random events), run the daily tick once, and show the summary for the day that just ended.
+- **Dog (Burek) has strange red objects on his sides (C-53)** — remove them. Root cause: the collar box is wider than the body and passes through it, so its ends show as red squares on both flanks. Also make the legs the same color as the body; the two-tone legs read as artifacts.
+- **Skip must not reset the player (C-54)** — the Skip button in the dialogue window teleported the view back to the starting position. The player prefers to stay where they are, next to the person they just talked to.
+- **Conversations must be staged like conversations (C-54)** — starting a conversation often left the player inside a wall or somewhere strange, and the NPC rarely faced the player ("most people keep some eye contact when they talk, so should the NPC"). Fix: place the player at a collision-safe conversation spot facing the NPC, and the NPC turns to the player and holds it (frozen schedule, no chatter stealing) for the whole dialogue.
+- **Speech-bubble text is unreadable (C-55)** — even up close. The hover labels ("name - role") are sharp DOM text; the bubbles are a 256x64 canvas with a 16px monospace font and NearestFilter upscaling. Rebuild the bubble texture at high resolution with the hover-label font and linear filtering.

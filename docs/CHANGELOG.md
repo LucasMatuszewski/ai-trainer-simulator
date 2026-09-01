@@ -681,3 +681,33 @@ A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
 - **Measured result.** Morning: peak NPCs within 3 m of the door **13 of 14 -> 1**; frozen-at-the-door **147.2 s -> 15.7 s**; frozen across the whole morning **165.5 s -> 31.0 s**. Full day on the C-50 harness: frozen **265 s -> 77 s**, jam episodes **53 -> 19**, worst single walk **115 m -> 59 m**. The day-regression ceilings are tightened to 250 s / 60 episodes / 150 m / 12 s. So C-51 also turned out to be the largest remaining win on the crowd problem C-48 and C-50 were chasing - most of what those rounds had left to fix was being manufactured by the morning gate.
 - **Janusz note:** only his arrival TIME changes. His schedule state stays `at-desk` in all three periods, so L-2026-08-31-02 and its two unit tests are unaffected.
 - **Acceptance criteria:** (1) At day start several colleagues are already working and several walk in through the door. (2) Only a handful of NPCs are ever near the door at once. (3) Janusz arrives visibly later than everyone else. (4) Day 2+ mornings arrive through the door exactly like day 1. (5) The morning door-jam metrics stay under the ceilings in `tests/unit/npc-morning-arrivals.test.ts`.
+
+
+### C-52 — "End the day" actually ends the day (2026-09-01)
+
+- **Source (Lucas, 2026-09-01):** "clicking on End the day only shows the summary modal but doesn't end the day... we need to wait until late evening either way, every time."
+- **Was:** `endDay()` in `main.ts` ran `runDailyTick()` and showed the summary but never dispatched `advance-time`. The day counter and clock stayed where they were, so after "Continue" the player replayed the same in-game day from the same period and the automatic evening rollover fired `endDay()` a second time (a second daily tick). The summary also displayed `day - 1` of an un-advanced day (day 1 showed as "Day 0").
+- **Now:** `endDay()` first advances the calendar to the next morning (`periodsUntilDayEnd()` in `game/pacing.ts`: 3/2/1 dispatches from morning/afternoon/evening), sets the `day-1-ended` quest flag when day 1 is the day being ended (the flag existed in `quests.ts` but nothing ever set it), then runs the daily tick once and shows the summary for the day that just ended. Remaining periods' random events are skipped - the day is over. The natural evening rollover path (`advanceOfficePeriods`) passes `dayAlreadyAdvanced` so it does not double-advance.
+- **Note:** this completes the "End-day-early" speed control promised in C-16's 5/10/5 pacing decision.
+
+### C-53 — Dog mesh: no red flanks, legs match the body (2026-09-01)
+
+- **Source (Lucas, 2026-09-01, screenshot):** "dog has some strange red objects on the sides. remove them. And I would do the dog's leg same color as body, now we see artifacts."
+- **Was:** `createDogMesh()` added a red collar box `[0.52, 0.08, 0.08]` at z=0.22 - mid-body, not the neck - and 0.12 wider than the 0.4-wide body, so both ends poked out of the flanks as floating red squares. Legs used `darkFur` on a `fur` body.
+- **Now:** collar removed (the head group already carries the dog's identifying dark ears/snout), all four legs use the body's `fur` material. Unit test pins: no child material uses the red, leg material matches the body material.
+
+### C-54 — Conversations are staged: stand next to the NPC, keep eye contact, stay after Skip (2026-09-01)
+
+- **Source (Lucas, 2026-09-01):** "in dialogue window to talk with npc I have Skip button in the corner, it always resets me to the starting position, I prefer to stay where I am, next to this person." And: "When I start a conversation I'm often moved inside a wall or other strange situations/places, and the person I talk to do not look at me very often... most of people keep some eye contact when they talk, so should the NPC!"
+- **Was:** opening a dialogue panned the camera (`cameraDirector.panTo`, offset (0, 1.6, 3.2) from the NPC) with no collision awareness, so the view landed inside walls/furniture; on close the camera snapped back to the player's feet - the spawn point when talking from the roster - i.e. "reset to the starting position". The NPC got ONE face-the-player yaw at open; if it was mid-walk, the controller kept writing its schedule rotation and could walk away mid-sentence. The `walk-to-face` planner (built for exactly this in ADR-0007) existed but was never wired in.
+- **Now:**
+  1. `openDialogueWith` plans the conversation spot with `planWalkToFace` from the player's live position to the NPC's LIVE mesh position, pushes it out of furniture/walls with the new pure `pushOutOfObstacles` (collision.ts), and applies it with the new `controls.setPlayerPose(x, z, yaw)` - the player stands 1.6 m from the NPC, facing them. No cameraDirector pan at all; the first-person camera is the player's eyes, so it cannot be in a wall.
+  2. `NpcController.setTalkingToPlayer(npcId | null)` freezes the NPC for the whole dialogue (movement gate, separation pass skip, excluded from new chatter pairs and Burek barks) so nothing overwrites the face-the-player yaw or walks them off. On close the schedule yaw is restored (existing behavior) and the player simply stays where they are.
+  3. Skip/Continue/option-end all close via the same path, so there is no reset of any kind.
+- **Rejected alternative:** keeping the cinematic pan and just clamping it to open space - it still fights the first-person model (C-01) and still needs a snap-back on close, which is the behavior Lucas asked to remove.
+
+### C-55 — Speech-bubble text at hover-label quality (2026-09-01)
+
+- **Source (Lucas, 2026-09-01):** "The text in bubbles with dialogues is very low quality and unreadable, even from close! ... labels with 'name - position' on hover are very sharp, nice text. How to fix that and have a nice readable font for the dialogue bubbles? Compare the code with the code of the label."
+- **Was:** `makeTexture` drew 16px monospace onto a 256x64 canvas and set magFilter/minFilter to NearestFilter - the sprite then upscaled that tiny, aliased texture (blocky, blurry). The sharp hover label is plain DOM text at 26px VT323.
+- **Now:** the canvas is 512x128 (4x the pixels), the font is the hover label's own VT323 at 44px canvas units with a measure-and-shrink pass so every line fits, filters are Linear + mipmaps, and the texture carries SRGBColorSpace so the colors match the rest of the renderer (which outputs SRGB). Sprite scale roughly unchanged, so the layout is the same - just readable.
