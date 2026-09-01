@@ -103,8 +103,12 @@ export function pickFromCamera(args: {
   const { raycaster, npcMeshes, interactableMeshes } = args;
   const max = args.maxDistance ?? 50;
 
-  // NPCs first.
-  const npcArr = Array.from(npcMeshes.values());
+  // NPCs first. `visible` is filtered explicitly: three.js does NOT
+  // skip invisible objects when raycasting, and the controller leaves
+  // hidden bodies parked in the world - gone-home NPCs at the origin,
+  // and (C-51) not-yet-arrived ones on the doormat. The player must
+  // not be able to hover or click someone who is not in the room.
+  const npcArr = Array.from(npcMeshes.values()).filter((mesh) => mesh.visible);
   if (npcArr.length > 0) {
     const hits = raycaster.intersectObjects(npcArr, true);
     const first = hits.find((h) => h.distance <= max);

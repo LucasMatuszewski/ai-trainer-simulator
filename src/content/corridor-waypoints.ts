@@ -21,6 +21,13 @@ export const CORRIDOR_WAYPOINTS: readonly Waypoint[] = [
   { id: "door-main-kitchen", position: { x: 9.65, y: 0, z: 0 } },
   { id: "door-main-ceo", position: { x: 0, y: 0, z: -9.8 } },
   { id: "door-main-meeting", position: { x: 0, y: 0, z: 9.9 } },
+  // C-51: the office entrance itself. Without a node here, an NPC
+  // standing at the front door (0, 8.4) snaps to `door-main-meeting`
+  // (1.5 m away, but BEHIND them inside the meeting room) instead of
+  // `main-south` (3.4 m ahead), so every morning arrival walked north
+  // into the meeting room before turning back - measured as a 23.7 s
+  // pacing loop for Klaudia on the C-51 morning probe.
+  { id: "door-main-entry", position: { x: 0, y: 0, z: 8.4 } },
   // The toilet is entered through the narrow door at the main
   // office's SW corner (gap x [-9, -8.5], z [9, 9.5]), then north
   // through the antechamber strip east of the toilet-east-south

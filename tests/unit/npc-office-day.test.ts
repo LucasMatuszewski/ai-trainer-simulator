@@ -83,17 +83,22 @@ describe("office day (C-48 v5 crowd-flow regression)", () => {
     const worstWalked = Math.max(...rows.map((r) => r.walked));
     const worstFreeze = Math.max(...rows.map((r) => r.max));
 
-    // Measured against the pre-C-48-v5 controller on this exact
-    // scenario: 2014s frozen, 375 jam episodes. These ceilings are set
-    // well above the current numbers (270s / 54) so ordinary tuning
-    // does not trip them, but a return of the old standing-around or
-    // the pacing marathons would.
-    expect(totalFrozen).toBeLessThan(800);
-    expect(totalEpisodes).toBeLessThan(150);
+    // Measured on this exact scenario across three rounds of fixes:
+    //   pre-C-48-v5   2014 s frozen, 375 jam episodes, 905 m worst walk
+    //   post-C-50      265 s frozen,  53 jam episodes, 115 m worst walk
+    //   post-C-51       77 s frozen,  19 jam episodes,  59 m worst walk
+    // C-51 was the biggest single win because the morning door crowd
+    // was generating most of what was left: everyone used to be
+    // teleported onto one door point and released within 9.5 s.
+    // Ceilings keep ~3x headroom over the current numbers so ordinary
+    // tuning does not trip them, but a return of the factory-gate
+    // morning, the standing-around or the pacing marathons would.
+    expect(totalFrozen).toBeLessThan(250);
+    expect(totalEpisodes).toBeLessThan(60);
     // Nobody paces: a day of walking is tens of metres, not hundreds.
     // The worst offender covered 905m before this was fixed.
-    expect(worstWalked).toBeLessThan(250);
+    expect(worstWalked).toBeLessThan(150);
     // And no single stall runs long enough to read as "stuck".
-    expect(worstFreeze).toBeLessThan(15);
+    expect(worstFreeze).toBeLessThan(12);
   });
 });

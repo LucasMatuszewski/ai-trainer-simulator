@@ -12,7 +12,9 @@ import {
   LUNCH_STAGGER_OFFSET,
   NPC_SCHEDULES,
   pickKitchenSequence,
+  planMorningArrivals,
   type KitchenSequenceStop,
+  type MorningArrival,
   type Period,
   type ScheduleEntry,
 } from "../content/npc-schedule";
@@ -67,6 +69,8 @@ export interface NpcController {
   destroy: () => void;
   setOverride: (npcId: NpcId, entry: ScheduleEntry | null) => void;
   getNpcIds: () => readonly NpcId[];
+  /** C-51: false while an NPC has not walked in through the door yet. */
+  hasArrived: (npcId: NpcId) => boolean;
   /** C-46 debug/test hook: the conversations currently in flight. */
   getActiveConversations: () => readonly ActiveConversationView[];
 }
@@ -304,6 +308,15 @@ interface ActiveConversation {
   starterAt: number;
 }
 
+export interface NpcControllerOptions {
+  /** C-51: run the staggered morning arrival (early birds at their
+   *  desks, everyone else walking in through the door over the
+   *  morning). Default true. Tests that exercise the collision and
+   *  chatter models set this false so they can place NPCs directly
+   *  without the arrival schedule moving them. */
+  arrivals?: boolean;
+}
+
 export function createNpcController(
   npcs: readonly NPC[],
   npcObjects: Readonly<Record<NpcId, THREE.Object3D>>,
@@ -311,7 +324,9 @@ export function createNpcController(
   getDay: () => number = () => 1,
   rng: () => number = Math.random,
   isLunchActive: () => boolean = () => false,
+  options: NpcControllerOptions = {},
 ): NpcController {
+  const arrivalsEnabled = options.arrivals ?? true;
   const obstacles = getNpcObstacles();
   const edges = buildWaypointEdges(CORRIDOR_WAYPOINTS, obstacles, DEFAULT_MAX_EDGE_LENGTH);
   const runtime = new Map<NpcId, NpcRuntime>();
@@ -324,6 +339,13 @@ export function createNpcController(
   const conversations = new Map<string, ActiveConversation>();
   const pairCooldowns = new Map<string, number>();
   let lastPeriod: Period | null = null;
+  // C-51: the day the current period bookkeeping belongs to, so a new
+  // day's morning re-runs the arrival instead of re-planning everyone
+  // from wherever `gone-home` parked them.
+  let lastDay: number | null = null;
+  // C-51: NPCs who have not walked in yet, and when they will.
+  const pendingArrivals = new Map<NpcId, MorningArrival>();
+  let arrivalClock = 0;
   let destroyed = false;
   let idleElapsed = 0;
   let bubbleElapsed = 0;
@@ -594,6 +616,8 @@ export function createNpcController(
 
   const synchronizePeriod = (period: Period): void => {
     lastPeriod = period;
+    lastDay = getDay();
+    pendingArrivals.clear();
     overrides.clear();
     validatedDestinations.clear();
     // Everyone re-plans across the office, so any in-flight exchange
@@ -603,6 +627,95 @@ export function createNpcController(
       const state = runtime.get(npc.id)!;
       state.path = null; state.kitchenStops = null; state.dwellRemaining = 0; state.returnEntry = null;
       planForEntry(npc.id, NPC_SCHEDULES[npc.id][period]);
+    }
+  };
+
+  /**
+   * C-51: start a day. A few NPCs are already at their desks; the rest
+   * wait invisible on the doormat until their arrival moment, then
+   * become visible and walk to their morning spot. At most one person
+   * is ever visibly in the doorway, because `planMorningArrivals`
+   * guarantees a minimum gap between consecutive arrivals.
+   */
+  const beginMorningArrivals = (period: Period): void => {
+    lastPeriod = period;
+    lastDay = getDay();
+    arrivalClock = 0;
+    overrides.clear();
+    validatedDestinations.clear();
+    conversations.clear();
+    pendingArrivals.clear();
+    const plan = planMorningArrivals(npcs.map((npc) => npc.id), getDay(), rng);
+    for (const arrival of plan) {
+      const state = runtime.get(arrival.npcId);
+      if (state === undefined) continue;
+      state.path = null;
+      state.kitchenStops = null;
+      state.dwellRemaining = 0;
+      state.returnEntry = null;
+      state.velocity = { x: 0, z: 0 };
+      const entry = NPC_SCHEDULES[arrival.npcId][period];
+      if (arrival.mode === "already-in") {
+        settle(arrival.npcId, entry);
+        continue;
+      }
+      // Not here yet: parked INVISIBLE on their own doormat, so the
+      // door never accumulates a crowd of people waiting for their cue.
+      // Invisible NPCs are excluded from the movement snapshot, the
+      // separation pass, chatter pairing, the roster (as "Not in yet")
+      // and the interaction raycast, so they are inert until released
+      // - and releasing costs no movement, which keeps the crowd-flow
+      // metrics honest.
+      pendingArrivals.set(arrival.npcId, arrival);
+      const object = npcObjects[arrival.npcId];
+      object.visible = false;
+      object.position.set(arrival.door.x, arrival.door.y, arrival.door.z);
+      object.userData.npcState = "arriving";
+      state.target = null;
+      state.anchor = null;
+    }
+  };
+
+  /** C-51: fold the period AND day bookkeeping into one place, so a new
+   *  day's morning always runs the arrival and every other transition
+   *  runs the ordinary re-plan. */
+  const ensureCurrentPeriod = (): Period => {
+    const period = getCurrentPeriod();
+    const day = getDay();
+    const morningArrival = arrivalsEnabled && period === "morning";
+    if (lastPeriod === null) {
+      if (morningArrival) beginMorningArrivals(period);
+      else synchronizePeriod(period);
+    } else if (morningArrival && day !== lastDay) {
+      beginMorningArrivals(period);
+    } else if (period !== lastPeriod) {
+      synchronizePeriod(period);
+    }
+    return period;
+  };
+
+  /** C-51: put a waiting NPC on the doormat and send them to their
+   *  spot. The only way an NPC ever enters the world in the morning. */
+  const releaseArrival = (npcId: NpcId, period: Period): void => {
+    const arrival = pendingArrivals.get(npcId);
+    if (arrival === undefined) return;
+    pendingArrivals.delete(npcId);
+    const object = npcObjects[npcId];
+    object.position.set(arrival.door.x, arrival.door.y, arrival.door.z);
+    runtime.get(npcId)!.baseY = arrival.door.y;
+    planForEntry(npcId, NPC_SCHEDULES[npcId][period]);
+    // After planning, not before: an unroutable destination strands the
+    // NPC (which leaves `visible` alone), and someone who walked in
+    // must be in the room either way.
+    object.visible = true;
+  };
+
+  /** C-51: release everyone whose arrival time has come. */
+  const advanceArrivals = (period: Period, dt: number): void => {
+    if (pendingArrivals.size === 0) return;
+    arrivalClock += dt;
+    for (const [npcId, arrival] of [...pendingArrivals]) {
+      if (arrival.at <= arrivalClock) releaseArrival(npcId, period);
     }
   };
 
@@ -685,32 +798,12 @@ export function createNpcController(
       bubbleSystem.update(safeDt, camera ?? fallbackCamera);
     }
 
-    const period = getCurrentPeriod();
-    if (lastPeriod === null) {
-      lastPeriod = period;
-      // C-45 amendment (l)/morning entry: every NPC starts the day
-      // at the front door and walks to their morning destination.
-      // Each NPC gets a per-NPC delay (rng) so they don't all enter
-      // on the same frame; some are "late" (up to 8 s), some are
-      // on time (0-1 s), some are mid (2-4 s). The door is at
-      // (0, 0, 8.4) - the main office's south wall gap. The morning
-      // schedule entry is the walk target. The stagger means the
-      // office "fills up" over a few seconds at game start.
-      const doorTarget = { x: 0, y: 0, z: 8.4 };
-      for (const npc of npcs) {
-        const morning = NPC_SCHEDULES[npc.id][period];
-        if (npc.id === "burek") { settle(npc.id, morning); continue; }
-        // Per-NPC late/early/mid delay: hash from id (stable) +
-        // a per-NPC jitter (rng) so the day looks varied.
-        let h = 0;
-        for (let i = 0; i < npc.id.length; i += 1) h = (h * 31 + npc.id.charCodeAt(i)) >>> 0;
-        const baseDelay = (h & 0xff) / 0xff; // 0..1, stable per NPC
-        const jitter = rng() * 1.5;          // 0..1.5 s of frame noise
-        const delay = baseDelay * 8 + jitter; // 0..9.5 s, mostly late-arrivers
-        npcObjects[npc.id].position.set(doorTarget.x, doorTarget.y, doorTarget.z);
-        startPath(npc.id, morning, delay);
-      }
-    } else if (period !== lastPeriod) synchronizePeriod(period);
+    // C-51: period + day bookkeeping, then release anyone whose
+    // arrival time has come. The old code teleported all 13 humans onto
+    // the single door point on frame 0 and released them within 9.5 s -
+    // 89% of the morning's jamming was created right there.
+    const period = ensureCurrentPeriod();
+    advanceArrivals(period, safeDt);
 
     // Who is mid-conversation this frame: they hold still for the chat
     // instead of creeping onward.
@@ -1149,6 +1242,8 @@ export function createNpcController(
     update,
     destroy: () => { destroyed = true; bubbleSystem?.destroy(); },
     getNpcIds: () => npcs.map((npc) => npc.id),
+    /** C-51: false while an NPC has not walked in yet this morning. */
+    hasArrived: (npcId) => !pendingArrivals.has(npcId),
     getActiveConversations: () => [...conversations.values()].map((conversation) => ({
       a: conversation.aId,
       b: conversation.bId,
@@ -1156,10 +1251,16 @@ export function createNpcController(
       starterLine: conversation.starterLine,
     })),
     setOverride: (npcId, entry) => {
-      const period = getCurrentPeriod();
-      if (lastPeriod !== null && period !== lastPeriod) synchronizePeriod(period);
+      const period = ensureCurrentPeriod();
       const state = runtime.get(npcId);
       if (state === undefined) return;
+      // C-51: this NPC is not in the building yet, so it has no
+      // position to override from. Walk them in NOW rather than
+      // teleporting them into the middle of the office - the override
+      // becomes the destination they head for once through the door.
+      // (The events layer skips unarrived NPCs via `hasArrived`, so in
+      // the real game this only fires for deliberate placement.)
+      releaseArrival(npcId, period);
       state.path = null; state.kitchenStops = null; state.dwellRemaining = 0; state.returnEntry = null;
       if (entry === null) {
         overrides.delete(npcId); validatedDestinations.delete(npcId);

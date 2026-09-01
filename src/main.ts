@@ -250,6 +250,7 @@ function startOffice(playIntro = false): void {
     registerNpcController({
       setOverride: (id, entry) => built.npcController.setOverride(id, entry),
       getNpcIds: () => built.npcController.getNpcIds(),
+      hasArrived: (id) => built.npcController.hasArrived(id),
     });
     // L-2026-08-30-01: wire the WebMCP player-action hooks so an
     // external agent can play the game the same way the user does

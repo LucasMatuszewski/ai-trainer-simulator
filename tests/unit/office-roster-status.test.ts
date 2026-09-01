@@ -26,6 +26,8 @@ describe("rosterStatusFor (C-46: the roster tells the truth)", () => {
 
   it("marks gone-home NPCs as not in office and unavailable", () => {
     expect(rosterStatusFor("gone-home")).toEqual({ label: "Not in office", available: false });
+    // C-51: not through the door yet - no body to walk up to.
+    expect(rosterStatusFor("arriving")).toEqual({ label: "Not in yet", available: false });
   });
 
   it("treats unknown states as at desk (defensive default)", () => {

@@ -39,6 +39,7 @@ import type { GameState, NpcId } from "../types";
 let npcControllerHooks: {
   setOverride: (npcId: NpcId, entry: ScheduleEntry | null) => void;
   getNpcIds: () => readonly NpcId[];
+  hasArrived: (npcId: NpcId) => boolean;
 } | null = null;
 
 /** Register the NPC controller so we can push random destinations. */
@@ -46,6 +47,7 @@ export function registerNpcController(
   controller: {
     setOverride: (npcId: NpcId, entry: ScheduleEntry | null) => void;
     getNpcIds: () => readonly NpcId[];
+    hasArrived: (npcId: NpcId) => boolean;
   },
 ): void {
   npcControllerHooks = controller;
@@ -58,6 +60,10 @@ function rollRandomNpcDestinations(period: Period): void {
   // Roll per-NPC. PickRandomDestination returns null when the NPC
   // should stay at the desk (70% of the time on average).
   for (const npcId of npcControllerHooks.getNpcIds()) {
+    // C-51: somebody who has not walked in yet gets no destination
+    // roll - they head for their desk when they arrive. Overriding
+    // them here would pull them into the office ahead of their time.
+    if (!npcControllerHooks.hasArrived(npcId)) continue;
     const dest = pickRandomDestination(npcId, Math.random, state.day, {
       period,
       periodElapsed: 0,

@@ -127,6 +127,146 @@ export function LUNCH_STAGGER_OFFSET(
   return rng() * 2;
 }
 
+/* -------------------------------------------------------------------
+ * C-51: morning arrivals.
+ *
+ * An IT company does not open a gate at 9:00. A few people are already
+ * at their desks before the player gets in, most trickle in over the
+ * morning, and one is reliably late. This block is the pure data +
+ * pure planner; `npc-controller.ts` only executes the plan.
+ *
+ * The MEASURED problem this replaces: the controller used to teleport
+ * all 13 humans onto the single door point (0, 8.4) on frame 0 and
+ * release them within 9.5 s. On the C-50 day harness that put 13 of 14
+ * NPCs within 3 m of the door at once, and 147.2 s of the morning's
+ * 165.5 s of frozen-while-walking happened AT the door - 89% of all the
+ * morning jamming was created by the arrival itself.
+ * ----------------------------------------------------------------- */
+
+export type ArrivalMode = "already-in" | "arrives";
+
+/** They beat the player in. PRD 11.4 names Marek and Bartek at their
+ *  desks during the day-1 fade-in; Maciek is the CTO who "only appears
+ *  in the morning" (PRD 11.1), Dawid is the CEO in his own office, and
+ *  Burek the dog sleeps here. */
+export const ALREADY_IN_AT_DAY_START: ReadonlySet<NpcId> = new Set([
+  "bartek", "marek", "maciek", "dawid", "burek",
+]);
+
+/** PRD 11.1: "Janusz (the janitor) - arrives late (10am)". Only his
+ *  arrival TIME is late; his schedule STATE stays `at-desk` in all
+ *  three periods (L-2026-08-31-02), so this changes when he walks in,
+ *  not where he stands. Seconds into the morning period. */
+export const LATE_ARRIVAL_AT: ReadonlyMap<NpcId, number> = new Map([["janusz", 130]]);
+
+/** The regular arrivals are spread evenly across this many seconds of
+ *  the 180 s morning, so the office visibly fills up. Sized so that the
+ *  late arrival (130 s) is clearly last AND still has time to reach his
+ *  desk before the period ends. */
+export const ARRIVAL_WINDOW_SECONDS = 95;
+
+/** THE crowd fix. Consecutive arrivals are pushed apart to at least
+ *  this gap, which at a 1.2 m/s walk is ~4.8 m of clearance - the
+ *  previous arrival is well out of the doorway before the next one
+ *  appears. Preventing the crowd in data beats handing it to the
+ *  C-48/C-50 avoidance system to untangle. */
+export const MIN_ARRIVAL_GAP_S = 4;
+
+/** Per-day wobble on each arrival time, so no two mornings replay
+ *  identically while the pecking order stays stable. */
+export const ARRIVAL_JITTER_S = 6;
+
+/** The main office's south-wall door gap. */
+export const OFFICE_DOOR = { x: 0, y: 0, z: 8.4 } as const;
+
+/** Consecutive arrivals step through the doorway on slightly different
+ *  lines instead of retracing one point. */
+export const DOOR_LANE_HALF_WIDTH = 0.8;
+
+export interface MorningArrival {
+  npcId: NpcId;
+  mode: ArrivalMode;
+  /** Seconds after the morning period starts. Always 0 for `already-in`. */
+  at: number;
+  /** Where this NPC steps in. Unused for `already-in`. */
+  door: { x: number; y: number; z: number };
+}
+
+/** Stable per-NPC ordering key: the same person is always the early
+ *  bird and the same person is always last through the door. */
+function arrivalRank(npcId: NpcId): number {
+  let hash = 2166136261;
+  for (const char of npcId) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return hash / 0x1_0000_0000;
+}
+
+/**
+ * Build the day's arrival plan. Pure: same ids + day + rng sequence
+ * gives the same plan.
+ *
+ * 1. Early birds are `already-in` at t = 0.
+ * 2. Everyone else is ranked by `arrivalRank` (stable personality) and
+ *    laid out evenly across `ARRIVAL_WINDOW_SECONDS`; pinned late
+ *    arrivals take their fixed time instead of a slot.
+ * 3. A per-day jitter wobbles each time.
+ * 4. The list is sorted and each arrival pushed forward until it is at
+ *    least `MIN_ARRIVAL_GAP_S` after the one before it.
+ */
+export function planMorningArrivals(
+  npcIds: readonly NpcId[],
+  _day: number,
+  rng: () => number,
+): MorningArrival[] {
+  const doorLane = (): { x: number; y: number; z: number } => ({
+    x: OFFICE_DOOR.x + (rng() * 2 - 1) * DOOR_LANE_HALF_WIDTH,
+    y: OFFICE_DOOR.y,
+    z: OFFICE_DOOR.z,
+  });
+
+  const alreadyIn: MorningArrival[] = [];
+  const arriving: NpcId[] = [];
+  for (const npcId of npcIds) {
+    if (ALREADY_IN_AT_DAY_START.has(npcId)) {
+      alreadyIn.push({ npcId, mode: "already-in", at: 0, door: { ...OFFICE_DOOR } });
+    } else {
+      arriving.push(npcId);
+    }
+  }
+
+  const byRank = [...arriving].sort(
+    (a, b) => arrivalRank(a) - arrivalRank(b) || (a < b ? -1 : 1),
+  );
+  const onTime = byRank.filter((id) => !LATE_ARRIVAL_AT.has(id));
+  const spacing = onTime.length > 1 ? ARRIVAL_WINDOW_SECONDS / (onTime.length - 1) : 0;
+
+  const planned: MorningArrival[] = [];
+  for (const npcId of byRank) {
+    const pinned = LATE_ARRIVAL_AT.get(npcId);
+    const slot = pinned ?? onTime.indexOf(npcId) * spacing;
+    const jitter = (rng() * 2 - 1) * (ARRIVAL_JITTER_S / 2);
+    planned.push({
+      npcId,
+      mode: "arrives",
+      at: Math.max(0, slot + jitter),
+      door: doorLane(),
+    });
+  }
+
+  planned.sort((a, b) => a.at - b.at || (a.npcId < b.npcId ? -1 : 1));
+  for (let index = 1; index < planned.length; index += 1) {
+    const previous = planned[index - 1]!;
+    const current = planned[index]!;
+    if (current.at - previous.at < MIN_ARRIVAL_GAP_S) {
+      current.at = previous.at + MIN_ARRIVAL_GAP_S;
+    }
+  }
+
+  return [...alreadyIn, ...planned];
+}
+
 export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
   // L-2026-08-31-02: NPC schedule positions and face rotations
   // match the new wall-aligned desk layout (see npcs.ts). Each

@@ -23,6 +23,11 @@ export function rosterStatusFor(npcState: string): { label: string; available: b
   switch (npcState) {
     case "gone-home":
       return { label: "Not in office", available: false };
+    // C-51: they have not walked in yet this morning. Same treatment
+    // as gone-home - the card is disabled, because there is no body in
+    // the office for the player to walk up to.
+    case "arriving":
+      return { label: "Not in yet", available: false };
     case "walking":
       return { label: "Walking", available: true };
     case "kitchen":

@@ -47,7 +47,7 @@ describe("nextBarkDelay", () => {
 
 describe("createNpcController", () => {
   it("supports an empty NPC list and exposes its ids", () => {
-    const controller = createNpcController([], {} as never, () => "morning", () => 1);
+    const controller = createNpcController([], {} as never, () => "morning", () => 1, Math.random, () => false, { arrivals: false });
     expect(controller.getNpcIds()).toEqual([]);
     expect(() => controller.update(1 / 60)).not.toThrow();
     expect(() => controller.destroy()).not.toThrow();
@@ -56,7 +56,7 @@ describe("createNpcController", () => {
   it("re-plans an interrupted walk from the current position", () => {
     let period: Period = "morning";
     const object = makeObject("pawel");
-    const controller = createNpcController([npc("pawel")], { pawel: object } as Record<NpcId, THREE.Object3D>, () => period, () => 1, () => 0);
+    const controller = createNpcController([npc("pawel")], { pawel: object } as Record<NpcId, THREE.Object3D>, () => period, () => 1, () => 0, () => false, { arrivals: false });
     controller.update(0); period = "afternoon"; controller.update(1);
     const interrupted = object.position.clone();
     period = "evening"; controller.update(0); controller.update(0.5);
@@ -66,7 +66,7 @@ describe("createNpcController", () => {
 
   it("visits kitchen stops in order with a dwell between walks", () => {
     const object = makeObject("bartek");
-    const controller = createNpcController([npc("bartek")], { bartek: object } as Record<NpcId, THREE.Object3D>, () => "morning", () => 1, () => 0);
+    const controller = createNpcController([npc("bartek")], { bartek: object } as Record<NpcId, THREE.Object3D>, () => "morning", () => 1, () => 0, () => false, { arrivals: false });
     controller.update(0);
     controller.setOverride("bartek", { position: { x: 14, y: 0, z: 1.2 }, face: Math.PI, state: "kitchen" });
     const dwellPositions: THREE.Vector3[] = [];
@@ -89,7 +89,7 @@ describe("createNpcController", () => {
   it("delays lunch departure by the stagger offset", () => {
     let period: Period = "morning";
     const object = makeObject("bartek");
-    const controller = createNpcController([npc("bartek")], { bartek: object } as Record<NpcId, THREE.Object3D>, () => period, () => 2, () => 0.5);
+    const controller = createNpcController([npc("bartek")], { bartek: object } as Record<NpcId, THREE.Object3D>, () => period, () => 2, () => 0.5, () => false, { arrivals: false });
     controller.update(0); period = "afternoon"; controller.update(0);
     controller.setOverride("bartek", { position: { x: 14, y: 0, z: 1.2 }, face: Math.PI, state: "kitchen" });
     const before = object.position.clone();
@@ -103,7 +103,7 @@ describe("createNpcController", () => {
     // test is: once settled, the controller pins the ROOT y to baseY
     // (idle animations live on child bones only, never on the root).
     const object = makeObject("bartek");
-    const controller = createNpcController([npc("bartek")], { bartek: object } as Record<NpcId, THREE.Object3D>, () => "morning", () => 1, () => 0);
+    const controller = createNpcController([npc("bartek")], { bartek: object } as Record<NpcId, THREE.Object3D>, () => "morning", () => 1, () => 0, () => false, { arrivals: false });
     controller.update(0);
     // 50 s at 0.25 s steps: comfortably longer than the door -> desk walk.
     for (let step = 0; step < 200; step += 1) controller.update(0.25);
@@ -139,6 +139,8 @@ describe("createNpcController", () => {
       () => "morning",
       () => 1,
       rng,
+      () => false,
+      { arrivals: false },
     );
     return { controller, objects };
   }
@@ -259,6 +261,7 @@ describe("createNpcController", () => {
         () => 1,
         rng,
         () => lunch,
+        { arrivals: false },
       );
       controller.update(0);
       placeAt({ controller, objects }, "bartek", 0, 0);
@@ -293,7 +296,7 @@ describe("createNpcController", () => {
     const rng = lcg(9);
     const objects = {} as Record<NpcId, THREE.Object3D>;
     for (const id of ids) objects[id] = makeObject(id);
-    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng);
+    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng, () => false, { arrivals: false });
     controller.update(0);
     // Head-on on the open kitchen z=0 line: each walks to the other's start.
     objects.bartek.position.set(10, 0, 0);
@@ -333,7 +336,7 @@ describe("createNpcController", () => {
     const rng = lcg(11);
     const objects = {} as Record<NpcId, THREE.Object3D>;
     for (const id of ids) objects[id] = makeObject(id);
-    const harness: Harness = { controller: createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng), objects };
+    const harness: Harness = { controller: createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng, () => false, { arrivals: false }), objects };
     harness.controller.update(0);
     placeAt(harness, "kasia", 14, 0);
     for (let step = 0; step < 200 && harness.objects.kasia.userData.npcState !== "at-desk"; step += 1) {
@@ -365,7 +368,7 @@ describe("createNpcController", () => {
     const rng = lcg(17);
     const objects = {} as Record<NpcId, THREE.Object3D>;
     for (const id of ids) objects[id] = makeObject(id);
-    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng);
+    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng, () => false, { arrivals: false });
     controller.update(0);
     // Two settled NPCs form a wall across the open kitchen with a gap
     // too narrow to pass (0.9 m < 2 x MIN_SEPARATION).
@@ -397,7 +400,7 @@ describe("createNpcController", () => {
     const rng = lcg(23);
     const objects = {} as Record<NpcId, THREE.Object3D>;
     for (const id of ids) objects[id] = makeObject(id);
-    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng);
+    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng, () => false, { arrivals: false });
     controller.update(0);
     ids.forEach((id, index) => {
       const [x, z] = spots[index]!;
@@ -433,7 +436,7 @@ describe("createNpcController", () => {
     const ids: NpcId[] = ["bartek", "kasia", "zosia", "pawel"];
     const objects = {} as Record<NpcId, THREE.Object3D>;
     for (const id of ids) objects[id] = makeObject(id);
-    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, lcg(5));
+    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, lcg(5), () => false, { arrivals: false });
     controller.update(0);
     for (const [id, z] of [["zosia", 1], ["pawel", -1]] as [NpcId, number][]) {
       objects[id]!.position.set(14, 0, z);
@@ -481,6 +484,7 @@ describe("createNpcController", () => {
     for (const id of ["bartek", "kasia"] as NpcId[]) objects[id] = makeObject(id);
     const controller = createNpcController(
       (["bartek", "kasia"] as NpcId[]).map((id) => npc(id)), objects, () => "morning", () => 1, lcg(2),
+      () => false, { arrivals: false },
     );
     controller.update(0);
     objects.kasia.position.set(14, 0, 0);
@@ -521,7 +525,7 @@ describe("createNpcController", () => {
     const ids: NpcId[] = ["bartek", ...ring];
     const objects = {} as Record<NpcId, THREE.Object3D>;
     for (const id of ids) objects[id] = makeObject(id);
-    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, lcg(31));
+    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, lcg(31), () => false, { arrivals: false });
     controller.update(0);
     // Six settled NPCs ringed 0.85 m around (14, 0): every gap is
     // 0.86 m wide, well under 2 x MIN_SEPARATION.
@@ -564,27 +568,22 @@ describe("createNpcController", () => {
     });
   });
 
-  it("spreads the morning door crowd instead of stacking on one point (C-48)", () => {
+  it("no longer stacks anyone on the door point - superseded by C-51", () => {
+    // Was: "spreads the morning door crowd instead of stacking on one
+    // point". That test pinned the FACTORY-GATE behaviour - all NPCs
+    // teleported onto (0, 8.4) on frame 0 and spread by the separation
+    // pass. C-51 removed the stack at the source (staggered arrivals
+    // with a minimum inter-arrival gap), so the contract is now the
+    // opposite: with arrivals on, nobody is placed at the door until
+    // it is their turn. See tests/unit/npc-morning-arrivals.test.ts.
     const ids: NpcId[] = ["bartek", "kasia", "zosia", "pawel"];
-    const rng = lcg(3);
     const objects = {} as Record<NpcId, THREE.Object3D>;
     for (const id of ids) objects[id] = makeObject(id);
-    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng);
-    controller.update(0); // morning entry: everyone placed on the same door point
-    for (const id of ids) {
-      // The same update's separation pass already spreads the stack
-      // along the door line (x), but nobody leaves the door spot.
-      expect(objects[id]!.position.x).toBeGreaterThanOrEqual(-1.05);
-      expect(objects[id]!.position.x).toBeLessThanOrEqual(1.05);
-      expect(objects[id]!.position.z).toBeCloseTo(8.4, 5);
-    }
-    for (let step = 0; step < 120; step += 1) controller.update(1 / 60);
-    let minPair = Infinity;
-    for (let i = 0; i < ids.length; i += 1) {
-      for (let j = i + 1; j < ids.length; j += 1) {
-        minPair = Math.min(minPair, objects[ids[i]!].position.distanceTo(objects[ids[j]!].position));
-      }
-    }
-    expect(minPair).toBeGreaterThan(0.2);
+    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, lcg(3));
+    controller.update(0);
+    const onDoorPoint = ids.filter(
+      (id) => objects[id]!.visible && Math.hypot(objects[id]!.position.x, objects[id]!.position.z - 8.4) < 1,
+    );
+    expect(onDoorPoint.length).toBeLessThanOrEqual(1);
   });
 });
