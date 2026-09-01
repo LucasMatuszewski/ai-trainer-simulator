@@ -32,7 +32,14 @@ import {
   roomAt,
   type RoomId,
 } from "./chatter";
-import { computeAvoidancePush, type AvoidanceAgent } from "./npc-avoidance";
+import {
+  BLOCKED_PROGRESS_RATIO,
+  MIN_SEPARATION,
+  arrivalClearOf,
+  escapeWaypoint,
+  separationCorrection,
+  walkBlockedAhead,
+} from "./npc-avoidance";
 import { createInitialIdleState, updateIdle, type IdleState } from "./npc-idle";
 import { planNpcPath } from "./npc-path";
 import {
@@ -82,7 +89,48 @@ interface NpcRuntime {
   returnEntry: ScheduleEntry | null;
   baseY: number;
   velocity: { x: number; z: number };
+  /** C-48: seconds spent blocked (< 25% of expected progress) while walking. */
+  blockedFor: number;
+  /** C-48 v3: escape attempts made this block episode. Never caps - it
+   *  drives the rotating escape fan and the periodic re-plan. */
+  escapeAttempt: number;
+  /** C-48 v3: `blockedFor` value at which the next escape fires. */
+  nextEscapeAt: number;
+  /** C-48 v3: where this NPC settled, so a crowd that parted to let a
+   *  stuck walker through closes back up afterwards. */
+  anchor: { x: number; z: number } | null;
+  /** C-48 v3: path index of the escape waypoint currently being walked
+   *  to, or -1. While set, the stop-at-distance check is suspended for
+   *  this NPC so the escape leg cannot be frozen by the rule that
+   *  triggered it. */
+  escapeIndex: number;
 }
+
+// C-48 v3 blocked-walker LOOP (Lucas: "maybe we just need to loop ...
+// so the movement in new direction, even opposite direction if
+// needed"). All times are seconds of accumulated block. Stuck next to
+// the destination -> settle beside the blocker (the "meeting").
+// Otherwise: talk for a moment, then retry an escape every
+// ESCAPE_RETRY_S FOREVER - the fan rotates per attempt and every third
+// attempt is a full A* re-plan instead. v2's ladder was terminal (one
+// re-plan ever, and a failed detour never escalated), which is why
+// NPCs in the middle of a group gave up for good. Counters reset on
+// real progress.
+const BLOCKED_ARRIVAL_RADIUS = 1.2;
+const BLOCKED_SETTLE_AFTER_S = 1;
+const FIRST_ESCAPE_AFTER_S = 1.2;
+const ESCAPE_RETRY_S = 1.5;
+const REPLAN_EVERY_ATTEMPTS = 3;
+// C-48 v3: MIN_SEPARATION alone fences a crowd in - passing between two
+// NPCs needs a 2 x MIN_SEPARATION gap, which a real cluster never has,
+// so whoever ends up in the middle can never get out however many
+// escapes they try (Lucas: "some people in the middle will just stop
+// trying to get out"). While a walker is actively escaping, the pair
+// floor drops to a brush-past distance and the SETTLED blockers get
+// pushed aside instead of being immovable - the crowd parts. They
+// drift back to where they settled once the walker is through.
+const SQUEEZE_SEPARATION = 0.62;
+const ANCHOR_RETURN_SPEED = 0.6;
 
 export function advanceAlongPath(
   position: THREE.Vector3,
@@ -142,13 +190,6 @@ export function nextBarkDelay(rng: () => number): number {
   return 150 + Math.max(0, Math.min(1, rng())) * 150;
 }
 
-function priorityFor(id: NpcId): number {
-  if (id === "burek") return 1;
-  if (id === "dawid") return 2;
-  if (id === "zosia") return 3;
-  return 4;
-}
-
 /** An exchange in flight between two NPCs (C-46). The starter's line
  *  is already on screen; `response` is what the partner will say. */
 interface ActiveConversation {
@@ -200,9 +241,11 @@ export function createNpcController(
   for (const npc of npcs) {
     runtime.set(npc.id, {
       path: null, segmentIndex: 0, distanceInSegment: 0,
-      walkCycle: { distanceTraveled: 0 }, target: null, departureDelay: 0,
+      walkCycle: { distanceTraveled: 0, amplitude: 1 }, target: null, departureDelay: 0,
       kitchenStops: null, kitchenIndex: 0, dwellRemaining: 0, returnEntry: null,
       baseY: npcObjects[npc.id].position.y, velocity: { x: 0, z: 0 },
+      blockedFor: 0, escapeAttempt: 0, nextEscapeAt: FIRST_ESCAPE_AFTER_S, escapeIndex: -1,
+      anchor: null,
     });
   }
 
@@ -229,8 +272,76 @@ export function createNpcController(
     object.position.set(entry.position.x, entry.position.y, entry.position.z);
     object.rotation.y = entry.face;
     object.rotation.z = 0;
+    // C-48: park the gait in a neutral pose - the walk cycle leaves
+    // the limbs mid-swing the moment the NPC stops, and nothing else
+    // resets them.
+    for (const part of ["left-leg", "right-leg", "arm-left", "arm-right"]) {
+      const node = object.getObjectByName(part);
+      if (node) node.rotation.x = 0;
+    }
     object.visible = entry.state !== "gone-home";
     object.userData.npcState = entry.state;
+    state.anchor = { x: entry.position.x, z: entry.position.z };
+  };
+
+  /** C-48: apply one separation displacement per axis, keeping the NPC
+   *  out of furniture AABBs (a shove can never push through a wall). */
+  const applyDisplacement = (object: THREE.Object3D, dx: number, dz: number): void => {
+    if (dx !== 0 && !isSpawnBlocked({ x: object.position.x + dx, z: object.position.z, radius: NPC_DEFAULT_RADIUS }, obstacles)) {
+      object.position.x += dx;
+    }
+    if (dz !== 0 && !isSpawnBlocked({ x: object.position.x, z: object.position.z + dz, radius: NPC_DEFAULT_RADIUS }, obstacles)) {
+      object.position.z += dz;
+    }
+  };
+
+  /** C-48 v3: splice ONE straight-line escape waypoint into the path.
+   *  The direction comes from the rotating escape fan, so consecutive
+   *  attempts lead elsewhere and a jam always has a next thing to try.
+   *  The NPC turns in place, walks the straight segment, then re-aims
+   *  at the original route - no curved arcs, no dancing. An escape
+   *  that is still pending is REPLACED rather than stacked, so a long
+   *  jam cannot grow the path without bound. */
+  const insertEscape = (npcId: NpcId, attempt: number): boolean => {
+    const state = runtime.get(npcId)!;
+    const object = npcObjects[npcId];
+    if (state.path === null) return false;
+    const next = state.path[state.segmentIndex + 1];
+    if (next === undefined) return false;
+    const self = { x: object.position.x, z: object.position.z };
+    const others: { x: number; z: number }[] = [];
+    for (const other of npcs) {
+      if (other.id === npcId) continue;
+      const otherObject = npcObjects[other.id];
+      if (!otherObject.visible) continue;
+      others.push({ x: otherObject.position.x, z: otherObject.position.z });
+    }
+    const escape = escapeWaypoint(
+      self, next.x - self.x, next.z - self.z, attempt, others,
+      (x, z) => isSpawnBlocked({ x, z, radius: NPC_DEFAULT_RADIUS }, obstacles),
+    );
+    if (escape === null) return false;
+    const point = new THREE.Vector3(escape.x, object.position.y, escape.z);
+    if (state.escapeIndex === state.segmentIndex + 1) state.path[state.escapeIndex] = point;
+    else {
+      state.path.splice(state.segmentIndex + 1, 0, point);
+      state.escapeIndex = state.segmentIndex + 1;
+    }
+    state.distanceInSegment = 0;
+    return true;
+  };
+
+  /** C-48 v3: a fresh A* route from where the NPC actually stands. */
+  const replanFrom = (npcId: NpcId, target: THREE.Vector3): boolean => {
+    const state = runtime.get(npcId)!;
+    const object = npcObjects[npcId];
+    const replanned = planNpcPath(object.position.clone(), target.clone(), CORRIDOR_WAYPOINTS, edges, obstacles);
+    if (replanned === null) return false;
+    state.path = replanned;
+    state.segmentIndex = 0;
+    state.distanceInSegment = 0;
+    state.escapeIndex = -1;
+    return true;
   };
 
   const startPath = (npcId: NpcId, entry: ScheduleEntry, delay: number): boolean => {
@@ -247,6 +358,11 @@ export function createNpcController(
     state.departureDelay = Math.max(0, delay);
     state.baseY = entry.position.y;
     state.velocity = { x: 0, z: 0 };
+    state.blockedFor = 0;
+    state.escapeAttempt = 0;
+    state.nextEscapeAt = FIRST_ESCAPE_AFTER_S;
+    state.escapeIndex = -1;
+    state.anchor = null;
     object.visible = entry.state !== "gone-home";
     object.userData.npcState = "walking";
     return true;
@@ -277,6 +393,7 @@ export function createNpcController(
     state.kitchenStops = null;
     state.returnEntry = null;
     state.target = null;
+    state.anchor = { x: npcObjects[npcId].position.x, z: npcObjects[npcId].position.z };
     npcObjects[npcId].userData.npcState = "at-desk";
   };
 
@@ -303,7 +420,23 @@ export function createNpcController(
     const state = runtime.get(npcId)!;
     const target = state.target;
     if (target === null) return;
-    settle(npcId, target);
+    // C-48: never settle on top of someone. If the destination is
+    // taken, park on the arrival ring beside them (the "meeting") -
+    // the chatter system picks the pair up from there.
+    const occupants: { x: number; z: number }[] = [];
+    for (const other of npcs) {
+      if (other.id === npcId) continue;
+      const object = npcObjects[other.id];
+      if (!object.visible) continue;
+      occupants.push({ x: object.position.x, z: object.position.z });
+    }
+    const spot = arrivalClearOf(
+      { x: target.position.x, z: target.position.z },
+      occupants,
+      MIN_SEPARATION,
+      (x, z) => isSpawnBlocked({ x, z, radius: NPC_DEFAULT_RADIUS }, obstacles),
+    );
+    settle(npcId, { ...target, position: { x: spot.x, y: target.position.y, z: spot.z } });
     if (state.kitchenStops !== null && state.kitchenIndex < state.kitchenStops.length) {
       const stop = state.kitchenStops[state.kitchenIndex]!;
       state.dwellRemaining = KITCHEN_STOP_DWELL[stop.id];
@@ -359,6 +492,30 @@ export function createNpcController(
       }
     } else if (period !== lastPeriod) synchronizePeriod(period);
 
+    // --- C-48 movement, pass 1: advance along paths -----------------
+    // (The old single loop advanced AND animated AND "avoided" per
+    // NPC; splitting it lets the stop check, separation and the gait
+    // see every NPC's final position for the frame.)
+    interface WalkFrame {
+      npc: NPC;
+      before: THREE.Vector3;
+      movementDt: number;
+    }
+    const walkFrames: WalkFrame[] = [];
+    // Positions at the start of the frame - the straight-line (capsule)
+    // stop check and the detour selector read these.
+    const snapshot = new Map<NpcId, { x: number; z: number }>();
+    for (const npc of npcs) {
+      const object = npcObjects[npc.id];
+      if (object.visible) snapshot.set(npc.id, { x: object.position.x, z: object.position.z });
+    }
+    const othersOf = (npcId: NpcId): { x: number; z: number }[] => {
+      const others: { x: number; z: number }[] = [];
+      for (const [id, point] of snapshot) {
+        if (id !== npcId) others.push(point);
+      }
+      return others;
+    };
     for (const npc of npcs) {
       const state = runtime.get(npc.id)!;
       const object = npcObjects[npc.id];
@@ -381,6 +538,27 @@ export function createNpcController(
           continue;
         }
       }
+      // C-48 v2: stop at a distance. Anyone standing inside the
+      // straight walk line freezes this NPC RIGHT HERE - they face
+      // each other and chat instead of pressing together - and the
+      // blocked ladder in pass 4 re-routes afterwards.
+      const nextWaypoint = state.path[state.segmentIndex + 1];
+      // While an escape leg is pending, the stop check is suspended for
+      // this NPC: the escape exists precisely to break a jam, and the
+      // rule that triggered it must not freeze it. Hard separation
+      // still keeps everyone MIN_SEPARATION apart.
+      const blockedByCapsule = state.escapeIndex < 0 && nextWaypoint !== undefined &&
+        walkBlockedAhead(
+          { x: object.position.x, z: object.position.z },
+          nextWaypoint.x - object.position.x,
+          nextWaypoint.z - object.position.z,
+          othersOf(npc.id),
+        );
+      if (blockedByCapsule) {
+        state.velocity = { x: 0, z: 0 };
+        walkFrames.push({ npc, before: object.position.clone(), movementDt });
+        continue;
+      }
       const before = object.position.clone();
       const advanced = advanceAlongPath(before, state.path, state.segmentIndex, state.distanceInSegment, npc.walkSpeed, movementDt);
       state.segmentIndex = advanced.segmentIndex;
@@ -393,33 +571,129 @@ export function createNpcController(
       if (advanced.finished) finishWalk(npc.id);
       else {
         object.userData.npcState = "walking";
-        const cycle = updateWalkCycle(state.walkCycle, movementDt, npc.walkSpeed);
-        state.walkCycle = cycle.state;
-        object.position.y = state.baseY + cycle.bobAmount;
-        const leftLeg = object.getObjectByName("left-leg");
-        const rightLeg = object.getObjectByName("right-leg");
-        const leftArm = object.getObjectByName("arm-left");
-        const rightArm = object.getObjectByName("arm-right");
-        if (leftLeg) leftLeg.rotation.x = cycle.legSwing;
-        if (rightLeg) rightLeg.rotation.x = -cycle.legSwing;
-        if (leftArm) leftArm.rotation.x = cycle.armSwing;
-        if (rightArm) rightArm.rotation.x = -cycle.armSwing;
+        walkFrames.push({ npc, before, movementDt });
       }
     }
 
-    const agents: AvoidanceAgent[] = npcs.map((npc) => {
-      const object = npcObjects[npc.id]; const state = runtime.get(npc.id)!;
-      return { id: npc.id, position: object.position, velocity: state.velocity, priority: priorityFor(npc.id) };
-    });
+    // --- C-48 pass 3: hard separation (CURE) ------------------------
+    // Nobody closer than MIN_SEPARATION, ever. Two walkers split the
+    // correction 50/50; a walker normally yields the FULL correction to
+    // a settled NPC (schedule-owned positions do not drift).
+    //
+    // EXCEPT when the walker is escaping a jam: then the pair floor
+    // drops to SQUEEZE_SEPARATION and the settled blocker takes half
+    // the correction, so the crowd PARTS instead of fencing the walker
+    // in. Without this a cluster is impassable by construction - a gap
+    // between two NPCs is only 0.8-1.5 m wide, but passing at the full
+    // floor would need 1.6 m, so whoever is in the middle is trapped
+    // no matter how many escape routes they try.
+    const isEscaping = (npcId: NpcId): boolean => {
+      const state = runtime.get(npcId)!;
+      return state.path !== null &&
+        (state.escapeIndex >= 0 || state.blockedFor >= FIRST_ESCAPE_AFTER_S);
+    };
+    for (let iteration = 0; iteration < 2; iteration += 1) {
+      for (let i = 0; i < npcs.length; i += 1) {
+        const a = npcs[i]!;
+        const aObject = npcObjects[a.id];
+        if (!aObject.visible) continue;
+        for (let j = i + 1; j < npcs.length; j += 1) {
+          const b = npcs[j]!;
+          const bObject = npcObjects[b.id];
+          if (!bObject.visible) continue;
+          const aWalking = aObject.userData.npcState === "walking";
+          const bWalking = bObject.userData.npcState === "walking";
+          if (!aWalking && !bWalking) continue;
+          const aEscaping = aWalking && isEscaping(a.id);
+          const bEscaping = bWalking && isEscaping(b.id);
+          const floor = aEscaping || bEscaping ? SQUEEZE_SEPARATION : MIN_SEPARATION;
+          const correction = separationCorrection(aObject.position, bObject.position, floor);
+          if (correction === null) continue;
+          const aShare = aWalking && bWalking ? 0.5 : aWalking ? (aEscaping ? 0.5 : 1) : (bEscaping ? 0.5 : 0);
+          const bShare = 1 - aShare;
+          applyDisplacement(aObject, -correction.nx * correction.penetration * aShare, -correction.nz * correction.penetration * aShare);
+          applyDisplacement(bObject, correction.nx * correction.penetration * bShare, correction.nz * correction.penetration * bShare);
+        }
+      }
+    }
+
+    // --- C-48 v3 pass 3b: the crowd closes back up ------------------
+    // A settled NPC that was shoved aside walks back to where it
+    // settled, once its spot is free again.
     for (const npc of npcs) {
-      const object = npcObjects[npc.id]; const state = runtime.get(npc.id)!;
-      if (state.path === null || object.userData.npcState !== "walking") continue;
-      const self = agents.find((agent) => agent.id === npc.id)!;
-      const push = computeAvoidancePush(self, agents);
-      const candidateX = object.position.x + push.x;
-      if (!isSpawnBlocked({ x: candidateX, z: object.position.z, radius: NPC_DEFAULT_RADIUS }, obstacles)) object.position.x = candidateX;
-      const candidateZ = object.position.z + push.z;
-      if (!isSpawnBlocked({ x: object.position.x, z: candidateZ, radius: NPC_DEFAULT_RADIUS }, obstacles)) object.position.z = candidateZ;
+      const state = runtime.get(npc.id)!;
+      const object = npcObjects[npc.id];
+      const anchor = state.anchor;
+      if (anchor === null || state.path !== null || !object.visible) continue;
+      if (object.userData.npcState === "walking") continue;
+      const dx = anchor.x - object.position.x;
+      const dz = anchor.z - object.position.z;
+      const distance = Math.hypot(dx, dz);
+      if (distance < 0.02) continue;
+      const occupied = npcs.some((other) => {
+        if (other.id === npc.id) return false;
+        const otherObject = npcObjects[other.id];
+        if (!otherObject.visible) return false;
+        return Math.hypot(otherObject.position.x - anchor.x, otherObject.position.z - anchor.z) < MIN_SEPARATION;
+      });
+      if (occupied) continue;
+      const step = Math.min(distance, ANCHOR_RETURN_SPEED * safeDt);
+      applyDisplacement(object, (dx / distance) * step, (dz / distance) * step);
+    }
+
+    // --- C-48 v2 pass 4: gait + blocked ladder (DEADLOCK) -----------
+    // The gait advances by the metres ACTUALLY moved, so a stopped NPC
+    // stands still instead of marching in place ("no more jumping").
+    // The ladder: settle beside the blocker when near the destination;
+    // else straight detour right, then left, then a full A* re-plan;
+    // then stand and chat until the way clears.
+    for (const frame of walkFrames) {
+      const state = runtime.get(frame.npc.id)!;
+      if (state.path === null) continue;
+      const object = npcObjects[frame.npc.id];
+      const moved = Math.hypot(object.position.x - frame.before.x, object.position.z - frame.before.z);
+      const cycle = updateWalkCycle(state.walkCycle, frame.movementDt, frame.npc.walkSpeed, moved);
+      state.walkCycle = cycle.state;
+      object.position.y = state.baseY + cycle.bobAmount;
+      const leftLeg = object.getObjectByName("left-leg");
+      const rightLeg = object.getObjectByName("right-leg");
+      const leftArm = object.getObjectByName("arm-left");
+      const rightArm = object.getObjectByName("arm-right");
+      if (leftLeg) leftLeg.rotation.x = cycle.legSwing;
+      if (rightLeg) rightLeg.rotation.x = -cycle.legSwing;
+      if (leftArm) leftArm.rotation.x = cycle.armSwing;
+      if (rightArm) rightArm.rotation.x = -cycle.armSwing;
+
+      const expected = frame.npc.walkSpeed * frame.movementDt;
+      const blocked = expected > 0 && moved < expected * BLOCKED_PROGRESS_RATIO;
+      if (!blocked) {
+        state.blockedFor = 0;
+        state.escapeAttempt = 0;
+        state.nextEscapeAt = FIRST_ESCAPE_AFTER_S;
+        // The escape leg is done once the NPC has walked past it.
+        if (state.escapeIndex >= 0 && state.segmentIndex >= state.escapeIndex) state.escapeIndex = -1;
+        continue;
+      }
+      state.blockedFor += frame.movementDt;
+      const target = state.path[state.path.length - 1]!;
+      const distanceToTarget = Math.hypot(target.x - object.position.x, target.z - object.position.z);
+      if (distanceToTarget <= BLOCKED_ARRIVAL_RADIUS) {
+        // The "meeting": park beside whoever occupies the destination.
+        if (state.blockedFor >= BLOCKED_SETTLE_AFTER_S) finishWalk(frame.npc.id);
+        continue;
+      }
+      if (state.blockedFor < state.nextEscapeAt) continue;
+      // The loop that never gives up. The attempt counter advances
+      // whether or not the attempt succeeds, so a failed escape can
+      // never swallow the escalation (v2's deadlock), and the retry is
+      // rescheduled every time - there is no terminal rung.
+      state.escapeAttempt += 1;
+      state.nextEscapeAt = state.blockedFor + ESCAPE_RETRY_S;
+      const wantsReplan = state.escapeAttempt % REPLAN_EVERY_ATTEMPTS === 0;
+      if (wantsReplan && replanFrom(frame.npc.id, target)) continue;
+      if (insertEscape(frame.npc.id, state.escapeAttempt)) continue;
+      // Local escape failed too: fall back to a fresh route.
+      replanFrom(frame.npc.id, target);
     }
 
     for (const npc of npcs) {

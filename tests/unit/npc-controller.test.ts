@@ -6,6 +6,7 @@ import { KITCHEN_STOP_DWELL, type Period } from "../../src/content/npc-schedule"
 import { NPCS } from "../../src/content/npcs";
 import { advanceAlongPath, createNpcController, nextBarkDelay } from "../../src/engine/npc-controller";
 import { PAIR_COOLDOWN_S, roomAt } from "../../src/engine/chatter";
+import { MIN_SEPARATION } from "../../src/engine/npc-avoidance";
 import type { NPC, NpcId } from "../../src/types";
 
 function npc(id: NpcId): NPC { return NPCS.find((candidate) => candidate.id === id)!; }
@@ -283,5 +284,217 @@ describe("createNpcController", () => {
     for (const start of workStarts) {
       expect(workLines.has(start.starterLine)).toBe(true);
     }
+  });
+
+  // --- C-48: NPC-vs-NPC collision model -----------------------------
+
+  it("keeps head-on walkers apart and lets both arrive (C-48)", () => {
+    const ids: NpcId[] = ["bartek", "kasia"];
+    const rng = lcg(9);
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ids) objects[id] = makeObject(id);
+    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng);
+    controller.update(0);
+    // Head-on on the open kitchen z=0 line: each walks to the other's start.
+    objects.bartek.position.set(10, 0, 0);
+    objects.kasia.position.set(18, 0, 0);
+    controller.setOverride("bartek", { position: { x: 18, y: 0, z: 0 }, face: 0, state: "at-desk" });
+    controller.setOverride("kasia", { position: { x: 10, y: 0, z: 0 }, face: 0, state: "at-desk" });
+
+    let minDistance = Infinity;
+    const last: Partial<Record<NpcId, { x: number; z: number; state: string }>> = {};
+    for (let step = 0; step < 1200; step += 1) {
+      controller.update(1 / 30);
+      minDistance = Math.min(minDistance, objects.bartek.position.distanceTo(objects.kasia.position));
+      for (const id of ids) {
+        const object = objects[id]!;
+        const current = { x: object.position.x, z: object.position.z, state: String(object.userData.npcState) };
+        const previous = last[id];
+        // While walking, per-frame motion stays bounded - a vibration
+        // or a snap (the old C-48 "crazy jumping") would exceed it.
+        if (previous !== undefined && previous.state === "walking" && current.state === "walking") {
+          const moved = Math.hypot(current.x - previous.x, current.z - previous.z);
+          expect(moved).toBeLessThanOrEqual(npc(id).walkSpeed * (1 / 30) * 3 + 1e-9);
+        }
+        last[id] = current;
+      }
+      if (objects.bartek.userData.npcState === "at-desk" && objects.kasia.userData.npcState === "at-desk") break;
+    }
+    expect(minDistance).toBeGreaterThanOrEqual(MIN_SEPARATION - 1e-6);
+    expect(objects.bartek.userData.npcState).toBe("at-desk");
+    expect(objects.kasia.userData.npcState).toBe("at-desk");
+  });
+
+  it("settles beside an NPC parked on its target instead of stacking (C-48)", () => {
+    const ids: NpcId[] = ["bartek", "kasia"];
+    const rng = lcg(11);
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ids) objects[id] = makeObject(id);
+    const harness: Harness = { controller: createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng), objects };
+    harness.controller.update(0);
+    placeAt(harness, "kasia", 14, 0);
+    for (let step = 0; step < 200 && harness.objects.kasia.userData.npcState !== "at-desk"; step += 1) {
+      harness.controller.update(0.25);
+    }
+    expect(harness.objects.kasia.userData.npcState).toBe("at-desk");
+    // Bartek walks INTO the spot kasia is standing on.
+    harness.controller.setOverride("bartek", { position: { x: 14, y: 0, z: 0 }, face: 0, state: "at-desk" });
+    for (let step = 0; step < 160; step += 1) {
+      harness.controller.update(0.25);
+      const distance = harness.objects.bartek.position.distanceTo(harness.objects.kasia.position);
+      expect(distance).toBeGreaterThanOrEqual(MIN_SEPARATION - 1e-6);
+      if (harness.objects.bartek.userData.npcState === "at-desk") break;
+    }
+    expect(harness.objects.bartek.userData.npcState).toBe("at-desk");
+    const separation = harness.objects.bartek.position.distanceTo(harness.objects.kasia.position);
+    expect(separation).toBeGreaterThanOrEqual(MIN_SEPARATION - 1e-6);
+    // Parked on the arrival ring beside her (0.8-1.6 m) - the
+    // "meeting" at a polite distance, not a stack.
+    expect(separation).toBeLessThanOrEqual(1.75);
+  });
+
+  it("never gives up: a walker jammed by a wall of NPCs still gets around (C-48 v3)", () => {
+    // v2 regression: a blocked NPC whose two detour points were both
+    // occupied never escalated (the failed detour left detourCount at
+    // 0), so it stood there for the rest of the period. The v3 ladder
+    // loops, so it must eventually get through.
+    const ids: NpcId[] = ["bartek", "kasia", "zosia"];
+    const rng = lcg(17);
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ids) objects[id] = makeObject(id);
+    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng);
+    controller.update(0);
+    // Two settled NPCs form a wall across the open kitchen with a gap
+    // too narrow to pass (0.9 m < 2 x MIN_SEPARATION).
+    objects.kasia.position.set(14, 0, -0.45);
+    objects.zosia.position.set(14, 0, 0.45);
+    controller.setOverride("kasia", { position: { x: 14, y: 0, z: -0.45 }, face: 0, state: "at-desk" });
+    controller.setOverride("zosia", { position: { x: 14, y: 0, z: 0.45 }, face: 0, state: "at-desk" });
+    for (let step = 0; step < 400; step += 1) controller.update(0.25);
+    // The walker must cross the wall line to reach the far side.
+    objects.bartek.position.set(11, 0, 0);
+    controller.setOverride("bartek", { position: { x: 17, y: 0, z: 0 }, face: 0, state: "at-desk" });
+
+    let arrived = false;
+    for (let step = 0; step < 3600 && !arrived; step += 1) {
+      controller.update(1 / 30);
+      arrived = objects.bartek.userData.npcState === "at-desk";
+    }
+    expect(arrived).toBe(true);
+    expect(objects.bartek.position.x).toBeGreaterThan(14);
+  });
+
+  it("resolves a jammed crowd - nobody is left frozen mid-walk (C-48 v3)", () => {
+    // The reported failure: "if the group is big some people in the
+    // middle will just stop trying to get out". Five NPCs start inside
+    // each other's separation radius and all cross the cluster.
+    const ids: NpcId[] = ["bartek", "kasia", "zosia", "pawel", "janusz"];
+    const spots: [number, number][] = [[13.6, -0.4], [14.4, -0.4], [13.6, 0.4], [14.4, 0.4], [14, 0]];
+    const targets: [number, number][] = [[17.5, 0], [10.5, 0], [14, -3.5], [11, -3.5], [17, -3.5]];
+    const rng = lcg(23);
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ids) objects[id] = makeObject(id);
+    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng);
+    controller.update(0);
+    ids.forEach((id, index) => {
+      const [x, z] = spots[index]!;
+      objects[id]!.position.set(x, 0, z);
+    });
+    ids.forEach((id, index) => {
+      const [x, z] = targets[index]!;
+      controller.setOverride(id, { position: { x, y: 0, z }, face: 0, state: "at-desk" });
+    });
+
+    for (let step = 0; step < 4500; step += 1) controller.update(1 / 30);
+
+    // Liveness: nobody is still stuck in the walking state.
+    for (const id of ids) {
+      expect(objects[id]!.userData.npcState).not.toBe("walking");
+    }
+    // Safety: the hard separation held throughout the jam.
+    for (let i = 0; i < ids.length; i += 1) {
+      for (let j = i + 1; j < ids.length; j += 1) {
+        const distance = objects[ids[i]!]!.position.distanceTo(objects[ids[j]!]!.position);
+        expect(distance).toBeGreaterThanOrEqual(MIN_SEPARATION - 0.05);
+      }
+    }
+  });
+
+  it("a fully surrounded NPC still gets out - the crowd parts, then closes (C-48 v3)", () => {
+    // THE reported bug: "if the group is big some people in the middle
+    // will just stop trying to get out". MIN_SEPARATION alone fences a
+    // cluster in - a gap between two NPCs is under 2 x the floor, so
+    // the middle is unreachable-from and unleavable however many
+    // escape routes are tried. The escaping walker must be able to
+    // squeeze through and shove the blockers aside.
+    const ring: NpcId[] = ["kasia", "zosia", "pawel", "janusz", "przemek", "ania"];
+    const ids: NpcId[] = ["bartek", ...ring];
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ids) objects[id] = makeObject(id);
+    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, lcg(31));
+    controller.update(0);
+    // Six settled NPCs ringed 0.85 m around (14, 0): every gap is
+    // 0.86 m wide, well under 2 x MIN_SEPARATION.
+    ring.forEach((id, index) => {
+      const angle = (index / ring.length) * Math.PI * 2;
+      const x = 14 + Math.cos(angle) * 0.85;
+      const z = Math.sin(angle) * 0.85;
+      objects[id]!.position.set(x, 0, z);
+      controller.setOverride(id, { position: { x, y: 0, z }, face: 0, state: "at-desk" });
+    });
+    for (let step = 0; step < 400; step += 1) controller.update(0.25);
+    objects.bartek.position.set(14, 0, 0);
+    controller.setOverride("bartek", { position: { x: 17.5, y: 0, z: 0 }, face: 0, state: "at-desk" });
+
+    let resolvedAt = -1;
+    let closestEver = Infinity;
+    for (let step = 0; step < 3600; step += 1) {
+      controller.update(1 / 30);
+      for (let i = 0; i < ids.length; i += 1) {
+        for (let j = i + 1; j < ids.length; j += 1) {
+          closestEver = Math.min(closestEver, objects[ids[i]!]!.position.distanceTo(objects[ids[j]!]!.position));
+        }
+      }
+      if (resolvedAt < 0 && objects.bartek.userData.npcState !== "walking") resolvedAt = (step + 1) / 30;
+    }
+
+    // He gets out, and reasonably fast - not "eventually, in theory".
+    expect(resolvedAt).toBeGreaterThan(0);
+    expect(resolvedAt).toBeLessThan(30);
+    expect(objects.bartek.position.x).toBeGreaterThan(16);
+    // Squeezing past is allowed, overlapping is not: NPC bodies are
+    // 0.3 m in radius, so 0.6 m centre-to-centre is exactly touching.
+    expect(closestEver).toBeGreaterThanOrEqual(0.6);
+    // ...and the crowd closed back up where it was standing.
+    ring.forEach((id, index) => {
+      const angle = (index / ring.length) * Math.PI * 2;
+      const expected = { x: 14 + Math.cos(angle) * 0.85, z: Math.sin(angle) * 0.85 };
+      const position = objects[id]!.position;
+      expect(Math.hypot(position.x - expected.x, position.z - expected.z)).toBeLessThan(0.1);
+    });
+  });
+
+  it("spreads the morning door crowd instead of stacking on one point (C-48)", () => {
+    const ids: NpcId[] = ["bartek", "kasia", "zosia", "pawel"];
+    const rng = lcg(3);
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ids) objects[id] = makeObject(id);
+    const controller = createNpcController(ids.map((id) => npc(id)), objects, () => "morning", () => 1, rng);
+    controller.update(0); // morning entry: everyone placed on the same door point
+    for (const id of ids) {
+      // The same update's separation pass already spreads the stack
+      // along the door line (x), but nobody leaves the door spot.
+      expect(objects[id]!.position.x).toBeGreaterThanOrEqual(-1.05);
+      expect(objects[id]!.position.x).toBeLessThanOrEqual(1.05);
+      expect(objects[id]!.position.z).toBeCloseTo(8.4, 5);
+    }
+    for (let step = 0; step < 120; step += 1) controller.update(1 / 60);
+    let minPair = Infinity;
+    for (let i = 0; i < ids.length; i += 1) {
+      for (let j = i + 1; j < ids.length; j += 1) {
+        minPair = Math.min(minPair, objects[ids[i]!].position.distanceTo(objects[ids[j]!].position));
+      }
+    }
+    expect(minPair).toBeGreaterThan(0.2);
   });
 });
