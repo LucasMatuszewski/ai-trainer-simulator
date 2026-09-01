@@ -95,14 +95,15 @@ function makeTexture(line: string): THREE.CanvasTexture {
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  // C-55 amendment (Lucas: "very blurry now, like with some filter"):
-  // NO mipmaps. The sprite renders smaller than the 512px texture at
-  // typical viewports, so mip filtering blended in the half-res mip -
-  // the text was effectively drawn from a 256x64 copy again, i.e. the
-  // old blur. Plain linear sampling always reads the full-res canvas.
+  // C-55 final (Lucas, after seeing all three variants): mipmaps ON is
+  // the look he called "perfect sharp" / "very nice". Without them a
+  // sprite smaller than the 512px texture minifies with plain linear
+  // sampling and the text turns into jagged low-res raster. The scale
+  // stays at the original 0.42 - the 0.46 bump was the change he saw
+  // as blurry and it bought nothing.
   texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearFilter;
-  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
   texture.needsUpdate = true;
   return texture;
 }
