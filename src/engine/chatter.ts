@@ -36,8 +36,17 @@ export type RoomId =
   | "ceo"
   | "corridor";
 
-/** Max distance between two NPCs for a conversation to fire. */
-export const CHATTER_RADIUS = 2.5;
+/** Max distance between two NPCs for a conversation to fire.
+ *  C-57 (Lucas: "friends sitting on the desk next to each other should
+ *  talk sometimes"): the old 2.5 m excluded every desk neighbour - the
+ *  morning schedule seats desk columns with 2.5-4.5 m between adjacent
+ *  seats (measured from NPC_SCHEDULES; the largest neighbour gap is
+ *  4.5 m, east column ania -> grazyna). 4.6 m covers all desk pairs
+ *  while the two 15.4 m-apart columns stay separate pools. Frequency
+ *  is not raised: starts still fire on the 6-12 s schedule within
+ *  MAX_CONVERSATIONS, so the extra eligible pairs SPLIT the same
+ *  number of exchanges - everyone chats occasionally, everyone works. */
+export const CHATTER_RADIUS = 4.6;
 
 /** Seconds between the starter bubble and the partner's response.
  *  Raised 2.2 -> 3.8 on 2026-09-01 (Lucas: "response is displayed also
