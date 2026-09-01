@@ -30,7 +30,10 @@ import { applyWithCollision } from "./collision";
 
 const WALK_SPEED = 4.5; // units per second
 const SPRINT_MULT = 1.8;
-const PLAYER_RADIUS = 0.3; // half-width for AABB collision
+/** Half-width for AABB collision. Exported for placement callers
+ *  (C-54: the conversation spot must respect the same clearance the
+ *  walk code enforces). */
+export const PLAYER_RADIUS = 0.3;
 // Mouse feel (C-48). The spins were NOT this constant: they were OS
 // acceleration (now bypassed via unadjustedMovement) plus clamps
 // sized too tight for high-DPI mice (whose raw movementX/Y counts per
@@ -161,6 +164,15 @@ export interface Controls {
   getYaw: () => number;
   getPitch: () => number;
   getPlayerPosition: () => THREE.Vector3;
+  /**
+   * C-54: teleport-style placement for the conversation staging -
+   * move the player to (x, z) facing `yaw` and update the camera
+   * immediately (controls.update() is skipped while a dialogue is
+   * open, so the camera would otherwise lag a frame behind - or a
+   * whole conversation). The CALLER is responsible for collision
+   * clearance; this setter bypasses applyWithCollision on purpose.
+   */
+  setPlayerPose: (x: number, z: number, yaw: number) => void;
   destroy: () => void;
 }
 
@@ -536,6 +548,15 @@ export function createControls(opts: ControlsOptions): Controls {
     getYaw: () => state.yaw,
     getPitch: () => state.pitch,
     getPlayerPosition: () => player.clone(),
+    setPlayerPose: (x, z, yaw) => {
+      state = { ...state, player: { x, y: state.player.y, z }, yaw };
+      player.x = x;
+      player.z = z;
+      // Mirror update()'s camera write so the new pose is live at
+      // once (update() is gated off while a dialogue is open).
+      camera.position.set(player.x, player.y + EYE_HEIGHT, player.z);
+      camera.rotation.set(state.pitch, state.yaw, 0, "YXZ");
+    },
     /**
      * Remove every event listener this Controls instance registered.
      * Without this, the listeners stay installed for the lifetime of

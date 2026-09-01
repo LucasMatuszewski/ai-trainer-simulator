@@ -73,6 +73,15 @@ export interface NpcController {
   hasArrived: (npcId: NpcId) => boolean;
   /** C-46 debug/test hook: the conversations currently in flight. */
   getActiveConversations: () => readonly ActiveConversationView[];
+  /**
+   * C-54: while the PLAYER is talking to an NPC, that NPC holds still
+   * and keeps the face-the-player yaw for the whole dialogue - no
+   * schedule walking, no separation shoves, no new chatter pairing,
+   * no Burek bark stealing the scene. Null when no player dialogue is
+   * open. The NPC's path is kept, so they simply resume where they
+   * were when the conversation ends.
+   */
+  setTalkingToPlayer: (npcId: NpcId | null) => void;
 }
 
 export interface PathAdvanceResult {
@@ -338,6 +347,8 @@ export function createNpcController(
   // the same two NPCs do not monopolize the office chatter.
   const conversations = new Map<string, ActiveConversation>();
   const pairCooldowns = new Map<string, number>();
+  // C-54: the NPC currently in a player dialogue, if any.
+  let playerTalkingTo: NpcId | null = null;
   let lastPeriod: Period | null = null;
   // C-51: the day the current period bookkeeping belongs to, so a new
   // day's morning re-runs the arrival instead of re-planning everyone
@@ -812,6 +823,9 @@ export function createNpcController(
       chattingNow.add(conversation.aId);
       chattingNow.add(conversation.bId);
     }
+    // C-54: an NPC in a PLAYER dialogue holds still for the same
+    // reason - and keeps the face-the-player yaw main.ts set.
+    if (playerTalkingTo !== null) chattingNow.add(playerTalkingTo);
 
     // --- C-48 movement, pass 1: advance along paths -----------------
     // (The old single loop advanced AND animated AND "avoided" per
@@ -947,6 +961,10 @@ export function createNpcController(
           const b = npcs[j]!;
           const bObject = npcObjects[b.id];
           if (!bObject.visible) continue;
+          // C-54: the player's dialogue partner must not be shoved
+          // mid-conversation - they are standing exactly where the
+          // player expects them.
+          if (a.id === playerTalkingTo || b.id === playerTalkingTo) continue;
           const aWalking = aObject.userData.npcState === "walking";
           const bWalking = bObject.userData.npcState === "walking";
           if (!aWalking && !bWalking) continue;
@@ -1161,7 +1179,8 @@ export function createNpcController(
         const candidates = npcs
           .filter((npc) => {
             const object = npcObjects[npc.id];
-            return object.visible && object.userData.npcState !== "gone-home" && !busy.has(npc.id);
+            // C-54: an NPC talking to the PLAYER is not a chatter candidate.
+            return object.visible && object.userData.npcState !== "gone-home" && !busy.has(npc.id) && npc.id !== playerTalkingTo;
           })
           .map((npc) => {
             const object = npcObjects[npc.id];
@@ -1230,7 +1249,10 @@ export function createNpcController(
     if (controllerElapsed >= barkAt) {
       const burek = npcs.find((npc) => npc.id === "burek");
       const object = burek === undefined ? undefined : npcObjects.burek;
-      if (object !== undefined && object.visible && object.userData.npcState !== "gone-home" && controllerElapsed - lastBurekBubbleAt >= 60) {
+      // C-54: no ambient bark while the player has Burek's attention.
+      if (playerTalkingTo === "burek") {
+        barkAt = Math.max(barkAt, controllerElapsed + 2);
+      } else if (object !== undefined && object.visible && object.userData.npcState !== "gone-home" && controllerElapsed - lastBurekBubbleAt >= 60) {
         bubbleSystem?.show(object.position, pickLine(BUREK_LINES, rng));
         lastBurekBubbleAt = controllerElapsed;
         barkAt = controllerElapsed + nextBarkDelay(rng);
@@ -1244,6 +1266,9 @@ export function createNpcController(
     getNpcIds: () => npcs.map((npc) => npc.id),
     /** C-51: false while an NPC has not walked in yet this morning. */
     hasArrived: (npcId) => !pendingArrivals.has(npcId),
+    setTalkingToPlayer: (npcId) => {
+      playerTalkingTo = npcId;
+    },
     getActiveConversations: () => [...conversations.values()].map((conversation) => ({
       a: conversation.aId,
       b: conversation.bId,

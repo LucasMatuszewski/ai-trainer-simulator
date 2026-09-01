@@ -23,7 +23,7 @@ import { game } from "./game/state";
 import { runDailyTick, publishCashflow } from "./game/economy";
 import { runPeriodEvent, registerNpcController } from "./game/events";
 import { registerPlayerActions } from "./webmcp/tools";
-import { NPCS } from "./content/npcs";
+import { NPCS, OBSTACLES } from "./content/npcs";
 import { LUNCH_WINDOW_SECONDS } from "./content/npc-schedule";
 import type { GameState, NPC, NpcId } from "./types";
 import { mountHud, renderHud, showToast, type HudElements } from "./ui/hud";
@@ -37,13 +37,15 @@ import {
 import { mountDebugScript, type DebugScriptHandle } from "./minigames/debug-script";
 import { audio, type MusicId } from "./audio/AudioManager";
 import { resolveUrl, type Manifest, loadManifest } from "./audio/manifest";
-import { SECONDS_PER_PERIOD } from "./game/pacing";
+import { SECONDS_PER_PERIOD, periodsUntilDayEnd } from "./game/pacing";
 import { mountQuestLog, type QuestLogHandle } from "./ui/quest-log";
 import { mountHelpModal, type HelpModalHandle } from "./ui/help-modal";
 import { ndcFromMouse, pickFromCamera } from "./engine/interaction-raycaster";
-import { getMouseSensitivity, setMouseSensitivity } from "./engine/controls";
-import { yawToFace } from "./engine/npc-face";
+import { PLAYER_RADIUS, getMouseSensitivity, setMouseSensitivity } from "./engine/controls";
+import { pushOutOfObstacles } from "./engine/collision";
+import { planWalkToFace } from "./engine/walk-to-face";
 import { createBubbleSystem } from "./engine/bubbles";
+import { WORLD_BOUNDS, WORLD_COLLISION_WALLS } from "./content/world-layout";
 
 type Screen = "title" | "create" | "office" | "summary" | "minigame" | "gameover";
 
@@ -65,6 +67,10 @@ let questLog: QuestLogHandle | null = null;
 let helpModal: HelpModalHandle | null = null;
 let unsubscribeGame: (() => void) | null = null;
 let focusedNpcId: NpcId | null = null;
+// C-54: who the currently-open player dialogue is with (null when
+// none). The dialogue controller is created once, so its close
+// callback cannot capture the per-conversation NPC.
+let dialogueNpcId: NpcId | null = null;
 let officeStartedAt = 0;
 let lastTime = performance.now();
 // C-46: seconds elapsed inside the CURRENT period, updated each frame
@@ -628,7 +634,7 @@ function updateHoverLabel(): void {
   hoverLabel.hidden = false;
 }
 
-function endDay(): void {
+function endDay(dayAlreadyAdvanced = false): void {
   if (screen !== "office") return;
   // Close any open dialogue first. showDailySummary will clear uiRoot.innerHTML
   // which would otherwise orphan the dialogue DOM but leave the controller's
@@ -636,6 +642,22 @@ function endDay(): void {
   // "already open" — the "dialog never appears again" bug.
   if (dialogue?.isOpen()) {
     dialogue.close();
+  }
+  // C-52: ending the day must END the day. Advance the calendar to the
+  // next morning (skipping the remaining periods - their random events
+  // are not fired, the day is over) before running the tick, so the
+  // summary shows the day that just ended and the clock does not make
+  // the player sit through the same day again after "Continue". The
+  // natural evening rollover in advanceOfficePeriods already advanced
+  // the day before calling here and passes dayAlreadyAdvanced.
+  if (!dayAlreadyAdvanced) {
+    const dispatches = periodsUntilDayEnd(game.get().timeOfDay);
+    for (let i = 0; i < dispatches; i += 1) {
+      game.dispatch({ type: "advance-time" });
+    }
+    if (game.get().day - 1 === 1) {
+      game.dispatch({ type: "set-flag", flag: "day-1-ended", value: true });
+    }
   }
   const result = runDailyTick();
   if (hud) publishCashflow(hud);
@@ -688,17 +710,30 @@ function openDialogueWith(npc: NPC): void {
   // overloaded with overlapping text. The bubble system is created
   // in startOffice() (see below).
   bubbles?.clear();
+  // C-54: the roster stays clickable while a dialogue is open; a new
+  // pick switches the conversation instead of silently keeping the
+  // old one (the controller's open() is a no-op while already open).
+  if (dialogue?.isOpen()) dialogue.close();
   if (!dialogue) {
     dialogue = createDialogue(uiRoot, () => {
       audio().tts.stop();
       audio().sfx.play("sfx_dialogue_close");
-      // Return focus to the roster, not the wide office shot, so the
-      // player sees the NPC they were just talking to.
-      // Restore the NPC's yaw to its schedule face (no longer looking
-      // at the player — the conversation is over).
-      const restoredYaw = npcScheduleYaws.get(npc.id) ?? null;
-      if (restoredYaw !== null) npcFaceAnimations.set(npc.id, restoredYaw);
-      focusNpc(focusedNpcId);
+      // C-54: hand the NPC back to the schedule (its yaw returns to
+      // the schedule face) but the PLAYER stays exactly where the
+      // conversation left them - no reset to the spawn, no camera
+      // pan. dialogueNpcId tracks WHO the dialogue was with: the
+      // controller is created once, so a closure over the first
+      // openDialogueWith() call's `npc` would restore the wrong NPC
+      // on every later conversation.
+      if (dialogueNpcId !== null) {
+        sceneObjects?.npcController.setTalkingToPlayer(null);
+        const restoredYaw = npcScheduleYaws.get(dialogueNpcId) ?? null;
+        if (restoredYaw !== null) npcFaceAnimations.set(dialogueNpcId, restoredYaw);
+        npcScheduleYaws.delete(dialogueNpcId);
+        dialogueNpcId = null;
+      }
+      focusNpc(null);
+      roster?.setFocus(null);
     });
     dialogue.onNodeShown((npc, nodeId) => {
       void (async () => {
@@ -714,21 +749,37 @@ function openDialogueWith(npc: NPC): void {
       })();
     });
   }
-  // Smoothly rotate the NPC to face the player. Saves the current
-  // (schedule-driven) yaw so we can restore it when the dialogue closes.
+  // C-54: stage the conversation like a conversation. The player is
+  // placed at a collision-clear spot 1.6 m from the NPC's LIVE
+  // position (they wander - npc.position is just their desk), both
+  // facing each other, and the NPC is frozen for the dialogue so
+  // nothing walks them off or overwrites the face-the-player yaw.
+  // The first-person camera is the player's own eyes, so it can no
+  // longer end up inside a wall via a cameraDirector pan.
   const mesh = sceneObjects?.npcMeshes.get(npc.id);
-  if (mesh) {
-    const playerPos = controls?.getPlayerPosition();
-    if (playerPos) {
-      const targetYaw = yawToFace(
-        { x: npc.position.x, z: npc.position.z },
-        { x: playerPos.x, z: playerPos.z },
-      );
-      if (!npcScheduleYaws.has(npc.id)) {
-        npcScheduleYaws.set(npc.id, mesh.rotation.y);
-      }
-      npcFaceAnimations.set(npc.id, targetYaw);
+  if (mesh && controls) {
+    const playerPos = controls.getPlayerPosition();
+    const plan = planWalkToFace({
+      player: { x: playerPos.x, y: playerPos.y, z: playerPos.z },
+      npc: { x: mesh.position.x, y: mesh.position.y, z: mesh.position.z },
+      officeBounds: WORLD_BOUNDS,
+    });
+    // planWalkToFace only clamps to the room bounds; the push then
+    // clears any furniture the spot landed in (the planner is
+    // AABB-blind by design).
+    const spot = pushOutOfObstacles(
+      { x: plan.target[0], z: plan.target[2] },
+      PLAYER_RADIUS,
+      WORLD_BOUNDS,
+      [...OBSTACLES, ...WORLD_COLLISION_WALLS],
+    );
+    controls.setPlayerPose(spot.x, spot.z, plan.playerYaw);
+    if (!npcScheduleYaws.has(npc.id)) {
+      npcScheduleYaws.set(npc.id, mesh.rotation.y);
     }
+    npcFaceAnimations.set(npc.id, plan.npcYaw);
+    sceneObjects?.npcController.setTalkingToPlayer(npc.id);
+    dialogueNpcId = npc.id;
   }
   const state = game.get();
   let treeKey = "default";
@@ -750,7 +801,8 @@ function openDialogueWith(npc: NPC): void {
   if (!tree) return;
   (window as unknown as { __aitLastTree?: string }).__aitLastTree = treeKey;
   audio().sfx.play("sfx_dialogue_open");
-  focusNpc(npc.id);
+  // C-54: no cameraDirector pan - the player IS at the conversation
+  // spot now. The roster card keeps its highlight.
   roster?.setFocus(npc.id);
   dialogue.open(npc, tree, treeKey);
 }
@@ -806,7 +858,9 @@ function advanceOfficePeriods(periodCount: number, now: number): void {
   }
   if (game.get().day !== prevDay) {
     officeStartedAt = now;
-    endDay();
+    // The rollover already moved the calendar; endDay must not advance
+    // it a second time (C-52).
+    endDay(true);
   } else {
     officeStartedAt += periodCount * SECONDS_PER_PERIOD * 1000;
   }
