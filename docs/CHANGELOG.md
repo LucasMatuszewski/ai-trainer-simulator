@@ -740,3 +740,8 @@ A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
 - **Source (Lucas, 2026-09-01):** add a sign on the right of the kitchen door ("Kitchen") and the meeting room door ("Meeting Room"), aligned with the walls and visible when looking toward the door.
 - **Now:** `DOOR_SIGN_MOUNTS` + `addDoorSign()` in `src/engine/scene.ts` - retro canvas-texture labels on the office side of each doorway (east wall south of the kitchen gap, south wall west of the meeting gap = the player's right facing the door), pinned by `signs-and-walls.test.ts`; visual spec `c60-door-signs.spec.ts`.
 - **Palette rework (Lucas, same day: "colors are horrible"):** both door signs re-rendered with the muted `drawPoster` style in the BATCAVE gold `0x8a6d1f`; SHIP IT recolored from poster-red/yellow to teal `#17656b` / amber `#ffc94d` / sage.
+
+### C-61 — Speech bubbles redrawn as DOM text (2026-09-01)
+
+- **Source (Lucas, 2026-09-01):** bubble text is low quality and scales badly on big screens; use the exact same method as the NPC hover labels ("Dawid - CEO"), which are always sharp; frame/background can go, text color may differ, no collision with labels.
+- **Now:** bubbles are a pool of DOM divs (`.npc-bubble`) projected each frame like the hover label (same VT323 26px, native resolution, constant size - sharp on any screen at any distance), pale-blue tint instead of the label ivory, no frame/background. The sprite/canvas-texture renderer is gone; the bubble system lives in the NPC controller, which now exposes `clearBubbles` / `setBubblesVisible` (main.ts clears on dialogue open - previously it cleared its own never-shown copy, a latent no-op - and gates visibility to the office screen).

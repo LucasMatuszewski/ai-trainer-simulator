@@ -83,6 +83,14 @@ export interface NpcController {
    * were when the conversation ends.
    */
   setTalkingToPlayer: (npcId: NpcId | null) => void;
+  /**
+   * C-61: the controller owns the inter-NPC bubble system (DOM text).
+   * main.ts forwards screen state here: bubbles hide outside the
+   * office (they are DOM now and would float above other screens'
+   * UI) and are cleared when a player dialogue opens.
+   */
+  setBubblesVisible: (visible: boolean) => void;
+  clearBubbles: () => void;
 }
 
 export interface PathAdvanceResult {
@@ -1365,6 +1373,8 @@ export function createNpcController(
     setTalkingToPlayer: (npcId) => {
       playerTalkingTo = npcId;
     },
+    setBubblesVisible: (visible) => bubbleSystem?.setVisible(visible),
+    clearBubbles: () => bubbleSystem?.clear(),
     getActiveConversations: () => [...conversations.values()].map((conversation) => ({
       a: conversation.aId,
       b: conversation.bId,

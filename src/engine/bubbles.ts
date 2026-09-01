@@ -4,16 +4,30 @@ export interface BubbleHandle {
   update: (dt: number, camera: THREE.Camera) => void;
   show: (speakerPosition: THREE.Vector3, line: string) => void;
   clear: () => void;
+  /**
+   * C-61: hard show/hide for the whole layer. Bubbles are DOM now, so
+   * they would float ABOVE the summary / minigame UI unless gated -
+   * the sprite version hid behind those panels naturally.
+   */
+  setVisible: (visible: boolean) => void;
   destroy: () => void;
 }
 
 /**
- * C-46: up to MAX_CONVERSATIONS (=2) exchanges can run at once (plus
- * Burek's ambient bark), so the system keeps a small pool of bubble
- * sprites instead of the single sprite the old locked-pair design
- * could get away with.
+ * C-61: inter-NPC speech bubbles are plain DOM text, positioned each
+ * frame exactly like the hover label (project the speaker's head into
+ * screen space). The old canvas-texture sprites were rasterized once
+ * and GPU-scaled, so their quality depended on distance and window
+ * size; DOM text rasterizes at native resolution and stays sharp at a
+ * constant size - Lucas: the hover label "is perfectly sharp even from
+ * the distance", the bubbles must use the same method. No frame or
+ * background: just the text (Lucas allowed dropping them), set apart
+ * from the ivory labels by a pale-blue tint.
  */
 const BUBBLE_POOL_SIZE = 4;
+
+/** Bubble anchor above the speaker's feet (hover label sits at 2.1). */
+const ANCHOR_HEIGHT = 1.7;
 
 export function pickLine(lines: ReadonlyArray<string>, rng: () => number): string {
   if (lines.length === 0) return "";
@@ -27,91 +41,23 @@ export function pickLine(lines: ReadonlyArray<string>, rng: () => number): strin
 
 const lastLineByList = new WeakMap<ReadonlyArray<string>, number>();
 
-function fitLine(line: string): string[] {
+/** Cap a line to at most 2 rows of 36 characters (wrap on a space,
+ *  ellipsize anything longer). Exported for tests. */
+export function fitLine(line: string): string {
   const maximumCharacters = 36;
   const maximumTotal = maximumCharacters * 2 - 3;
   const shortened = line.length > maximumTotal
     ? `${line.slice(0, maximumTotal).trimEnd()}...`
     : line;
-  if (shortened.length <= maximumCharacters) return [shortened];
+  if (shortened.length <= maximumCharacters) return shortened;
 
   const breakAt = shortened.lastIndexOf(" ", maximumCharacters);
   const splitAt = breakAt > 0 ? breakAt : maximumCharacters;
-  return [shortened.slice(0, splitAt), shortened.slice(splitAt).trimStart()];
-}
-
-/**
- * C-55: draw the bubble at 4x the old pixel count with the hover
- * label's own font (VT323) and linear filtering. The old 256x64
- * canvas with a 16px monospace font and NearestFilter upscaled into
- * unreadable blocks - the hover label is plain DOM text at 26px VT323,
- * which is why it was sharp while the bubbles were mush.
- */
-function makeTexture(line: string): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 128;
-  const context = canvas.getContext("2d");
-  if (context === null) throw new Error("Unable to create speech bubble canvas");
-
-  context.fillStyle = "#17152880";
-  context.fillRect(0, 0, canvas.width, canvas.height - 16);
-  context.fillStyle = "#17152899";
-  context.beginPath();
-  context.moveTo(224, 112);
-  context.lineTo(256, 128);
-  context.lineTo(288, 112);
-  context.fill();
-  context.strokeStyle = "#f4d35e80";
-  context.lineWidth = 6;
-  context.strokeRect(3, 3, canvas.width - 6, canvas.height - 22);
-  context.fillStyle = "#fff7d6";
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  const lines = fitLine(line);
-  // One shared font size for both lines: shrink until the widest
-  // line fits the bubble's inner width.
-  const baseFontPx = 44;
-  const maxTextWidth = canvas.width - 32;
-  let fontPx = baseFontPx;
-  const setFont = (): void => {
-    context.font = `${fontPx}px "VT323", monospace`;
-  };
-  setFont();
-  const widest = (): number => {
-    let max = 0;
-    for (const text of lines) max = Math.max(max, context.measureText(text).width);
-    return max;
-  };
-  const measured = widest();
-  if (measured > maxTextWidth) {
-    fontPx = Math.max(24, Math.floor(baseFontPx * maxTextWidth / measured));
-    setFont();
-  }
-  lines.forEach((text, index) => {
-    const y = lines.length === 1 ? 56 : 40 + index * 44;
-    context.fillText(text, canvas.width / 2, y);
-  });
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  // C-55 final (Lucas, after seeing all three variants): mipmaps ON is
-  // the look he called "perfect sharp" / "very nice". Without them a
-  // sprite smaller than the 512px texture minifies with plain linear
-  // sampling and the text turns into jagged low-res raster. The scale
-  // stays at the original 0.42 - the 0.46 bump was the change he saw
-  // as blurry and it bought nothing.
-  texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.generateMipmaps = true;
-  texture.needsUpdate = true;
-  return texture;
+  return `${shortened.slice(0, splitAt)}\n${shortened.slice(splitAt).trimStart()}`;
 }
 
 interface BubbleSlot {
-  sprite: THREE.Sprite;
-  material: THREE.SpriteMaterial;
-  texture: THREE.CanvasTexture | null;
+  el: HTMLDivElement;
   speakerPosition: THREE.Vector3 | null;
   elapsed: number;
   lifetime: number;
@@ -123,7 +69,7 @@ function pickRecyclableSlot(slots: readonly BubbleSlot[]): BubbleSlot {
   let chosen = slots[0]!;
   let leastRemaining = Number.POSITIVE_INFINITY;
   for (const slot of slots) {
-    if (!slot.sprite.visible) return slot;
+    if (slot.el.hidden) return slot;
     const remaining = slot.lifetime - slot.elapsed;
     if (remaining < leastRemaining) {
       leastRemaining = remaining;
@@ -133,93 +79,102 @@ function pickRecyclableSlot(slots: readonly BubbleSlot[]): BubbleSlot {
   return chosen;
 }
 
-export function createBubbleSystem(scene: THREE.Scene): BubbleHandle {
-  // C-55: the canvas can only draw VT323 once the face is loaded; it
-  // is normally in by the first bubble (the DOM uses it everywhere),
-  // but ask for it explicitly so the first texture never falls back
-  // to monospace.
-  if (typeof document !== "undefined") {
-    void document.fonts?.load('44px "VT323"').catch(() => { /* font stays fallback */ });
-  }
+/** The game canvas - supplies the projection rect. Optional so the
+ *  system can run headless in unit tests (bubbles just stay hidden). */
+function defaultCanvas(): HTMLCanvasElement | null {
+  if (typeof document === "undefined") return null;
+  return document.querySelector<HTMLCanvasElement>("#game-canvas");
+}
+
+export function createBubbleSystem(
+  _scene: THREE.Scene,
+  parent: HTMLElement | null = typeof document === "undefined" ? null : document.body,
+  canvas: HTMLCanvasElement | null = defaultCanvas(),
+): BubbleHandle {
+  const layer = document.createElement("div");
+  layer.className = "npc-bubble-layer";
   const slots: BubbleSlot[] = [];
   for (let i = 0; i < BUBBLE_POOL_SIZE; i += 1) {
-    const material = new THREE.SpriteMaterial({
-      transparent: true,
-      depthTest: false,
-      sizeAttenuation: false,
-    });
-    const sprite = new THREE.Sprite(material);
-    sprite.visible = false;
-    // C-55 amendment: back to the original on-screen size - the scale
-    // bump bought nothing and Lucas flagged it as the visible change.
-    sprite.scale.set(0.42, 0.105, 1);
-    sprite.renderOrder = 1000;
-    scene.add(sprite);
-    slots.push({
-      sprite,
-      material,
-      texture: null,
-      speakerPosition: null,
-      elapsed: 0,
-      lifetime: 0,
-    });
+    const el = document.createElement("div");
+    el.className = "npc-bubble";
+    el.hidden = true;
+    layer.appendChild(el);
+    slots.push({ el, speakerPosition: null, elapsed: 0, lifetime: 0 });
   }
+  parent?.appendChild(layer);
 
   let destroyed = false;
+  let layerVisible = true;
+  const projected = new THREE.Vector3();
 
   const clearSlot = (slot: BubbleSlot): void => {
-    slot.sprite.visible = false;
     slot.speakerPosition = null;
     slot.elapsed = 0;
+    slot.el.hidden = true;
   };
 
   return {
     update: (dt, camera) => {
-      void camera;
       if (destroyed) return;
       const safeDt = Math.max(0, dt);
+      const rect = canvas?.getBoundingClientRect?.() ?? null;
       for (const slot of slots) {
-        if (!slot.sprite.visible || slot.speakerPosition === null) continue;
+        if (slot.speakerPosition === null) continue;
         slot.elapsed += safeDt;
-        slot.sprite.position.set(
+        if (slot.elapsed >= slot.lifetime) {
+          clearSlot(slot);
+          continue;
+        }
+        if (!layerVisible || rect === null) {
+          slot.el.hidden = true;
+          continue;
+        }
+        projected.set(
           slot.speakerPosition.x,
-          slot.speakerPosition.y + 1.7,
+          slot.speakerPosition.y + ANCHOR_HEIGHT,
           slot.speakerPosition.z,
-        );
-        slot.material.opacity = Math.min(1, Math.max(0, (slot.lifetime - slot.elapsed) / 0.5));
-        if (slot.elapsed >= slot.lifetime) clearSlot(slot);
+        ).project(camera);
+        // Behind / clipped by the far plane - same guard as the label.
+        if (projected.z > 1 || projected.z < -1) {
+          slot.el.hidden = true;
+          continue;
+        }
+        const x = (projected.x * 0.5 + 0.5) * rect.width;
+        const y = (-projected.y * 0.5 + 0.5) * rect.height;
+        slot.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
+        slot.el.style.opacity = String(Math.min(1, Math.max(0, (slot.lifetime - slot.elapsed) / 0.5)));
+        slot.el.hidden = false;
       }
     },
     show: (position, line) => {
       if (destroyed) return;
       const slot = pickRecyclableSlot(slots);
-      slot.texture?.dispose();
-      slot.texture = makeTexture(line);
-      slot.material.map = slot.texture;
-      slot.material.opacity = 1;
-      slot.material.needsUpdate = true;
       slot.speakerPosition = position;
       slot.elapsed = 0;
       // 6-8 s: long enough that the starter is still readable when the
       // reply lands at RESPONSE_DELAY_S (3.8 s) and the pair reads as
       // one exchange (Lucas, 2026-09-01).
       slot.lifetime = 6 + Math.random() * 2;
-      slot.sprite.position.set(position.x, position.y + 1.7, position.z);
-      slot.sprite.visible = true;
+      slot.el.textContent = fitLine(line);
+      slot.el.style.opacity = "1";
+      slot.el.hidden = !layerVisible;
     },
     clear: () => {
       if (destroyed) return;
       for (const slot of slots) clearSlot(slot);
     },
+    setVisible: (visible) => {
+      if (destroyed) return;
+      layerVisible = visible;
+      if (!visible) {
+        for (const slot of slots) slot.el.hidden = true;
+      }
+    },
     destroy: () => {
       if (destroyed) return;
       destroyed = true;
-      for (const slot of slots) {
-        clearSlot(slot);
-        scene.remove(slot.sprite);
-        slot.texture?.dispose();
-        slot.material.dispose();
-      }
+      for (const slot of slots) clearSlot(slot);
+      layer.remove();
     },
   };
 }

@@ -1210,6 +1210,31 @@ html, body {
   text-shadow: 0 2px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.85);
 }
 
+/* C-61: inter-NPC speech bubbles are DOM text positioned exactly like
+   the hover label above (native-resolution raster, constant size), so
+   they stay sharp on any screen. Pale blue tint differentiates them
+   from the ivory labels; no frame or background by design. */
+.npc-bubble-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.npc-bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: pre-line;
+  text-align: center;
+  font-family: var(--font-pixel);
+  font-size: 26px;
+  letter-spacing: 1px;
+  color: #aee2ff;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.85);
+}
+
 /* C-46: an away (gone-home) NPC is not talkable. Disabled card gets a
    slightly different background plus the existing away dimming, and
    never shows the hover accent. */
