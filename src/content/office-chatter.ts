@@ -23,7 +23,7 @@
  * - every exchange has 1-3 responses
  */
 
-export type ChatterTopic = "it" | "finance" | "janitor";
+export type ChatterTopic = "it" | "finance" | "janitor" | "sales" | "marketing";
 
 export interface ChatterExchange {
   /** The line the chattiness-weighted starter says. */
@@ -280,6 +280,83 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "The mop is load-bearing. Don't ask.",
     ],
   },
+  // --- Sales exchanges (C-47: told AT the Deal Wall) ---------------
+  // Affinity: przemek (Sales), kasia (Recruiter), zosia (Manager),
+  // dawid (CEO - he comes over to stare at the numbers).
+  {
+    starter: "Deal Wall update: we are number one!",
+    topic: "sales",
+    responses: [
+      "Number one from the bottom?",
+      "The bar was on the floor anyway.",
+      "Screenshot it before Friday.",
+    ],
+  },
+  {
+    starter: "The client ghosted the demo again.",
+    topic: "sales",
+    responses: [
+      "Follow up with a meme. Works 60% of the time.",
+      "Add them to the 'maybe' graveyard.",
+      "Their 'no' was a 'not yet'. Probably.",
+    ],
+  },
+  {
+    starter: "Q3 quota is a fantasy novel.",
+    topic: "sales",
+    responses: [
+      "Epic. Tragic. Fictional.",
+      "I sell hope and dashboard numbers.",
+      "Rename it 'stretch goals' and breathe.",
+    ],
+  },
+  {
+    starter: "I closed the Acme renewal!",
+    topic: "sales",
+    responses: [
+      "Ring the bell! Quietly. Finance is auditing.",
+      "What discount did that renewal cost us?!",
+      "Add it to the wall before someone else does.",
+    ],
+  },
+  // --- Marketing exchanges (C-47: told AT the Content Booth) -------
+  // Affinity: ania (Marketing), klaudia (Influencer), zosia, dawid.
+  {
+    starter: "Filming a reel by the brand wall. Need a hand?",
+    topic: "marketing",
+    responses: [
+      "Only if I don't have to talk.",
+      "Can Burek cameo? He sells.",
+      "Crop the server rack out. Again.",
+    ],
+  },
+  {
+    starter: "Our engagement is up 300%!",
+    topic: "marketing",
+    responses: [
+      "From what? A screenshot of a spreadsheet?",
+      "Three likes to twelve. Growth.",
+      "The bots love us this quarter.",
+    ],
+  },
+  {
+    starter: "The logo must be bigger. Client's words.",
+    topic: "marketing",
+    responses: [
+      "Bigger logo, smaller website.",
+      "Make it POP. Make it PURPLE.",
+      "Tell them the logo IS the product.",
+    ],
+  },
+  {
+    starter: "Synergy workshop at 3. Bring Post-its.",
+    topic: "marketing",
+    responses: [
+      "I'll bring buzzword bingo instead.",
+      "Is 'synergy' load-bearing this quarter?",
+      "Only if there's cake synergy.",
+    ],
+  },
 ];
 
 /**
@@ -287,6 +364,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
  * start general exchanges. Absent = general only. Per the C-46
  * amendment: techies + CEO tell IT jokes; Grazyna (accountant) and
  * Zosia (manager) tell finance ones; Janusz tells janitor ones.
+ * C-47: sales topics for przemek/kasia (+ zosia, dawid), marketing
+ * topics for ania/klaudia (+ zosia, dawid) - the revenue corner.
  */
 export const SPEAKER_TOPICS: Readonly<Record<string, readonly ChatterTopic[]>> = {
   bartek: ["it"],
@@ -294,12 +373,15 @@ export const SPEAKER_TOPICS: Readonly<Record<string, readonly ChatterTopic[]>> =
   marek: ["it"],
   maciek: ["it"],
   pawel: ["it"],
-  dawid: ["it"],
-  zosia: ["finance", "it"],
+  dawid: ["it", "sales", "marketing"],
+  zosia: ["finance", "it", "sales", "marketing"],
   grazyna: ["finance"],
   janusz: ["janitor"],
-  // przemek (Sales), ania (Marketing), kasia (Recruiter),
-  // klaudia (Influencer), burek (dog) -> general only.
+  przemek: ["sales"],
+  kasia: ["sales"],
+  ania: ["marketing"],
+  klaudia: ["marketing"],
+  // marek (DevOps), burek (dog) -> general only.
 };
 
 /** Flat union of every line in OFFICE_CHATTER. Kept as a named export

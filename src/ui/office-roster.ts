@@ -37,6 +37,10 @@ export function rosterStatusFor(npcState: string): { label: string; available: b
       return { label: "Meeting room", available: true };
     case "training":
       return { label: "Training room", available: true };
+    case "deal-wall":
+      return { label: "Deal Wall", available: true };
+    case "content-booth":
+      return { label: "Content Booth", available: true };
     default:
       return { label: "At desk", available: true };
   }

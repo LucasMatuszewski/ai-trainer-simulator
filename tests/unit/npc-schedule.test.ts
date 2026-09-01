@@ -7,10 +7,12 @@ import {
   NPC_SCHEDULES,
   pickRandomDestination,
   RANDOM_DESTINATIONS,
+  REVENUE_SPOT_CHANCE,
   SOCIAL_LUNCHERS,
   type Period,
 } from "../../src/content/npc-schedule";
 import { NPCS, OFFICE_BOUNDS } from "../../src/content/npcs";
+import { getNpcObstacles, isSpawnBlocked } from "../../src/engine/npc-spawn-validator";
 import type { NpcId } from "../../src/types";
 
 const PERIODS: readonly Period[] = ["morning", "afternoon", "evening"];
@@ -231,9 +233,45 @@ describe("Random walk destinations (L-2026-08-30-01)", () => {
         if (r !== null) {
           expect(r.position.x).toBeDefined();
           expect(r.position.z).toBeDefined();
-          expect(["coffee", "kitchen", "toilet", "meeting", "training"]).toContain(r.state);
+          expect(["coffee", "kitchen", "toilet", "meeting", "training", "deal-wall", "content-booth"]).toContain(r.state);
         }
       }
+    }
+  });
+
+  it("routes affinity NPCs to their C-47 revenue-corner prop", () => {
+    const stayPass = 0.95; // >= the 0.9 stay probability
+    const revenueHit = REVENUE_SPOT_CHANCE / 2; // < REVENUE_SPOT_CHANCE
+
+    const seq = (first: number, second: number) => {
+      let calls = 0;
+      return (): number => {
+        calls += 1;
+        return calls === 1 ? first : second;
+      };
+    };
+    for (const npcId of ["przemek", "kasia", "zosia", "dawid"] as NpcId[]) {
+      const dest = pickRandomDestination(npcId, seq(stayPass, revenueHit), 1);
+      expect(dest?.state).toBe("deal-wall");
+    }
+    // ...and marketing to the Content Booth.
+    for (const npcId of ["ania", "klaudia"] as NpcId[]) {
+      const dest = pickRandomDestination(npcId, seq(stayPass, revenueHit), 1);
+      expect(dest?.state).toBe("content-booth");
+    }
+    // NPCs without a revenue affinity never get the props.
+    for (const npcId of ["bartek", "tomek", "grazyna", "janusz", "burek"] as NpcId[]) {
+      const dest = pickRandomDestination(npcId, seq(stayPass, revenueHit), 1);
+      expect(["deal-wall", "content-booth"]).not.toContain(dest?.state);
+    }
+  });
+
+  it("stands the revenue-corner destination spots clear of furniture", () => {
+    const obstacles = getNpcObstacles();
+    for (const state of ["deal-wall", "content-booth"] as const) {
+      const entry = RANDOM_DESTINATIONS.find((candidate) => candidate.state === state);
+      expect(entry).toBeDefined();
+      expect(isSpawnBlocked({ x: entry!.position.x, z: entry!.position.z, radius: 0.3 }, obstacles)).toBe(false);
     }
   });
 });

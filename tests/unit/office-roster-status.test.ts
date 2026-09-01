@@ -14,6 +14,11 @@ describe("rosterStatusFor (C-46: the roster tells the truth)", () => {
     expect(rosterStatusFor("training")).toEqual({ label: "Training room", available: true });
   });
 
+  it("labels the C-47 revenue corner props", () => {
+    expect(rosterStatusFor("deal-wall")).toEqual({ label: "Deal Wall", available: true });
+    expect(rosterStatusFor("content-booth")).toEqual({ label: "Content Booth", available: true });
+  });
+
   it("keeps walkers and desk workers available", () => {
     expect(rosterStatusFor("walking")).toEqual({ label: "Walking", available: true });
     expect(rosterStatusFor("at-desk")).toEqual({ label: "At desk", available: true });

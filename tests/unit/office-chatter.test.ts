@@ -83,7 +83,7 @@ describe("OFFICE_CHATTER (C-46)", () => {
 
 describe("OFFICE_CHATTER topic affinities (C-46 amendment)", () => {
   it("only uses known topics or none (general)", () => {
-    const known = new Set(["it", "finance", "janitor"]);
+    const known = new Set(["it", "finance", "janitor", "sales", "marketing"]);
     for (const exchange of OFFICE_CHATTER) {
       if (exchange.topic !== undefined) expect(known.has(exchange.topic)).toBe(true);
     }
@@ -99,12 +99,8 @@ describe("OFFICE_CHATTER topic affinities (C-46 amendment)", () => {
     expect(SPEAKER_TOPICS.janusz).toContain("janitor");
   });
 
-  it("keeps non-tech roles on general exchanges only", () => {
-    // Lucas: sales, marketing, recruiting don't tell IT jokes.
-    // (grazyna/janusz/zosia have their own affinities tested above.)
-    for (const id of ["przemek", "ania", "kasia", "klaudia"]) {
-      expect(SPEAKER_TOPICS[id]).toBeUndefined();
-    }
+  it("keeps the dog on general exchanges only", () => {
+    expect(SPEAKER_TOPICS.burek).toBeUndefined();
     // Techies + CEO tell IT jokes; zosia gets finance (+it).
     expect(SPEAKER_TOPICS.bartek).toContain("it");
     expect(SPEAKER_TOPICS.tomek).toContain("it");
@@ -113,6 +109,27 @@ describe("OFFICE_CHATTER topic affinities (C-46 amendment)", () => {
     expect(SPEAKER_TOPICS.pawel).toContain("it");
     expect(SPEAKER_TOPICS.dawid).toContain("it");
     expect(SPEAKER_TOPICS.zosia).toContain("it");
+  });
+
+  it("gives sales and marketing their own C-47 exchange pools", () => {
+    // Lucas: "at least 2 objects with dialogues (starter + 3 responses)
+    // specific to marketing and sales".
+    expect(SPEAKER_TOPICS.przemek).toContain("sales");
+    expect(SPEAKER_TOPICS.kasia).toContain("sales");
+    expect(SPEAKER_TOPICS.ania).toContain("marketing");
+    expect(SPEAKER_TOPICS.klaudia).toContain("marketing");
+    // The manager and the CEO are fluent in the revenue corner.
+    expect(SPEAKER_TOPICS.zosia).toContain("sales");
+    expect(SPEAKER_TOPICS.zosia).toContain("marketing");
+    expect(SPEAKER_TOPICS.dawid).toContain("sales");
+    expect(SPEAKER_TOPICS.dawid).toContain("marketing");
+    for (const topic of ["sales", "marketing"] as const) {
+      const exchanges = OFFICE_CHATTER.filter((e) => e.topic === topic);
+      expect(exchanges.length).toBeGreaterThanOrEqual(4);
+      for (const exchange of exchanges) {
+        expect(exchange.responses.length).toBe(3);
+      }
+    }
   });
 
   it("leaves every speaker a healthy general pool (>= 10 starters)", () => {

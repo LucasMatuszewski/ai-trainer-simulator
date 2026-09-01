@@ -14,7 +14,9 @@ export type NpcState =
   | "gone-home"
   | "toilet"
   | "training"
-  | "kitchen";
+  | "kitchen"
+  | "deal-wall"
+  | "content-booth";
 
 export interface ScheduleEntry {
   position: { x: number; y: number; z: number };
@@ -260,7 +262,29 @@ export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
   { position: { x: 23, y: 0, z: -16.4 }, face: 0, state: "training" },
   { position: { x: 21, y: 0, z: -15 }, face: Math.PI, state: "training" },
   { position: { x: 25.2, y: 0, z: -13.2 }, face: Math.PI, state: "training" },
+  // C-47 revenue corner: stand in front of the Deal Wall (east wall,
+  // between the desk rows) and the Content Booth (west wall, behind
+  // Klaudia's desk), facing the props (face +X = PI/2, face -X =
+  // -PI/2). The affinity weighting in pickRandomDestination sends
+  // sales people to the wall and marketing to the booth.
+  { position: { x: 8.2, y: 0, z: -0.25 }, face: Math.PI / 2, state: "deal-wall" },
+  { position: { x: -8.2, y: 0, z: 5.5 }, face: -Math.PI / 2, state: "content-booth" },
 ];
+
+/**
+ * C-47: who gravitates to the revenue-corner props. Sales-flavored
+ * NPCs favor the Deal Wall, marketing favors the Content Booth; the
+ * manager and the CEO visit both (the CEO's stare at the numbers IS
+ * the joke, per Lucas: "point people to them (including CEO)").
+ */
+export const DEAL_WALL_NPC_IDS: ReadonlySet<NpcId> = new Set([
+  "przemek", "kasia", "zosia", "dawid",
+]);
+export const CONTENT_BOOTH_NPC_IDS: ReadonlySet<NpcId> = new Set([
+  "ania", "klaudia", "zosia", "dawid",
+]);
+/** Chance per random-walk roll that an affinity NPC heads to their prop. */
+export const REVENUE_SPOT_CHANCE = 0.35;
 
 /** Pick a random destination for the given NPC, weighted by role.
  *  Returns null when the NPC should stay at the desk (e.g. they are
@@ -302,6 +326,16 @@ export function pickRandomDestination(
   }
   if (LUNCH_OUTSIDERS.has(npcId) && rng() < 0.3) {
     return pickKitchenSequence(npcId, rng)[0]!.entry;
+  }
+  // C-47: affinity NPCs visit their revenue-corner prop instead of a
+  // generic destination.
+  if (rng() < REVENUE_SPOT_CHANCE) {
+    if (DEAL_WALL_NPC_IDS.has(npcId)) {
+      return RANDOM_DESTINATIONS.find((entry) => entry.state === "deal-wall") ?? null;
+    }
+    if (CONTENT_BOOTH_NPC_IDS.has(npcId)) {
+      return RANDOM_DESTINATIONS.find((entry) => entry.state === "content-booth") ?? null;
+    }
   }
   // 20% of walks: visit a colleague at their desk.
   if (rng() < 0.2) {
