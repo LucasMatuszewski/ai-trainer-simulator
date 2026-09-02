@@ -54,7 +54,7 @@ import {
   givesWayTo,
   separationCorrection,
 } from "./npc-avoidance";
-import { createInitialIdleState, updateIdle, type IdleState } from "./npc-idle";
+import { createInitialIdleState, resetIdlePose, updateIdle, type IdleState } from "./npc-idle";
 import { planNpcPath } from "./npc-path";
 import {
   findValidNpcSpawn,
@@ -486,11 +486,13 @@ export function createNpcController(
     object.rotation.z = 0;
     // C-48: park the gait in a neutral pose - the walk cycle leaves
     // the limbs mid-swing the moment the NPC stops, and nothing else
-    // resets them.
-    for (const part of ["left-leg", "right-leg", "arm-left", "arm-right"]) {
+    // resets them. C-63 extends that to the arm ROLL and the head, which
+    // only the desk gestures ever touch.
+    for (const part of ["left-leg", "right-leg"]) {
       const node = object.getObjectByName(part);
       if (node) node.rotation.x = 0;
     }
+    resetIdlePose(object);
     object.visible = entry.state !== "gone-home" && entry.state !== "conference";
     object.userData.npcState = entry.state;
     state.anchor = { x: entry.position.x, z: entry.position.z };
@@ -660,6 +662,10 @@ export function createNpcController(
         TRIP_ALLOWANCE_FACTOR + TRIP_ALLOWANCE_GRACE_S;
     object.visible = entry.state !== "gone-home";
     object.userData.npcState = "walking";
+    // C-63: an NPC that leaves the desk mid-facepalm would keep the bent
+    // arm for the whole walk - updateIdle is not called for walkers, and
+    // the walk cycle only ever writes rotation.x.
+    resetIdlePose(object);
     return true;
   };
 
@@ -1317,8 +1323,16 @@ export function createNpcController(
       const rightArm = object.getObjectByName("arm-right");
       if (leftLeg) leftLeg.rotation.x = cycle.legSwing;
       if (rightLeg) rightLeg.rotation.x = -cycle.legSwing;
-      if (leftArm) leftArm.rotation.x = cycle.armSwing;
-      if (rightArm) rightArm.rotation.x = -cycle.armSwing;
+      if (leftArm) {
+        leftArm.rotation.x = cycle.armSwing;
+        // C-63: the gait owns the arms while walking - zero the roll the
+        // desk gestures use, so no pose can bleed into the walk cycle.
+        leftArm.rotation.z = 0;
+      }
+      if (rightArm) {
+        rightArm.rotation.x = -cycle.armSwing;
+        rightArm.rotation.z = 0;
+      }
 
       state.tripElapsed += frame.movementDt;
       if (state.tripElapsed > state.tripAllowance) {
@@ -1441,7 +1455,13 @@ export function createNpcController(
       const object = npcObjects[npc.id];
       if (!object.visible || object.userData.npcState === "walking") continue;
       const idle = idleStates.get(npc.id) ?? createInitialIdleState(0, npc.id);
-      idleStates.set(npc.id, updateIdle(idle, safeDt, object.position, object.rotation.y, object, idleElapsed, rng));
+      // C-63: Lucas asked for the typing animation "when npc is working
+      // next to the desk (only then)" - this flag is that "only then".
+      const atDesk = object.userData.npcState === "at-desk";
+      idleStates.set(
+        npc.id,
+        updateIdle(idle, safeDt, object.position, object.rotation.y, object, idleElapsed, rng, { atDesk }),
+      );
     }
 
     // --- C-46 conversation manager ---------------------------------
