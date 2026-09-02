@@ -16,7 +16,8 @@ import { DIALOGUES } from "./dialogues";
 export const NPCS: NPC[] = [
   // Each NPC sits in a chair at the FRONT of the desk (the +Z side,
   // where the keyboard is). The monitor is on the -Z side; the chair is
-  // about 0.5m past the keyboard for legroom. See the desk AABB in
+  // about 0.5m past the keyboard for legroom; C-63 moved every desk
+  // NPC 0.25m closer in, to 0.45m from the desk edge. See the desk AABB in
   // OBSTACLES below: desks are 2m wide × 1m deep, so the chair is at
   // maxZ + 0.5 along the Z axis.
   {
@@ -27,7 +28,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     // C-63: the steady senior consultant: plain and unremarkable on purpose.
     appearance: { skin: "fair", hair: "brown", shirt: "navy" },
-    position: { x: -7.7, y: 0, z: -5 },
+    position: { x: -7.45, y: 0, z: -5 },
     rotationY: Math.PI / 2,
     walkSpeed: 1.2,
     triggerRadius: 1.8,
@@ -45,7 +46,7 @@ export const NPCS: NPC[] = [
     gender: "female",
     // C-63: the LinkedIn influencer dresses for the camera.
     appearance: { skin: "porcelain", hair: "blond", shirt: "mustard" },
-    position: { x: -7.7, y: 0, z: 5.5 },
+    position: { x: -7.45, y: 0, z: 5.5 },
     rotationY: Math.PI / 2,
     walkSpeed: 1.2,
     triggerRadius: 1.8,
@@ -61,7 +62,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     // C-63: DevOps in the same dark hoodie-grey he has worn for years.
     appearance: { skin: "olive", hair: "black", shirt: "charcoal" },
-    position: { x: 7.7, y: 0, z: -5 },
+    position: { x: 7.45, y: 0, z: -5 },
     rotationY: -Math.PI / 2,
     walkSpeed: 1.4,
     triggerRadius: 1.8,
@@ -77,7 +78,7 @@ export const NPCS: NPC[] = [
     gender: "female",
     // C-63: the manager, the only one in the office who owns a blazer.
     appearance: { skin: "tan", hair: "auburn", shirt: "burgundy" },
-    position: { x: 3, y: 0, z: 7.7 },
+    position: { x: 3, y: 0, z: 7.45 },
     rotationY: Math.PI,
     walkSpeed: 1,
     triggerRadius: 1.8,
@@ -93,7 +94,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     // C-63: the intern, still trying to look employable.
     appearance: { skin: "porcelain", hair: "brown", shirt: "teal" },
-    position: { x: -3, y: 0, z: 7.7 },
+    position: { x: -3, y: 0, z: 7.45 },
     rotationY: Math.PI,
     walkSpeed: 1.2,
     triggerRadius: 1.6,
@@ -109,7 +110,7 @@ export const NPCS: NPC[] = [
     gender: "female",
     // C-63: the recruiter, dressed to be remembered.
     appearance: { skin: "brown", hair: "black", shirt: "violet" },
-    position: { x: 7.7, y: 0, z: 5.5 },
+    position: { x: 7.45, y: 0, z: 5.5 },
     rotationY: -Math.PI / 2,
     walkSpeed: 1.2,
     triggerRadius: 1.8,
@@ -125,7 +126,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     // C-63: the junior with the dyed hair phase.
     appearance: { skin: "fair", hair: "dyed", shirt: "forest" },
-    position: { x: -7.7, y: 0, z: -1.5 },
+    position: { x: -7.45, y: 0, z: -1.5 },
     rotationY: Math.PI / 2,
     walkSpeed: 1.4,
     triggerRadius: 1.8,
@@ -141,7 +142,7 @@ export const NPCS: NPC[] = [
     gender: "female",
     // C-63: marketing, matching the brand deck.
     appearance: { skin: "olive", hair: "blond", shirt: "rust" },
-    position: { x: 7.7, y: 0, z: -2.5 },
+    position: { x: 7.45, y: 0, z: -2.5 },
     rotationY: -Math.PI / 2,
     walkSpeed: 1.2,
     triggerRadius: 1.8,
@@ -157,7 +158,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     // C-63: the janitor, work greens and twenty years of grey.
     appearance: { skin: "tan", hair: "grey", shirt: "forest" },
-    position: { x: -7.7, y: 0, z: 2 },
+    position: { x: -7.45, y: 0, z: 2 },
     rotationY: Math.PI / 2,
     walkSpeed: 1.2,
     triggerRadius: 1.8,
@@ -187,7 +188,7 @@ export const NPCS: NPC[] = [
     gender: "female",
     // C-63: the accountant, in accountant.
     appearance: { skin: "fair", hair: "grey", shirt: "charcoal" },
-    position: { x: 7.7, y: 0, z: 2 },
+    position: { x: 7.45, y: 0, z: 2 },
     rotationY: -Math.PI / 2,
     walkSpeed: 1.2,
     triggerRadius: 1.8,
@@ -203,7 +204,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     // C-63: the CTO, one good shirt on rotation.
     appearance: { skin: "deep", hair: "black", shirt: "teal" },
-    position: { x: -3, y: 0, z: -7.7 },
+    position: { x: -3, y: 0, z: -7.45 },
     rotationY: 0,
     walkSpeed: 1.4,
     triggerRadius: 1.8,
@@ -219,7 +220,7 @@ export const NPCS: NPC[] = [
     gender: "male",
     // C-63: sales, the loudest shirt on the floor.
     appearance: { skin: "tan", hair: "brown", shirt: "burgundy" },
-    position: { x: 3, y: 0, z: -7.7 },
+    position: { x: 3, y: 0, z: -7.45 },
     rotationY: 0,
     walkSpeed: 1.2,
     triggerRadius: 1.8,
@@ -316,8 +317,9 @@ export const OBSTACLES: Obstacle[] = [
   // (2m) is perpendicular to the wall, the short edge (1m) runs
   // along the wall. N wall desks are rotated π; S wall desks are
   // NOT rotated (the default orientation already faces the center
-  // for a south-wall desk). NPC positions are 0.7m past the desk's
-  // wall-side edge for legroom — see the NPCS array above.
+  // for a south-wall desk). NPC positions are 0.45m past the desk's
+  // wall-side edge (C-63; was 0.7m, which read as standing NEAR a
+  // desk rather than working at it) — see the NPCS array above.
   { id: "desk-bartek", minX: -7, maxX: -6, minZ: -6, maxZ: -4, rotationY: -Math.PI / 2, label: "Desk (Bartek)" },
   { id: "desk-tomek", minX: -7, maxX: -6, minZ: -2.5, maxZ: -0.5, rotationY: -Math.PI / 2, label: "Desk (Tomek)" },
   { id: "desk-janusz", minX: -7, maxX: -6, minZ: 1, maxZ: 3, rotationY: -Math.PI / 2, label: "Desk (Janusz)" },

@@ -299,25 +299,26 @@ export function planMorningArrivals(
 export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
   // L-2026-08-31-02: NPC schedule positions and face rotations
   // match the new wall-aligned desk layout (see npcs.ts). Each
-  // "at-desk" position is 0.7m past the desk's wall-side edge,
-  // facing the office center.
+  // "at-desk" position is 0.45m past the desk's wall-side edge,
+  // facing the office center (C-63: was 0.7m - Lucas, "move working
+  // npc a little closer to the desk, they are a little too far away").
   bartek: {
-    morning: { position: { x: -7.7, y: 0, z: -5 }, face: Math.PI / 2, state: "at-desk" },
-    afternoon: { position: { x: -7.7, y: 0, z: -5 }, face: Math.PI / 2, state: "at-desk" },
-    evening: { position: { x: -7.7, y: 0, z: -5 }, face: Math.PI / 2, state: "at-desk" },
+    morning: { position: { x: -7.45, y: 0, z: -5 }, face: Math.PI / 2, state: "at-desk" },
+    afternoon: { position: { x: -7.45, y: 0, z: -5 }, face: Math.PI / 2, state: "at-desk" },
+    evening: { position: { x: -7.45, y: 0, z: -5 }, face: Math.PI / 2, state: "at-desk" },
   },
   klaudia: {
-    morning: { position: { x: -7.7, y: 0, z: 5.5 }, face: Math.PI / 2, state: "at-desk" },
-    afternoon: { position: { x: -7.7, y: 0, z: 5.5 }, face: Math.PI / 2, state: "at-desk" },
+    morning: { position: { x: -7.45, y: 0, z: 5.5 }, face: Math.PI / 2, state: "at-desk" },
+    afternoon: { position: { x: -7.45, y: 0, z: 5.5 }, face: Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   marek: {
-    morning: { position: { x: 7.7, y: 0, z: -5 }, face: -Math.PI / 2, state: "at-desk" },
-    afternoon: { position: { x: 7.7, y: 0, z: -5 }, face: -Math.PI / 2, state: "at-desk" },
+    morning: { position: { x: 7.45, y: 0, z: -5 }, face: -Math.PI / 2, state: "at-desk" },
+    afternoon: { position: { x: 7.45, y: 0, z: -5 }, face: -Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   zosia: {
-    morning: { position: { x: 3, y: 0, z: 7.7 }, face: Math.PI, state: "at-desk" },
+    morning: { position: { x: 3, y: 0, z: 7.45 }, face: Math.PI, state: "at-desk" },
     // C-62 (Lucas: "why is Zosia standing in the middle of the office
     // so often?"): her afternoon "meeting" entry parked her at the
     // world origin - the literal center of the main office. She now
@@ -326,28 +327,28 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   pawel: {
-    morning: { position: { x: -3, y: 0, z: 7.7 }, face: Math.PI, state: "at-desk" },
+    morning: { position: { x: -3, y: 0, z: 7.45 }, face: Math.PI, state: "at-desk" },
     afternoon: { position: { x: 7.5, y: 0, z: -7.5 }, face: 0, state: "coffee" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   kasia: {
-    morning: { position: { x: 7.7, y: 0, z: 5.5 }, face: -Math.PI / 2, state: "at-desk" },
-    afternoon: { position: { x: 7.7, y: 0, z: 5.5 }, face: -Math.PI / 2, state: "at-desk" },
+    morning: { position: { x: 7.45, y: 0, z: 5.5 }, face: -Math.PI / 2, state: "at-desk" },
+    afternoon: { position: { x: 7.45, y: 0, z: 5.5 }, face: -Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   tomek: {
-    morning: { position: { x: -7.7, y: 0, z: -1.5 }, face: Math.PI / 2, state: "at-desk" },
-    afternoon: { position: { x: -7.7, y: 0, z: -1.5 }, face: Math.PI / 2, state: "at-desk" },
+    morning: { position: { x: -7.45, y: 0, z: -1.5 }, face: Math.PI / 2, state: "at-desk" },
+    afternoon: { position: { x: -7.45, y: 0, z: -1.5 }, face: Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   ania: {
-    morning: { position: { x: 7.7, y: 0, z: -2.5 }, face: -Math.PI / 2, state: "at-desk" },
-    afternoon: { position: { x: 7.7, y: 0, z: -2.5 }, face: -Math.PI / 2, state: "at-desk" },
+    morning: { position: { x: 7.45, y: 0, z: -2.5 }, face: -Math.PI / 2, state: "at-desk" },
+    afternoon: { position: { x: 7.45, y: 0, z: -2.5 }, face: -Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   janusz: {
-    morning: { position: { x: -7.7, y: 0, z: 2 }, face: Math.PI / 2, state: "at-desk" },
-    afternoon: { position: { x: -7.7, y: 0, z: 2 }, face: Math.PI / 2, state: "at-desk" },
+    morning: { position: { x: -7.45, y: 0, z: 2 }, face: Math.PI / 2, state: "at-desk" },
+    afternoon: { position: { x: -7.45, y: 0, z: 2 }, face: Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   burek: {
@@ -356,18 +357,18 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
     evening: { position: { x: -5, y: 0, z: 4 }, face: Math.PI, state: "at-desk" },
   },
   grazyna: {
-    morning: { position: { x: 7.7, y: 0, z: 2 }, face: -Math.PI / 2, state: "at-desk" },
-    afternoon: { position: { x: 7.7, y: 0, z: 2 }, face: -Math.PI / 2, state: "at-desk" },
+    morning: { position: { x: 7.45, y: 0, z: 2 }, face: -Math.PI / 2, state: "at-desk" },
+    afternoon: { position: { x: 7.45, y: 0, z: 2 }, face: -Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   maciek: {
-    morning: { position: { x: -3, y: 0, z: -7.7 }, face: 0, state: "at-desk" },
+    morning: { position: { x: -3, y: 0, z: -7.45 }, face: 0, state: "at-desk" },
     afternoon: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   przemek: {
-    morning: { position: { x: 3, y: 0, z: -7.7 }, face: 0, state: "at-desk" },
-    afternoon: { position: { x: 3, y: 0, z: -7.7 }, face: 0, state: "at-desk" },
+    morning: { position: { x: 3, y: 0, z: -7.45 }, face: 0, state: "at-desk" },
+    afternoon: { position: { x: 3, y: 0, z: -7.45 }, face: 0, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   // C-38: the new CEO (Dawid) sits at the CEO desk in the new

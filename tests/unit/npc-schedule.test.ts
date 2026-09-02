@@ -108,7 +108,8 @@ describe("NPC schedules", () => {
     // test referenced a schedule that no longer exists.
     const entry = getScheduleFor("janusz", "afternoon");
     expect(entry.state).toBe("at-desk");
-    expect(entry.position).toEqual({ x: -7.7, y: 0, z: 2 });
+    // C-63: 0.7m -> 0.45m from the desk edge.
+    expect(entry.position).toEqual({ x: -7.45, y: 0, z: 2 });
   });
 
   it("puts Zosia in the afternoon meeting", () => {
