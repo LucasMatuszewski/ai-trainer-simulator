@@ -1053,7 +1053,18 @@ declare global {
       setSensitivity: (radPerPixel: number) => void;
       getSensitivity: () => number;
       getSceneObjects: () => { keys: string[]; hasPlayerGroup: boolean } | null;
-      inspectNpcs: () => Array<{ npcId: string; position: { x: number; z: number }; childNames: string[]; state: unknown | null }> | null;
+      inspectNpcs: () => Array<{
+        npcId: string;
+        position: { x: number; z: number };
+        childNames: string[];
+        state: unknown | null;
+        /** C-63: live limb pose, so an e2e can assert a desk animation
+         *  actually ran instead of only eyeballing a screenshot. */
+        pose: {
+          leftArmPitch: number; rightArmPitch: number;
+          rightArmRoll: number; headPitch: number; mugVisible: boolean;
+        };
+      }> | null;
       inspectFurniture: () => Array<{ name: string; position: { x: number; y: number; z: number }; size?: readonly [number, number, number] }> | null;
       debugSkipPeriod: () => void;
       /** Dev/QA hook: teleport the player to (x, z) with a yaw (radians). */
@@ -1105,11 +1116,25 @@ window.__aitrainer = {
       obj.traverse((c: { name: string }) => {
         if (c.name) childNames.push(c.name);
       });
+      // C-63: the live limb pose. `getObjectByName` is used rather than
+      // a cached lookup because this hook runs at most a few times per
+      // QA run, never in the frame loop.
+      const leftArm = obj.getObjectByName("arm-left");
+      const rightArm = obj.getObjectByName("arm-right");
+      const head = obj.getObjectByName("head");
+      const mug = obj.getObjectByName("mug");
       out.push({
         npcId,
         position: { x: obj.position.x, z: obj.position.z },
         childNames,
         state: obj.userData.npcState ?? null,
+        pose: {
+          leftArmPitch: leftArm?.rotation.x ?? 0,
+          rightArmPitch: rightArm?.rotation.x ?? 0,
+          rightArmRoll: rightArm?.rotation.z ?? 0,
+          headPitch: head?.rotation.x ?? 0,
+          mugVisible: mug?.visible ?? false,
+        },
       });
     }
     return out;
