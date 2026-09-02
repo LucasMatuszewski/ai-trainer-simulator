@@ -89,7 +89,9 @@ describe("planMorningArrivals (C-51)", () => {
     const plan = planMorningArrivals(ALL_IDS, 1, lcg(7));
     for (const arrival of plan) {
       expect(Math.abs(arrival.door.x)).toBeLessThanOrEqual(DOOR_LANE_HALF_WIDTH + 1e-9);
-      expect(arrival.door.z).toBeCloseTo(8.4, 5);
+      // C-62: the spawn is deep inside the meeting room now, not on
+      // the office side of the doorway.
+      expect(arrival.door.z).toBeCloseTo(18.2, 5);
     }
     const lanes = plan.filter((a) => a.mode === "arrives").map((a) => a.door.x);
     expect(new Set(lanes.map((x) => x.toFixed(4))).size).toBeGreaterThan(1);

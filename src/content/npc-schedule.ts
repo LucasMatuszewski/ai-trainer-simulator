@@ -12,6 +12,7 @@ export type NpcState =
   | "meeting"
   | "lunch"
   | "gone-home"
+  | "conference"
   | "toilet"
   | "training"
   | "kitchen"
@@ -157,13 +158,13 @@ export const ALREADY_IN_AT_DAY_START: ReadonlySet<NpcId> = new Set([
  *  arrival TIME is late; his schedule STATE stays `at-desk` in all
  *  three periods (L-2026-08-31-02), so this changes when he walks in,
  *  not where he stands. Seconds into the morning period. */
-export const LATE_ARRIVAL_AT: ReadonlyMap<NpcId, number> = new Map([["janusz", 130]]);
+export const LATE_ARRIVAL_AT: ReadonlyMap<NpcId, number> = new Map([["janusz", 115]]);
 
 /** The regular arrivals are spread evenly across this many seconds of
  *  the 180 s morning, so the office visibly fills up. Sized so that the
  *  late arrival (130 s) is clearly last AND still has time to reach his
  *  desk before the period ends. */
-export const ARRIVAL_WINDOW_SECONDS = 95;
+export const ARRIVAL_WINDOW_SECONDS = 80;
 
 /** THE crowd fix. Consecutive arrivals are pushed apart to at least
  *  this gap, which at a 1.2 m/s walk is ~4.8 m of clearance - the
@@ -176,8 +177,36 @@ export const MIN_ARRIVAL_GAP_S = 4;
  *  identically while the pecking order stays stable. */
 export const ARRIVAL_JITTER_S = 6;
 
-/** The main office's south-wall door gap. */
-export const OFFICE_DOOR = { x: 0, y: 0, z: 8.4 } as const;
+/** The entrance spawn point, DEEP inside the meeting room (C-62,
+ * Lucas: the old doormat at z=8.4 sat on the office side of the
+ * doorway, so arriving NPCs popped into view like a teleport - now
+ * they materialize by the entrance at the meeting room's south end
+ * and walk the whole room before stepping through the door). */
+export const OFFICE_DOOR = { x: 0, y: 0, z: 18.2 } as const;
+
+/** Evening departures (C-62): leavers walk to the entrance zone (deep
+ *  meeting room) and only vanish on arrival. Staggered across the
+ *  whole evening so the office empties gradually, with a few staying
+ *  after hours. */
+export const DEPARTURE_FIRST_AT_S = 30;
+export const DEPARTURE_SPREAD_S = 135;
+export const MIN_DEPARTURE_GAP_S = 14;
+export const DEPARTURE_JITTER_S = 10;
+
+/** C-62 (Lucas: "Zosia's meeting with who? Maybe a random 1-2 npc
+ *  should join her?"): seats around the meeting-room table that 1-2
+ *  randomly-picked colleagues occupy during the afternoon meeting. */
+export const MEETING_SEATS: readonly ScheduleEntry[] = [
+  { position: { x: -3.6, y: 0, z: 12.6 }, face: Math.PI / 2, state: "meeting" },
+  { position: { x: -0.8, y: 0, z: 12.6 }, face: -Math.PI / 2, state: "meeting" },
+  { position: { x: -3.6, y: 0, z: 15.4 }, face: Math.PI / 2, state: "meeting" },
+  { position: { x: -0.8, y: 0, z: 15.4 }, face: -Math.PI / 2, state: "meeting" },
+];
+
+/** C-62 (Lucas): leavers head to a RANDOM point in this zone instead
+ *  of one doormat - a single exit point made them converge, park on
+ *  top of each other and get shoved back into the office. */
+export const ENTRANCE_EXIT_AREA = { minX: -2.4, maxX: 2.4, minZ: 17.2, maxZ: 18.6 } as const;
 
 /** Consecutive arrivals step through the doorway on slightly different
  *  lines instead of retracing one point. */
@@ -280,42 +309,46 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
   klaudia: {
     morning: { position: { x: -7.7, y: 0, z: 5.5 }, face: Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: -7.7, y: 0, z: 5.5 }, face: Math.PI / 2, state: "at-desk" },
-    evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
+    evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   marek: {
     morning: { position: { x: 7.7, y: 0, z: -5 }, face: -Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: 7.7, y: 0, z: -5 }, face: -Math.PI / 2, state: "at-desk" },
-    evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
+    evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   zosia: {
     morning: { position: { x: 3, y: 0, z: 7.7 }, face: Math.PI, state: "at-desk" },
-    afternoon: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "meeting" },
-    evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
+    // C-62 (Lucas: "why is Zosia standing in the middle of the office
+    // so often?"): her afternoon "meeting" entry parked her at the
+    // world origin - the literal center of the main office. She now
+    // holds her meetings at the meeting-room table.
+    afternoon: { position: { x: -2.2, y: 0, z: 14 }, face: Math.PI / 2, state: "meeting" },
+    evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   pawel: {
     morning: { position: { x: -3, y: 0, z: 7.7 }, face: Math.PI, state: "at-desk" },
     afternoon: { position: { x: 7.5, y: 0, z: -7.5 }, face: 0, state: "coffee" },
-    evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
+    evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   kasia: {
     morning: { position: { x: 7.7, y: 0, z: 5.5 }, face: -Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: 7.7, y: 0, z: 5.5 }, face: -Math.PI / 2, state: "at-desk" },
-    evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
+    evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   tomek: {
     morning: { position: { x: -7.7, y: 0, z: -1.5 }, face: Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: -7.7, y: 0, z: -1.5 }, face: Math.PI / 2, state: "at-desk" },
-    evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
+    evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   ania: {
     morning: { position: { x: 7.7, y: 0, z: -2.5 }, face: -Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: 7.7, y: 0, z: -2.5 }, face: -Math.PI / 2, state: "at-desk" },
-    evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
+    evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   janusz: {
     morning: { position: { x: -7.7, y: 0, z: 2 }, face: Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: -7.7, y: 0, z: 2 }, face: Math.PI / 2, state: "at-desk" },
-    evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
+    evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   burek: {
     morning: { position: { x: -5, y: 0, z: 4 }, face: Math.PI, state: "at-desk" },
@@ -325,17 +358,17 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
   grazyna: {
     morning: { position: { x: 7.7, y: 0, z: 2 }, face: -Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: 7.7, y: 0, z: 2 }, face: -Math.PI / 2, state: "at-desk" },
-    evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
+    evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   maciek: {
     morning: { position: { x: -3, y: 0, z: -7.7 }, face: 0, state: "at-desk" },
     afternoon: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
-    evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
+    evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   przemek: {
     morning: { position: { x: 3, y: 0, z: -7.7 }, face: 0, state: "at-desk" },
     afternoon: { position: { x: 3, y: 0, z: -7.7 }, face: 0, state: "at-desk" },
-    evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
+    evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   // C-38: the new CEO (Dawid) sits at the CEO desk in the new
   // CEO office (former training room footprint, north of the
@@ -346,7 +379,9 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
   dawid: {
     morning: { position: { x: 0, y: 0, z: -17 }, face: 0, state: "at-desk" },
     afternoon: { position: { x: 0, y: 0, z: -17 }, face: 0, state: "at-desk" },
-    evening: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
+    // C-62 (Lucas): the CEO is ALWAYS on his desk - even in the
+    // evening he does not leave (the preset had him vanish).
+    evening: { position: { x: 0, y: 0, z: -17 }, face: 0, state: "at-desk" },
   },
 };
 

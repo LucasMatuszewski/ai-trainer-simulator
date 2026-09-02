@@ -10,15 +10,23 @@ import { OFFICE_CHATTER } from "../content/office-chatter";
 import {
   KITCHEN_STOP_DWELL,
   LUNCH_STAGGER_OFFSET,
+  MEETING_SEATS,
   NPC_SCHEDULES,
+  OFFICE_DOOR,
   pickKitchenSequence,
   planMorningArrivals,
+  DEPARTURE_FIRST_AT_S,
+  DEPARTURE_SPREAD_S,
+  MIN_DEPARTURE_GAP_S,
+  DEPARTURE_JITTER_S,
+  ENTRANCE_EXIT_AREA,
   type KitchenSequenceStop,
   type MorningArrival,
   type Period,
   type ScheduleEntry,
 } from "../content/npc-schedule";
 import { pickMorningGreeting } from "../content/morning-greetings";
+import { pickEveningGoodbye } from "../content/evening-goodbyes";
 import type { AABB } from "./collision";
 import type { NPC, NpcId } from "../types";
 import { createBubbleSystem, pickLine } from "./bubbles";
@@ -400,6 +408,27 @@ export function createNpcController(
   // C-51: NPCs who have not walked in yet, and when they will.
   const pendingArrivals = new Map<NpcId, MorningArrival>();
   let arrivalClock = 0;
+  // C-62: greetings held until the greeter walks into the office.
+  const pendingGreetings = new Set<NpcId>();
+  const greetWaitSince = new Map<NpcId, number>();
+  /** z below this line = inside the main office (doorway at z≈9.5). */
+  const GREET_OFFICE_Z = 9.2;
+  // C-62: NPCs waiting for their staggered evening departure, and the
+  // clock that releases them (runs while the evening period is on).
+  interface Departure {
+    npcId: NpcId;
+    at: number;
+    /** Random point in the entrance zone - not one shared doormat. */
+    target: { x: number; z: number };
+  }
+  const pendingDepartures = new Map<NpcId, Departure>();
+  /** C-62: leavers already walking to the exit (no new chatter). */
+  const departing = new Set<NpcId>();
+  let departureClock = 0;
+  // C-62: per-day quirks, derived from the day number so the pattern
+  // varies across days but stays deterministic for tests.
+  let maciekLeavesEarly = true; // the CTO leaves after the morning
+  let ceoOutToday = false; // CEO at a conference: out the whole day
   let destroyed = false;
   let idleElapsed = 0;
   let bubbleElapsed = 0;
@@ -462,7 +491,7 @@ export function createNpcController(
       const node = object.getObjectByName(part);
       if (node) node.rotation.x = 0;
     }
-    object.visible = entry.state !== "gone-home";
+    object.visible = entry.state !== "gone-home" && entry.state !== "conference";
     object.userData.npcState = entry.state;
     state.anchor = { x: entry.position.x, z: entry.position.z };
   };
@@ -668,6 +697,26 @@ export function createNpcController(
     else if (!startPath(npcId, entry, rng() * 0.3)) strand(npcId);
   };
 
+  /**
+   * C-62: the day's schedule with the per-day quirks applied. Maciek
+   * (CTO) only leaves early on even days; on conference days the CEO
+   * is out of the office entirely (invisible, roster says so).
+   */
+  const scheduleFor = (npcId: NpcId, period: Period): ScheduleEntry => {
+    const base = NPC_SCHEDULES[npcId]![period]!;
+    if (npcId === "maciek" && period === "afternoon" && !maciekLeavesEarly) {
+      return NPC_SCHEDULES.maciek!.morning!;
+    }
+    if (ceoOutToday && npcId === "dawid") {
+      return {
+        position: { x: OFFICE_DOOR.x, y: OFFICE_DOOR.y, z: OFFICE_DOOR.z },
+        face: Math.PI,
+        state: "conference",
+      };
+    }
+    return base;
+  };
+
   const synchronizePeriod = (period: Period): void => {
     lastPeriod = period;
     lastDay = getDay();
@@ -677,10 +726,29 @@ export function createNpcController(
     // Everyone re-plans across the office, so any in-flight exchange
     // would end up as bubbles over NPCs walking away from each other.
     conversations.clear();
+    // C-62 (Lucas: "Zosia's meeting with who?"): 1-2 colleagues join
+    // the manager's afternoon meeting at the meeting-room table
+    // instead of her sitting there alone.
+    const meetingGuests = new Map<NpcId, ScheduleEntry>();
+    if (period === "afternoon") {
+      const eligible = npcs
+        .filter((npc) => npc.id !== "zosia" && npc.id !== "burek" && npc.id !== "dawid")
+        .filter((npc) => NPC_SCHEDULES[npc.id]!.afternoon!.state === "at-desk")
+        .map((npc) => npc.id);
+      for (let i = eligible.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(rng() * (i + 1));
+        [eligible[i], eligible[j]] = [eligible[j]!, eligible[i]!];
+      }
+      const guestCount = 1 + Math.floor(rng() * 2);
+      eligible.slice(0, guestCount).forEach((npcId, index) => {
+        const seat = MEETING_SEATS[index % MEETING_SEATS.length]!;
+        meetingGuests.set(npcId, seat);
+      });
+    }
     for (const npc of npcs) {
       const state = runtime.get(npc.id)!;
       state.path = null; state.kitchenStops = null; state.dwellRemaining = 0; state.returnEntry = null;
-      planForEntry(npc.id, NPC_SCHEDULES[npc.id][period]);
+      planForEntry(npc.id, meetingGuests.get(npc.id) ?? scheduleFor(npc.id, period));
     }
   };
 
@@ -695,6 +763,15 @@ export function createNpcController(
     lastPeriod = period;
     lastDay = getDay();
     arrivalClock = 0;
+    pendingDepartures.clear();
+    departing.clear();
+    pendingGreetings.clear();
+    greetWaitSince.clear();
+    // C-62: roll today's quirks off the day number. The CTO leaves
+    // early every other day; the CEO is "Out. Conference" roughly one
+    // day a week (and on those days he is simply not in the office).
+    maciekLeavesEarly = getDay() % 2 === 0;
+    ceoOutToday = getDay() % 7 === 0;
     overrides.clear();
     validatedDestinations.clear();
     conversations.clear();
@@ -724,7 +801,7 @@ export function createNpcController(
       state.dwellRemaining = 0;
       state.returnEntry = null;
       state.velocity = { x: 0, z: 0 };
-      const entry = NPC_SCHEDULES[arrival.npcId][period];
+      const entry = scheduleFor(arrival.npcId, period);
       if (arrival.mode === "already-in") {
         settle(arrival.npcId, entry);
         continue;
@@ -746,6 +823,112 @@ export function createNpcController(
     }
   };
 
+  /**
+   * C-62: start the evening walk-out. Leavers keep doing whatever they
+   * were doing until their staggered departure time, then say goodbye
+   * and WALK to a random spot in the entrance zone (deep meeting
+   * room) - the old transition made them vanish at their desks the
+   * moment the evening started. The CEO never leaves (his evening
+   * entry is at-desk), Burek stays, and 0-2 random humans stay after
+   * hours. NPCs who never walked in today quietly count as absent.
+   */
+  const beginEveningDepartures = (period: Period): void => {
+    lastPeriod = period;
+    lastDay = getDay();
+    departureClock = 0;
+    pendingArrivals.clear();
+    pendingDepartures.clear();
+    departing.clear();
+    overrides.clear();
+    validatedDestinations.clear();
+    conversations.clear();
+        const leavers: NpcId[] = [];
+    for (const npc of npcs) {
+      const entry = scheduleFor(npc.id, period);
+      if (entry.state !== "gone-home") {
+        settle(npc.id, entry);
+        continue;
+      }
+      // Still invisible (never walked in today): quietly absent - no
+      // departure, no popping into existence at the door later.
+      if (!npcObjects[npc.id].visible) {
+        settle(npc.id, entry);
+        continue;
+      }
+      leavers.push(npc.id);
+    }
+    // A couple of lucky humans stay after hours (0-2 of the leavers,
+    // deterministic under the seeded rng). They simply keep doing what
+    // they were doing - no departure is scheduled for them.
+    const shuffled = [...leavers];
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(rng() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+    }
+    const stayLate = new Set(shuffled.slice(0, Math.floor(rng() * 3)));
+    const due = shuffled.filter((npcId) => !stayLate.has(npcId));
+    due.sort((a, b) => (a < b ? -1 : 1));
+    const spacing = due.length > 1 ? DEPARTURE_SPREAD_S / (due.length - 1) : 0;
+    for (const npcId of due) {
+      const at = DEPARTURE_FIRST_AT_S + due.indexOf(npcId) * spacing + (rng() * 2 - 1) * (DEPARTURE_JITTER_S / 2);
+      // Random exit point in the entrance zone - a single doormat made
+      // the whole office converge, park on top of each other and get
+      // shoved back inside (Lucas, 2026-09-02).
+      const target = {
+        x: ENTRANCE_EXIT_AREA.minX + rng() * (ENTRANCE_EXIT_AREA.maxX - ENTRANCE_EXIT_AREA.minX),
+        z: ENTRANCE_EXIT_AREA.minZ + rng() * (ENTRANCE_EXIT_AREA.maxZ - ENTRANCE_EXIT_AREA.minZ),
+      };
+      pendingDepartures.set(npcId, { npcId, at, target });
+    }
+    // Enforce the minimum gap (the jitter can pair two departures).
+    const ordered = [...pendingDepartures.values()].sort((a, b) => a.at - b.at);
+    for (let index = 1; index < ordered.length; index += 1) {
+      const previous = ordered[index - 1]!;
+      const current = ordered[index]!;
+      if (current.at - previous.at < MIN_DEPARTURE_GAP_S) {
+        current.at = previous.at + MIN_DEPARTURE_GAP_S;
+        pendingDepartures.set(current.npcId, current);
+      }
+    }
+  };
+
+  /** C-62: put a leaver on the exit path. They say goodbye and WALK to
+   *  their random entrance-zone spot; settle() hides them only once
+   *  they arrive. */
+  const releaseDeparture = (npcId: NpcId): void => {
+    const departure = pendingDepartures.get(npcId);
+    if (departure === undefined) return;
+    pendingDepartures.delete(npcId);
+    departing.add(npcId);
+    const object = npcObjects[npcId];
+    const entry: ScheduleEntry = {
+      position: { x: departure.target.x, y: 0, z: departure.target.z },
+      face: Math.PI,
+      state: "gone-home",
+    };
+    planForEntry(npcId, entry);
+    // startPath hides a gone-home walk at its start; a leaver must be
+    // SEEN walking out. If the route failed (strand), they slip out
+    // silently instead of standing around as a phantom "at-desk".
+    if (object.userData.npcState === "walking") {
+      object.visible = true;
+      bubbleSystem?.show(object.position, pickEveningGoodbye(npcId, rng));
+      markSpoke(npcId, controllerElapsed);
+    } else {
+      object.visible = false;
+      object.userData.npcState = "gone-home";
+    }
+  };
+
+  /** C-62: release every leaver whose departure time has come. */
+  const advanceDepartures = (dt: number): void => {
+    if (pendingDepartures.size === 0) return;
+    departureClock += dt;
+    for (const [npcId, departure] of [...pendingDepartures]) {
+      if (departure.at <= departureClock) releaseDeparture(npcId);
+    }
+  };
+
   /** C-51: fold the period AND day bookkeeping into one place, so a new
    *  day's morning always runs the arrival and every other transition
    *  runs the ordinary re-plan. */
@@ -759,7 +942,11 @@ export function createNpcController(
     } else if (morningArrival && day !== lastDay) {
       beginMorningArrivals(period);
     } else if (period !== lastPeriod) {
-      synchronizePeriod(period);
+      // C-62: the evening is a staged walk-out, not a mass vanish -
+      // leavers get staggered departure times and walk to the
+      // entrance; a few (plus the CEO) stay after hours.
+      if (period === "evening" && arrivalsEnabled) beginEveningDepartures(period);
+      else synchronizePeriod(period);
     }
     return period;
   };
@@ -773,28 +960,43 @@ export function createNpcController(
     const object = npcObjects[npcId];
     object.position.set(arrival.door.x, arrival.door.y, arrival.door.z);
     runtime.get(npcId)!.baseY = arrival.door.y;
-    planForEntry(npcId, NPC_SCHEDULES[npcId][period]);
+    planForEntry(npcId, scheduleFor(npcId, period));
     // After planning, not before: an unroutable destination strands the
     // NPC (which leaves `visible` alone), and someone who walked in
     // must be in the room either way.
     object.visible = true;
-    // C-56: greet on entry. The bubble is positioned by the engine
-    // using the speaker's live position, so even if they're mid-step
-    // the bubble is on top of them. Bubbles are short-lived (6-8 s)
-    // and the pool guarantees a category-flavored greeting. markSpoke
-    // puts the speaker on cooldown so no second bubble fires over the
-    // greeting (Lucas: "still visible the same person should not say
-    // other dialogue").
-    bubbleSystem?.show(object.position, pickMorningGreeting(npcId, rng));
-    markSpoke(npcId, controllerElapsed);
+    // C-56: greet on entry. C-62 (Lucas): not HERE - the spawn is deep
+    // in the meeting room and greeting into an empty room reads wrong.
+    // The greeting waits until they have walked through the doorway
+    // into the office (see advanceArrivals).
+    pendingGreetings.add(npcId);
+    greetWaitSince.set(npcId, controllerElapsed);
   };
 
   /** C-51: release everyone whose arrival time has come. */
   const advanceArrivals = (period: Period, dt: number): void => {
-    if (pendingArrivals.size === 0) return;
-    arrivalClock += dt;
-    for (const [npcId, arrival] of [...pendingArrivals]) {
-      if (arrival.at <= arrivalClock) releaseArrival(npcId, period);
+    if (pendingArrivals.size > 0) {
+      arrivalClock += dt;
+      for (const [npcId, arrival] of [...pendingArrivals]) {
+        if (arrival.at <= arrivalClock) releaseArrival(npcId, period);
+      }
+    }
+    // C-62 (Lucas): fire the held greetings only once the NPC has
+    // walked through the doorway INTO the office - a hello into the
+    // empty meeting room is wasted. The 25 s fallback covers anyone
+    // whose route never crosses the threshold.
+    for (const npcId of [...pendingGreetings]) {
+      const object = npcObjects[npcId];
+      if (object === undefined || !object.visible) continue;
+      const since = greetWaitSince.get(npcId) ?? controllerElapsed;
+      const inOffice = object.position.z < GREET_OFFICE_Z;
+      const waitedLong = controllerElapsed - since > 25;
+      if (inOffice || waitedLong) {
+        pendingGreetings.delete(npcId);
+        greetWaitSince.delete(npcId);
+        bubbleSystem?.show(object.position, pickMorningGreeting(npcId, rng));
+        markSpoke(npcId, controllerElapsed);
+      }
     }
     // C-56: the already-in crowd greets once each, staggered across
     // the first 2-12 s of the morning. The list is randomized so two
@@ -904,6 +1106,7 @@ export function createNpcController(
     // 89% of the morning's jamming was created right there.
     const period = ensureCurrentPeriod();
     advanceArrivals(period, safeDt);
+    advanceDepartures(safeDt);
 
     // Who is mid-conversation this frame: they hold still for the chat
     // instead of creeping onward.
@@ -1270,7 +1473,13 @@ export function createNpcController(
           .filter((npc) => {
             const object = npcObjects[npc.id];
             // C-54: an NPC talking to the PLAYER is not a chatter candidate.
+            // C-62: neither is anyone who has ALREADY set off for the
+            // exit - they would stop and chat at the door instead of
+            // leaving (Lucas: "they stay there all evening and talk").
+            // NPCs still waiting for their departure slot keep
+            // chatting normally, so the evening is not silent.
             if (!object.visible || object.userData.npcState === "gone-home" || busy.has(npc.id) || npc.id === playerTalkingTo) return false;
+            if (departing.has(npc.id)) return false;
             // C-56: refuse to start a conversation with an NPC whose
             // bubble is still on screen (greeting, in-flight response,
             // burek bark). Without this guard the same NPC could chain
@@ -1402,16 +1611,16 @@ export function createNpcController(
       state.path = null; state.kitchenStops = null; state.dwellRemaining = 0; state.returnEntry = null;
       if (entry === null) {
         overrides.delete(npcId); validatedDestinations.delete(npcId);
-        planForEntry(npcId, NPC_SCHEDULES[npcId][period]);
+        planForEntry(npcId, scheduleFor(npcId, period));
         return;
       }
       if (entry.state === "kitchen") {
         overrides.set(npcId, entry);
-        startKitchen(npcId, NPC_SCHEDULES[npcId][period], period === "afternoon");
+        startKitchen(npcId, scheduleFor(npcId, period), period === "afternoon");
         return;
       }
       const validated = validateOverride(npcId, entry);
-      if (validated === null) { settle(npcId, NPC_SCHEDULES[npcId][period]); return; }
+      if (validated === null) { settle(npcId, scheduleFor(npcId, period)); return; }
       overrides.set(npcId, validated);
       startPath(npcId, validated, rng() * 0.3);
     },

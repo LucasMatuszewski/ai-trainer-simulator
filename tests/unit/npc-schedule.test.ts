@@ -71,7 +71,10 @@ describe("NPC schedules", () => {
         expect(entry.position.x).toBeGreaterThanOrEqual(OFFICE_BOUNDS.minX);
         expect(entry.position.x).toBeLessThanOrEqual(OFFICE_BOUNDS.maxX);
         expect(entry.position.z).toBeGreaterThanOrEqual(-19);
-        expect(entry.position.z).toBeLessThanOrEqual(OFFICE_BOUNDS.maxZ);
+        // C-62: the evening exit (and entrance spawn) sits deep in the
+        // meeting room, south of the main office, so the walkable
+        // world now reaches to the meeting room's south wall.
+        expect(entry.position.z).toBeLessThanOrEqual(19);
       }
     }
   });
