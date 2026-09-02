@@ -31,7 +31,7 @@ export function makeReceptionGarden(): THREE.Group {
     group.add(hill);
   }
   const treeSpecs: ReadonlyArray<readonly [number, number, number]> = [
-    [-8.35, 9.6, 0.85], [-8.1, 11.1, 1.05], [-8.25, 12.6, 0.9], [-8.05, 14.1, 1.15], [-8.3, 15.6, 0.88], [-8.12, 17.1, 1], [-8.28, 18.6, 0.8],
+    [-8.1, 11.1, 1.05], [-8.25, 12.6, 0.9], [-8.05, 14.1, 1.15], [-8.3, 15.6, 0.88], [-8.12, 17.1, 1], [-8.28, 18.6, 0.8],
   ];
   for (const [x, z, scale] of treeSpecs) {
     const tree = makeTree(scale);
