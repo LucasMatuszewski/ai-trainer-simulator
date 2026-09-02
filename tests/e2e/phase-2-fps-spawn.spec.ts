@@ -20,6 +20,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { shot } from "./shots";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -63,7 +64,7 @@ test("Phase 2 FPS spawn: eye-height camera looking into the office", async ({ pa
   await expect(page.locator(".hud")).toBeVisible();
 
   // The intro toast is also a good signal — it appears at ~4.1s.
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/phase-2-01-fps-spawn.png` });
+  await shot(page, `${SCREENSHOT_DIR}/phase-2-01-fps-spawn.png`);
 
   // The roster is on the right. The canvas should fill the LEFT
   // side; we should see the office interior, not the roof.
@@ -102,7 +103,7 @@ test("Phase 2 FPS spawn: eye-height camera looking into the office", async ({ pa
   // W moves the player in -Z (forward into the office). beforeZ
   // should be greater than afterZ.
   expect(afterZ).toBeLessThan(beforeZ);
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/phase-2-02-fps-walked.png` });
+  await shot(page, `${SCREENSHOT_DIR}/phase-2-02-fps-walked.png`);
 
   // Mouse-look toggle via Space (Pattern D trackpad fallback). The
   // cursor should hide while mouse-look is engaged. We then release
@@ -111,7 +112,7 @@ test("Phase 2 FPS spawn: eye-height camera looking into the office", async ({ pa
   await page.waitForTimeout(100);
   const mouseLookAfter = await page.evaluate(() => window.__aitrainer!.isMouseLook());
   expect(mouseLookAfter).toBe(true);
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/phase-2-03-mouse-look.png` });
+  await shot(page, `${SCREENSHOT_DIR}/phase-2-03-mouse-look.png`);
   await page.keyboard.press("Space");
   await page.waitForTimeout(100);
   const mouseLookReleased = await page.evaluate(() => window.__aitrainer!.isMouseLook());

@@ -9,6 +9,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { shot } from "./shots";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -57,7 +58,7 @@ test("C-60: Kitchen sign visible facing the kitchen door", async ({ page }) => {
   // +X (yaw -pi/2): sign dead ahead, doorway in frame to the left.
   await page.evaluate(() => window.__aitrainer!.teleport(4.5, 2.3, -Math.PI / 2));
   await page.waitForTimeout(300);
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/c60-01-kitchen-door-sign.png` });
+  await shot(page, `${SCREENSHOT_DIR}/c60-01-kitchen-door-sign.png`);
 });
 
 test("C-64: Reception sign visible facing the reception door", async ({ page }) => {
@@ -67,7 +68,7 @@ test("C-64: Reception sign visible facing the reception door", async ({ page }) 
   // +Z (yaw pi): sign dead ahead, doorway in frame to the left.
   await page.evaluate(() => window.__aitrainer!.teleport(-2.4, 4, Math.PI));
   await page.waitForTimeout(300);
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/c64-02-reception-door-sign.png` });
+  await shot(page, `${SCREENSHOT_DIR}/c64-02-reception-door-sign.png`);
 });
 
 test("C-60: SHIP IT sign palette", async ({ page }) => {
@@ -76,5 +77,5 @@ test("C-60: SHIP IT sign palette", async ({ page }) => {
   // South wall sign at (4, 2): straight ahead from office center.
   await page.evaluate(() => window.__aitrainer!.teleport(4, 4.5, Math.PI));
   await page.waitForTimeout(300);
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/c60-03-ship-it-palette.png` });
+  await shot(page, `${SCREENSHOT_DIR}/c60-03-ship-it-palette.png`);
 });

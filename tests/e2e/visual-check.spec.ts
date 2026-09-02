@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { SHOTS_ENABLED, shot } from "./shots";
 import { mkdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -28,7 +29,7 @@ test.use({
 
 async function capture(page: Page, filename: (typeof screenshots)[number]) {
   await page.waitForTimeout(250);
-  await page.screenshot({ path: resolve(SCREENSHOT_DIR, filename) });
+  await shot(page, resolve(SCREENSHOT_DIR, filename));
 }
 
 async function walk(page: Page, key: "w" | "a" | "s" | "d", presses: number) {
@@ -55,7 +56,10 @@ async function walkUntil(
   throw new Error(`${label}: player did not reach the target corridor; final=${JSON.stringify(finalPosition)}`);
 }
 
-test("visual check: office, new rooms, help, and dialogue", async ({ page }) => {
+// @slow: a long scripted key-walk through the whole office (~2 min).
+// Skip with `pnpm test:e2e:fast` when iterating (Lucas, 2026-09-02:
+// e2e CPU heat).
+test("visual check: office, new rooms, help, and dialogue", { tag: "@slow" }, async ({ page }) => {
   test.setTimeout(120_000);
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
@@ -132,9 +136,13 @@ test("visual check: office, new rooms, help, and dialogue", async ({ page }) => 
   await expect(page.locator(".dialogue")).toBeVisible({ timeout: 15_000 });
   await capture(page, screenshots[6]);
 
-  for (const filename of screenshots) {
-    const size = statSync(resolve(SCREENSHOT_DIR, filename)).size;
-    expect(size, `${filename} should contain a rendered canvas`).toBeGreaterThan(10 * 1024);
+  // Only assert the PNG bytes when shots are actually on - in the
+  // default no-screenshot mode the files are never written.
+  if (SHOTS_ENABLED) {
+    for (const filename of screenshots) {
+      const size = statSync(resolve(SCREENSHOT_DIR, filename)).size;
+      expect(size, `${filename} should contain a rendered canvas`).toBeGreaterThan(10 * 1024);
+    }
   }
 
   console.log(`VISUAL_CHECK_CONSOLE_ERRORS=${JSON.stringify(consoleErrors)}`);

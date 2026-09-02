@@ -16,6 +16,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { shot } from "./shots";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -35,7 +36,9 @@ test.use({
 
 test.setTimeout(480_000);
 
-test("C-51: the office fills up over the morning", async ({ page }) => {
+// @slow: waits out the full ~150 s morning arrival spread. Skip with
+// `pnpm test:e2e:fast` when iterating (Lucas, 2026-09-02: e2e CPU heat).
+test("C-51: the office fills up over the morning", { tag: "@slow" }, async ({ page }) => {
   await page.goto("http://localhost:5173/");
   await page.evaluate(() => localStorage.clear());
   await page.reload();
@@ -59,14 +62,14 @@ test("C-51: the office fills up over the morning", async ({ page }) => {
   expect(rosterCount).toBeGreaterThan(10);
 
   const samples: { t: number; screen: string; waiting: number; rows: string[] }[] = [];
-  const record = async (t: number, shot: string): Promise<void> => {
+  const record = async (t: number, filename: string): Promise<void> => {
     await expect
       .poll(async () => (await statuses()).length, { timeout: 5_000 })
       .toBe(rosterCount);
     const rows = await statuses();
     const screen = await page.evaluate(() => window.__aitrainer!.getScreen());
     samples.push({ t, screen, waiting: notInYet(rows), rows });
-    await page.screenshot({ path: `${SCREENSHOT_DIR}/${shot}` });
+    await shot(page, `${SCREENSHOT_DIR}/${filename}`);
   };
 
   await record(6, "c51-01-fade-in.png");

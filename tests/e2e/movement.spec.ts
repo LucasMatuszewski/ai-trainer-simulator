@@ -22,6 +22,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { shot } from "./shots";
 
 const KEY_TO_AXIS = {
   w: { axis: "z", sign: -1 }, // forward = -Z

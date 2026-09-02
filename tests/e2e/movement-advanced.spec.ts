@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { shot } from "./shots";
 
 test.use({
   baseURL: "http://localhost:5173",

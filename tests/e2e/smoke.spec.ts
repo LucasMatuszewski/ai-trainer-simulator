@@ -12,6 +12,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { shot } from "./shots";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -44,12 +45,12 @@ test("full smoke flow: title -> create -> office -> walk -> talk", async ({ page
   // 1. Title screen
   await expect(page.locator("h1")).toContainText(/Stack Underflow|AI Trainer/i);
   await expect(page.locator('[data-action="new"]')).toBeVisible();
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/01-title.png` });
+  await shot(page, `${SCREENSHOT_DIR}/01-title.png`);
 
   // 2. New Game
   await page.click('[data-action="new"]');
   await expect(page.locator(".character-create")).toBeVisible();
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/02-character-create.png` });
+  await shot(page, `${SCREENSHOT_DIR}/02-character-create.png`);
 
   // 3. Pick specialisation and trait
   await page.click('[data-spec-id="ai"]');
@@ -67,9 +68,9 @@ test("full smoke flow: title -> create -> office -> walk -> talk", async ({ page
   // Keep the phase screenshot focused on the HUD and office; random-event
   // toasts are covered elsewhere and can obscure most of the 3D view.
   await page.locator(".toast").evaluateAll((toasts) => toasts.forEach((toast) => toast.remove()));
-  await page.screenshot({ path: resolve("screenshots/c67-lunch-clock.png") });
+  await shot(page, resolve("screenshots/c67-lunch-clock.png"));
   await page.waitForTimeout(800);
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/03-office.png` });
+  await shot(page, `${SCREENSHOT_DIR}/03-office.png`);
 
   // 5. Walk with WASD (use the canvas focus + key press)
   // Click the unobstructed centre of the canvas; the top-left HUD is an
@@ -79,23 +80,23 @@ test("full smoke flow: title -> create -> office -> walk -> talk", async ({ page
   await page.keyboard.down("w");
   await page.waitForTimeout(600);
   await page.keyboard.up("w");
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/04-walked-forward.png` });
+  await shot(page, `${SCREENSHOT_DIR}/04-walked-forward.png`);
 
   // 6. Press E to interact (should open dialogue with the nearest NPC)
   await page.keyboard.press("e");
   await page.waitForTimeout(300);
   const dialogueVisible = await page.locator(".dialogue").isVisible().catch(() => false);
   if (dialogueVisible) {
-    await page.screenshot({ path: `${SCREENSHOT_DIR}/05-dialogue.png` });
+    await shot(page, `${SCREENSHOT_DIR}/05-dialogue.png`);
     // Pick the first option
     // This smoke validates dialogue progression, not pointer hit-testing;
     // fixed HUD/quest overlays can overlap the responsive dialogue panel.
     await page.locator(".dialogue [data-opt]").first().click({ force: true });
     await page.waitForTimeout(300);
-    await page.screenshot({ path: `${SCREENSHOT_DIR}/06-dialogue-after-pick.png` });
+    await shot(page, `${SCREENSHOT_DIR}/06-dialogue-after-pick.png`);
   } else {
     // No NPC in range; just confirm prompt is showing
-    await page.screenshot({ path: `${SCREENSHOT_DIR}/05-no-nearby-npc.png` });
+    await shot(page, `${SCREENSHOT_DIR}/05-no-nearby-npc.png`);
   }
 
   // 7. Console errors should be empty (or only contain allowed warnings)

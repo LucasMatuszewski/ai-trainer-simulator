@@ -13,6 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:fast": "playwright test --grep-invert @slow",
+    "test:e2e:screens": "E2E_SCREENSHOTS=1 playwright test",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit"
   },

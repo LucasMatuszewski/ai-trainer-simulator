@@ -13,6 +13,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { shot } from "./shots";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -68,10 +69,12 @@ test("C-62: fresh game lands the player in the reception facing the office", asy
   expect(pose.player.z).toBeLessThan(19);
   expect(Math.abs(pose.player.x)).toBeLessThan(1.5);
   expect(pose.yaw).toBeCloseTo(0, 1); // facing -Z (north, toward the office)
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/c62-01-meeting-room-start.png` });
+  await shot(page, `${SCREENSHOT_DIR}/c62-01-meeting-room-start.png`);
 });
 
-test("C-62: evening walk-out is staggered and visible", async ({ page }) => {
+// @slow: waits out ~130 s of arrivals plus a ~90 s walk-out. Skip with
+// `pnpm test:e2e:fast` when iterating (Lucas, 2026-09-02: e2e CPU heat).
+test("C-62: evening walk-out is staggered and visible", { tag: "@slow" }, async ({ page }) => {
   test.setTimeout(300_000);
   await page.addInitScript((save) => {
     localStorage.setItem("aitrainer:save:v1", JSON.stringify(save));
@@ -108,7 +111,7 @@ test("C-62: evening walk-out is staggered and visible", async ({ page }) => {
   )) as string[];
   const vanished = beforeFlip.filter((id) => !rightAfterFlip.includes(id));
   expect(vanished, `vanished at the flip: ${vanished.join(", ")}`).toHaveLength(0);
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/c62-02-evening-start.png` });
+  await shot(page, `${SCREENSHOT_DIR}/c62-02-evening-start.png`);
 
   // Departures start around 10 s and spread across ~70 s: after 90 s several
   // have left and the office is emptying gradually, not all at once.
@@ -121,5 +124,5 @@ test("C-62: evening walk-out is staggered and visible", async ({ page }) => {
   )) as string[];
   expect(stillIn.length).toBeLessThan(beforeFlip.length);
   expect(stillIn).toContain("dawid"); // the CEO never leaves
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/c62-03-evening-walkout.png` });
+  await shot(page, `${SCREENSHOT_DIR}/c62-03-evening-walkout.png`);
 });

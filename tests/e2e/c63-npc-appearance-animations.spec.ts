@@ -13,6 +13,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { shot } from "./shots";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -83,7 +84,7 @@ test("C-63: a working NPC plays a desk pose, and stands close to the desk", asyn
   // (Bartek at x=-7.45, z=-5).
   await page.evaluate((yaw) => window.__aitrainer!.teleport(-5.2, -5, yaw), FACE_WEST);
   await page.waitForTimeout(600);
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/c63-01-west-desks.png` });
+  await shot(page, `${SCREENSHOT_DIR}/c63-01-west-desks.png`);
 
   // Sample the pose of every settled at-desk NPC for a while. Typing
   // bursts are 4-9 s with 3-7 s gaps, so ~40 s is several bursts.
@@ -117,7 +118,7 @@ test("C-63: a working NPC plays a desk pose, and stands close to the desk", asyn
   const typed = desked.filter(([, sample]) => sample.maxForward < -0.8);
   expect(typed.length, "no desk NPC ever typed").toBeGreaterThan(0);
 
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/c63-02-desk-poses.png` });
+  await shot(page, `${SCREENSHOT_DIR}/c63-02-desk-poses.png`);
 });
 
 test("C-63: a walking NPC never holds a desk pose", async ({ page }) => {
