@@ -11,6 +11,14 @@ nothing is lost again.
 - Add `.playwright-cli/` to `.gitignore`; local browser-verification snapshots and logs must not dirty the working tree.
 - **Cross-reference:** operational repository hygiene only; no gameplay/design scope changes, so no PRD, ADR, or phase-plan update is required.
 
+## 2026-09-02 — help and onboarding
+
+**ID: L-2026-09-02-02 — The `?` help modal must explain every control**
+- The current help modal is incomplete and does not repeat all controls taught by Renata the receptionist.
+- It must explicitly cover at least: **WASD movement**, **hold Right Mouse Button for mouse-look**, **Space to lock the mouse/pointer**, and **Shift to run/sprint**.
+- Audit the live input bindings and Renata's full onboarding so the modal covers everything else the player can do; it must be the reliable complete reference, not a partial reminder.
+- **Cross-reference:** add a new correction entry to `docs/CHANGELOG.md`/PRD corrections and add this bounded polish item to the active phase plan; no ADR is required because no control architecture changes.
+
 ## 2026-08-31 — feedback captured (this message)
 
 **ID: L-2026-08-31-02 — Make the game perfect, playable, and fun**

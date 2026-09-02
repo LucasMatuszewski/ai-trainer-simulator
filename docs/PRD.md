@@ -60,15 +60,20 @@ All three want the same first impression: a charming, weird, *recognizable* pixe
 The user's explicit request: "I want to simulate that I'm moving the direction of the character and then I can use WASD to move, with W to move in the direction when mouse is pointing." This is the standard FPS-RPG control scheme. After research, the chosen control scheme is:
 
 - **WASD** = move the player in world-relative directions, OR camera-relative. **Default: camera-relative** (W = forward, where the camera is looking). The two layouts: **WASD** (modern) and **arrows + mouse-look** (oldschool). Player chooses in settings. Both work the same way internally — both move relative to camera yaw.
-- **Mouse** = rotate the camera (yaw + pitch). The player avatar turns to face the new yaw, so what the player sees is consistent with what direction the avatar is "looking."
+- **Mouse while mouse-look is active** = rotate the camera (yaw + pitch). The player avatar turns to face the new yaw, so what the player sees is consistent with what direction the avatar is "looking."
 - **Right mouse button HOLD** = mouse-look mode (alternative to free mouse). In this mode, the OS cursor is hidden and the mouse moves rotate the view. Releasing RMB returns to free mouse for clicking UI buttons. (This is the model used in Deus Ex, Skyrim, many immersive sims — see C-02 research.)
+- **Space** = toggle locked mouse-look on/off (trackpad-friendly alternative to holding RMB). **Esc** releases mouse-look.
 - **Shift** = sprint.
 - **E** = interact (talk to NPC, use object). Trigger volumes are around NPCs and objects. When inside a trigger, an on-screen prompt appears: "[E] Talk to Bartek" / "[E] Use Coffee Machine". Pressing E opens the dialogue or activates the object.
 - **Click (left)** = also a way to interact (alternative to E). On a click, raycast from the camera through the cursor; if it hits an NPC or interactive object, activate it. The click-to-talk raycaster is the **primary** interaction for NPCs in third-person-friendly code paths; E is a convenience for keyboard-first players.
 - **Esc** = open the in-game menu (Career, Inventory, Settings, Save, Quit to title). Also closes the dialogue overlay if one is open.
 - **Tab** = toggle the office roster panel (the right-side card list of coworkers).
 - **M** = mute / unmute audio (when added in a later phase).
-- **?** (Shift+/) = open the help modal (added in Phase 1, persisted into MVP).
+- **Z** = end the current day (same action as the roster's End Day button).
+- **?** (Shift+/) or **F1** = open the help modal; the top-right `?` button opens the same modal (C-66).
+- **F3** = toggle the optional performance meter.
+
+**Complete-help rule (C-66):** the `?` modal is the authoritative reference for every control that is actually shipped. It repeats all controls taught by Renata and groups them into movement/look, interaction, and interface actions. It must not advertise planned-but-unimplemented bindings such as E/Tab/M until those bindings work. Any new player-facing binding must update the modal and its coverage test in the same commit.
 
 **Navigation model (C-02):**
 - **Default state: free mouse.** The OS cursor is visible. The cursor is hidden ONLY when RMB is held for mouse-look. This solves the original problem ("my mouse gets out of the screen when I want to move more in one direction") because the mouse does not rotate the view at all when not in mouse-look mode.
@@ -183,6 +188,12 @@ The dialogue system must support:
 - AC-M-01: WASD moves the player smoothly at a reasonable walk speed (3 units/sec, sprint 5).
 - AC-M-02: The player cannot walk through walls, desks, or NPCs (collision works).
 - AC-M-03: The camera follows the player and rotates with mouse movement, clamped between -45° and +60° pitch.
+
+### AC-Help
+- AC-H-01: The `?` help modal names every shipped player control: WASD/arrows, Shift, RMB hold, Space toggle, Esc release/close, in-world and roster clicks, Z/End Day, computer/minigame button, quest-log expansion, `?`/F1 help, and F3 performance meter.
+- AC-H-02: The modal and Renata's controls answer agree; no displayed shortcut is inert.
+- AC-H-03: The complete controls remain readable at the game's supported desktop viewport; the modal body scrolls without clipping its close button.
+- AC-H-04: An automated DOM test fails if a required control disappears from the modal.
 
 ### AC-Dialogue
 - AC-D-01: Pressing E near an NPC opens a dialogue overlay with at least 2 response options.

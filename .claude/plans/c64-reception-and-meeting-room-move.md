@@ -168,3 +168,14 @@ Only then does the next wave start.
 - **The entrance is load-bearing.** `OFFICE_DOOR` (`z=18.2`), `ENTRANCE_EXIT_AREA` and the C-62 arrival/departure logic all live in the old meeting room. The reception rebuild must not move the spawn point or the C-62 e2e tests break.
 - **`meeting` is an NPC state, a roster label and a dialogue topic.** D10 keeps the id and moves the coordinates precisely to avoid a rename cascade.
 - **GLM quota.** If it is still out, Codex does the taste work and the result will be more literal. Acceptable; Lucas can re-run a polish pass on the visuals later.
+
+---
+
+## 7. Post-merge polish — C-66 complete help reference
+
+Beads: `sacs-ab6p`. Lucas found that the `?` modal does not repeat the controls taught by Renata. This bounded follow-up keeps the two help surfaces synchronized.
+
+1. Add a failing jsdom test for the mounted help modal covering the complete shipped-controls list and modal keyboard/close behavior.
+2. Rework the modal into compact **Move & look**, **Talk & act**, and **Interface** groups; retain Goal, Stats, Money, and Cast guidance below them.
+3. Wire the two shortcuts already promised elsewhere but currently inert: **Z = End Day** and **? = Help** (F1 remains an alternative). Do not list planned E/Tab/M controls before they work.
+4. Run typecheck, all unit tests, the focused visual E2E/help flow, and browser QA at the supported viewport. Save and show the screenshot before treating this polish item as accepted.
