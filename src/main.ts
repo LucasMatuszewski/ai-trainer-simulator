@@ -108,6 +108,25 @@ const npcScheduleYaws = new Map<string, number>();    // npcId -> schedule yaw
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     if (dialogue?.isOpen()) dialogue.close();
+    return;
+  }
+  // C-66: Renata and the roster's keycap both promise Z = End Day.
+  // Keep it inert outside the office and while the player is reading
+  // a modal/dialogue so a stray key cannot discard their current flow.
+  if ((e.code === "KeyZ" || e.key.toLowerCase() === "z") && !e.repeat) {
+    const target = e.target;
+    const isTextEntry = target instanceof HTMLElement && (
+      target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable
+    );
+    if (
+      !isTextEntry &&
+      screen === "office" &&
+      !dialogue?.isOpen() &&
+      !helpModal?.isOpen()
+    ) {
+      e.preventDefault();
+      endDay();
+    }
   }
 });
 
@@ -1226,7 +1245,7 @@ frame();
 // Bump after every commit so the console line in the browser
 // confirms the user is on the right build. See AGENTS.md
 // "Verify the build you are testing" section.
-const BUILD_VERSION = "v2026.09.02-07";
+const BUILD_VERSION = "v2026.09.02-08";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,

@@ -1059,7 +1059,7 @@ html, body {
 
 /* ============================================================================
  * Help / how-to-play modal. Same visual language as the quest log but a
- * centered card on a dark backdrop. Pure DOM; closes on Esc/F1/backdrop.
+ * centered card on a dark backdrop. Pure DOM; closes on Esc/?/F1/backdrop.
  * ============================================================================ */
 .help-modal {
   position: fixed;
@@ -1085,9 +1085,11 @@ html, body {
 
 .help-modal-card {
   position: relative;
-  width: min(560px, calc(100vw - 32px));
+  width: min(860px, calc(100vw - 32px));
   max-height: calc(100vh - 64px);
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(180deg, var(--panel) 0%, var(--panel-dark) 100%);
   border: 4px solid var(--panel-border);
   border-radius: 6px;
@@ -1097,6 +1099,7 @@ html, body {
 }
 
 .help-modal-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1134,16 +1137,40 @@ html, body {
 }
 
 .help-modal-body {
+  min-height: 0;
+  overflow-y: auto;
   padding: 16px 20px 20px;
   font-size: 15px;
   line-height: 1.6;
   color: var(--fg);
 }
 
-.help-modal-body section + section {
+.help-controls,
+.help-guidance {
+  display: grid;
+  gap: 12px;
+}
+
+.help-controls {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.help-guidance {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px dashed var(--panel-border);
+}
+
+.help-controls section,
+.help-guidance section {
+  min-width: 0;
+}
+
+.help-controls section {
+  padding: 10px;
+  border: 2px solid rgba(136, 170, 204, 0.28);
+  background: rgba(0, 0, 0, 0.16);
 }
 
 .help-modal-body h3 {
@@ -1173,6 +1200,36 @@ html, body {
 .help-modal-body b {
   color: var(--fg);
   font-family: var(--font-pixel-bold);
+}
+
+.help-control-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.help-control-list div {
+  display: grid;
+  gap: 1px;
+}
+
+.help-control-list dt {
+  color: var(--fg);
+  font-family: var(--font-pixel-bold);
+  line-height: 1.25;
+}
+
+.help-control-list dd {
+  margin: 0;
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+
+@media (max-width: 760px) {
+  .help-controls,
+  .help-guidance {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ============================================================================
