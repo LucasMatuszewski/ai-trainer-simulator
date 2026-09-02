@@ -30,7 +30,7 @@ describe("morning greetings content (C-56)", () => {
       for (const line of pool) {
         expect(line.length, `${id} too long: ${line.length} chars`).toBeLessThanOrEqual(72);
         // eslint-disable-next-line no-control-regex
-        expect(/^[\x20-\x7e]+$/.test(line), `${id} not plain ASCII: ${line}`).toBe(true);
+        expect(/^[\x20-\x7e\n]+$/.test(line), `${id} not plain ASCII: ${line}`).toBe(true);
       }
     }
   });

@@ -12,11 +12,17 @@ const ASCII = /^[\x20-\x7E]+$/;
 const MAX_LENGTH = 60;
 
 describe("OFFICE_CHATTER (C-46)", () => {
-  it("has exchanges with 1-3 responses each", () => {
+  it("has exchanges with 1-6 responses each (C-61: 4-6 per starter)", () => {
     expect(OFFICE_CHATTER.length).toBeGreaterThanOrEqual(10);
     for (const exchange of OFFICE_CHATTER) {
       expect(exchange.responses.length).toBeGreaterThanOrEqual(1);
-      expect(exchange.responses.length).toBeLessThanOrEqual(3);
+      expect(exchange.responses.length).toBeLessThanOrEqual(6);
+    }
+  });
+
+  it("gives every starter at least 3 answers (C-61 amendment)", () => {
+    for (const exchange of OFFICE_CHATTER) {
+      expect(exchange.responses.length, exchange.starter).toBeGreaterThanOrEqual(3);
     }
   });
 
@@ -127,7 +133,7 @@ describe("OFFICE_CHATTER topic affinities (C-46 amendment)", () => {
       const exchanges = OFFICE_CHATTER.filter((e) => e.topic === topic);
       expect(exchanges.length).toBeGreaterThanOrEqual(4);
       for (const exchange of exchanges) {
-        expect(exchange.responses.length).toBe(3);
+        expect(exchange.responses.length).toBeGreaterThanOrEqual(3);
       }
     }
   });

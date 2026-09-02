@@ -3,7 +3,8 @@
  * greeting bubble. Door-entering NPCs greet on `releaseArrival`; the
  * already-in crowd drops staggered hellos during the first 2-12 s of
  * the day so the office wakes up talking. Burek is always already-in
- * (`mode: "already-in"` in npc-schedule.ts) and never gets a line.
+ * (`mode: "already-in"` in npc-schedule.ts) and greets in dog
+ * (C-61 amendment: bark + bracketed translation).
  *
  * Shape: GREETING is a short hello (hi/hello/morning/hey/yo/...) with
  * at most ONE short category-flavor tag. Lines are <= 30 chars so a
@@ -40,6 +41,16 @@ export const NPC_GREETING_CATEGORY: Record<string, GreetingCategory> = {
 };
 
 export const GREETINGS_BY_NPC: Record<string, ReadonlyArray<string>> = {
+  // C-61 amendment (Lucas): Burek greets too - MUD conventions, a
+  // bark plus the bracketed translation. Previously the unmapped id
+  // fell through to the generic "office" pool and the dog said
+  // human "Morning." lines.
+  burek: [
+    "*wuff wuff!*\n[means: good morning]",
+    "*aarf!*\n[means: hello. feed me]",
+    "*yawn*\n[means: morning already?]",
+    "*tail thump*\n[means: nice to sniff you]",
+  ],
   // IT (Bartek, Marek, Tomek) - one short IT tag
   bartek: [
     "Morning. Standup in 5.",

@@ -65,8 +65,11 @@ export function pickLine(lines: ReadonlyArray<string>, rng: () => number): strin
 const lastLineByList = new WeakMap<ReadonlyArray<string>, number>();
 
 /** Cap a line to at most 2 rows of 36 characters (wrap on a space,
- *  ellipsize anything longer). Exported for tests. */
+ *  ellipsize anything longer). Lines that already carry their own
+ *  newline (the dog's bark + subtitle format) pass through untouched.
+ *  Exported for tests. */
 export function fitLine(line: string): string {
+  if (line.includes("\n")) return line;
   const maximumCharacters = 36;
   const maximumTotal = maximumCharacters * 2 - 3;
   const shortened = line.length > maximumTotal
