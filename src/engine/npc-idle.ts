@@ -53,6 +53,45 @@ const TYPING_HEAD_BOB = 0.02;
 
 const STRETCH_ARM_PITCH = -2.5;
 const STRETCH_HEAD_PITCH = 0.28;
+/** Shrug: how far out to the side each arm swings. Just past 90 degrees
+ *  so the hands end up slightly ABOVE the shoulder line. */
+export const SHRUG_ARM_ROLL = 1.75;
+
+/**
+ * C-63 amendment (Lucas, 2026-09-02: "the typing animation should be
+ * only played when npc is facing the desk, on working position. Now it
+ * plays when npc's are talking looking on each other, not on the
+ * computer").
+ *
+ * Being AT the desk is not the same as WORKING at it. The chatter system
+ * and the player walk-to-face both turn a settled NPC to face someone
+ * without changing their `at-desk` state, so an NPC mid-conversation was
+ * typing on a keyboard that had rotated out from under their hands. The
+ * pose therefore also requires the NPC to still be pointed at their
+ * workstation, within this tolerance.
+ */
+export const WORKING_YAW_TOLERANCE = 0.35;
+
+/** Smallest absolute angle between two yaws, in radians (0..pi). */
+export function yawDifference(a: number, b: number): number {
+  const raw = Math.abs(a - b) % (Math.PI * 2);
+  return raw > Math.PI ? Math.PI * 2 - raw : raw;
+}
+
+/**
+ * True when the NPC is settled at their desk AND still turned toward it.
+ * `workingYaw` is the yaw their schedule entry settled them at; undefined
+ * means the NPC has no workstation orientation (a stranded NPC, or one
+ * whose state is not a desk), which is never a working position.
+ */
+export function isWorkingAtDesk(
+  npcState: unknown,
+  currentYaw: number,
+  workingYaw: number | undefined,
+): boolean {
+  if (npcState !== "at-desk" || workingYaw === undefined) return false;
+  return yawDifference(currentYaw, workingYaw) <= WORKING_YAW_TOLERANCE;
+}
 
 export interface PoseTimer {
   /** Seconds remaining in the pose. 0 means "not playing". */
@@ -256,13 +295,17 @@ function gesturePose(timer: GestureTimer): PoseOutput {
     }
     case "shrug":
     default:
+      // Lucas, 2026-09-02: "shrug should extend arms on the sides + up,
+      // not forward-up". So the pose is pure ROLL - at 1.75 rad the arm
+      // swings out sideways and a little above the shoulder, which is
+      // the "well, I dunno" silhouette. The pitch stays at 0: with the
+      // arm already ~100 degrees out to the side, pitch no longer
+      // raises it, it just twists the arm backwards.
       return {
         ...NEUTRAL_POSE,
-        leftArmPitch: -0.35 * ease,
-        rightArmPitch: -0.35 * ease,
-        leftArmRoll: -0.55 * ease,
-        rightArmRoll: 0.55 * ease,
-        headPitch: 0.05 * ease,
+        leftArmRoll: -SHRUG_ARM_ROLL * ease,
+        rightArmRoll: SHRUG_ARM_ROLL * ease,
+        headPitch: 0.06 * ease,
       };
   }
 }

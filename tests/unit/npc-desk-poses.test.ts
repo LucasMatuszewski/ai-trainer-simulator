@@ -18,11 +18,14 @@ import {
   GESTURE_INTERVAL_S,
   STRETCH_DURATION_S,
   STRETCH_INTERVAL_S,
+  SHRUG_ARM_ROLL,
   TYPING_ARM_PITCH,
   TYPING_BURST_S,
   createInitialIdleState,
+  isWorkingAtDesk,
   resetIdlePose,
   updateIdle,
+  yawDifference,
   type IdleState,
 } from "../../src/engine/npc-idle";
 import { ARM_TOTAL_LENGTH, SHOULDER_Y, createNpcMesh } from "../../src/engine/npc-mesh";
@@ -247,5 +250,74 @@ describe("per-NPC desync (C-63)", () => {
       pitches.add(Number(armPitch(mesh, "right").toFixed(6)));
     }
     expect(pitches.size, "every NPC hits the same keystroke on the same frame").toBeGreaterThan(1);
+  });
+});
+
+describe("typing requires the WORKING position, not just the desk (C-63 amendment)", () => {
+  /**
+   * Lucas, 2026-09-02: "the typing animation should be only played when
+   * npc is facing the desk, on working position. Now it plays when npc's
+   * are talking looking on each other, not on the computer."
+   *
+   * Chatter (npc-controller: `first.rotation.y = Math.atan2(dx, dz)`) and
+   * the player's walk-to-face both spin a settled NPC without touching
+   * their `at-desk` state, so the state alone was never enough.
+   */
+  it("counts an NPC still pointed at their desk as working", () => {
+    expect(isWorkingAtDesk("at-desk", Math.PI / 2, Math.PI / 2)).toBe(true);
+    // A small drift (the yaw lerp has not fully converged) still counts.
+    expect(isWorkingAtDesk("at-desk", Math.PI / 2 + 0.2, Math.PI / 2)).toBe(true);
+  });
+
+  it("does not count an NPC who has turned to talk to someone", () => {
+    // Turned 90 degrees to face a colleague: still `at-desk`, not working.
+    expect(isWorkingAtDesk("at-desk", 0, Math.PI / 2)).toBe(false);
+    // Turned right around to face the room.
+    expect(isWorkingAtDesk("at-desk", -Math.PI / 2, Math.PI / 2)).toBe(false);
+  });
+
+  it("wraps around the +/-pi seam instead of reporting a full turn", () => {
+    expect(yawDifference(Math.PI - 0.05, -Math.PI + 0.05)).toBeCloseTo(0.1, 5);
+    expect(isWorkingAtDesk("at-desk", Math.PI - 0.05, -Math.PI + 0.05)).toBe(true);
+  });
+
+  it("is never working when away from a desk or with no workstation yaw", () => {
+    expect(isWorkingAtDesk("kitchen", Math.PI / 2, Math.PI / 2)).toBe(false);
+    expect(isWorkingAtDesk("walking", Math.PI / 2, Math.PI / 2)).toBe(false);
+    // A stranded NPC is marked at-desk but has no settled target.
+    expect(isWorkingAtDesk("at-desk", Math.PI / 2, undefined)).toBe(false);
+  });
+});
+
+describe("shrug reaches out to the sides (C-63 amendment)", () => {
+  /** Lucas, 2026-09-02: "shrug should extend arms on the sides + up, not
+   *  forward-up". */
+  it("swings the arms sideways and slightly up, not forward", () => {
+    const mesh = human();
+    let state = base({ nextGestureAt: 0 });
+    let now = 0;
+    let peakRoll = 0;
+    let peakPitch = 0;
+    // rng 0.99 lands on the last gesture, "shrug".
+    for (let step = 0; step < 60; step += 1) {
+      now += 1 / 30;
+      state = updateIdle(state, 1 / 30, position, 0, mesh, now, () => 0.99, { atDesk: true });
+      const arm = mesh.getObjectByName("arm-right")!;
+      if (Math.abs(arm.rotation.z) > Math.abs(peakRoll)) peakRoll = arm.rotation.z;
+      if (Math.abs(arm.rotation.x) > Math.abs(peakPitch)) peakPitch = arm.rotation.x;
+    }
+    expect(state.gesture?.kind ?? "shrug").toBe("shrug");
+    expect(peakRoll, "the arms go OUT to the side").toBeGreaterThan(1.5);
+    expect(Math.abs(peakPitch), "and not forward").toBeLessThan(0.05);
+  });
+
+  it("puts the hands out past the shoulders and above them", () => {
+    const mesh = human();
+    const arm = mesh.getObjectByName("arm-right")!;
+    arm.rotation.set(0, 0, SHRUG_ARM_ROLL);
+    mesh.updateMatrixWorld(true);
+    const hand = mesh.getObjectByName("hand-right")!.getWorldPosition(new THREE.Vector3());
+    expect(hand.x, "out past the shoulder at x=0.38").toBeGreaterThan(0.9);
+    expect(hand.y, "and up, above the shoulder at y=0.95").toBeGreaterThan(SHOULDER_Y);
   });
 });

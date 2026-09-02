@@ -54,7 +54,7 @@ import {
   givesWayTo,
   separationCorrection,
 } from "./npc-avoidance";
-import { createInitialIdleState, resetIdlePose, updateIdle, type IdleState } from "./npc-idle";
+import { createInitialIdleState, isWorkingAtDesk, resetIdlePose, updateIdle, type IdleState } from "./npc-idle";
 import { planNpcPath } from "./npc-path";
 import {
   findValidNpcSpawn,
@@ -1457,7 +1457,17 @@ export function createNpcController(
       const idle = idleStates.get(npc.id) ?? createInitialIdleState(0, npc.id);
       // C-63: Lucas asked for the typing animation "when npc is working
       // next to the desk (only then)" - this flag is that "only then".
-      const atDesk = object.userData.npcState === "at-desk";
+      // Amendment (Lucas, 2026-09-02): "only played when npc is facing
+      // the desk, on working position. Now it plays when npc's are
+      // talking looking on each other, not on the computer." Chatter and
+      // walk-to-face rotate a settled NPC without leaving the `at-desk`
+      // state, so the state alone is not enough - the NPC must still be
+      // pointed at the workstation the schedule settled them at.
+      const atDesk = isWorkingAtDesk(
+        object.userData.npcState,
+        object.rotation.y,
+        runtime.get(npc.id)?.target?.face,
+      );
       idleStates.set(
         npc.id,
         updateIdle(idle, safeDt, object.position, object.rotation.y, object, idleElapsed, rng, { atDesk }),
