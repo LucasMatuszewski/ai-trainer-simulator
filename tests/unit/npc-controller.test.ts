@@ -4,7 +4,7 @@ import { INTER_NPC_LINES, OFFICE_CHATTER } from "../../src/content/office-chatte
 import { LUNCH_DIALOGUES_HUMAN } from "../../src/content/lunch-dialogues";
 import { KITCHEN_STOP_DWELL, type Period } from "../../src/content/npc-schedule";
 import { NPCS } from "../../src/content/npcs";
-import { CHAT_PAUSE_S, COPY_RUN_DWELL_S, COPY_RUN_INTERVAL_S, SQUEEZE_SEPARATION, advanceAlongPath, blockerBoxCoversDestination, createNpcController, nextBarkDelay } from "../../src/engine/npc-controller";
+import { CHAT_PAUSE_S, COPY_RUN_DWELL_S, COPY_RUN_INTERVAL_S, SQUEEZE_SEPARATION, advanceAlongPath, blockerBoxCoversDestination, createNpcController, nextBarkDelay, selectMeetingGuestIds } from "../../src/engine/npc-controller";
 import { PAIR_COOLDOWN_S, RESPONSE_DELAY_S, roomAt } from "../../src/engine/chatter";
 import { MIN_SEPARATION } from "../../src/engine/npc-avoidance";
 import type { NPC, NpcId } from "../../src/types";
@@ -236,6 +236,48 @@ describe("createNpcController", () => {
     expect(object.userData.npcState).toBe("at-desk");
     expect(object.position.x).toBeCloseTo(4.9, 3);
     expect(object.position.z).toBeCloseTo(13.5, 3);
+  });
+
+  it("does not start a path or cancel the slot for an NPC who has not arrived", () => {
+    const janusz = makeObject("janusz");
+    let period: Period = "morning";
+    const controller = createNpcController(
+      [npc("janusz")],
+      { janusz } as Record<NpcId, THREE.Object3D>,
+      () => period,
+      () => 1,
+      () => 0.5,
+      () => false,
+      { chatter: false },
+    );
+
+    controller.update(0);
+    expect(controller.hasArrived("janusz")).toBe(false);
+    expect(janusz.visible).toBe(false);
+    expect(janusz.userData.npcState).toBe("arriving");
+
+    period = "afternoon";
+    controller.update(0);
+
+    expect(controller.hasArrived("janusz")).toBe(false);
+    expect(janusz.visible).toBe(false);
+    expect(janusz.userData.npcState).toBe("arriving");
+
+    controller.update(116);
+    expect(controller.hasArrived("janusz")).toBe(true);
+    expect(janusz.visible).toBe(true);
+    expect(janusz.userData.npcState).not.toBe("arriving");
+  });
+
+  it("only chooses already-arrived NPCs as morning meeting guests", () => {
+    const arrived = new Set<NpcId>(["bartek", "renata"]);
+    const guests = selectMeetingGuestIds(
+      [npc("bartek"), npc("janusz"), npc("renata"), npc("zosia")],
+      "morning",
+      (npcId) => arrived.has(npcId),
+      () => 0,
+    );
+    expect(guests).toEqual(["bartek"]);
   });
 
   // --- C-46: rotating chatter pairs (invariant simulation) ---------

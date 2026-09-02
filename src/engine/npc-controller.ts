@@ -79,6 +79,33 @@ const PRINTER_STOP: ScheduleEntry = {
   state: "at-desk",
 };
 
+const MEETING_STATION_BOUND_NPC_IDS: ReadonlySet<NpcId> = new Set([
+  "burek",
+  "dawid",
+  "renata",
+]);
+
+/** Pick Zosia's 1-2 meeting guests from colleagues who are physically
+ * in the building. Pure so arrival/meeting eligibility cannot regress
+ * behind controller timing again. */
+export function selectMeetingGuestIds(
+  npcs: readonly NPC[],
+  period: Period,
+  hasArrived: (npcId: NpcId) => boolean,
+  rng: () => number,
+): NpcId[] {
+  const eligible = npcs
+    .filter((npc) => npc.id !== "zosia" && !MEETING_STATION_BOUND_NPC_IDS.has(npc.id))
+    .filter((npc) => hasArrived(npc.id))
+    .filter((npc) => NPC_SCHEDULES[npc.id]![period]!.state === "at-desk")
+    .map((npc) => npc.id);
+  for (let i = eligible.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [eligible[i], eligible[j]] = [eligible[j]!, eligible[i]!];
+  }
+  return eligible.slice(0, 1 + Math.floor(rng() * 2));
+}
+
 export interface ActiveConversationView {
   a: string;
   b: string;
@@ -831,7 +858,6 @@ export function createNpcController(
   const synchronizePeriod = (period: Period): void => {
     lastPeriod = period;
     lastDay = getDay();
-    pendingArrivals.clear();
     overrides.clear();
     validatedDestinations.clear();
     // Everyone re-plans across the office, so any in-flight exchange
@@ -847,22 +873,22 @@ export function createNpcController(
       // C-64: these roles must remain at their public-facing stations;
       // pulling reception or leadership into a random guest slot breaks
       // the tutorial and the authored office hierarchy.
-      const stationBoundNpcIds: ReadonlySet<NpcId> = new Set(["burek", "dawid", "renata"]);
-      const eligible = npcs
-        .filter((npc) => npc.id !== "zosia" && !stationBoundNpcIds.has(npc.id))
-        .filter((npc) => NPC_SCHEDULES[npc.id]![period]!.state === "at-desk")
-        .map((npc) => npc.id);
-      for (let i = eligible.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(rng() * (i + 1));
-        [eligible[i], eligible[j]] = [eligible[j]!, eligible[i]!];
-      }
-      const guestCount = 1 + Math.floor(rng() * 2);
-      eligible.slice(0, guestCount).forEach((npcId, index) => {
+      const guests = selectMeetingGuestIds(
+        npcs,
+        period,
+        (npcId) => !pendingArrivals.has(npcId),
+        rng,
+      );
+      guests.forEach((npcId, index) => {
         const seat = MEETING_SEATS[index % MEETING_SEATS.length]!;
         meetingGuests.set(npcId, seat);
       });
     }
     for (const npc of npcs) {
+      // Arrival state is owned exclusively by beginMorningArrivals /
+      // releaseArrival. A period synchronization must not cancel the
+      // slot, reveal the parked object, or install a path ahead of time.
+      if (pendingArrivals.has(npc.id)) continue;
       const state = runtime.get(npc.id)!;
       state.path = null; state.kitchenStops = null; state.dwellRemaining = 0; state.returnEntry = null;
       planForEntry(npc.id, meetingGuests.get(npc.id) ?? scheduleFor(npc.id, period));

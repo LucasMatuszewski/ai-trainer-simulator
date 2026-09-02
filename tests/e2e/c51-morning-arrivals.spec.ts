@@ -33,7 +33,7 @@ test.use({
   viewport: { width: 1280, height: 720 },
 });
 
-test.setTimeout(180_000);
+test.setTimeout(480_000);
 
 test("C-51: the office fills up over the morning", async ({ page }) => {
   await page.goto("http://localhost:5173/");
@@ -74,7 +74,25 @@ test("C-51: the office fills up over the morning", async ({ page }) => {
   await record(46, "c51-02-morning-mid.png");
   await page.waitForTimeout(50_000);
   await record(96, "c51-03-morning-late.png");
-  await page.waitForTimeout(55_000);
+  // C-64: the last sample POLLS for an empty waiting list instead of
+  // sleeping a fixed 55 s more.
+  //
+  // The game clock is `Math.min(0.1, realDt)` (main.ts), so below 10 fps
+  // the simulated day advances slower than wall-clock. Headless Chrome
+  // renders this scene with software GL at 5-9 fps (measured), which
+  // means ~151 s of test time was only ~90-115 s of morning - and Janusz,
+  // the pinned late arrival at 115 s, had legitimately not been released
+  // yet. The old fixed wait silently assumed a 1:1 clock and was already
+  // marginal; the heavier C-64 reception pushed it over.
+  //
+  // Polling asserts the same thing the fixed wait meant to ("and it does
+  // actually fill up") without the frame-rate assumption.
+  const deadline = Date.now() + 240_000;
+  let waitingNow = notInYet(await statuses());
+  while (waitingNow > 0 && Date.now() < deadline) {
+    await page.waitForTimeout(5_000);
+    waitingNow = notInYet(await statuses());
+  }
   await record(151, "c51-04-morning-end.png");
 
   for (const sample of samples) {
@@ -94,7 +112,7 @@ test("C-51: the office fills up over the morning", async ({ page }) => {
   for (let i = 1; i < samples.length; i += 1) {
     expect(samples[i]!.waiting).toBeLessThanOrEqual(samples[i - 1]!.waiting);
   }
-  // And it does actually fill up.
+  // And it does actually fill up - every arrival is eventually released.
   expect(samples[samples.length - 1]!.waiting).toBe(0);
   expect(samples[0]!.waiting).toBeGreaterThan(samples[samples.length - 1]!.waiting);
 });
