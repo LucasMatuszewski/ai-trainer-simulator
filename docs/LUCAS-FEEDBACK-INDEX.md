@@ -5,6 +5,12 @@ given. Every item MUST be reflected in `docs/PRD.md` and the
 plan. The agent MUST update this file when Lucas sends feedback so
 nothing is lost again.
 
+## 2026-09-02 — repository hygiene
+
+**ID: L-2026-09-02-01 — Ignore Playwright CLI artifacts**
+- Add `.playwright-cli/` to `.gitignore`; local browser-verification snapshots and logs must not dirty the working tree.
+- **Cross-reference:** operational repository hygiene only; no gameplay/design scope changes, so no PRD, ADR, or phase-plan update is required.
+
 ## 2026-08-31 — feedback captured (this message)
 
 **ID: L-2026-08-31-02 — Make the game perfect, playable, and fun**
