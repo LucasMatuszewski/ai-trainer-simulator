@@ -310,9 +310,11 @@ export function buildOfficeScene(
   // Tall floor lamp in a corner for warm light
   scene.add(makeFloorLamp(-8.5, 6));
 
-  // C-47 revenue corner: the Deal Wall (sales leaderboard, east wall)
-  // and the Content Booth (marketing backdrop + ring light, west
-  // wall). Wall-mounted, so no floor AABB is needed.
+  // C-47 revenue corner: the Deal Wall (sales leaderboard) and the
+  // Content Booth (marketing backdrop + ring light). C-64 moved both
+  // into the relocated meeting room south of the kitchen, on its west
+  // and east walls respectively. Wall-mounted, so no floor AABB is
+  // needed.
   scene.add(makeDealWall());
   scene.add(makeContentBooth());
 
@@ -1099,7 +1101,14 @@ function makeDealWall(): THREE.Group {
     bar.position.set(-0.575 + barLengths[i]! / 2, 1.74 - i * 0.19, 0.045);
     g.add(bar);
   }
-  g.position.set(-6.02, 0, 12.6);
+  // C-64: the Deal Wall follows the meeting room to its new home south
+  // of the kitchen (Lucas: "We should move there all furnitures and the
+  // sales chart and content booth"). It hangs on the new room's west
+  // wall, whose inner face is x=9.78, so the sales NPCs standing at the
+  // relocated `deal-wall` destination (10.9, 12.6) face it. Left where
+  // it was, it stayed mounted on what is now the reception's GLASS
+  // wall, visibly floating in the garden window.
+  g.position.set(9.8, 0, 12.6);
   g.rotation.y = Math.PI / 2; // front (+Z) -> +X, east into the room
   return g;
 }
@@ -1154,7 +1163,11 @@ function makeContentBooth(): THREE.Group {
   );
   tripod.position.set(0.55, 0.65, 1);
   g.add(tripod);
-  g.position.set(5.75, 0, 12.6);
+  // C-64: moved with the meeting room. The new room's east wall has an
+  // inner face at x=19, and the relocated `content-booth` destination
+  // is (17.6, 12.6) facing +X, so the backdrop sits just inside that
+  // wall. It previously hung on what is now the reception plant wall.
+  g.position.set(18.97, 0, 12.6);
   g.rotation.y = -Math.PI / 2; // front (+Z) -> -X, west into the room
   return g;
 }

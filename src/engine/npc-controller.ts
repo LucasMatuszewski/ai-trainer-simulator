@@ -63,6 +63,21 @@ import {
   NPC_DEFAULT_RADIUS,
 } from "./npc-spawn-validator";
 import { updateWalkCycle, type WalkCycleState } from "./npc-walk-cycle";
+import { audio } from "../audio/AudioManager";
+import {
+  PRINTER_FLASH_SWEEP_COUNT,
+  PRINTER_FLASH_SWEEP_INTERVAL_S,
+  printerFlashIntensity,
+} from "./printer-flash";
+
+export const COPY_RUN_INTERVAL_S = { min: 60, max: 120 } as const;
+export const COPY_RUN_DWELL_S = { min: 6, max: 10 } as const;
+export const RENATA_COPY_NPC_ID: NpcId = "renata";
+const PRINTER_STOP: ScheduleEntry = {
+  position: { x: 4.4, y: 0, z: 15.6 },
+  face: 0,
+  state: "at-desk",
+};
 
 export interface ActiveConversationView {
   a: string;
@@ -122,6 +137,9 @@ interface NpcRuntime {
   kitchenIndex: number;
   dwellRemaining: number;
   returnEntry: ScheduleEntry | null;
+  copyPhase: "none" | "outbound" | "copying" | "returning";
+  copyElapsed: number;
+  copySweepsPlayed: number;
   baseY: number;
   velocity: { x: number; z: number };
   /** C-48: seconds spent blocked (< 25% of expected progress) while walking. */
@@ -349,6 +367,10 @@ export interface NpcControllerOptions {
    *  any chatter tuning would silently reshuffle every escape-jitter
    *  roll and make jam tests seed-fragile. */
   chatter?: boolean;
+  /** C-64: injectable so controller tests do not need a browser AudioContext. */
+  playSfx?: (id: "sfx_photocopier") => void;
+  /** C-64: explicit printer host for isolated controller tests. */
+  printerObject?: THREE.Object3D;
 }
 
 export function createNpcController(
@@ -362,6 +384,11 @@ export function createNpcController(
 ): NpcController {
   const arrivalsEnabled = options.arrivals ?? true;
   const chatterEnabled = options.chatter ?? true;
+  const playSfx = options.playSfx ?? ((id: "sfx_photocopier") => {
+    // Unit simulations run without a DOM or AudioContext. Production
+    // browsers use the shared manager; headless runs stay silent.
+    if (typeof window !== "undefined") audio().sfx.play(id);
+  });
   const obstacles = getNpcObstacles();
   const edges = buildWaypointEdges(CORRIDOR_WAYPOINTS, obstacles, DEFAULT_MAX_EDGE_LENGTH);
   const runtime = new Map<NpcId, NpcRuntime>();
@@ -437,6 +464,16 @@ export function createNpcController(
   // often enough"). The first chatter lands 4-8 s after mount.
   let nextStartAt = 4 + rng() * 4;
   let controllerElapsed = 0;
+  // C-64: cosmetic copier timing must not consume the simulation RNG;
+  // doing so reshuffles arrivals, meetings and departures for everyone.
+  let copyRandomState = (getDay() * 2654435761) >>> 0;
+  const copyRandom = (): number => {
+    copyRandomState = (copyRandomState * 1664525 + 1013904223) >>> 0;
+    return copyRandomState / 0x100000000;
+  };
+  let nextCopyRunAt = npcs.some((npc) => npc.id === RENATA_COPY_NPC_ID)
+    ? COPY_RUN_INTERVAL_S.min + copyRandom() * (COPY_RUN_INTERVAL_S.max - COPY_RUN_INTERVAL_S.min)
+    : Infinity;
   let lastBurekBubbleAt = -Infinity;
   let barkAt = nextBarkDelay(rng);
 
@@ -444,6 +481,18 @@ export function createNpcController(
   let root: THREE.Object3D | null = firstNpc === undefined ? null : npcObjects[firstNpc.id];
   while (root?.parent) root = root.parent;
   const sceneRoot = root instanceof THREE.Scene ? root : null;
+  const printer = options.printerObject ?? sceneRoot?.getObjectByName("xerox-printer") ?? null;
+  const scannerFlash = printer === null ? null : new THREE.Mesh(
+    new THREE.PlaneGeometry(0.7, 0.09),
+    new THREE.MeshBasicMaterial({ color: 0xd8fbff, transparent: true, opacity: 0 }),
+  );
+  if (scannerFlash !== null && printer !== null) {
+    scannerFlash.name = "xerox-scanner-flash";
+    scannerFlash.rotation.x = -Math.PI / 2;
+    scannerFlash.position.set(0, 1.083, 0);
+    scannerFlash.visible = false;
+    printer.add(scannerFlash);
+  }
   const bubbleSystem = sceneRoot === null ? null : createBubbleSystem(sceneRoot);
   const fallbackCamera = new THREE.PerspectiveCamera();
 
@@ -452,6 +501,7 @@ export function createNpcController(
       path: null, segmentIndex: 0, distanceInSegment: 0,
       walkCycle: { distanceTraveled: 0, amplitude: 1 }, target: null, departureDelay: 0,
       kitchenStops: null, kitchenIndex: 0, dwellRemaining: 0, returnEntry: null,
+      copyPhase: "none", copyElapsed: 0, copySweepsPlayed: 0,
       baseY: npcObjects[npc.id].position.y, velocity: { x: 0, z: 0 },
       blockedFor: 0, escapeAttempt: 0, nextEscapeAt: FIRST_ESCAPE_AFTER_S, escapeIndex: -1,
       anchor: null, blockedBy: null, clearFor: 0, yieldWaits: 0, retreats: [], replanCooldownUntil: 0,
@@ -627,7 +677,18 @@ export function createNpcController(
     const state = runtime.get(npcId)!;
     const target = new THREE.Vector3(entry.position.x, entry.position.y, entry.position.z);
     if (object.position.distanceTo(target) <= 1e-6) { settle(npcId, entry); return true; }
-    const path = planNpcPath(object.position.clone(), target, CORRIDOR_WAYPOINTS, edges, obstacles);
+    // C-64: authored working points can deliberately sit inside a desk
+    // footprint (Renata stands behind/within the reception counter).
+    // Ignore only obstacles containing an endpoint so the shared path
+    // machinery can walk her out and back; every obstacle between the
+    // endpoints remains solid.
+    const pathObstacles = obstacles.filter((obstacle) => {
+      const contains = (point: THREE.Vector3): boolean =>
+        point.x >= obstacle.minX && point.x <= obstacle.maxX &&
+        point.z >= obstacle.minZ && point.z <= obstacle.maxZ;
+      return !contains(object.position) && !contains(target);
+    });
+    const path = planNpcPath(object.position.clone(), target, CORRIDOR_WAYPOINTS, edges, pathObstacles);
     if (path === null) return false;
     state.path = path;
     state.segmentIndex = 0;
@@ -685,6 +746,27 @@ export function createNpcController(
     }
   };
 
+  const scheduleNextCopyRun = (): void => {
+    nextCopyRunAt = controllerElapsed + COPY_RUN_INTERVAL_S.min +
+      copyRandom() * (COPY_RUN_INTERVAL_S.max - COPY_RUN_INTERVAL_S.min);
+  };
+
+  const startCopyRun = (): void => {
+    const state = runtime.get(RENATA_COPY_NPC_ID);
+    if (state === undefined || playerTalkingTo === RENATA_COPY_NPC_ID) return;
+    const desk = scheduleFor(RENATA_COPY_NPC_ID, getCurrentPeriod());
+    state.returnEntry = desk;
+    state.copyElapsed = 0;
+    state.copySweepsPlayed = 0;
+    if (startPath(RENATA_COPY_NPC_ID, PRINTER_STOP, 0)) state.copyPhase = "outbound";
+    else {
+      state.copyPhase = "none";
+      state.returnEntry = null;
+      settle(RENATA_COPY_NPC_ID, desk);
+      scheduleNextCopyRun();
+    }
+  };
+
   /** No route exists: rather than leaving the NPC frozen mid-office
    *  with a stale "walking" state (which also blocks the idle
    *  animation), strand it in place as at-desk. */
@@ -721,6 +803,19 @@ export function createNpcController(
       };
     }
     return base;
+  };
+
+  const cancelCopyRun = (period: Period): void => {
+    const state = runtime.get(RENATA_COPY_NPC_ID);
+    if (state === undefined || state.copyPhase === "none") return;
+    state.copyPhase = "none";
+    state.copyElapsed = 0;
+    state.copySweepsPlayed = 0;
+    state.dwellRemaining = 0;
+    state.returnEntry = null;
+    if (scannerFlash !== null) scannerFlash.visible = false;
+    settle(RENATA_COPY_NPC_ID, scheduleFor(RENATA_COPY_NPC_ID, period));
+    scheduleNextCopyRun();
   };
 
   const synchronizePeriod = (period: Period): void => {
@@ -950,6 +1045,8 @@ export function createNpcController(
     } else if (morningArrival && day !== lastDay) {
       beginMorningArrivals(period);
     } else if (period !== lastPeriod) {
+      // C-64: period placement supersedes an in-flight copy errand.
+      cancelCopyRun(period);
       // C-62: the evening is a staged walk-out, not a mass vanish -
       // leavers get staggered departure times and walk to the
       // entrance; a few (plus the CEO) stay after hours.
@@ -1046,6 +1143,23 @@ export function createNpcController(
       (x, z) => isSpawnBlocked({ x, z, radius: NPC_DEFAULT_RADIUS }, obstacles),
     );
     settle(npcId, { ...target, position: { x: spot.x, y: target.position.y, z: spot.z } });
+    if (npcId === RENATA_COPY_NPC_ID && state.copyPhase === "outbound") {
+      state.copyPhase = "copying";
+      state.copyElapsed = 0;
+      state.copySweepsPlayed = 0;
+      state.dwellRemaining = COPY_RUN_DWELL_S.min + copyRandom() * (COPY_RUN_DWELL_S.max - COPY_RUN_DWELL_S.min);
+      npcObjects[npcId].userData.npcState = "dwelling";
+      return;
+    }
+    if (npcId === RENATA_COPY_NPC_ID && state.copyPhase === "returning") {
+      // The working point is intentionally inside the reception desk's
+      // broad AABB. The route has finished safely, then the final settle
+      // restores the authored behind-counter pose instead of parking her
+      // on the generic arrival-clearance ring.
+      settle(npcId, target);
+      state.copyPhase = "none";
+      scheduleNextCopyRun();
+    }
     if (state.kitchenStops !== null && state.kitchenIndex < state.kitchenStops.length) {
       const stop = state.kitchenStops[state.kitchenIndex]!;
       state.dwellRemaining = KITCHEN_STOP_DWELL[stop.id];
@@ -1099,6 +1213,26 @@ export function createNpcController(
     if (destroyed) return;
     const safeDt = Number.isFinite(dt) ? Math.max(0, dt) : 0;
     idleElapsed += safeDt; bubbleElapsed += safeDt; controllerElapsed += safeDt;
+    const renataState = runtime.get(RENATA_COPY_NPC_ID);
+    if (renataState?.copyPhase === "copying") {
+      const previousSweep = Math.floor(renataState.copyElapsed / PRINTER_FLASH_SWEEP_INTERVAL_S);
+      renataState.copyElapsed += safeDt;
+      const intensity = printerFlashIntensity(renataState.copyElapsed);
+      if (scannerFlash !== null) {
+        const material = scannerFlash.material as THREE.MeshBasicMaterial;
+        material.opacity = intensity;
+        scannerFlash.visible = intensity > 0;
+        const sweepProgress = (renataState.copyElapsed % PRINTER_FLASH_SWEEP_INTERVAL_S) / PRINTER_FLASH_SWEEP_INTERVAL_S;
+        scannerFlash.position.z = -0.28 + sweepProgress * 0.56;
+      }
+      const currentSweep = Math.floor(renataState.copyElapsed / PRINTER_FLASH_SWEEP_INTERVAL_S);
+      if (renataState.copySweepsPlayed < PRINTER_FLASH_SWEEP_COUNT && currentSweep >= previousSweep) {
+        while (renataState.copySweepsPlayed <= currentSweep && renataState.copySweepsPlayed < PRINTER_FLASH_SWEEP_COUNT) {
+          playSfx("sfx_photocopier");
+          renataState.copySweepsPlayed += 1;
+        }
+      }
+    } else if (scannerFlash !== null) scannerFlash.visible = false;
     if (bubbleSystem !== null && sceneRoot !== null) {
       // C-61 fix: projection uses the camera set via setBubblesCamera
       // (main.ts wires engine.camera). The old scene-graph sniffing
@@ -1176,7 +1310,16 @@ export function createNpcController(
       state.velocity = { x: 0, z: 0 };
       if (state.dwellRemaining > 0) {
         state.dwellRemaining = Math.max(0, state.dwellRemaining - safeDt);
-        if (state.dwellRemaining === 0) continueKitchen(npc.id);
+        if (state.dwellRemaining === 0 && npc.id === RENATA_COPY_NPC_ID && state.copyPhase === "copying") {
+          const returnEntry = state.returnEntry;
+          state.returnEntry = null;
+          state.copyPhase = "returning";
+          if (returnEntry === null || !startPath(npc.id, returnEntry, 0)) {
+            state.copyPhase = "none";
+            if (returnEntry !== null) settle(npc.id, returnEntry);
+            scheduleNextCopyRun();
+          }
+        } else if (state.dwellRemaining === 0) continueKitchen(npc.id);
       }
       if (state.path === null) {
         object.position.y = state.baseY;
@@ -1233,6 +1376,13 @@ export function createNpcController(
         walkFrames.push({ npc, before, movementDt });
       }
     }
+
+    if (
+      controllerElapsed >= nextCopyRunAt && renataState !== undefined &&
+      renataState.copyPhase === "none" && renataState.path === null &&
+      npcObjects[RENATA_COPY_NPC_ID].userData.npcState === "at-desk" &&
+      playerTalkingTo !== RENATA_COPY_NPC_ID
+    ) startCopyRun();
 
     // --- C-48 pass 3: hard separation (CURE) ------------------------
     // Nobody closer than MIN_SEPARATION, ever. Two walkers split the
@@ -1613,7 +1763,13 @@ export function createNpcController(
 
   return {
     update,
-    destroy: () => { destroyed = true; bubbleSystem?.destroy(); },
+    destroy: () => {
+      destroyed = true;
+      bubbleSystem?.destroy();
+      scannerFlash?.removeFromParent();
+      scannerFlash?.geometry.dispose();
+      (scannerFlash?.material as THREE.Material | undefined)?.dispose();
+    },
     getNpcIds: () => npcs.map((npc) => npc.id),
     /** C-51: false while an NPC has not walked in yet this morning. */
     hasArrived: (npcId) => !pendingArrivals.has(npcId),

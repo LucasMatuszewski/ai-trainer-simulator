@@ -28,7 +28,7 @@ export type SfxId =
   | "sfx_cash_register" | "sfx_error_buzzer" | "sfx_glitch" | "sfx_easter_chime"
   | "sfx_dialogue_open" | "sfx_dialogue_close" | "sfx_alarm" | "sfx_typing_burst"
   | "sfx_coffee_pour" | "sfx_printer_jam" | "sfx_server_beep" | "sfx_glitch_long"
-  | "sfx_suspense" | "sfx_quest_done";
+  | "sfx_suspense" | "sfx_quest_done" | "sfx_photocopier";
 
 export interface AudioManagerAPI {
   /** Lazy init on first user gesture. Safe to call repeatedly. */

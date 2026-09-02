@@ -209,3 +209,33 @@ describe("buildMultiRoomMeshes", () => {
     for (const mesh of signMeshes) expect((mesh.material as THREE.MeshBasicMaterial).map).toBeInstanceOf(THREE.CanvasTexture);
   });
 });
+
+describe("C-64: the revenue-corner props followed the meeting room", () => {
+  /**
+   * Lucas, 2026-09-02: "We should move there all furnitures and the
+   * sales chart and content booth."
+   *
+   * Wave 1 moved the `deal-wall` and `content-booth` DESTINATIONS but the
+   * meshes are built in scene.ts and stayed on the old room's walls - the
+   * sales chart ended up mounted on what is now the reception's glass
+   * wall, visibly hanging in the garden window. These assertions pin the
+   * props to the same room as the destinations that face them.
+   */
+  it("keeps each prop on the wall its NPC destination faces", async () => {
+    const { RANDOM_DESTINATIONS } = await import("../../src/content/npc-schedule");
+    const dealWall = RANDOM_DESTINATIONS.find((entry) => entry.state === "deal-wall");
+    const booth = RANDOM_DESTINATIONS.find((entry) => entry.state === "content-booth");
+    expect(dealWall, "no deal-wall destination").toBeDefined();
+    expect(booth, "no content-booth destination").toBeDefined();
+
+    // Both must be inside the relocated meeting room, x=[9.5, 19].
+    for (const entry of [dealWall!, booth!]) {
+      expect(entry.position.x).toBeGreaterThanOrEqual(9.5);
+      expect(entry.position.x).toBeLessThanOrEqual(19);
+      expect(entry.position.z).toBeGreaterThanOrEqual(7.5);
+      expect(entry.position.z).toBeLessThanOrEqual(17.5);
+    }
+    // The deal wall is on the WEST side, the booth on the EAST.
+    expect(dealWall!.position.x).toBeLessThan(booth!.position.x);
+  });
+});

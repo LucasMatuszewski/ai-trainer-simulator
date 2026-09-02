@@ -4,7 +4,7 @@ import { INTER_NPC_LINES, OFFICE_CHATTER } from "../../src/content/office-chatte
 import { LUNCH_DIALOGUES_HUMAN } from "../../src/content/lunch-dialogues";
 import { KITCHEN_STOP_DWELL, type Period } from "../../src/content/npc-schedule";
 import { NPCS } from "../../src/content/npcs";
-import { CHAT_PAUSE_S, SQUEEZE_SEPARATION, advanceAlongPath, createNpcController, nextBarkDelay } from "../../src/engine/npc-controller";
+import { CHAT_PAUSE_S, COPY_RUN_DWELL_S, COPY_RUN_INTERVAL_S, SQUEEZE_SEPARATION, advanceAlongPath, createNpcController, nextBarkDelay } from "../../src/engine/npc-controller";
 import { PAIR_COOLDOWN_S, RESPONSE_DELAY_S, roomAt } from "../../src/engine/chatter";
 import { MIN_SEPARATION } from "../../src/engine/npc-avoidance";
 import type { NPC, NpcId } from "../../src/types";
@@ -51,6 +51,58 @@ describe("createNpcController", () => {
     expect(controller.getNpcIds()).toEqual([]);
     expect(() => controller.update(1 / 60)).not.toThrow();
     expect(() => controller.destroy()).not.toThrow();
+  });
+
+  it("sends Renata to the Xerox, flashes and plays each sweep, then returns her to reception", () => {
+    const printer = new THREE.Group();
+    printer.name = "xerox-printer";
+    const object = makeObject("renata");
+    object.position.set(4.4, 0, 13.5);
+    const played: string[] = [];
+    const controller = createNpcController(
+      [npc("renata")],
+      { renata: object } as Record<NpcId, THREE.Object3D>,
+      () => "afternoon",
+      () => 1,
+      () => 0,
+      () => false,
+      { arrivals: false, chatter: false, playSfx: (id) => played.push(id), printerObject: printer },
+    );
+    controller.update(0);
+    controller.setOverride("renata", { position: { x: 4.4, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" });
+    expect(object.position.toArray()).toEqual([4.4, 0, 13.5]);
+    controller.update(COPY_RUN_INTERVAL_S.max);
+    for (let step = 0; step < 120 && object.userData.npcState !== "dwelling"; step += 1) controller.update(0.1);
+    expect(object.userData.npcState).toBe("dwelling");
+    const flash = printer.getObjectByName("xerox-scanner-flash");
+    expect(flash).toBeDefined();
+    let sawFlash = false;
+    for (let step = 0; step < COPY_RUN_DWELL_S.max * 10; step += 1) {
+      controller.update(0.1);
+      sawFlash ||= flash?.visible ?? false;
+    }
+    expect(sawFlash).toBe(true);
+    expect(played).toEqual(Array(4).fill("sfx_photocopier"));
+    for (let step = 0; step < 120 && object.userData.npcState !== "at-desk"; step += 1) controller.update(0.1);
+    expect(object.position.x).toBeCloseTo(4.4);
+    expect(object.position.z).toBeCloseTo(13.5);
+    expect(flash?.visible).toBe(false);
+  });
+
+  it("does not start Renata's copy run while the player is talking to her", () => {
+    const object = makeObject("renata");
+    object.position.set(4.4, 0, 13.5);
+    const controller = createNpcController(
+      [npc("renata")],
+      { renata: object } as Record<NpcId, THREE.Object3D>,
+      () => "afternoon", () => 1, () => 0, () => false,
+      { arrivals: false, chatter: false },
+    );
+    controller.update(0);
+    controller.setTalkingToPlayer("renata");
+    controller.update(COPY_RUN_INTERVAL_S.max + 1);
+    expect(object.userData.npcState).toBe("at-desk");
+    expect(object.position.z).toBeLessThan(15);
   });
 
   it("re-plans an interrupted walk from the current position", () => {
