@@ -1,6 +1,6 @@
 # C-64 — Reception, relocated Meeting Room, and the Receptionist
 
-Status: IN FLIGHT (started 2026-09-02, ~04:30 Portugal time)
+Status: COMPLETE (2026-09-02, ~06:15 Portugal time). All six waves landed and committed on the branch; see docs/CHANGELOG.md C-64 for the summary.
 Branch: `feat/c64-reception-and-meeting-room-move-opus`
 Owner: Claude Opus 5 (orchestrator). Implementation delegated to CLI agents.
 Source: Lucas, 2026-09-02, night batch. He went to sleep and asked for this to be planned, delegated and executed autonomously, with decisions made rather than questions asked.

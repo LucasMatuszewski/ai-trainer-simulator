@@ -202,6 +202,305 @@
       },
       "bytes": 7004,
       "ms": 0
+    },
+    "bartek_tutorial": {
+      "path": "public/assets/audio/speech/bartek_tutorial.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "bartek",
+        "node": "tutorial"
+      },
+      "bytes": 259494,
+      "ms": 14449
+    },
+    "bartek_printer": {
+      "path": "public/assets/audio/speech/bartek_printer.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "bartek",
+        "node": "printer"
+      },
+      "bytes": 245079,
+      "ms": 13489
+    },
+    "bartek_after_tut_greeting": {
+      "path": "public/assets/audio/speech/bartek_after_tut_greeting.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "bartek",
+        "node": "after-tutorial-greeting"
+      },
+      "bytes": 294088,
+      "ms": 13286
+    },
+    "bartek_after_contract": {
+      "path": "public/assets/audio/speech/bartek_after_contract.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "bartek",
+        "node": "after-contract"
+      },
+      "bytes": 143602,
+      "ms": 13771
+    },
+    "klaudia_greeting": {
+      "path": "public/assets/audio/speech/klaudia_greeting.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "klaudia",
+        "node": "greeting"
+      },
+      "bytes": 219710,
+      "ms": 13421
+    },
+    "klaudia_collab_yes": {
+      "path": "public/assets/audio/speech/klaudia_collab_yes.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "klaudia",
+        "node": "collab-yes"
+      },
+      "bytes": 261223,
+      "ms": 53365
+    },
+    "klaudia_collab_no": {
+      "path": "public/assets/audio/speech/klaudia_collab_no.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "klaudia",
+        "node": "collab-no"
+      },
+      "bytes": 183962,
+      "ms": 13273
+    },
+    "klaudia_collab_q": {
+      "path": "public/assets/audio/speech/klaudia_collab_q.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "klaudia",
+        "node": "collab-question"
+      },
+      "bytes": 231241,
+      "ms": 13173
+    },
+    "marek_greeting": {
+      "path": "public/assets/audio/speech/marek_greeting.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "marek",
+        "node": "greeting"
+      },
+      "bytes": 229512,
+      "ms": 13641
+    },
+    "marek_10x": {
+      "path": "public/assets/audio/speech/marek_10x.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "marek",
+        "node": "what-is-10x"
+      },
+      "bytes": 121692,
+      "ms": 13119
+    },
+    "marek_fellow": {
+      "path": "public/assets/audio/speech/marek_fellow.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "marek",
+        "node": "fellow-10x"
+      },
+      "bytes": 197223,
+      "ms": 13156
+    },
+    "marek_leave": {
+      "path": "public/assets/audio/speech/marek_leave.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "marek",
+        "node": "leave"
+      },
+      "bytes": 123422,
+      "ms": 13009
+    },
+    "zosia_greeting": {
+      "path": "public/assets/audio/speech/zosia_greeting.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "zosia",
+        "node": "greeting"
+      },
+      "bytes": 402484,
+      "ms": 13379
+    },
+    "zosia_roadmap": {
+      "path": "public/assets/audio/speech/zosia_roadmap.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "zosia",
+        "node": "roadmap"
+      },
+      "bytes": 237007,
+      "ms": 13518
+    },
+    "pawel_greeting": {
+      "path": "public/assets/audio/speech/pawel_greeting.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "pawel",
+        "node": "greeting"
+      },
+      "bytes": 242773,
+      "ms": 13462
+    },
+    "pawel_pair": {
+      "path": "public/assets/audio/speech/pawel_pair.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "pawel",
+        "node": "pair-yes"
+      },
+      "bytes": 236431,
+      "ms": 13306
+    },
+    "pawel_delete": {
+      "path": "public/assets/audio/speech/pawel_delete.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "pawel",
+        "node": "delete-script"
+      },
+      "bytes": 151097,
+      "ms": 13182
+    },
+    "pawel_readme": {
+      "path": "public/assets/audio/speech/pawel_readme.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "pawel",
+        "node": "readme"
+      },
+      "bytes": 111314,
+      "ms": 13061
+    },
+    "renata_greeting": {
+      "path": "public/assets/audio/speech/renata_greeting.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "renata",
+        "node": "greeting",
+        "use": "C-64 tutorial / help centre"
+      },
+      "bytes": 149368,
+      "ms": 13117
+    },
+    "renata_intro": {
+      "path": "public/assets/audio/speech/renata_intro.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "renata",
+        "node": "intro",
+        "use": "C-64 tutorial / help centre"
+      },
+      "bytes": 168971,
+      "ms": 13384
+    },
+    "renata_already": {
+      "path": "public/assets/audio/speech/renata_already.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "renata",
+        "node": "already",
+        "use": "C-64 tutorial / help centre"
+      },
+      "bytes": 196070,
+      "ms": 13259
+    },
+    "renata_walk": {
+      "path": "public/assets/audio/speech/renata_walk.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "renata",
+        "node": "walk",
+        "use": "C-64 tutorial / help centre"
+      },
+      "bytes": 188575,
+      "ms": 13225
+    },
+    "renata_look": {
+      "path": "public/assets/audio/speech/renata_look.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "renata",
+        "node": "look",
+        "use": "C-64 tutorial / help centre"
+      },
+      "bytes": 212214,
+      "ms": 13279
+    },
+    "renata_talk": {
+      "path": "public/assets/audio/speech/renata_talk.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "renata",
+        "node": "talk",
+        "use": "C-64 tutorial / help centre"
+      },
+      "bytes": 187422,
+      "ms": 13265
+    },
+    "renata_end": {
+      "path": "public/assets/audio/speech/renata_end.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "renata",
+        "node": "end",
+        "use": "C-64 tutorial / help centre"
+      },
+      "bytes": 167818,
+      "ms": 13201
+    },
+    "renata_cast": {
+      "path": "public/assets/audio/speech/renata_cast.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "renata",
+        "node": "cast",
+        "use": "C-64 tutorial / help centre"
+      },
+      "bytes": 234701,
+      "ms": 13379
+    },
+    "renata_stats": {
+      "path": "public/assets/audio/speech/renata_stats.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "renata",
+        "node": "stats",
+        "use": "C-64 tutorial / help centre"
+      },
+      "bytes": 277944,
+      "ms": 12954
+    },
+    "renata_ready": {
+      "path": "public/assets/audio/speech/renata_ready.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "renata",
+        "node": "ready",
+        "use": "C-64 tutorial / help centre"
+      },
+      "bytes": 226052,
+      "ms": 13237
+    },
+    "sfx_photocopier": {
+      "path": "public/assets/audio/sfx/sfx_photocopier.mp3",
+      "kind": "sfx-tts",
+      "meta": {
+        "use": "C-64 Xerox scanner sweep during Renata's copy run"
+      },
+      "bytes": 34052,
+      "ms": 13342
     }
   },
   "failed": {
