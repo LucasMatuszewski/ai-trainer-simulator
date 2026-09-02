@@ -18,16 +18,15 @@ export const CORRIDOR_WAYPOINTS: readonly Waypoint[] = [
   { id: "main-east", position: { x: 4.5, y: 0, z: 0 } },
   { id: "main-north", position: { x: 0, y: 0, z: -5 } },
   { id: "main-south", position: { x: 0, y: 0, z: 5 } },
-  // C-57: a waypoint in the SW corner of the main office,
-  // OUTSIDE the server rack (which is at x=[-8.5, -7.5],
-  // z=[7.5, 8.5]). x=-8.7 is between the west wall (-9.5..-9)
-  // and the server rack. z=8.6 is north of the server rack
-  // (z>8.5). The line from here to the W-wall desk column
-  // (x=-7.7) goes diagonally through the SW corner, clearing
-  // the server rack (the line at z=8 is at x=-8.7 + (8-8.6)/
-  // (any_z-8.6) * delta_x, and as long as the line stays west
-  // of the server rack at z=8, it doesn't cross).
-  { id: "desk-aisle-west", position: { x: -8.7, y: 0, z: 8.6 } },
+  // C-57: a waypoint in the SW corner of the main office, bridging
+  // the south aisle to the W-wall desk column (x=-7.7). After the
+  // 2026-09-01 furniture re-layout the server rack moved to
+  // x=[-9, -8], z=[7.9, 8.9] (it now touches the west wall), so the
+  // old x=-8.7 gap west of the rack is gone. The waypoint now sits
+  // in the rack's old spot, ON the desk-column line: the straight
+  // x=-7.7 run down to desk-klaudia clears every AABB (the rack's
+  // maxX is -8, the desks start at -7).
+  { id: "desk-aisle-west", position: { x: -7.7, y: 0, z: 8.6 } },
   { id: "door-main-kitchen", position: { x: 9.65, y: 0, z: 0 } },
   { id: "door-main-ceo", position: { x: 0, y: 0, z: -9.8 } },
   { id: "door-main-meeting", position: { x: 0, y: 0, z: 9.9 } },
@@ -64,6 +63,17 @@ export const CORRIDOR_WAYPOINTS: readonly Waypoint[] = [
   { id: "desk-tomek", position: { x: -7.7, y: 0, z: -1.5 } },
   { id: "desk-janusz", position: { x: -7.7, y: 0, z: 2 } },
   { id: "desk-klaudia", position: { x: -7.7, y: 0, z: 5.5 } },
+  // C-61 review fix: the W-wall desk column is a single walkable line
+  // (x=-7.7) with four at-desk NPCs standing exactly on it, so any
+  // walk down the column funnels into whoever is already seated and
+  // jams forever (measured: Janusz oscillating z=[6.3, 8.5] for the
+  // whole morning, never reaching his desk, after the 2026-09-01
+  // furniture re-layout moved the server rack against the west wall
+  // and killed the old west detour). This bypass node sits west of
+  // the column, between the desks and the wall band, so
+  // replanFrom(avoidPeople) has a real route around a standing
+  // blocker. It must NOT be on the direct line - that is the point.
+  { id: "desk-aisle-west-bypass", position: { x: -8.4, y: 0, z: 3.5 } },
   { id: "desk-marek", position: { x: 7.7, y: 0, z: -5 } },
   { id: "desk-ania", position: { x: 7.7, y: 0, z: -2.5 } },
   { id: "desk-grazyna", position: { x: 7.7, y: 0, z: 2 } },
