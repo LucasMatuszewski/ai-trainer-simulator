@@ -3,6 +3,7 @@
  */
 
 import type { SpecializationId, TraitId } from "../types";
+import { GAME_VERSION } from "../version";
 
 const GAME_NAME = "Stack Underflow"; // working title; will be replaced if GLM 5.3 has a better one
 
@@ -20,7 +21,7 @@ export function mountTitleScreen(
         <button data-action="new">New Game</button>
         <button data-action="continue" ${hasSave ? "" : "disabled"}>Continue</button>
       </div>
-      <div class="version">v0.0.1 MVP - a Lucas Matuszewski project</div>
+      <div class="version">${GAME_VERSION} - a Lucas Matuszewski project</div>
     </div>
   `;
   root.querySelector<HTMLButtonElement>('[data-action="new"]')!.addEventListener("click", onNewGame);
