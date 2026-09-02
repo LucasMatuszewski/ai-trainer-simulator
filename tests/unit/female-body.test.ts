@@ -6,10 +6,13 @@ describe("female NPC body", () => {
   const female = createNpcMesh("female", 0, "klaudia");
 
   it("attaches both arms close to the torso", () => {
+    // 0.28 / y 0.95 since Lucas's 2026-09-01 mesh pass (commit
+    // 609816d): arms sit slightly wider and lower than the old
+    // 0.24-by-1.05 pose so they read as relaxed, not glued on.
     expect(Math.abs(female.getObjectByName("arm-left")!.position.x)).toBeGreaterThanOrEqual(0.2);
-    expect(Math.abs(female.getObjectByName("arm-left")!.position.x)).toBeLessThanOrEqual(0.24);
+    expect(Math.abs(female.getObjectByName("arm-left")!.position.x)).toBeLessThanOrEqual(0.3);
     expect(Math.abs(female.getObjectByName("arm-right")!.position.x)).toBeGreaterThanOrEqual(0.2);
-    expect(Math.abs(female.getObjectByName("arm-right")!.position.x)).toBeLessThanOrEqual(0.24);
+    expect(Math.abs(female.getObjectByName("arm-right")!.position.x)).toBeLessThanOrEqual(0.3);
   });
 
   it("uses a naturally proportioned half-metre torso", () => {
@@ -33,7 +36,9 @@ describe("female NPC body", () => {
     expect(breasts).toHaveLength(2);
     for (const breast of breasts) {
       expect(breast.geometry).toBeInstanceOf(THREE.SphereGeometry);
-      expect(breast.position.z).toBeGreaterThan(0.2);
+      // 0.18 since Lucas's 2026-09-01 mesh pass (609816d): the chest
+      // is smaller and sits closer to the torso than the old 0.21.
+      expect(breast.position.z).toBeGreaterThanOrEqual(0.15);
     }
   });
 
