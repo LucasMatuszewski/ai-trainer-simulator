@@ -15,6 +15,18 @@ A single-player 3D retro pixel-art browser game where the player is an IT traine
 4. `~/AGENTS.md` — global hard rules (NEVER skip)
 5. `~/.claude/CLAUDE.md` — model orchestration rules (which CLI to use for what)
 
+## Shared Beads epic — start here for game work
+
+The umbrella issue for this growing game is **`sacs-xtma` — “Stack Underflow / AI Trainer Simulator game.”** It is the durable entry point for the game backlog across agents and devices.
+
+Before creating any game issue:
+1. Run `bd show sacs-xtma` to recover the epic context and inspect its children.
+2. Search the shared backlog by meaning (`bd search "<concept>"`) and enrich an existing issue instead of creating a duplicate.
+3. If the work is a genuinely new game deliverable, create exactly one child under the epic with `--parent sacs-xtma`. Keep one deliverable per issue; split independent outcomes into separate children.
+4. Link the relevant feedback (`docs/LUCAS-FEEDBACK-INDEX.md` ID), PRD/ADR, and implementation plan from the issue rather than copying those documents into Beads.
+
+Do not put unrelated repository maintenance or machine-specific work under this epic merely because it touches this checkout. The global SACS workflow in `~/AGENTS.md` and the `agents-workflow-sacs` skill remains authoritative for priorities, claiming, dependencies, notes, and closing.
+
 ## Hard rules for this project
 
 These project-specific rules are non-negotiable. The global HR-1, HR-2, HR-3, HR-4, HR-5 from `~/AGENTS.md` apply on top.

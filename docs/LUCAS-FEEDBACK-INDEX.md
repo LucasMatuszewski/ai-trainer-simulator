@@ -5,6 +5,47 @@ given. Every item MUST be reflected in `docs/PRD.md` and the
 plan. The agent MUST update this file when Lucas sends feedback so
 nothing is lost again.
 
+## 2026-09-02 — four-period day, real course simulation, and multiplayer vision
+
+**ID: L-2026-09-02-05 — Dedicated Lunch period with a shorter 3/2/3/2 day**
+- The current day already feels long; a 20-real-minute day would be too long.
+- Confirmed pacing at 1x is **Morning 3 min / Lunch 2 min / Afternoon 3 min / Evening 2 min** = **10 real minutes per in-game day**.
+- Lunch must be a real period shown as **Lunch** in the HUD, not the first part of Afternoon. Lunch movement and lunch chatter belong only to this period.
+- Afternoon is working time and should become the clean attachment point for meetings, client work, training-room courses, and future activity paths.
+- Lucas approved the focused time refactor. Keep the activity scheduler simple because the larger quest/course design is not decided yet; preserve a clean transition interface for that later system.
+- **Cross-reference:** Beads epic `sacs-xtma`; Lunch feature `sacs-xtma.1`. The PRD correction and time architecture update are the next documentation gate; no code work starts before Lucas reviews those changes.
+
+**ID: L-2026-09-02-08 — Quarter-hour digital clock in the HUD**
+- Add a digital clock to the HUD alongside the named period.
+- The clock advances at **1 real minute = 1 in-game hour**. To keep it readable, display quarter-hour steps, so the visible clock changes every 15 real seconds (`09:00`, `09:15`, `09:30`, and so on).
+- Confirmed clock ranges are **Morning 09:00-12:00 / Lunch 12:00-14:00 / Afternoon 14:00-17:00 / Evening 17:00-19:00**. These align exactly with the confirmed 3/2/3/2 real-minute durations.
+- **Resolved by Lucas:** the day starts at **09:00**, not 08:00, and ends at 19:00.
+- Dialogue, cinematic, modal, and any future explicit pause must freeze both the named period and digital clock without catch-up afterward.
+- **Cross-reference:** Beads Lunch feature `sacs-xtma.1`. Include this in the same future pacing PRD/ADR correction and implementation, not as a separate clock system.
+
+**ID: L-2026-09-02-06 — Courses and quests must consume real time and create challenge**
+- Future quests should represent real courses in the Training Room and real client meetings, potentially surfaced through a calendar view.
+- The current quest flow is much too simple: selecting one dialogue option can immediately complete a quest, making an entire training course appear to finish in a microsecond.
+- The game currently lacks meaningful challenge. Course preparation, delivery, participant behavior, outcomes, failure, rewards, and consequences need deliberate gameplay design soon.
+- A calendar / appointment / timeline scheduler may be needed, but its requirements are not known yet. Do not guess them or build the full scheduler as part of the Lunch-period change.
+- Run a **separate PRD and Q&A round** before designing or implementing the course, quest, challenge, calendar, or appointment system.
+- **Cross-reference:** Beads epic `sacs-xtma`; design task `sacs-xtma.2`. PRD/ADR/implementation-plan changes are deliberately deferred until that Q&A produces approved requirements.
+
+**ID: L-2026-09-02-07 — Shared offices for 5-10 humans and WebMCP AI agents**
+- Preserve single-player so either a human or an AI agent can play the user role through player-level WebMCP tools.
+- Add multiplayer soon: an **office code / invitation code** lets approximately **5-10 players** share an office and plan together.
+- Human players and AI agents must be able to participate together in the same office. AI agents play alongside humans rather than receiving admin-only powers.
+- This is Lucas's intended advanced, fun entry for the current OpenAI WebMCP contest / hackathon, and he expects to work on it today and tomorrow.
+- Multiplayer details still need their own approved design: lobby/invite flow, shared state, authority, identity, disconnect/rejoin, persistence, hosting, security, and the smallest contest-ready cooperative gameplay loop.
+- **Cross-reference:** Beads epic `sacs-xtma`; multiplayer/WebMCP feature `sacs-xtma.3`. A separate multiplayer PRD/ADR is required before implementation decisions are locked.
+
+**ID: L-2026-09-02-09 — One umbrella Beads epic for the growing game**
+- The game is becoming large enough to require a durable umbrella epic for all related product and engineering work.
+- The umbrella epic is **`sacs-xtma` — “Stack Underflow / AI Trainer Simulator game.”**
+- Record this epic ID in the project `AGENTS.md` so every agent knows where to recover game backlog context and where to add new deduplicated child issues.
+- Agents must search the epic and shared backlog before creating a child, keep one deliverable per issue, and must not attach unrelated work merely because it happens in the same repository.
+- **Cross-reference:** Beads epic `sacs-xtma`; project coordination instructions in `AGENTS.md`. No PRD or ADR change is required because this is workflow metadata, not a gameplay decision.
+
 ## 2026-09-02 — visual acceptance and local CPU usage
 
 **ID: L-2026-09-02-04 — Keep Vite running; optimize test CPU later**
