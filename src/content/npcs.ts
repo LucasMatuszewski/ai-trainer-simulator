@@ -386,8 +386,5 @@ export const OBSTACLES: Obstacle[] = [
   { id: "filing-cabinet-south", minX: 8.45, maxX: 8.95, minZ: 1.8, maxZ: 2.2, label: "Filing cabinet" },
 ];
 
-/** Player starts here. Inside the office, south side, away from walls. */
-export const PLAYER_START = { x: 0, y: 0.5, z: 6 };
-
 /** Where the office "door" is, used for flavor text only. */
 export const DOOR = { x: 0, z: 9 };
