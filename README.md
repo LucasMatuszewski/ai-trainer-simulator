@@ -1,6 +1,6 @@
 # AI Trainer Simulator
 
-A 3D retro pixel-art browser game where you are an IT trainer at a quirky office in Warsaw. Walk around, talk to coworkers, deliver training, run standups, debug client scripts, and try not to go bankrupt. Full vision in `docs/PRD.md` and `~/.claude/plans/glistening-napping-hinton.md`.
+A 3D retro pixel-art browser game where you are an IT trainer at a quirky office in Warsaw. Walk around, talk to coworkers, deliver training, run standups, debug client scripts, and try not to go bankrupt. Full vision in `docs/PRD.md`; the shared roadmap is in `docs/plans/game-roadmap.md`.
 
 > "Make this the best simulator business retro game in the history, a real game, not just a demo." — Lucas
 
@@ -57,17 +57,10 @@ tests/unit/      vitest unit tests
 tests/e2e/       Playwright end-to-end tests
 docs/PRD.md      what we're building (with corrections log)
 docs/ADR/        architecture decisions
-~/.claude/plans/ active phase plan (shared across agents)
+docs/plans/      shared roadmap and code-bound plans (status stays in Beads)
 AGENTS.md        agent rules (read this if you're a new agent)
 ```
 
-## Status (as of 2026-08-29)
+## Project status
 
-- **Phase 0** (fix obvious bugs): done.
-- **Phase 1** (intro cinematic + onboarding + quest log): done.
-- **Phase 2** (FPS walking, Pattern D mouse-look, LMB click-to-talk): done, but unverified on 4173 by Lucas — use 5173 to confirm.
-- **Phase 3** (NPC life, schedules, speech bubbles): pending.
-- **Phase 3.5** (NPC visuals — Burek = real dog, gendered NPCs, desk proportions): pending (started, only desk depth done).
-- **Phase 4-6** (multi-room world, multi-turn dialogue, polish): pending.
-
-The full list of known issues + Lucas's bug reports is in `~/.claude/plans/glistening-napping-hinton.md` §"Lucas's mid-turn bug report" and §"Phase 3.5".
+The game has progressed beyond the original numbered phase snapshot, so status is intentionally not duplicated here. Current work and known issues live under Beads epic `sacs-xtma`; the product progression is in `docs/plans/game-roadmap.md`, and Lucas's complete append-only feedback record is in `docs/LUCAS-FEEDBACK-INDEX.md`.

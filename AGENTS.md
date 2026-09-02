@@ -4,16 +4,19 @@ Project-specific instructions for every agent (Claude Code, Codex CLI, agy, open
 
 ## What this game is
 
-A single-player 3D retro pixel-art browser game where the player is an IT trainer/consultant. The full vision is in `docs/PRD.md`. The phased roadmap is in `~/.claude/plans/glistening-napping-hinton.md`. The architecture is in `docs/ADR/000-main-architecture.md`.
+A single-player 3D retro pixel-art browser game where the player is an IT trainer/consultant. The full vision is in `docs/PRD.md`. The durable roadmap/backlog starts at Beads epic `sacs-xtma`. The architecture is in `docs/ADR/000-main-architecture.md`.
 
 **The user's mandate (verbatim):** "make it the best simulator business retro game in the history, a real game, not just simple demo, make it huge and ambitious! Do not stop until you have detailed graphics, funny storyline, high engagement, working mechanics, and no bugs at all." This is not an MVP. The Definition of Done is a polished, full game.
 
 **Project source of truth (read these BEFORE designing anything):**
-1. `docs/PRD.md` — what to build, including the corrections log
-2. `~/.claude/plans/glistening-napping-hinton.md` — what is in flight, phase by phase
-3. `docs/ADR/000-main-architecture.md` — technical decisions
-4. `~/AGENTS.md` — global hard rules (NEVER skip)
-5. `~/.claude/CLAUDE.md` — model orchestration rules (which CLI to use for what)
+1. `docs/PRD.md` — current product requirements
+2. `docs/CHANGELOG.md` — historical C-NN corrections and supersession record
+3. Beads epic `sacs-xtma` — what is in flight and its deduplicated child deliverables
+4. `docs/plans/` — shared roadmap and code-bound plans; Beads remains the status tracker
+5. `docs/ADR/000-main-architecture.md` — technical decisions
+6. `docs/LUCAS-FEEDBACK-INDEX.md` — feedback that must not be lost
+7. `~/AGENTS.md` — global hard rules (NEVER skip)
+8. `~/.claude/CLAUDE.md` — model orchestration rules (which CLI to use for what)
 
 ## Shared Beads epic — start here for game work
 
@@ -31,12 +34,12 @@ Do not put unrelated repository maintenance or machine-specific work under this 
 
 These project-specific rules are non-negotiable. The global HR-1, HR-2, HR-3, HR-4, HR-5 from `~/AGENTS.md` apply on top.
 
-### PR-1: Design decisions live in the PRD corrections log, not in chat.
+### PR-1: Design decisions live in the PRD/CHANGELOG and Beads, not only in chat.
 
 When the user gives a design decision or correction:
 1. The agent reads `docs/PRD.md` first.
-2. The agent updates the PRD, adding a "C-NN" entry to §13 (Corrections Log) and changing the affected section.
-3. The agent updates `~/.claude/plans/glistening-napping-hinton.md` if the change affects phase scope or order.
+2. The agent updates the affected current requirement in `docs/PRD.md` and appends a "C-NN" entry to `docs/CHANGELOG.md`.
+3. The agent updates the appropriate child under Beads epic `sacs-xtma` and any current implementation plan if the change affects scope or order.
 4. The agent confirms the doc updates with the user BEFORE writing any code.
 
 This rule exists because the user got fed up on 2026-08-29 with the agent making changes without documenting them.
@@ -149,7 +152,7 @@ Lucas's verbatim mandate: "make this the best simulator business retro game in t
 
 This is the project's north star. Every phase is checked against this mandate before declaring it "done." A phase that does not move the game toward "the best simulator business retro game in the history" is the wrong phase.
 
-The mandate is captured in PRD §13 C-26 and the plan's Endgame additions (C-26). The agent reviews C-26 at the start of every phase and reports progress against it.
+The mandate is captured in `docs/CHANGELOG.md` C-26 and the product direction in `docs/PRD.md`. The agent reviews C-26 at the start of every phase and reports progress against it.
 
 ### PR-12: Lucas's feedback is captured before it gets lost (2026-08-30)
 
@@ -160,9 +163,9 @@ forgotten between sessions. The agent MUST:
    doing anything else. The entry is timestamped, has a unique
    id (`L-YYYY-MM-DD-NN`), and lists every concrete item from
    the message.
-2. **Cross-reference** the items to be added in `docs/PRD.md`
-   (new §13 entry) and the plan file
-   (`~/.claude/plans/glistening-napping-hinton.md`).
+2. **Cross-reference** the affected current requirement in `docs/PRD.md`,
+   the new C-NN record in `docs/CHANGELOG.md`, and the relevant child of
+   Beads epic `sacs-xtma`.
 3. **Create new ADRs** for any technical decision that emerges
    (e.g. ADR-0010, ADR-0011, ADR-0012).
 4. **Link the index from this file** so future agents find it.
@@ -212,22 +215,16 @@ hand control back to Lucas:
    HMR so saves reload automatically. 4173 is a static preview of
    `dist/` and only updates after `pnpm build`. PR-2 already
    documents this; PR-13 makes it the only path.
-3. **Read the console line.** `main.ts` prints a build version
-   on startup: `AI Trainer Simulator vYYYY.MM.DD-NN`. The
-   `BUILD_VERSION` constant lives at the bottom of `src/main.ts`
-   and is bumped on every commit. The agent MUST bump it as part
+3. **Read the console line and title footer.** Both print the same canonical build version: `vYYYY.MM.DD-NN`. The single version constant lives in `src/version.ts`; neither UI surface may hardcode its own value. The agent MUST bump it as part
    of every commit (`vYYYY.MM.DD-NN` where NN is the next ordinal
-   for the day, counting from 1). The agent MUST read the
-   console line in the Playwright snapshot and confirm it matches
-   the latest commit before claiming "fixed" or "screenshot
-   attached".
+   for the Europe/Lisbon calendar day, counting from 1). Version identifiers are immutable: never reuse an ordinal for different committed code. The agent MUST read the console line and confirm the title footer matches it in the Playwright snapshot before claiming "fixed" or "screenshot attached". `package.json` SemVer and the save-schema integer are separate technical metadata and are not player-facing.
 4. **No `pnpm dev` until the previous process is dead.** The
    dev server is single-tenant; starting a second one binds to a
    different port and Lucas cannot tell which one is current.
 
 ## Current design direction (post-2026-08-29 corrections)
 
-The user's corrections on 2026-08-29 changed the design direction. The corrected PRD is in `docs/PRD.md` §13. Summary:
+The user's corrections changed the design direction. Current requirements are in `docs/PRD.md`; their dated history is in `docs/CHANGELOG.md`. Summary:
 
 - **Camera is first-person, not over-the-shoulder.** `camera.position = player.position + (0, EYE_HEIGHT, 0)`. Mouse does not orbit the player. The player avatar turns to face the yaw direction.
 - **Default state is free mouse.** RMB-hold = mouse-look mode. Click (LMB) = raycast interaction. Roster panel is the primary way to choose an NPC from a distance.
@@ -235,13 +232,14 @@ The user's corrections on 2026-08-29 changed the design direction. The corrected
 - **Walk-to-face** before every dialogue. The player walks to 1.5m in front of the NPC; the NPC turns to face the player; dialogue opens.
 - **Multi-turn dialogues** (4-8 turns minimum per conversation, no hard cap — Lucas: "I just need this game to be real game, not a demo, so we need enough options, branching, decisions trees etc to make this a real simulation, with simulation of relations, previous actions influencing future actions and dialogues and answer options. Like in real RPG!"). NPCs remember past conversations. Greetings vary by "how many times talked today." 5-layer structure: greetings + topic threads + follow-up branches + memory callbacks + gated options. ~2,300 authored strings across ~730 tree nodes (13x today's volume, ~100x perceived variety).
 - **NPCs sit AT desks, face their monitors, have idle animations.** Procedural variation: each desk has a random wood tint, each NPC has random items (mug color, sticky notes, plant).
-- **NPC schedule per period** (morning/afternoon/evening). NPCs move between their schedule targets. The CTO is gone by afternoon. The janitor arrives late.
+- **NPC schedule per period** (Morning/Lunch/Afternoon/Evening). NPCs move between their schedule targets. Lunch owns kitchen movement and lunch chatter; Afternoon is work time. The CTO is gone by afternoon. The janitor arrives late.
 - **Inter-NPC speech bubbles** when 2 NPCs are within 2.5m of each other. 50+ curated lines.
 - **Day-1 intro cinematic** with sky, trees, birds, neighboring buildings, road with cars. Establishing shot from a distance (~50-80m), not a wall closeup. Exterior meshes disposed after the cinematic.
 - **Roster panel and trigger prompts are larger** (16-18px font, generous padding).
 - **Camera is NEVER through walls** — first-person by construction.
 - **NPC life = deterministic schedule + per-day random seed + named events (birthdays, team lunches, firedrills, hackathons).** Lucas: "mix both your ideas... BOTH!!!" Per the agy report, the architecture is the 4-tier priority stack (Option D): quest hard-pins + daily quirk + bounded micro-events + base routine. The event calendar is a separate higher-priority layer (Tier 0) that overrides even quest-pinned NPCs.
-- **Time = 10 real minutes per period, 3 periods per day = 30 min/in-game day.** Lucas: "10 min/period should be enough. lets test it." Time NEVER advances while a dialogue is open — this is a hard rule, not a soft check. Period-rollover toast does not fire during dialogue.
+- **Time = 3/2/3/2 across four periods = 10 active real minutes per day** (C-67/D-32): Morning 09:00-12:00 (180 s), Lunch 12:00-14:00 (120 s), Afternoon 14:00-17:00 (180 s), Evening 17:00-19:00 (120 s). At 1x, one real minute equals one in-game hour. The HUD clock uses 15-minute steps. Time NEVER advances while dialogue or another blocking overlay is open and never catches up afterward.
+- **Visible build version = immutable `vYYYY.MM.DD-NN` CalVer-style identity** (C-68/D-33), sourced once and shown identically in the console and title footer.
 - **Onboarding = cinematic + first quest + in-dialogue introductions + help modal + quest log, all mixed.** Lucas: "longer and more clear what we are doing here, who we are, what is a goal, and more like simulations, we should have dialogs explaining who we are like in a game!!!" Each of the 13 NPCs gets an in-character introduction in Bartek's onboarding conversation.
 - **Multi-room world.** Main office (existing 20x20) + Training Room + Kitchen + Meeting Room + CTO Office. Open doorways, no real doors. The CTO office has a huge window onto the main office and a huge Batman sign on the wall. Glass wall (transmission material or fallback opacity). The existing office MUST NOT BE BROKEN.
 - **DevPowers + Edukey two-brand identity.** Wall poster, CEO office logo, classroom title, day-end KPIs. Soft rebrand (add assets, don't sweep dialogue).
@@ -249,7 +247,7 @@ The user's corrections on 2026-08-29 changed the design direction. The corrected
 - **MMORPG endgame (C-25) — vision only.** Players + AI agents + NPCs in a shared world. Post-Phase 6.
 - **The mandate (C-26).** "The best simulator business retro game in the history." Every phase is checked against this.
 
-A new agent on this project should READ the corrections log in `docs/PRD.md` §13 BEFORE making any design decision. The "obvious" choice (over-the-shoulder camera, always-rotating mouse, single-turn dialogue) was already tried and rejected.
+A new agent on this project should READ the current requirements in `docs/PRD.md` and corrections in `docs/CHANGELOG.md` BEFORE making any design decision. The "obvious" choice (over-the-shoulder camera, always-rotating mouse, single-turn dialogue) was already tried and rejected.
 
 ## Build & test commands
 
@@ -290,10 +288,11 @@ src/
   content/
     npcs.ts                # NPC definitions, positions, dialogue trees
     dialogues.ts           # All dialogue lines + trees
-    npc-schedule.ts        # Per-NPC per-period schedule (Phase 3)
+    npc-schedule.ts        # Per-NPC four-period schedule
     quests.ts              # Quest chain data (Phase 1)
     events.ts              # Random events (Phase 3.5 — done)
   game/
+    pacing.ts              # Period order, duration, clock mapping
     state.ts               # GameState + reducer
     __tests__/             # state.test.ts
   ui/
@@ -312,7 +311,10 @@ tests/
 .agent-briefs/             # Briefs for delegates (not shipped)
 screenshots/               # Playwright screenshots (committed)
 docs/
-  PRD.md                   # WHAT to build (including corrections log)
+  PRD.md                   # Current product requirements
+  CHANGELOG.md             # Historical C-NN decisions/corrections
+  LUCAS-FEEDBACK-INDEX.md  # Append-only user feedback record
+  plans/                   # Shared roadmap and code-bound plans
   ADR/
     000-main-architecture.md  # Technical decisions
 ```
@@ -330,10 +332,11 @@ As of 2026-08-29:
 - No quests. First-day quest chain per C-22 / D-29 is Phase 1.
 - No NPC variation. Procedural variation (mug colors, items, wood tints) per C-19 / D-26 is Phase 3.
 - Stuck-dialogue bug per C-17 / D-24 is Phase 0 (done).
-- Time runs at 60s/period. Bump to 300s/period per C-16 / D-23 is Phase 0 (done).
+- Dedicated Lunch + 3/2/3/2 clock refactor per C-67/D-32 is active in Beads `sacs-xtma.1`.
+- Canonical title/console CalVer-style build version per C-68/D-33 is tracked in `sacs-xtma.4`.
 - No DevPowers + Edukey branding. Soft rebrand per C-13 / D-20 is a single commit.
 - No WebMCP. WebMCP layer per C-14 / D-21 is Phase 7.
 - No NPC stochastic life. Per-day random seed per C-15 / D-22 is Phase 3.
 - TTS only for important moments. Audio scope per C-20 / D-27 is a scope rule, no code change.
 
-A new agent should pick up at the next unfinished phase per the plan, but FIRST confirm with the user which of the open corrections they want tackled first. The full corrections log is in `docs/PRD.md` §13 (C-01..C-24) and the architecture is in `docs/ADR/000-main-architecture.md` §13 (D-08..D-19) and the new §14 (D-20..D-31).
+A new agent should start at Beads epic `sacs-xtma`, inspect its children, and confirm with the user which open correction they want tackled first. The full corrections log is in `docs/CHANGELOG.md`; current requirements are in `docs/PRD.md`; architectural decisions currently run through D-33 in `docs/ADR/000-main-architecture.md`.
