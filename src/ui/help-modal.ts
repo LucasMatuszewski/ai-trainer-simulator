@@ -36,6 +36,7 @@ export function mountHelpModal(parent: HTMLElement): HelpModalHandle {
             <li><b>Click "Use computer"</b> to debug a client script (minigame, +cash on win).</li>
             <li><b>Click "End day"</b> to finish the day and roll up your income/expenses.</li>
             <li><b>Esc</b> closes any open dialogue.</li>
+            <li><b>F3</b> shows or hides the performance meter (FPS, frame time, 1% low).</li>
           </ul>
         </section>
         <section>

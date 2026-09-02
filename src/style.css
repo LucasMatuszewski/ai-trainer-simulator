@@ -1262,3 +1262,33 @@ html, body {
 .roster-card:disabled:hover .roster-rel {
   color: var(--text-dim);
 }
+
+/* --- FPS meter (C-65) ---------------------------------------------
+ * Bottom-left, the one free corner: player stats are top-left, the
+ * context prompt is bottom-center, the quest log bottom-right and the
+ * roster down the right edge. Hidden until F3, and `display: none`
+ * rather than opacity so a hidden meter costs no layout or paint.
+ */
+.fps-meter {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  z-index: 20;
+  display: none;
+  padding: 4px 10px;
+  font-family: "VT323", monospace;
+  font-size: 20px;
+  line-height: 1.1;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  text-shadow: 1px 1px 0 #000;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.fps-meter.visible {
+  display: block;
+}

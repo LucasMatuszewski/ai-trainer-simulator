@@ -27,6 +27,7 @@ import { NPCS, OBSTACLES } from "./content/npcs";
 import { LUNCH_WINDOW_SECONDS } from "./content/npc-schedule";
 import type { GameState, NPC, NpcId } from "./types";
 import { mountHud, renderHud, showToast, type HudElements } from "./ui/hud";
+import { mountFpsMeter, type FpsMeter } from "./ui/fps-meter";
 import { mountTitleScreen, mountCharacterCreate, showDailySummary, showGameOver } from "./ui/title";
 import { mountOfficeRoster, rosterStatusFor, type OfficeRosterHandle } from "./ui/office-roster";
 import {
@@ -96,6 +97,11 @@ let cinematicPlaying = false;
 // the dialogue closes, the NPC returns to its schedule-driven yaw.
 // Each map holds the data needed to drive the interpolation: the
 // current target yaw, and the schedule yaw to restore on close.
+// C-65: the F3 frame-time meter. Mounted once for the life of the page
+// rather than per screen, so a measurement survives menu/office
+// transitions and #ui-root being cleared by setScreen.
+let fpsMeter: FpsMeter | null = null;
+
 const npcFaceAnimations = new Map<string, number>(); // npcId -> target yaw
 const npcScheduleYaws = new Map<string, number>();    // npcId -> schedule yaw
 
@@ -952,8 +958,20 @@ function advanceOfficePeriods(periodCount: number, now: number): void {
 
 function frame(): void {
   const now = performance.now();
-  const dt = Math.min(0.1, (now - lastTime) / 1000);
+  const rawFrameMs = now - lastTime;
+  const dt = Math.min(0.1, rawFrameMs / 1000);
   lastTime = now;
+  // C-65: the meter reads the RAW frame time, never the clamped `dt`.
+  // `dt` is capped at 0.1 s so a stalled tab cannot teleport the
+  // simulation - which means a `dt`-based readout would bottom out at a
+  // reassuring 10 fps however bad the real frame rate got. That is
+  // exactly the number a measurement tool must not lie about.
+  // three's render.info counts the LAST frame, so reading it before this
+  // frame's render is the honest number for the frame just measured.
+  fpsMeter?.frame(
+    rawFrameMs,
+    engine ? { calls: engine.renderer.info.render.calls, triangles: engine.renderer.info.render.triangles } : null,
+  );
 
   // C-46: keep the in-period clock fresh for the lunch window. The
   // office-start timestamp is rebased on day change and advanced by
@@ -1077,6 +1095,8 @@ declare global {
       debugSkipPeriod: () => void;
       /** Dev/QA hook: teleport the player to (x, z) with a yaw (radians). */
       teleport: (x: number, z: number, yaw: number) => void;
+      /** C-65: toggle the F3 frame-time meter; returns its new state. */
+      toggleFps: () => boolean;
     };
   }
 }
@@ -1171,12 +1191,20 @@ window.__aitrainer = {
     });
     return out;
   },
+  toggleFps: (): boolean => {
+    fpsMeter?.toggle();
+    return fpsMeter?.isVisible() ?? false;
+  },
   debugSkipPeriod: () => {
     const now = performance.now();
     officeStartedAt = now;
     advanceOfficePeriods(1, now);
   },
 };
+
+// C-65: mount the meter before the loop starts so the very first frames
+// are sampled. Hidden until F3 unless the player left it on last time.
+fpsMeter = mountFpsMeter(document.body);
 
 frame();
 
@@ -1198,7 +1226,7 @@ frame();
 // Bump after every commit so the console line in the browser
 // confirms the user is on the right build. See AGENTS.md
 // "Verify the build you are testing" section.
-const BUILD_VERSION = "v2026.09.02-03";
+const BUILD_VERSION = "v2026.09.02-05";
 // eslint-disable-next-line no-console
 console.info(
   "%cAI Trainer Simulator %c" + BUILD_VERSION,
