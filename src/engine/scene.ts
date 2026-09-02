@@ -1205,7 +1205,8 @@ function makeFloorLamp(x: number, z: number): THREE.Group {
 // -------- NPCs --------
 
 function makeNpcMarker(npc: NPC, index: number): THREE.Group {
-  const g = createNpcMesh(npc.gender, index, npc.id);
+  // C-63: `npc.appearance` is this person's authored skin/hair/shirt.
+  const g = createNpcMesh(npc.gender, index, npc.id, npc.appearance);
   g.position.set(npc.position.x, 0, npc.position.z);
   // The NPC mesh's eyes look at local +Z. By default the desk has its
   // monitor on the local -Z side, so the NPC was rotated 180° to face

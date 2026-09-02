@@ -25,6 +25,8 @@ export const NPCS: NPC[] = [
     role: "Senior Consultant",
     emoji: "B",
     gender: "male",
+    // C-63: the steady senior consultant: plain and unremarkable on purpose.
+    appearance: { skin: "fair", hair: "brown", shirt: "navy" },
     position: { x: -7.7, y: 0, z: -5 },
     rotationY: Math.PI / 2,
     walkSpeed: 1.2,
@@ -41,6 +43,8 @@ export const NPCS: NPC[] = [
     role: "The LinkedIn Influencer",
     emoji: "K",
     gender: "female",
+    // C-63: the LinkedIn influencer dresses for the camera.
+    appearance: { skin: "porcelain", hair: "blond", shirt: "mustard" },
     position: { x: -7.7, y: 0, z: 5.5 },
     rotationY: Math.PI / 2,
     walkSpeed: 1.2,
@@ -55,6 +59,8 @@ export const NPCS: NPC[] = [
     role: "DevOps / 10x Engineer",
     emoji: "M",
     gender: "male",
+    // C-63: DevOps in the same dark hoodie-grey he has worn for years.
+    appearance: { skin: "olive", hair: "black", shirt: "charcoal" },
     position: { x: 7.7, y: 0, z: -5 },
     rotationY: -Math.PI / 2,
     walkSpeed: 1.4,
@@ -69,6 +75,8 @@ export const NPCS: NPC[] = [
     role: "The Manager",
     emoji: "Z",
     gender: "female",
+    // C-63: the manager, the only one in the office who owns a blazer.
+    appearance: { skin: "tan", hair: "auburn", shirt: "burgundy" },
     position: { x: 3, y: 0, z: 7.7 },
     rotationY: Math.PI,
     walkSpeed: 1,
@@ -83,6 +91,8 @@ export const NPCS: NPC[] = [
     role: "The Intern",
     emoji: "P",
     gender: "male",
+    // C-63: the intern, still trying to look employable.
+    appearance: { skin: "porcelain", hair: "brown", shirt: "teal" },
     position: { x: -3, y: 0, z: 7.7 },
     rotationY: Math.PI,
     walkSpeed: 1.2,
@@ -97,6 +107,8 @@ export const NPCS: NPC[] = [
     role: "The Recruiter",
     emoji: "📱",
     gender: "female",
+    // C-63: the recruiter, dressed to be remembered.
+    appearance: { skin: "brown", hair: "black", shirt: "violet" },
     position: { x: 7.7, y: 0, z: 5.5 },
     rotationY: -Math.PI / 2,
     walkSpeed: 1.2,
@@ -111,6 +123,8 @@ export const NPCS: NPC[] = [
     role: "Junior Developer",
     emoji: "🐛",
     gender: "male",
+    // C-63: the junior with the dyed hair phase.
+    appearance: { skin: "fair", hair: "dyed", shirt: "forest" },
     position: { x: -7.7, y: 0, z: -1.5 },
     rotationY: Math.PI / 2,
     walkSpeed: 1.4,
@@ -125,6 +139,8 @@ export const NPCS: NPC[] = [
     role: "Marketing & Synergy",
     emoji: "📣",
     gender: "female",
+    // C-63: marketing, matching the brand deck.
+    appearance: { skin: "olive", hair: "blond", shirt: "rust" },
     position: { x: 7.7, y: 0, z: -2.5 },
     rotationY: -Math.PI / 2,
     walkSpeed: 1.2,
@@ -139,6 +155,8 @@ export const NPCS: NPC[] = [
     role: "The Janitor",
     emoji: "🧹",
     gender: "male",
+    // C-63: the janitor, work greens and twenty years of grey.
+    appearance: { skin: "tan", hair: "grey", shirt: "forest" },
     position: { x: -7.7, y: 0, z: 2 },
     rotationY: Math.PI / 2,
     walkSpeed: 1.2,
@@ -167,6 +185,8 @@ export const NPCS: NPC[] = [
     role: "The Accountant",
     emoji: "💰",
     gender: "female",
+    // C-63: the accountant, in accountant.
+    appearance: { skin: "fair", hair: "grey", shirt: "charcoal" },
     position: { x: 7.7, y: 0, z: 2 },
     rotationY: -Math.PI / 2,
     walkSpeed: 1.2,
@@ -181,6 +201,8 @@ export const NPCS: NPC[] = [
     role: "The CTO",
     emoji: "🚀",
     gender: "male",
+    // C-63: the CTO, one good shirt on rotation.
+    appearance: { skin: "deep", hair: "black", shirt: "teal" },
     position: { x: -3, y: 0, z: -7.7 },
     rotationY: 0,
     walkSpeed: 1.4,
@@ -195,6 +217,8 @@ export const NPCS: NPC[] = [
     role: "Sales",
     emoji: "🤝",
     gender: "male",
+    // C-63: sales, the loudest shirt on the floor.
+    appearance: { skin: "tan", hair: "brown", shirt: "burgundy" },
     position: { x: 3, y: 0, z: -7.7 },
     rotationY: 0,
     walkSpeed: 1.2,
@@ -217,6 +241,8 @@ export const NPCS: NPC[] = [
     role: "The CEO",
     emoji: "👔",
     gender: "male",
+    // C-63: the CEO, the only navy that cost real money.
+    appearance: { skin: "olive", hair: "grey", shirt: "navy" },
     // L-2026-08-31: z=-17.0 sits him between the chair (z=-17.15)
     // and the desk's back edge (z=-16.7) so he reads as sitting
     // AT the desk, not inside the chair back.

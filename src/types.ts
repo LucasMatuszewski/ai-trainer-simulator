@@ -65,6 +65,29 @@ export interface DialogueTree {
   available?: (state: Readonly<GameState>) => boolean;
 }
 
+/**
+ * C-63: the visual "character sheet" tones. These are NAMES, not hex,
+ * so `content/npcs.ts` reads as character authoring and stays free of
+ * three.js; `engine/npc-mesh.ts` owns the name -> color mapping.
+ */
+export type SkinTone = "porcelain" | "fair" | "olive" | "tan" | "brown" | "deep";
+export type HairTone = "black" | "brown" | "auburn" | "blond" | "grey" | "dyed";
+export type ShirtTone =
+  | "navy" | "charcoal" | "forest" | "burgundy" | "mustard" | "teal" | "violet" | "rust";
+
+/**
+ * C-63 (Lucas: "maybe set it for every person together with other
+ * details about this person? Now everybody has exact same skin tone").
+ * Every field is optional: an NPC with no authored tone falls back to a
+ * deterministic hash of their id, so the office is never uniform even
+ * before anyone hand-picks a look.
+ */
+export interface NpcAppearance {
+  skin?: SkinTone;
+  hair?: HairTone;
+  shirt?: ShirtTone;
+}
+
 export interface NPC {
   id: NpcId;
   name: string;
@@ -89,6 +112,11 @@ export interface NPC {
    * read it). "dog" is a separate marker, not a humanoid.
    */
   gender: "male" | "female" | "dog";
+  /**
+   * C-63: this person's skin / hair / shirt tones, authored here next
+   * to their name, role and gender. Ignored for the dog.
+   */
+  appearance?: NpcAppearance;
   /** Map of state predicate name to dialogue tree id. The first matching tree wins. */
   dialogues: Record<string, DialogueTree>;
 }
