@@ -389,16 +389,18 @@ Per the corrected build:
 - **NPCs sit AT the desk, not in the middle of it.** The sitting position is at the chair (behind the desk, facing the monitor), not in the middle of the desk surface.
 - **Monitor is on the BACK edge of the desk, facing the NPC.** The NPC's monitor and the player's view of the NPC's monitor must look the same.
 - **NPCs rotate to face their monitor** (or their current schedule target) when "at desk."
-- **NPCs have idle animations:** while at desk, they occasionally:
-  - Type (the hands move up and down for 0.5-1.5 seconds, every 4-8 seconds)
-  - Stretch (the avatar's arms go up, 1-2 second animation, every 8-15 seconds)
-  - Sip coffee (hand goes to mouth, 1 second, every 6-12 seconds if they have a coffee mug)
-  - Look around (head rotates ±30° once, every 5-10 seconds)
-  - Lean back (1-2 second lean, every 10-20 seconds)
+- **NPCs have idle animations** (C-63 revises the cadences below; the pose system lives in `src/engine/npc-idle.ts` and is driven by the NPC's current activity, so a desk pose never plays while someone is standing in the kitchen):
+  - **Type** - DESK ONLY. Both arms extend forward over the keyboard and the hands alternate in small, unhurried strokes (~3.2 Hz, ±0.05 rad), with a slight head bob. Long working bursts (4-9 s) separated by 3-7 s pauses, not the old 0.5-1.5 s twitch. The pose eases in and out over ~0.35 s so it never snaps.
+  - **Stretch** - anywhere the NPC is standing still. Both arms rise up-and-forward and the head tilts up. RARE by design: once every 45-90 s per NPC, 2.2 s long, sine-eased.
+  - **Desk gesture** - DESK ONLY, once every 25-50 s, one of four picked at random: `facepalm` (hand to the face - the "who pushed to main on Friday" gesture), `coffee-sip` (hand to the mouth, head tilts back; this is the PRD's "sip coffee"), `fist-pump` (both arms up twice - the green-build celebration), `shrug` ("works on my machine").
+  - **Look around** (head rotates ±30° once, every 5-10 seconds)
+  - **Lean back** (1-2 second lean, every 10-20 seconds)
 - **NPC walk animation:** while `state === "walking"`, the NPC runs a procedural walk cycle (see §11.6): leg-swing, arm-swing, and a Y-bob all driven by `distanceTraveled * frequency` so the cycle is tied to actual speed, not to wall-clock. When the NPC is not moving (state `at-desk` / `dwelling`), the cycle is frozen — no in-place "walking" animation.
 - **NPCs are not in identical positions.** Each NPC's chair is offset by a small random amount in the X/Z plane (e.g. ±0.05m), so they don't look like clones. The desk positions are also randomized slightly per-NPC.
 - **Desks are not exact clones.** Each desk has a random tint of wood color (warm, dark, or light), a random mug color (red, blue, green, yellow, white), and a random set of items on it (mug, laptop, notebook, sticky notes, plant, family photo). Procedurally varied at scene-build time, not hand-placed.
-- **NPC body color is varied per-NPC.** The body color, hair color, and skin color differ per NPC. The user mentioned wanting a "feel" of individuality.
+- **NPC body color is varied per-NPC.** The body color, hair color, and skin color differ per NPC. The user mentioned wanting a "feel" of individuality. Per C-63 this is **authored data, not a hash**: every NPC in `src/content/npcs.ts` carries an `appearance: { skin, hair }` field next to their name, role and gender, drawn from named palettes (`SKIN_TONES`, `HAIR_TONES`) rather than raw hex. An NPC with no `appearance` still gets a deterministic tone from a hash of their id, so the field is optional and the dog is unaffected.
+- **Hands are skin-toned, not sleeve-toned.** Each arm is a shirt-colored sleeve plus a skin-colored hand parented at the sleeve's bottom, so the hand rotates with the arm and reads as a hand at the end of the sleeve. Total arm length is unchanged (0.65 m) - the sleeve gets shorter to make room for the hand.
+- **A working NPC stands 0.45 m from their desk edge, not 0.7 m** (C-63). The 0.7 m legroom gap read as "standing near a desk" rather than "working at it". 0.45 m leaves 0.15 m of clearance for the 0.3 m NPC body radius, so the spawn validator and the AABB collision are unaffected. The corridor waypoints stay at the old 0.7 m offset: they are approach nodes for the path graph, not the settle position, and moving them would perturb the computed edge set for no visual gain.
 
 ### 11.4 Day-1 intro cinematic
 
