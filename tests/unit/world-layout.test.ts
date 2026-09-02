@@ -59,7 +59,12 @@ describe("WORLD_ROOMS", () => {
     expect(reception.name).toBe("Reception");
     expect(reception.floor).toEqual({ minX: -6, maxX: 6, minZ: 9, maxZ: 19 });
     expect(reception.walls.some((wall) => wall.id === "glass" && wall.maxX === -6)).toBe(true);
-    expect(reception.furniture).toEqual([]);
+    for (const type of ["reception-desk", "plant-wall", "desk-led-bar", "reception-sofa", "reception-coffee-table", "glass-doors", "xerox-printer"]) {
+      expect(reception.furniture.some((item) => item.type === type), type).toBe(true);
+    }
+    expect(reception.lightPositions).toEqual([[3.4, 13.5], [-3.4, 13.5], [0, 16.8]]);
+    // C-64: every solid placement must leave the full north-south spawn aisle clear.
+    expect(reception.furniture.filter((item) => item.type !== "glass-doors").every((item) => Math.abs(item.position[0]) > 1.5)).toBe(true);
 
     expect(meeting.floor).toEqual({ minX: 9.5, maxX: 19, minZ: 7.5, maxZ: 17.5 });
     expect(meeting.furniture.filter((item) => item.type === "table")).toHaveLength(1);

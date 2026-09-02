@@ -27,7 +27,7 @@ export const GARDEN_BOUNDS = { minX: 9, maxX: 19, minZ: -19, maxZ: -7.5 } as con
 /** The outdoor scenery east of the training room. */
 export const OUTDOOR_BOUNDS = { minX: 27.5, maxX: 34, minZ: -19, maxZ: -3 } as const;
 
-function makeTree(scale: number, leafColor = LEAF): THREE.Group {
+export function makeTree(scale: number, leafColor = LEAF): THREE.Group {
   const group = new THREE.Group();
   group.name = "tree";
 

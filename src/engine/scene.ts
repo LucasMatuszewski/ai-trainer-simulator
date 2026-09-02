@@ -28,6 +28,8 @@ import { createNpcController, type NpcController } from "./npc-controller";
 import { createNpcMesh } from "./npc-mesh";
 import { buildMultiRoomMeshes, drawPoster } from "./multi-room";
 import { makeGarden, makeOutdoorScenery } from "./furniture/garden";
+import { makeReceptionGarden } from "./furniture/reception-garden";
+import { makeLobbyPlanter } from "./furniture/lobby-planter";
 import type { NPC, NpcId } from "../types";
 
 const COLORS = {
@@ -335,6 +337,15 @@ export function buildOfficeScene(
   // only - the glass walls keep the player out.
   scene.add(makeGarden());
   scene.add(makeOutdoorScenery());
+  scene.add(makeReceptionGarden());
+  // C-64: outside pots are scenery only. Keeping them out of the
+  // room furniture list prevents them from entering the NPC collision pass.
+  for (const x of [-3.05, 3.05]) {
+    const planter = makeLobbyPlanter(0.85);
+    planter.name = "reception-outside-planter";
+    planter.position.set(x, 0, 20.15);
+    scene.add(planter);
+  }
 
   // Furniture, monitors and NPC bodies cast compact directional shadows;
   // architectural surfaces receive them. Basic-material screens remain lit.

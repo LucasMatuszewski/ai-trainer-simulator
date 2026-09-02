@@ -120,9 +120,16 @@ export const ROOM_FURNITURE_AABBS: readonly AABB[] = [
   }))),
   { minX: 12, maxX: 16.5, minZ: 17.16, maxZ: 17.28 },
   // ---- RECEPTION (C-64, x=[-6, 6], z=[9, 19]) ----
-  // The future reception counter blocks NPC routing while leaving a
-  // 0.7m clear visitor gap between its west face and the authored stop.
-  { minX: 2.9, maxX: 4.0, minZ: 12.2, maxZ: 14.8 },
+  // Reception desk and return. The visitor face remains reachable from -X.
+  { minX: 2.95, maxX: 4.55, minZ: 12.15, maxZ: 14.85 },
+  // Sofa, coffee table, floor planter, and the two inside door planters.
+  { minX: -4.05, maxX: -3.05, minZ: 12.35, maxZ: 14.65 },
+  { minX: -2.75, maxX: -1.55, minZ: 13.15, maxZ: 13.85 },
+  { minX: -4.55, maxX: -3.85, minZ: 10.85, maxZ: 11.55 },
+  { minX: -3.35, maxX: -2.75, minZ: 18.05, maxZ: 18.65 },
+  { minX: 2.75, maxX: 3.35, minZ: 18.05, maxZ: 18.65 },
+  // The Xerox is solid; wall foliage and glass doors are visual-only.
+  { minX: 4.79, maxX: 5.51, minZ: 16.325, maxZ: 17.175 },
   // ---- TRAINING ROOM (x=[19, 27], z=[-19, -3]) ----
   // Projector screen (a thin wall on the far north wall).
   { minX: 20.5, maxX: 25.5, minZ: -19.06, maxZ: -18.34 },

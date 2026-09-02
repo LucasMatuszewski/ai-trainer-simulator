@@ -13,6 +13,15 @@ import { makeBookshelf } from "../../src/engine/furniture/bookshelf";
 import { makeToiletStall } from "../../src/engine/furniture/toilet-stall";
 import { makeToiletSink } from "../../src/engine/furniture/toilet-sink";
 import { makeUrinal } from "../../src/engine/furniture/urinal";
+import { makeReceptionDesk } from "../../src/engine/furniture/reception-desk";
+import { makePlantWall } from "../../src/engine/furniture/plant-wall";
+import { makeDeskLedBar } from "../../src/engine/furniture/desk-lights";
+import { makeReceptionSofa } from "../../src/engine/furniture/reception-sofa";
+import { makeReceptionCoffeeTable } from "../../src/engine/furniture/reception-coffee-table";
+import { makeLobbyPlanter } from "../../src/engine/furniture/lobby-planter";
+import { makeGlassDoors } from "../../src/engine/furniture/glass-doors";
+import { makeXeroxPrinter } from "../../src/engine/furniture/xerox-printer";
+import { makeReceptionGarden } from "../../src/engine/furniture/reception-garden";
 
 function namedChildren(group: THREE.Object3D): string[] {
   return group.children.flatMap((child) =>
@@ -121,6 +130,83 @@ describe("garden and outdoor scenery (C-44 #9)", () => {
     expect(sun).toBeDefined();
     expect(sun.rotation.y).toBeCloseTo(-Math.PI / 2, 5);
     expect(outdoor.children.some((child) => child.name === "outdoor-hill")).toBe(true);
+  });
+});
+
+describe("modern reception furniture (C-64)", () => {
+  it("builds a raised reception counter with monitor, phone, paper and flowers", () => {
+    const desk = makeReceptionDesk();
+    const top = desk.getObjectByName("desk-top") as THREE.Mesh;
+    expect(top.position.y + 0.025).toBeCloseTo(0.83, 2);
+    for (const name of ["desk-ledge", "desk-monitor-screen", "desk-phone-handset", "desk-paper", "desk-vase", "desk-flower-bloom"]) {
+      expect(desk.getObjectByName(name), name).toBeDefined();
+    }
+    expect(desk.children.filter((child) => child.name === "complimentary-dongle")).toHaveLength(5);
+  });
+
+  it("makes the plant wall dense, instanced and multi-toned", () => {
+    const wall = makePlantWall();
+    const leaves = wall.children.filter((child): child is THREE.InstancedMesh => child instanceof THREE.InstancedMesh);
+    expect(leaves).toHaveLength(4);
+    expect(leaves.reduce((sum, leaf) => sum + leaf.count, 0)).toBeGreaterThan(140);
+    expect(new Set(leaves.map((leaf) => (leaf.material as THREE.MeshLambertMaterial).color.getHex())).size).toBe(4);
+    expect(wall.children.filter((child) => child.name === "pw-flower")).toHaveLength(12);
+  });
+
+  it("uses self-lit cores and three downlights without creating real lights", () => {
+    const lights = makeDeskLedBar();
+    const core = lights.getObjectByName("led-core") as THREE.Mesh;
+    expect(core.material).toBeInstanceOf(THREE.MeshBasicMaterial);
+    expect(lights.children.filter((child) => child.name === "down-lamp")).toHaveLength(3);
+    expect(lights.children.some((child) => child instanceof THREE.Light)).toBe(false);
+  });
+
+  it("builds a navy lobby sofa with two cushions, arms and two accent pillows", () => {
+    const sofa = makeReceptionSofa();
+    for (const name of ["sofa-seat-left", "sofa-seat-right", "sofa-back-left", "sofa-arm-left", "sofa-arm-right", "sofa-pillow", "sofa-pillow-2"]) {
+      expect(sofa.getObjectByName(name), name).toBeDefined();
+    }
+  });
+
+  it("adds magazines and the visitor SLA binder to the reception table", () => {
+    const table = makeReceptionCoffeeTable();
+    expect(table.getObjectByName("agile-waterfall-magazine")).toBeDefined();
+    expect(table.getObjectByName("exit-vim-magazine")).toBeDefined();
+    expect(table.getObjectByName("visitor-log-sign-the-sla")).toBeDefined();
+  });
+
+  it("builds a flowering planter that scales as one prop", () => {
+    const planter = makeLobbyPlanter(0.85);
+    expect(planter.scale.x).toBeCloseTo(0.85);
+    expect(planter.getObjectByName("planter-pot")).toBeDefined();
+    expect(planter.children.filter((child) => child.name === "planter-bloom")).toHaveLength(4);
+  });
+
+  it("builds framed double glass doors with handles and an open angle", () => {
+    const doors = makeGlassDoors();
+    const left = doors.getObjectByName("door-leaf-left") as THREE.Group;
+    const right = doors.getObjectByName("door-leaf-right") as THREE.Group;
+    expect(left.rotation.y).not.toBe(0);
+    expect(right.rotation.y).toBeCloseTo(-left.rotation.y, 5);
+    expect(doors.getObjectByName("leaf-handle")).toBeDefined();
+    expect(doors.getObjectByName("devpowers-transom-logo")).toBeDefined();
+  });
+
+  it("builds the Xerox as a multi-part copier with a lit display", () => {
+    const xerox = makeXeroxPrinter();
+    for (const name of ["xerox-body", "xerox-scanner", "xerox-lid", "xerox-output", "xerox-control", "xerox-display", "xerox-paper"]) {
+      expect(xerox.getObjectByName(name), name).toBeDefined();
+    }
+    expect((xerox.getObjectByName("xerox-display") as THREE.Mesh).material).toBeInstanceOf(THREE.MeshBasicMaterial);
+  });
+
+  it("shows a garden with rolling hills and a literal row of seven trees", () => {
+    const garden = makeReceptionGarden();
+    expect(garden.children.filter((child) => child.name === "reception-hill")).toHaveLength(4);
+    const trees = garden.children.filter((child) => child.name === "reception-tree");
+    expect(trees).toHaveLength(7);
+    expect(Math.max(...trees.map((tree) => tree.position.x)) - Math.min(...trees.map((tree) => tree.position.x))).toBeLessThan(0.4);
+    expect(garden.children.filter((child) => child.name === "reception-bush")).toHaveLength(6);
   });
 });
 

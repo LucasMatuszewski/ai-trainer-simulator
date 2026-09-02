@@ -24,6 +24,14 @@ import { makeSofa } from "./furniture/sofa";
 import { makeToiletStall } from "./furniture/toilet-stall";
 import { makeToiletSink } from "./furniture/toilet-sink";
 import { makeUrinal } from "./furniture/urinal";
+import { makeReceptionDesk } from "./furniture/reception-desk";
+import { makePlantWall } from "./furniture/plant-wall";
+import { makeDeskLedBar } from "./furniture/desk-lights";
+import { makeReceptionSofa } from "./furniture/reception-sofa";
+import { makeReceptionCoffeeTable } from "./furniture/reception-coffee-table";
+import { makeLobbyPlanter } from "./furniture/lobby-planter";
+import { makeGlassDoors } from "./furniture/glass-doors";
+import { makeXeroxPrinter } from "./furniture/xerox-printer";
 
 /**
  * Furniture types rendered by dedicated 3D-model factories
@@ -56,6 +64,15 @@ const FURNITURE_FACTORIES: Record<string, () => THREE.Group> = {
   "toilet-stall": makeToiletStall,
   "toilet-sink": makeToiletSink,
   urinal: makeUrinal,
+  // Reception (C-64)
+  "reception-desk": makeReceptionDesk,
+  "plant-wall": makePlantWall,
+  "desk-led-bar": makeDeskLedBar,
+  "reception-sofa": makeReceptionSofa,
+  "reception-coffee-table": makeReceptionCoffeeTable,
+  "lobby-planter": makeLobbyPlanter,
+  "glass-doors": makeGlassDoors,
+  "xerox-printer": makeXeroxPrinter,
 };
 
 const WALL_HEIGHT = 3;
