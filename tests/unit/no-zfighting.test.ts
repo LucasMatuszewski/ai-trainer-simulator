@@ -106,10 +106,17 @@ describe("multi-room wall depth separation", () => {
     }
   });
 
-  it("separates the meeting-room north walls from the main-office south wall", () => {
+  it("separates the reception north walls from the main-office south wall", () => {
     const mainZ = centerZ(mainWall("main-south-west"));
-    expect(Math.abs(centerZ(roomWall("meeting-room", "meeting-north-west")) - mainZ)).toBeGreaterThanOrEqual(0.1);
-    expect(Math.abs(centerZ(roomWall("meeting-room", "meeting-north-east")) - mainZ)).toBeGreaterThanOrEqual(0.1);
+    expect(Math.abs(centerZ(roomWall("reception", "reception-north-west")) - mainZ)).toBeGreaterThanOrEqual(0.1);
+    expect(Math.abs(centerZ(roomWall("reception", "reception-north-east")) - mainZ)).toBeGreaterThanOrEqual(0.1);
+  });
+
+  it("separates the meeting-room north walls from the kitchen south wall", () => {
+    const kitchenWest = roomWall("kitchen", "kitchen-south-west");
+    const kitchenEast = roomWall("kitchen", "kitchen-south-east");
+    expect(Math.abs(centerZ(roomWall("meeting-room", "meeting-north-west")) - centerZ(kitchenWest))).toBeGreaterThanOrEqual(0.1);
+    expect(Math.abs(centerZ(roomWall("meeting-room", "meeting-north-east")) - centerZ(kitchenEast))).toBeGreaterThanOrEqual(0.1);
   });
 
   it("separates the kitchen west walls from the main-office east wall", () => {

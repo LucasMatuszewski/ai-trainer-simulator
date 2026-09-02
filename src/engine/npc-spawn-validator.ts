@@ -109,9 +109,16 @@ export const ROOM_FURNITURE_AABBS: readonly AABB[] = [
   // projects to world z=1.82-2.16 (sticking out from the south
   // wall at z=2 toward the room center).
   { minX: 23.25, maxX: 23.75, minZ: 1.75, maxZ: 2.2 },
-  // ---- MEETING ROOM (x=[-6, 6], z=[9, 19]) ----
-  // The big table.
-  { minX: -1.5, maxX: 1.5, minZ: 11.25, maxZ: 16.75 },
+  // ---- MEETING ROOM (C-64, x=[9.5, 19], z=[7.5, 17.5]) ----
+  // Table, eight chairs and the wall-mounted projector screen.
+  { minX: 12.75, maxX: 15.75, minZ: 9.75, maxZ: 15.25 },
+  ...[11.85, 16.65].flatMap((x) => [10.3, 11.8, 13.3, 14.8].map((z) => ({
+    minX: x - 0.22,
+    maxX: x + 0.22,
+    minZ: z - 0.22,
+    maxZ: z + 0.22,
+  }))),
+  { minX: 12, maxX: 16.5, minZ: 17.16, maxZ: 17.28 },
   // ---- TRAINING ROOM (x=[19, 27], z=[-19, -3]) ----
   // Projector screen (a thin wall on the far north wall).
   { minX: 20.5, maxX: 25.5, minZ: -19.06, maxZ: -18.34 },

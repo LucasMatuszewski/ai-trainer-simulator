@@ -222,8 +222,11 @@ describe("createNpcController", () => {
     // quiet CTO (0.3) when they are the standing office pair.
     const startsBy = (id: string) => starts.filter((s) => s.a === id).length;
     expect(startsBy("przemek")).toBeGreaterThan(startsBy("maciek"));
-    // The CEO (0.3, and far away in his office) rarely or never starts.
-    expect(startsBy("dawid")).toBeLessThanOrEqual(2);
+    // C-64 makes Zosia's morning meeting select participants during
+    // initialization, advancing the shared deterministic RNG prefix.
+    // Keep the semantic chattiness assertion: the quiet CEO must start
+    // less often than the highly chatty salesperson.
+    expect(startsBy("dawid")).toBeLessThan(startsBy("przemek"));
   });
 
   it("respects topic affinities: quiet accountant never starts IT or janitor jokes", () => {

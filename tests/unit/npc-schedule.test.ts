@@ -4,6 +4,7 @@ import {
   isLunchWindow,
   LUNCH_OUTSIDERS,
   LUNCH_STAGGER_OFFSET,
+  MEETING_SEATS,
   NPC_SCHEDULES,
   pickRandomDestination,
   RANDOM_DESTINATIONS,
@@ -11,7 +12,8 @@ import {
   SOCIAL_LUNCHERS,
   type Period,
 } from "../../src/content/npc-schedule";
-import { NPCS, OFFICE_BOUNDS } from "../../src/content/npcs";
+import { NPCS } from "../../src/content/npcs";
+import { WORLD_BOUNDS } from "../../src/content/world-layout";
 import { getNpcObstacles, isSpawnBlocked } from "../../src/engine/npc-spawn-validator";
 import type { NpcId } from "../../src/types";
 
@@ -68,8 +70,8 @@ describe("NPC schedules", () => {
     // office, not the main office.
     for (const schedule of Object.values(NPC_SCHEDULES)) {
       for (const entry of Object.values(schedule)) {
-        expect(entry.position.x).toBeGreaterThanOrEqual(OFFICE_BOUNDS.minX);
-        expect(entry.position.x).toBeLessThanOrEqual(OFFICE_BOUNDS.maxX);
+        expect(entry.position.x).toBeGreaterThanOrEqual(WORLD_BOUNDS.minX);
+        expect(entry.position.x).toBeLessThanOrEqual(WORLD_BOUNDS.maxX);
         expect(entry.position.z).toBeGreaterThanOrEqual(-19);
         // C-62: the evening exit (and entrance spawn) sits deep in the
         // meeting room, south of the main office, so the walkable
@@ -112,8 +114,9 @@ describe("NPC schedules", () => {
     expect(entry.position).toEqual({ x: -7.45, y: 0, z: 2 });
   });
 
-  it("puts Zosia in the afternoon meeting", () => {
-    expect(getScheduleFor("zosia", "afternoon").state).toBe("meeting");
+  it("puts Zosia in the C-64 morning meeting and back at her desk in the afternoon", () => {
+    expect(getScheduleFor("zosia", "morning").state).toBe("meeting");
+    expect(getScheduleFor("zosia", "afternoon").state).toBe("at-desk");
   });
 
   it("sends Pawel for afternoon coffee", () => {
@@ -260,6 +263,25 @@ describe("Random walk destinations (L-2026-08-30-01)", () => {
         expect(dest.position.z).toBeLessThanOrEqual(7);
       }
     }
+  });
+
+  it("moves C-64 meeting destinations and Zosia's meeting into the new room", () => {
+    for (const state of ["meeting", "deal-wall", "content-booth"] as const) {
+      for (const destination of RANDOM_DESTINATIONS.filter((entry) => entry.state === state)) {
+        expect(destination.position.x).toBeGreaterThanOrEqual(9.5);
+        expect(destination.position.x).toBeLessThanOrEqual(19);
+        expect(destination.position.z).toBeGreaterThanOrEqual(7.5);
+        expect(destination.position.z).toBeLessThanOrEqual(17.5);
+      }
+    }
+    for (const seat of MEETING_SEATS) {
+      expect(seat.position.x).toBeGreaterThanOrEqual(9.5);
+      expect(seat.position.x).toBeLessThanOrEqual(19);
+      expect(seat.position.z).toBeGreaterThanOrEqual(7.5);
+      expect(seat.position.z).toBeLessThanOrEqual(17.5);
+    }
+    expect(NPC_SCHEDULES.zosia.morning.state).toBe("meeting");
+    expect(NPC_SCHEDULES.zosia.afternoon.state).toBe("at-desk");
   });
 
   it("returns null or a ScheduleEntry (never throws) for any NPC", () => {

@@ -212,7 +212,11 @@ export const WORLD_ROOMS: WorldRoom[] = [
       // x starts at 9.5, east of the main office's east-wall band
       // (x=[9, 9.5]), so the two shells never share a volume.
       wall("kitchen-north", 9.5, 19, -7.5, -7),
-      wall("kitchen-south", 9.5, 19, 7, 7.5),
+      // C-64: Lucas moved the meeting room south of the kitchen.
+      // Split this wall around x=[10, 12] so the kitchen doorway
+      // and the meeting room's matching doorway share a real gap.
+      wall("kitchen-south-west", 9.5, 10, 7, 7.5),
+      wall("kitchen-south-east", 12, 19, 7, 7.5),
       // L-2026-08-31 (#47): the kitchen's east wall used to start
       // at z=-3, volumetrically overlapping the training room's
       // south wall in the corner cube x=[19,19.5] z=[-3,-2.5]
@@ -252,6 +256,11 @@ export const WORLD_ROOMS: WorldRoom[] = [
         "kitchen-to-toilet",
         { minX: 19, maxX: 19.5, minZ: 5, maxZ: 7 },
         { minX: 19.5, maxX: 20, minZ: 5, maxZ: 7 },
+      ),
+      gap(
+        "kitchen-to-meeting",
+        { minX: 10, maxX: 12, minZ: 7, maxZ: 7.5 },
+        { minX: 10, maxX: 12, minZ: 7.5, maxZ: 7.78 },
       ),
     ],
     floorColor: 0xc7b98b,
@@ -328,7 +337,11 @@ export const WORLD_ROOMS: WorldRoom[] = [
       { type: "kitchen-chair", position: [12, 0, 4.1], rotationY: Math.PI },
     ],
     signs: [
-      { text: "TODAY'S MENU: COFFEE", position: [14, 2.1, 7], face: Math.PI, color: 0x9b3f2f },
+      // C-64 D2-D3: from the kitchen facing +Z, Lucas's left side
+      // of the new doorway is +X. The menu moves east to keep the
+      // two signs from overlapping.
+      { text: "MEETING ROOM", position: [12.9, 2.1, 7], face: Math.PI, color: 0x2255aa, size: [1.4, 0.6] },
+      { text: "TODAY'S MENU: COFFEE", position: [16.5, 2.1, 7], face: Math.PI, color: 0x9b3f2f },
       // CLEAN AS YOU GO poster: above the counter, against the back
       // wall (z=-6.95, the wall inner face is at z=-7). Face 0 so it
       // faces the room (toward the player walking in).
@@ -398,32 +411,59 @@ export const WORLD_ROOMS: WorldRoom[] = [
     ],
   },
   {
-    id: "meeting-room",
-    name: "Meeting Room",
+    // C-64: the old meeting room keeps the load-bearing entrance
+    // and becomes the reception shell. Wave 2 owns its interior.
+    id: "reception",
+    name: "Reception",
     floor: { minX: -6, maxX: 6, minZ: 9, maxZ: 19 },
     walls: [
-      wall("meeting-south", -6, 6, 19, 19.5),
+      wall("reception-south", -6, 6, 19, 19.5),
       // L-2026-08-31 (#47 class): the side walls start at z=9.5
       // (south of the main office's south-wall band z=[9, 9.5])
-      // and the north walls sit inside the meeting room at
+      // and the north walls sit inside the reception at
       // z=[9.5, 9.78], so no wall pair ever shares a volume.
-      wall("meeting-west", -6.5, -6, 9.5, 19),
-      wall("meeting-east", 6, 6.5, 9.5, 19),
-      wall("meeting-north-west", -6, -1.25, 9.5, 9.78),
-      wall("meeting-north-east", 1.25, 6, 9.5, 9.78),
+      wall("glass", -6.5, -6, 9.5, 19),
+      wall("reception-east", 6, 6.5, 9.5, 19),
+      wall("reception-north-west", -6, -1.25, 9.5, 9.78),
+      wall("reception-north-east", 1.25, 6, 9.5, 9.78),
     ],
     doorways: [MAIN_OFFICE_DOORWAYS[2]!],
     floorColor: 0x76543d,
+    wallColor: 0x71877b,
+    furniture: [],
+    signs: [],
+  },
+  {
+    // C-64 D10: the meeting-room id follows the meeting concept,
+    // while its coordinates move south of the kitchen.
+    id: "meeting-room",
+    name: "Meeting Room",
+    floor: { minX: 9.5, maxX: 19, minZ: 7.5, maxZ: 17.5 },
+    walls: [
+      wall("meeting-south", 9.5, 19, 17.5, 18),
+      wall("meeting-west", 9.5, 9.78, 7.78, 17.5),
+      wall("meeting-east", 19, 19.5, 7.78, 17.5),
+      wall("meeting-north-west", 9.5, 10, 7.5, 7.78),
+      wall("meeting-north-east", 12, 19, 7.5, 7.78),
+    ],
+    doorways: [
+      gap(
+        "meeting-to-kitchen",
+        { minX: 10, maxX: 12, minZ: 7, maxZ: 7.5 },
+        { minX: 10, maxX: 12, minZ: 7.5, maxZ: 7.78 },
+      ),
+    ],
+    floorColor: 0x76543d,
     wallColor: 0x8a7968,
     furniture: [
-      { type: "table", position: [0, 0.45, 14], size: [3, 0.9, 5.5] },
-      ...[-2.4, 2.4].flatMap((x) => [11.8, 13.3, 14.8, 16.3].map((z) => ({
+      { type: "table", position: [14.25, 0.45, 12.5], size: [3, 0.9, 5.5] },
+      ...[11.85, 16.65].flatMap((x) => [10.3, 11.8, 13.3, 14.8].map((z) => ({
         type: "chair",
         position: [x, 0.25, z] as Vector3Tuple,
       }))),
-      { type: "projector-screen", position: [0, 1.7, 18.72], size: [4.5, 2, 0.12] },
+      { type: "projector-screen", position: [14.25, 1.7, 17.22], size: [4.5, 2, 0.12] },
     ],
-    signs: [{ text: "NEXT MEETING: 5 MIN AGO", position: [4, 2.2, 9.28], face: 0, color: 0xaa3322 }],
+    signs: [{ text: "NEXT MEETING: 5 MIN AGO", position: [16.5, 2.2, 7.8], face: 0, color: 0xaa3322 }],
   },
   {
     // C-57 (Lucas, 2026-09-01): the toilet moved from the back-

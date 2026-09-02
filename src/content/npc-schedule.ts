@@ -193,14 +193,13 @@ export const DEPARTURE_SPREAD_S = 135;
 export const MIN_DEPARTURE_GAP_S = 14;
 export const DEPARTURE_JITTER_S = 10;
 
-/** C-62 (Lucas: "Zosia's meeting with who? Maybe a random 1-2 npc
- *  should join her?"): seats around the meeting-room table that 1-2
- *  randomly-picked colleagues occupy during the afternoon meeting. */
+/** C-62/C-64: seats around the relocated meeting-room table that
+ *  1-2 randomly-picked colleagues occupy during Zosia's meeting. */
 export const MEETING_SEATS: readonly ScheduleEntry[] = [
-  { position: { x: -3.6, y: 0, z: 12.6 }, face: Math.PI / 2, state: "meeting" },
-  { position: { x: -0.8, y: 0, z: 12.6 }, face: -Math.PI / 2, state: "meeting" },
-  { position: { x: -3.6, y: 0, z: 15.4 }, face: Math.PI / 2, state: "meeting" },
-  { position: { x: -0.8, y: 0, z: 15.4 }, face: -Math.PI / 2, state: "meeting" },
+  { position: { x: 10.65, y: 0, z: 11.1 }, face: Math.PI / 2, state: "meeting" },
+  { position: { x: 13.45, y: 0, z: 11.1 }, face: -Math.PI / 2, state: "meeting" },
+  { position: { x: 10.65, y: 0, z: 13.9 }, face: Math.PI / 2, state: "meeting" },
+  { position: { x: 13.45, y: 0, z: 13.9 }, face: -Math.PI / 2, state: "meeting" },
 ];
 
 /** C-62 (Lucas): leavers head to a RANDOM point in this zone instead
@@ -318,12 +317,9 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   zosia: {
-    morning: { position: { x: 3, y: 0, z: 7.45 }, face: Math.PI, state: "at-desk" },
-    // C-62 (Lucas: "why is Zosia standing in the middle of the office
-    // so often?"): her afternoon "meeting" entry parked her at the
-    // world origin - the literal center of the main office. She now
-    // holds her meetings at the meeting-room table.
-    afternoon: { position: { x: -2.2, y: 0, z: 14 }, face: Math.PI / 2, state: "meeting" },
+    // C-64: Lucas explicitly moved Zosia's meeting to the morning.
+    morning: { position: { x: 10.65, y: 0, z: 11.1 }, face: Math.PI / 2, state: "meeting" },
+    afternoon: { position: { x: 3, y: 0, z: 7.45 }, face: Math.PI, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   pawel: {
@@ -441,9 +437,8 @@ export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
   // -Z (into the room). The NPC still stands 0.7m south of the
   // basin and faces north (-Z, Math.PI) toward the basin.
   { position: { x: 22, y: 0, z: 6.0 }, face: Math.PI, state: "toilet" },
-  // Meeting room: by the meeting table (center of room).
-  // The table is in the center; just stand there.
-  { position: { x: 0, y: 0, z: 14 }, face: 0, state: "meeting" },
+  // C-64 meeting room: clear seat on the west side of the table.
+  { position: { x: 11.85, y: 0, z: 10.3 }, face: Math.PI / 2, state: "meeting" },
   // Training room (C-44: elongated, z=[-19, -3]). The lectern
   // stands at x=23, z=-17 in front of the projector screen; the
   // audience rows are at z=-15, -13.2, -11.4. The speaker faces
@@ -452,15 +447,15 @@ export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
   { position: { x: 23, y: 0, z: -16.4 }, face: 0, state: "training" },
   { position: { x: 21, y: 0, z: -15 }, face: Math.PI, state: "training" },
   { position: { x: 25.2, y: 0, z: -13.2 }, face: Math.PI, state: "training" },
-  // C-47 revenue corner (relocated per Lucas 2026-09-01): gathering
-  // spots in the MEETING ROOM, in front of the Deal Wall (west wall)
+  // C-47/C-64 revenue corner: gathering spots in the relocated
+  // MEETING ROOM, in front of the Deal Wall (west wall)
   // and the Content Booth (east wall), facing the props. Spots sit
-  // 1.5m off the walls, clear of the meeting table (x [-1.5, 1.5])
-  // and the chair rows (x = +/-2.4). The affinity weighting in
+  // clear of the meeting table (x=[12.75, 15.75]) and chair
+  // columns (x=11.85 and x=16.65). The affinity weighting in
   // pickRandomDestination sends sales people to the wall and
   // marketing to the booth.
-  { position: { x: -4.6, y: 0, z: 12.6 }, face: -Math.PI / 2, state: "deal-wall" },
-  { position: { x: 4.6, y: 0, z: 12.6 }, face: Math.PI / 2, state: "content-booth" },
+  { position: { x: 10.9, y: 0, z: 12.6 }, face: -Math.PI / 2, state: "deal-wall" },
+  { position: { x: 17.6, y: 0, z: 12.6 }, face: Math.PI / 2, state: "content-booth" },
 ];
 
 /**

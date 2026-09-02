@@ -30,10 +30,10 @@ export const CORRIDOR_WAYPOINTS: readonly Waypoint[] = [
   { id: "desk-aisle-west", position: { x: -8.7, y: 0, z: 7.2 } },
   { id: "door-main-kitchen", position: { x: 9.65, y: 0, z: 0 } },
   { id: "door-main-ceo", position: { x: 0, y: 0, z: -9.8 } },
-  { id: "door-main-meeting", position: { x: 0, y: 0, z: 9.9 } },
+  { id: "door-main-reception", position: { x: 0, y: 0, z: 9.9 } },
   // C-51: the office entrance itself. Without a node here, an NPC
-  // standing at the front door (0, 8.4) snaps to `door-main-meeting`
-  // (1.5 m away, but BEHIND them inside the meeting room) instead of
+  // standing at the front door (0, 8.4) used to snap to the node now
+  // called `door-main-reception` (1.5 m away, but BEHIND them) instead of
   // `main-south` (3.4 m ahead), so every morning arrival walked north
   // into the meeting room before turning back - measured as a 23.7 s
   // pacing loop for Klaudia on the C-51 morning probe.
@@ -100,13 +100,25 @@ export const CORRIDOR_WAYPOINTS: readonly Waypoint[] = [
   { id: "kitchen-toilet-corner", position: { x: 17, y: 0, z: 4 } },
   { id: "door-kitchen-training", position: { x: 19.8, y: 0, z: -5 } },
 
-  { id: "meeting-table", position: { x: -2.2, y: 0, z: 14 } },
-  { id: "meeting-south", position: { x: 0, y: 0, z: 18 } },
-  // The big table (x [-1.5, 1.5], z [11.25, 16.75]) splits the
-  // room: meeting-south sits in the north aisle and needs the west
-  // aisle to reach the door or the table waypoint.
-  { id: "meeting-west-north", position: { x: -3, y: 0, z: 17 } },
-  { id: "meeting-west-south", position: { x: -3, y: 0, z: 10.5 } },
+  // C-64: the entrance remains in the old room, now reception.
+  // These shell waypoints leave the future desk, sofa and Xerox
+  // footprints clear while preserving routes to the office door.
+  { id: "reception-center", position: { x: 0, y: 0, z: 14 } },
+  { id: "reception-entrance", position: { x: 0, y: 0, z: 18 } },
+  { id: "reception-west", position: { x: -4.8, y: 0, z: 17 } },
+  { id: "reception-east", position: { x: 4.8, y: 0, z: 10.7 } },
+
+  // C-64: doorway nodes on both sides of the kitchen boundary,
+  // plus clear aisles around the meeting table and the two group
+  // destinations against the side walls.
+  { id: "door-kitchen-meeting", position: { x: 11, y: 0, z: 6.6 } },
+  { id: "meeting-entry", position: { x: 11, y: 0, z: 8.2 } },
+  { id: "meeting-table-north", position: { x: 14.25, y: 0, z: 9.1 } },
+  { id: "meeting-table-south", position: { x: 14.25, y: 0, z: 15.9 } },
+  { id: "meeting-deal-wall", position: { x: 10.9, y: 0, z: 12.6 } },
+  { id: "meeting-content-booth", position: { x: 17.6, y: 0, z: 12.6 } },
+  { id: "meeting-south-west", position: { x: 10.6, y: 0, z: 16.5 } },
+  { id: "meeting-south-east", position: { x: 18, y: 0, z: 16.5 } },
   { id: "training-row-front", position: { x: 20, y: 0, z: -10 } },
   { id: "training-row-back", position: { x: 26, y: 0, z: -14 } },
   { id: "training-speaker", position: { x: 21.5, y: 0, z: -17 } },

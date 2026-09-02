@@ -34,7 +34,7 @@ beforeAll(() => {
 });
 
 describe("WORLD_ROOMS", () => {
-  it("defines the requested rooms (CEO, kitchen, training, meeting, toilet)", () => {
+  it("defines the requested rooms (CEO, kitchen, training, reception, meeting, toilet)", () => {
     // C-35: the room order changed in 2026-08-31. The CEO office
     // moved into the former training room footprint (north of the
     // main office), and the training room moved into the former
@@ -45,9 +45,58 @@ describe("WORLD_ROOMS", () => {
       "ceo-office",
       "kitchen",
       "training-room",
+      "reception",
       "meeting-room",
       "toilet",
     ]);
+  });
+
+  it("implements the C-64 reception and relocated meeting-room geometry", () => {
+    const reception = WORLD_ROOMS.find((room) => room.id === "reception")!;
+    const meeting = WORLD_ROOMS.find((room) => room.id === "meeting-room")!;
+    const kitchen = WORLD_ROOMS.find((room) => room.id === "kitchen")!;
+
+    expect(reception.name).toBe("Reception");
+    expect(reception.floor).toEqual({ minX: -6, maxX: 6, minZ: 9, maxZ: 19 });
+    expect(reception.walls.some((wall) => wall.id === "glass" && wall.maxX === -6)).toBe(true);
+    expect(reception.furniture).toEqual([]);
+
+    expect(meeting.floor).toEqual({ minX: 9.5, maxX: 19, minZ: 7.5, maxZ: 17.5 });
+    expect(meeting.furniture.filter((item) => item.type === "table")).toHaveLength(1);
+    expect(meeting.furniture.filter((item) => item.type === "chair")).toHaveLength(8);
+    expect(meeting.furniture.filter((item) => item.type === "projector-screen")).toHaveLength(1);
+    expect(meeting.doorways.some((doorway) => doorway.id === "meeting-to-kitchen")).toBe(true);
+    expect(kitchen.doorways.some((doorway) => doorway.id === "kitchen-to-meeting")).toBe(true);
+  });
+
+  it("keeps coplanar wall signs from overlapping in projected extents", () => {
+    const signs = WORLD_ROOMS.flatMap((room) => room.signs);
+    for (let leftIndex = 0; leftIndex < signs.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < signs.length; rightIndex += 1) {
+        const left = signs[leftIndex]!;
+        const right = signs[rightIndex]!;
+        const leftOnZPlane = Math.abs(Math.sin(left.face)) < 0.01;
+        const rightOnZPlane = Math.abs(Math.sin(right.face)) < 0.01;
+        if (leftOnZPlane !== rightOnZPlane) continue;
+
+        const leftPlane = leftOnZPlane ? left.position[2] : left.position[0];
+        const rightPlane = rightOnZPlane ? right.position[2] : right.position[0];
+        if (Math.abs(leftPlane - rightPlane) > 0.05) continue;
+
+        const leftHorizontal = leftOnZPlane ? left.position[0] : left.position[2];
+        const rightHorizontal = rightOnZPlane ? right.position[0] : right.position[2];
+        const leftSize = left.size ?? [3.5, 1.4];
+        const rightSize = right.size ?? [3.5, 1.4];
+        const overlapsHorizontal = Math.abs(leftHorizontal - rightHorizontal) <
+          (leftSize[0] + rightSize[0]) / 2;
+        const overlapsVertical = Math.abs(left.position[1] - right.position[1]) <
+          (leftSize[1] + rightSize[1]) / 2;
+        expect(
+          !(overlapsHorizontal && overlapsVertical),
+          `${left.text} overlaps ${right.text} on the same wall plane`,
+        ).toBe(true);
+      }
+    }
   });
 
   it("keeps every room floor separate from every other room floor", () => {

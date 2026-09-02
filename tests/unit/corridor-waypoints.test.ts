@@ -87,6 +87,22 @@ describe("corridor waypoint graph", () => {
     expect(Math.hypot(waypoint!.position.x - x, waypoint!.position.z - z)).toBeLessThanOrEqual(0.6);
   });
 
+  it.each([
+    ["door-kitchen-meeting", 11, 6.6],
+    ["meeting-entry", 11, 8.2],
+    ["meeting-table-north", 14.25, 9.1],
+    ["meeting-table-south", 14.25, 15.9],
+    ["meeting-deal-wall", 10.9, 12.6],
+    ["meeting-content-booth", 17.6, 12.6],
+    ["meeting-south-west", 10.6, 16.5],
+    ["meeting-south-east", 18, 16.5],
+  ])("includes C-64 route stop %s near (%s, %s)", (id, x, z) => {
+    const waypoint = CORRIDOR_WAYPOINTS.find((candidate) => candidate.id === id);
+    expect(waypoint).toBeDefined();
+    expect(waypoint!.position.x).toBeCloseTo(x);
+    expect(waypoint!.position.z).toBeCloseTo(z);
+  });
+
   it("builds deterministic edges", () => {
     expect(buildWaypointEdges(CORRIDOR_WAYPOINTS, ALL_OBSTACLES, DEFAULT_MAX_EDGE_LENGTH)).toEqual(
       buildWaypointEdges(CORRIDOR_WAYPOINTS, ALL_OBSTACLES, DEFAULT_MAX_EDGE_LENGTH),
