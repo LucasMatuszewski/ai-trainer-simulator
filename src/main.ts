@@ -480,13 +480,16 @@ let prevCredibility = 0;
  * + UI directly and the timing is tied to other state changes. Kept small
  * and self-contained so the Quest Log can be its own file.
  *
- * The cinematic does 4 things in 3.5s:
+ * C-62 (Lucas): the sweep starts at a bird's-eye view of the WHOLE
+ * building and dives into the meeting room, landing exactly at the
+ * player's start pose - eye height, facing north through the doorway
+ * into the office, where the morning arrivals walk in with you.
+ *
+ * The cinematic does 4 things in 4.5s:
  *   1. Fade from black (0.4s)
- *   2. Establishing shot from outside (camera at +y=14, looking at the
- *      building). 1.0s.
- *   3. Dolly down through the front wall (no clipping yet — the office
- *      ceiling is opaque; once we're inside it doesn't matter). 1.5s.
- *   4. Land on the default over-shoulder framing. 0.6s.
+ *   2. Bird's-eye establishing shot of the whole building. 0.5s.
+ *   3. Long dive from the sky into the meeting room. 3.0s.
+ *   4. Land at the player's start pose, view through the door. 1.0s.
  *
  * During the cinematic, the quest log fades in at step 4 so the player
  * sees "Talk to Bartek" the moment the world becomes interactive.
@@ -496,7 +499,7 @@ async function playIntroCinematic(): Promise<void> {
   // Pause time during the cinematic; the day timer starts AFTER.
   cinematicPlaying = true;
   const cinematicStartMs = performance.now();
-  const CINEMATIC_DURATION_MS = 3500;
+  const CINEMATIC_DURATION_MS = 4500;
 
   // Step 1: fade from black via a CSS overlay.
   const overlay = document.createElement("div");
@@ -513,18 +516,21 @@ async function playIntroCinematic(): Promise<void> {
   // reports it as "obscuring the click target"), so we clean it up.
   setTimeout(() => overlay.remove(), 700);
 
-  // Step 2: establishing shot — outside the office, looking down.
-  engine.camera.position.set(0, 14, 20);
-  engine.camera.lookAt(0, 0, -5);
+  // Step 2: bird's-eye establishing shot - the whole building in frame
+  // (office + meeting room south, kitchen/training east).
+  engine.camera.position.set(30, 50, 70);
+  engine.camera.lookAt(5, 0, 2);
   engine.camera.fov = 55;
   engine.camera.updateProjectionMatrix();
 
   const cam = engine.camera;
   const fromPos = cam.position.clone();
   const fromFov = cam.fov;
-  // Final framing matches focusNpc(null) so the cinematic lands exactly
-  // where the player will start interacting.
-  const toPos = new THREE.Vector3(0, 1.7, 7.5);
+  // Final framing = the player's own FPS pose: eye height at the
+  // meeting-room start, looking -Z through the doorway into the office.
+  // When the cinematic ends, focusNpc(null) hands the camera to the
+  // controls and the view does not move a single frame.
+  const toPos = new THREE.Vector3(0, 1.65, 17.8);
   const toFov = 40;
 
   try {
@@ -532,9 +538,9 @@ async function playIntroCinematic(): Promise<void> {
       function step(): void {
         const elapsed = performance.now() - cinematicStartMs;
         const t = Math.min(1, elapsed / CINEMATIC_DURATION_MS);
-        // 0..0.15s = fade in + establishing shot holds; 0.15..1.0 = dolly
+        // 0..0.5s = fade in + establishing shot holds; 0.5..1.0 = dive
         // + fov tighten.
-        const u = Math.max(0, (elapsed - 400) / (CINEMATIC_DURATION_MS - 400));
+        const u = Math.max(0, (elapsed - 500) / (CINEMATIC_DURATION_MS - 500));
         const ease = u < 0 ? 0 : 1 - Math.pow(1 - Math.min(1, u), 3); // ease-out cubic
         cam.position.set(
           fromPos.x + (toPos.x - fromPos.x) * ease,
@@ -543,9 +549,10 @@ async function playIntroCinematic(): Promise<void> {
         );
         cam.fov = fromFov + (toFov - fromFov) * ease;
         cam.updateProjectionMatrix();
-        // Look at NPC head height as we approach the final frame.
-        const lookY = 1.1 * ease + 0 * (1 - ease);
-        const lookZ = -2 * ease + -5 * (1 - ease);
+        // Look from the building's heart down into the meeting room,
+        // ending at the office-door view the player will have.
+        const lookY = 1.45 * ease + 0 * (1 - ease);
+        const lookZ = 7.8 * ease + 2 * (1 - ease);
         cam.lookAt(0, lookY, lookZ);
         if (t < 1) {
           requestAnimationFrame(step);
