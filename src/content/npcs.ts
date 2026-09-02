@@ -264,7 +264,7 @@ export const NPCS: NPC[] = [
     // manager. She lives behind the reception desk in the
     // renamed "reception" room (the old meeting room, floor
     // x=[-6, 6], z=[9, 19]). The desk sits at (3.4, 0, 13.5)
-    // and she stands 1m behind it at (4.4, 0, 13.5), looking
+    // and she stands clear behind it at (4.9, 0, 13.5), looking
     // -X across the lobby at whoever walks in through the
     // glass doors on the south wall.
     //
@@ -284,11 +284,11 @@ export const NPCS: NPC[] = [
     emoji: "R",
     gender: "female",
     appearance: { skin: "brown", hair: "auburn", shirt: "navy" },
-    // Standing 1m behind the reception desk center (3.4, 13.5)
-    // so the desk does not visually clip her. face -PI/2 means
+    // Standing behind the reception desk with her full 0.3 m body
+    // clear of its east edge. face -PI/2 means
     // yaw = -90 deg = looking at -X (toward the lobby and the
     // glass doors on the south wall).
-    position: { x: 4.4, y: 0, z: 13.5 },
+    position: { x: 4.9, y: 0, z: 13.5 },
     rotationY: -Math.PI / 2,
     walkSpeed: 1.2,
     triggerRadius: 1.8,

@@ -188,10 +188,10 @@ describe("Renata's default / FAQ help-centre tree (C-64)", () => {
 });
 
 describe("Renata NPC roster data (C-64)", () => {
-  it("lives behind the reception desk at the position the brief specifies", () => {
+  it("lives behind the reception desk with her full body clear of its collision box", () => {
     const found = NPCS.find((n) => n.id === "renata");
     expect(found, "Renata must exist in NPCS").toBeDefined();
-    expect(found!.position.x).toBeCloseTo(4.4, 5);
+    expect(found!.position.x).toBeCloseTo(4.9, 5);
     expect(found!.position.z).toBeCloseTo(13.5, 5);
     expect(found!.rotationY).toBeCloseTo(-Math.PI / 2, 5);
     expect(found!.gender).toBe("female");

@@ -57,7 +57,7 @@ describe("createNpcController", () => {
     const printer = new THREE.Group();
     printer.name = "xerox-printer";
     const object = makeObject("renata");
-    object.position.set(4.4, 0, 13.5);
+    object.position.set(4.9, 0, 13.5);
     const played: string[] = [];
     const controller = createNpcController(
       [npc("renata")],
@@ -69,8 +69,8 @@ describe("createNpcController", () => {
       { arrivals: false, chatter: false, playSfx: (id) => played.push(id), printerObject: printer },
     );
     controller.update(0);
-    controller.setOverride("renata", { position: { x: 4.4, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" });
-    expect(object.position.toArray()).toEqual([4.4, 0, 13.5]);
+    controller.setOverride("renata", { position: { x: 4.9, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" });
+    expect(object.position.toArray()).toEqual([4.9, 0, 13.5]);
     controller.update(COPY_RUN_INTERVAL_S.max);
     for (let step = 0; step < 120 && object.userData.npcState !== "dwelling"; step += 1) controller.update(0.1);
     expect(object.userData.npcState).toBe("dwelling");
@@ -84,14 +84,14 @@ describe("createNpcController", () => {
     expect(sawFlash).toBe(true);
     expect(played).toEqual(Array(4).fill("sfx_photocopier"));
     for (let step = 0; step < 120 && object.userData.npcState !== "at-desk"; step += 1) controller.update(0.1);
-    expect(object.position.x).toBeCloseTo(4.4);
+    expect(object.position.x).toBeCloseTo(4.9);
     expect(object.position.z).toBeCloseTo(13.5);
     expect(flash?.visible).toBe(false);
   });
 
   it("does not start Renata's copy run while the player is talking to her", () => {
     const object = makeObject("renata");
-    object.position.set(4.4, 0, 13.5);
+    object.position.set(4.9, 0, 13.5);
     const controller = createNpcController(
       [npc("renata")],
       { renata: object } as Record<NpcId, THREE.Object3D>,
@@ -166,6 +166,24 @@ describe("createNpcController", () => {
     controller.update(0.5); controller.update(1);
     expect(object.position.y).toBe(0);
     expect(object.userData.npcState).toBe("at-desk");
+  });
+
+  it("keeps station-bound Renata out of Zosia's morning guest selection", () => {
+    const object = makeObject("renata");
+    const controller = createNpcController(
+      [npc("renata")],
+      { renata: object } as Record<NpcId, THREE.Object3D>,
+      () => "morning",
+      () => 1,
+      () => 0,
+      () => false,
+      { arrivals: false },
+    );
+    controller.update(0);
+    for (let step = 0; step < 200; step += 1) controller.update(0.25);
+    expect(object.userData.npcState).toBe("at-desk");
+    expect(object.position.x).toBeCloseTo(4.9, 3);
+    expect(object.position.z).toBeCloseTo(13.5, 3);
   });
 
   // --- C-46: rotating chatter pairs (invariant simulation) ---------

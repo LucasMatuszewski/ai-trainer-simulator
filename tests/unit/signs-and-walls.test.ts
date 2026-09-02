@@ -3,7 +3,7 @@
 import * as THREE from "three";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { OFFICE_BOUNDS } from "../../src/content/npcs";
-import { MAIN_OFFICE_DOORWAYS } from "../../src/content/world-layout";
+import { MAIN_OFFICE_DOORWAYS, WORLD_ROOMS } from "../../src/content/world-layout";
 import { makeWallTexture } from "../../src/engine/multi-room";
 import { DOOR_SIGN_MOUNTS, SHIP_IT_SIGN_MOUNT } from "../../src/engine/scene";
 
@@ -57,10 +57,11 @@ describe("sign and wall artifact fixes", () => {
     expect(mount.face).toBeCloseTo(Math.PI);
   });
 
-  it("mounts a Meeting Room sign beside the kitchen-to-meeting doorway", () => {
-    const mount = DOOR_SIGN_MOUNTS.kitchenMeeting;
-    expect(mount.text).toBe("Meeting Room");
-    expect(mount.position).toEqual([12.9, 2.1, 6.72]);
-    expect(mount.face).toBe(0);
+  it("owns the kitchen Meeting Room sign in WORLD_ROOMS exactly once", () => {
+    expect("kitchenMeeting" in DOOR_SIGN_MOUNTS).toBe(false);
+    const signs = WORLD_ROOMS.flatMap((room) => room.signs)
+      .filter((sign) => sign.text === "MEETING ROOM");
+    expect(signs).toHaveLength(1);
+    expect(signs[0]).toEqual(expect.objectContaining({ position: [12.9, 2.1, 7], face: Math.PI }));
   });
 });

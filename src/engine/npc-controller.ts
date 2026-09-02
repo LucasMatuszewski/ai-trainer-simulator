@@ -834,8 +834,12 @@ export function createNpcController(
     const zosiaMeetingPeriod = (Object.keys(NPC_SCHEDULES.zosia) as Period[])
       .find((candidatePeriod) => NPC_SCHEDULES.zosia[candidatePeriod].state === "meeting");
     if (period === zosiaMeetingPeriod) {
+      // C-64: these roles must remain at their public-facing stations;
+      // pulling reception or leadership into a random guest slot breaks
+      // the tutorial and the authored office hierarchy.
+      const stationBoundNpcIds: ReadonlySet<NpcId> = new Set(["burek", "dawid", "renata"]);
       const eligible = npcs
-        .filter((npc) => npc.id !== "zosia" && npc.id !== "burek" && npc.id !== "dawid")
+        .filter((npc) => npc.id !== "zosia" && !stationBoundNpcIds.has(npc.id))
         .filter((npc) => NPC_SCHEDULES[npc.id]![period]!.state === "at-desk")
         .map((npc) => npc.id);
       for (let i = eligible.length - 1; i > 0; i -= 1) {

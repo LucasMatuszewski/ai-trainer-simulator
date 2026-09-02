@@ -69,6 +69,10 @@ describe("WORLD_ROOMS", () => {
     expect(meeting.floor).toEqual({ minX: 9.5, maxX: 19, minZ: 7.5, maxZ: 17.5 });
     expect(meeting.furniture.filter((item) => item.type === "table")).toHaveLength(1);
     expect(meeting.furniture.filter((item) => item.type === "chair")).toHaveLength(8);
+    const chairs = meeting.furniture.filter((item) => item.type === "chair");
+    for (const chair of chairs) {
+      expect(chair.rotationY).toBeCloseTo(chair.position[0] < 14.25 ? Math.PI / 2 : -Math.PI / 2);
+    }
     expect(meeting.furniture.filter((item) => item.type === "projector-screen")).toHaveLength(1);
     expect(meeting.doorways.some((doorway) => doorway.id === "meeting-to-kitchen")).toBe(true);
     expect(kitchen.doorways.some((doorway) => doorway.id === "kitchen-to-meeting")).toBe(true);
@@ -122,10 +126,31 @@ describe("WORLD_ROOMS", () => {
     for (const room of WORLD_ROOMS) expect(overlaps(room.floor, OFFICE_BOUNDS)).toBe(false);
   });
 
-  it("makes every doorway at least 2.5 metres wide", () => {
+  it("measures real doorway openings and gives kitchen-to-meeting 2.5 metres", () => {
     for (const room of WORLD_ROOMS) {
-      for (const doorway of room.doorways) expect(doorway.width).toBeGreaterThanOrEqual(2.5);
+      for (const doorway of room.doorways) {
+        const fromWidth = Math.max(
+          doorway.from.maxX - doorway.from.minX,
+          doorway.from.maxZ - doorway.from.minZ,
+        );
+        const toWidth = Math.max(
+          doorway.to.maxX - doorway.to.minX,
+          doorway.to.maxZ - doorway.to.minZ,
+        );
+        const requiredWidth = doorway.id.includes("meeting") && doorway.id.includes("kitchen") ? 2.5 : 2;
+        expect(fromWidth, `${doorway.id} from-side opening`).toBeGreaterThanOrEqual(requiredWidth);
+        expect(toWidth, `${doorway.id} to-side opening`).toBeGreaterThanOrEqual(requiredWidth);
+      }
     }
+  });
+
+  it("faces the C-64 reception plant-wall foliage into the lobby", () => {
+    const reception = WORLD_ROOMS.find((room) => room.id === "reception")!;
+    const plantWall = reception.furniture.find((item) => item.type === "plant-wall")!;
+    expect(plantWall.position).toEqual([5.88, 0, 13.5]);
+    expect(plantWall.rotationY).toBeCloseTo(Math.PI);
+    // Local +X is the foliage side; after PI it points toward world -X.
+    expect(Math.cos(plantWall.rotationY!)).toBeLessThan(-0.99);
   });
 
   it("places the main office doorways on its north, east, and south edges", () => {

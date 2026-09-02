@@ -116,7 +116,6 @@ export const SHIP_IT_SIGN_MOUNT = {
 export const DOOR_SIGN_MOUNTS = {
   kitchen: { position: [OFFICE_BOUNDS.maxX - 0.16, 2.1, 2.3] as const, face: -Math.PI / 2, text: "Kitchen", color: 0x8a6d1f },
   meeting: { position: [-2.4, 2.1, OFFICE_BOUNDS.maxZ - 0.16] as const, face: Math.PI, text: "Reception", color: 0x8a6d1f },
-  kitchenMeeting: { position: [12.9, 2.1, 6.72] as const, face: 0, text: "Meeting Room", color: 0x8a6d1f },
 };
 
 const SCREEN_COLORS = [
@@ -241,10 +240,10 @@ export function buildOfficeScene(
   // meeting-room doorway, rather than floating across the doorway opening.
   addMotivationalSign(scene, ...SHIP_IT_SIGN_MOUNT.position, SHIP_IT_SIGN_MOUNT.face);
 
-  // C-60: "Kitchen" / "Meeting Room" labels next to their doorways.
+  // C-60/C-64: main-office doorway labels. The kitchen-side Meeting
+  // Room label is owned by WORLD_ROOMS so it is emitted exactly once.
   addDoorSign(scene, DOOR_SIGN_MOUNTS.kitchen);
   addDoorSign(scene, DOOR_SIGN_MOUNTS.meeting);
-  addDoorSign(scene, DOOR_SIGN_MOUNTS.kitchenMeeting);
 
   // ---- Window on east wall: a blue rectangle with a "sky" gradient.
   addWindow(scene, OFFICE_BOUNDS.maxX - 0.16, 1.6, -6.5, -Math.PI / 2);

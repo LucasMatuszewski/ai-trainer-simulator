@@ -266,6 +266,7 @@ describe("Random walk destinations (L-2026-08-30-01)", () => {
   });
 
   it("moves C-64 meeting destinations and Zosia's meeting into the new room", () => {
+    const obstacles = getNpcObstacles();
     for (const state of ["meeting", "deal-wall", "content-booth"] as const) {
       for (const destination of RANDOM_DESTINATIONS.filter((entry) => entry.state === state)) {
         expect(destination.position.x).toBeGreaterThanOrEqual(9.5);
@@ -279,9 +280,19 @@ describe("Random walk destinations (L-2026-08-30-01)", () => {
       expect(seat.position.x).toBeLessThanOrEqual(19);
       expect(seat.position.z).toBeGreaterThanOrEqual(7.5);
       expect(seat.position.z).toBeLessThanOrEqual(17.5);
+      expect(
+        isSpawnBlocked({ x: seat.position.x, z: seat.position.z, radius: 0.3 }, obstacles),
+        `meeting guest seat at ${seat.position.x},${seat.position.z} overlaps furniture`,
+      ).toBe(false);
     }
     expect(NPC_SCHEDULES.zosia.morning.state).toBe("meeting");
     expect(NPC_SCHEDULES.zosia.afternoon.state).toBe("at-desk");
+    for (const seat of MEETING_SEATS) {
+      expect(Math.hypot(
+        seat.position.x - NPC_SCHEDULES.zosia.morning.position.x,
+        seat.position.z - NPC_SCHEDULES.zosia.morning.position.z,
+      )).toBeGreaterThanOrEqual(0.8);
+    }
   });
 
   it("returns null or a ScheduleEntry (never throws) for any NPC", () => {
@@ -324,12 +335,22 @@ describe("Random walk destinations (L-2026-08-30-01)", () => {
     }
   });
 
-  it("stands the revenue-corner destination spots clear of furniture", () => {
+  it("stands meeting and revenue-corner destination spots clear of furniture", () => {
     const obstacles = getNpcObstacles();
-    for (const state of ["deal-wall", "content-booth"] as const) {
+    for (const state of ["meeting", "deal-wall", "content-booth"] as const) {
       const entry = RANDOM_DESTINATIONS.find((candidate) => candidate.state === state);
       expect(entry).toBeDefined();
       expect(isSpawnBlocked({ x: entry!.position.x, z: entry!.position.z, radius: 0.3 }, obstacles)).toBe(false);
+    }
+  });
+
+  it("keeps Renata's authored and scheduled station clear of reception furniture", () => {
+    const renata = NPCS.find((npc) => npc.id === "renata")!;
+    const obstacles = getNpcObstacles();
+    for (const position of [renata.position, ...PERIODS.map((period) => NPC_SCHEDULES.renata[period].position)]) {
+      expect(isSpawnBlocked({ x: position.x, z: position.z, radius: 0.3 }, obstacles)).toBe(false);
+      expect(position.x).toBe(renata.position.x);
+      expect(position.z).toBe(renata.position.z);
     }
   });
 });

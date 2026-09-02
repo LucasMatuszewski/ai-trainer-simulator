@@ -259,8 +259,8 @@ export const WORLD_ROOMS: WorldRoom[] = [
       ),
       gap(
         "kitchen-to-meeting",
-        { minX: 10, maxX: 12, minZ: 7, maxZ: 7.5 },
-        { minX: 10, maxX: 12, minZ: 7.5, maxZ: 7.78 },
+        { minX: 9.75, maxX: 12.25, minZ: 7, maxZ: 7.5 },
+        { minX: 9.75, maxX: 12.25, minZ: 7.5, maxZ: 7.78 },
       ),
     ],
     floorColor: 0xc7b98b,
@@ -437,7 +437,9 @@ export const WORLD_ROOMS: WorldRoom[] = [
     ],
     furniture: [
       { type: "reception-desk", position: [3.4, 0, 13.5], rotationY: -Math.PI / 2 },
-      { type: "plant-wall", position: [5.88, 0, 13.5] },
+      // C-64: local +X is the foliage side, so PI points it west
+      // into reception while the backing remains against the east wall.
+      { type: "plant-wall", position: [5.88, 0, 13.5], rotationY: Math.PI },
       { type: "desk-led-bar", position: [3.4, 0, 13.5], rotationY: -Math.PI / 2 },
       { type: "reception-sofa", position: [-3.55, 0, 13.5], rotationY: Math.PI / 2 },
       { type: "reception-coffee-table", position: [-2.15, 0, 13.5] },
@@ -459,14 +461,14 @@ export const WORLD_ROOMS: WorldRoom[] = [
       wall("meeting-south", 9.5, 19, 17.5, 18),
       wall("meeting-west", 9.5, 9.78, 7.78, 17.5),
       wall("meeting-east", 19, 19.5, 7.78, 17.5),
-      wall("meeting-north-west", 9.5, 10, 7.5, 7.78),
-      wall("meeting-north-east", 12, 19, 7.5, 7.78),
+      wall("meeting-north-west", 9.5, 9.75, 7.5, 7.78),
+      wall("meeting-north-east", 12.25, 19, 7.5, 7.78),
     ],
     doorways: [
       gap(
         "meeting-to-kitchen",
-        { minX: 10, maxX: 12, minZ: 7, maxZ: 7.5 },
-        { minX: 10, maxX: 12, minZ: 7.5, maxZ: 7.78 },
+        { minX: 9.75, maxX: 12.25, minZ: 7, maxZ: 7.5 },
+        { minX: 9.75, maxX: 12.25, minZ: 7.5, maxZ: 7.78 },
       ),
     ],
     floorColor: 0x76543d,
@@ -477,9 +479,10 @@ export const WORLD_ROOMS: WorldRoom[] = [
     ],
     furniture: [
       { type: "table", position: [14.25, 0.45, 12.5], size: [3, 0.9, 5.5] },
-      ...[11.85, 16.65].flatMap((x) => [10.3, 11.8, 13.3, 14.8].map((z) => ({
+      ...[11.85, 16.65].flatMap((x, columnIndex) => [10.3, 11.8, 13.3, 14.8].map((z) => ({
         type: "chair",
         position: [x, 0.25, z] as Vector3Tuple,
+        rotationY: columnIndex === 0 ? Math.PI / 2 : -Math.PI / 2,
       }))),
       { type: "projector-screen", position: [14.25, 1.7, 17.22], size: [4.5, 2, 0.12] },
     ],

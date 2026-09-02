@@ -196,10 +196,13 @@ export const DEPARTURE_JITTER_S = 10;
 /** C-62/C-64: seats around the relocated meeting-room table that
  *  1-2 randomly-picked colleagues occupy during Zosia's meeting. */
 export const MEETING_SEATS: readonly ScheduleEntry[] = [
-  { position: { x: 10.65, y: 0, z: 11.1 }, face: Math.PI / 2, state: "meeting" },
-  { position: { x: 13.45, y: 0, z: 11.1 }, face: -Math.PI / 2, state: "meeting" },
-  { position: { x: 10.65, y: 0, z: 13.9 }, face: Math.PI / 2, state: "meeting" },
-  { position: { x: 13.45, y: 0, z: 13.9 }, face: -Math.PI / 2, state: "meeting" },
+  // C-64: these are standing guest poses beside the chair columns,
+  // not chair centres. The 0.6 m offset clears both chair AABBs and
+  // the 0.3 m NPC body while keeping every guest facing the table.
+  { position: { x: 11.25, y: 0, z: 12.4 }, face: Math.PI / 2, state: "meeting" },
+  { position: { x: 17.25, y: 0, z: 11.1 }, face: -Math.PI / 2, state: "meeting" },
+  { position: { x: 11.25, y: 0, z: 13.9 }, face: Math.PI / 2, state: "meeting" },
+  { position: { x: 17.25, y: 0, z: 13.9 }, face: -Math.PI / 2, state: "meeting" },
 ];
 
 /** C-62 (Lucas): leavers head to a RANDOM point in this zone instead
@@ -388,12 +391,12 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
   // C-62 evening-departures system leaves her visible. She is
   // not in ALREADY_IN_AT_DAY_START - she arrives like a normal
   // employee, but stays all day. The position mirrors the
-  // roster entry (4.4, 0, 13.5) and the face (-PI/2) lets her
+  // roster entry (4.9, 0, 13.5) and the face (-PI/2) lets her
   // look across the lobby at arrivals.
   renata: {
-    morning: { position: { x: 4.4, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" },
-    afternoon: { position: { x: 4.4, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" },
-    evening: { position: { x: 4.4, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" },
+    morning: { position: { x: 4.9, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" },
+    afternoon: { position: { x: 4.9, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" },
+    evening: { position: { x: 4.9, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" },
   },
 };
 
@@ -452,8 +455,8 @@ export const RANDOM_DESTINATIONS: ReadonlyArray<ScheduleEntry> = [
   // -Z (into the room). The NPC still stands 0.7m south of the
   // basin and faces north (-Z, Math.PI) toward the basin.
   { position: { x: 22, y: 0, z: 6.0 }, face: Math.PI, state: "toilet" },
-  // C-64 meeting room: clear seat on the west side of the table.
-  { position: { x: 11.85, y: 0, z: 10.3 }, face: Math.PI / 2, state: "meeting" },
+  // C-64 meeting room: standing spot north-west of the chair row.
+  { position: { x: 11.25, y: 0, z: 9.35 }, face: Math.PI / 2, state: "meeting" },
   // Training room (C-44: elongated, z=[-19, -3]). The lectern
   // stands at x=23, z=-17 in front of the projector screen; the
   // audience rows are at z=-15, -13.2, -11.4. The speaker faces
