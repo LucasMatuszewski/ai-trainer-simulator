@@ -31,6 +31,7 @@ export type RoomId =
   | "main-office"
   | "kitchen"
   | "meeting"
+  | "reception"
   | "toilet"
   | "training"
   | "ceo"
@@ -65,8 +66,9 @@ export const MAX_CONVERSATIONS = 2;
  * Classify a world position into a room, matching the floor AABBs in
  * `src/content/world-layout.ts` (training x [19,27] z [-19,-3]; CEO
  * office x [-8,8] z [-19,-9]; kitchen x [9,19] z [-7,7]; toilet
- * x [19,24] z [2,7] C-57; meeting x [-6,6] z [9,19]; the main office
- * fills the rest of the central block; anything else is corridor).
+ * x [19,24] z [2,7] C-57; reception x [-6,6] z [9,19]; meeting
+ * x [9.5,19] z [7.5,17.5]; the main office fills the central block;
+ * anything else is corridor).
  */
 export function roomAt(x: number, z: number): RoomId {
   // C-57: the toilet moved from the back-SW corner of the office to
@@ -77,12 +79,13 @@ export function roomAt(x: number, z: number): RoomId {
   if (x > 19 && z >= 2 && z <= 7) return "toilet";
   if (x >= 19 && z <= -3) return "training";
   if (z <= -9) return "ceo";
+  // C-64: test the relocated meeting room before the kitchen and
+  // central-block fallthroughs because its north edge starts at z=7.5.
+  if (x >= 9.5 && x <= 19 && z >= 7.5 && z <= 17.5) return "meeting";
   if (x >= 9 && z >= -7 && z <= 7) return "kitchen";
-  // The old back-SW toilet (x <= -6.5, z >= 9) is gone - C-57. The
-  // space at x < -6, z >= 9 is the meeting room. The fallthrough
-  // below returns "meeting" for z >= 9.
-  if (z >= 9) return "meeting";
-  return "main-office";
+  if (x >= -6 && x <= 6 && z >= 9 && z <= 19) return "reception";
+  if (x >= -9 && x <= 9 && z >= -9 && z <= 9) return "main-office";
+  return "corridor";
 }
 
 export interface ChatterCandidate {

@@ -103,6 +103,13 @@ describe("corridor waypoint graph", () => {
     expect(waypoint!.position.z).toBeCloseTo(z);
   });
 
+  it("keeps a clear visitor stop in front of the C-64 reception counter", () => {
+    const visitor = CORRIDOR_WAYPOINTS.find((candidate) => candidate.id === "reception-desk-visitor")!;
+    expect(visitor.position).toEqual({ x: 2.2, y: 0, z: 13.5 });
+    expect(ROOM_FURNITURE_AABBS.some((box) => containsPoint(box, 3.5, 13.5))).toBe(true);
+    expect(ALL_OBSTACLES.some((box) => containsPoint(box, visitor.position.x, visitor.position.z))).toBe(false);
+  });
+
   it("builds deterministic edges", () => {
     expect(buildWaypointEdges(CORRIDOR_WAYPOINTS, ALL_OBSTACLES, DEFAULT_MAX_EDGE_LENGTH)).toEqual(
       buildWaypointEdges(CORRIDOR_WAYPOINTS, ALL_OBSTACLES, DEFAULT_MAX_EDGE_LENGTH),

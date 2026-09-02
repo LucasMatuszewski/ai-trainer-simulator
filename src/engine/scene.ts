@@ -113,7 +113,8 @@ export const SHIP_IT_SIGN_MOUNT = {
 // the BATCAVE sign (Lucas: keep the room labels in one warm family).
 export const DOOR_SIGN_MOUNTS = {
   kitchen: { position: [OFFICE_BOUNDS.maxX - 0.16, 2.1, 2.3] as const, face: -Math.PI / 2, text: "Kitchen", color: 0x8a6d1f },
-  meeting: { position: [-2.4, 2.1, OFFICE_BOUNDS.maxZ - 0.16] as const, face: Math.PI, text: "Meeting Room", color: 0x8a6d1f },
+  meeting: { position: [-2.4, 2.1, OFFICE_BOUNDS.maxZ - 0.16] as const, face: Math.PI, text: "Reception", color: 0x8a6d1f },
+  kitchenMeeting: { position: [12.9, 2.1, 6.72] as const, face: 0, text: "Meeting Room", color: 0x8a6d1f },
 };
 
 const SCREEN_COLORS = [
@@ -241,6 +242,7 @@ export function buildOfficeScene(
   // C-60: "Kitchen" / "Meeting Room" labels next to their doorways.
   addDoorSign(scene, DOOR_SIGN_MOUNTS.kitchen);
   addDoorSign(scene, DOOR_SIGN_MOUNTS.meeting);
+  addDoorSign(scene, DOOR_SIGN_MOUNTS.kitchenMeeting);
 
   // ---- Window on east wall: a blue rectangle with a "sky" gradient.
   addWindow(scene, OFFICE_BOUNDS.maxX - 0.16, 1.6, -6.5, -Math.PI / 2);

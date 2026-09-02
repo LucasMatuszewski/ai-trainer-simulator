@@ -455,6 +455,10 @@ export const WORLD_ROOMS: WorldRoom[] = [
     ],
     floorColor: 0x76543d,
     wallColor: 0x8a7968,
+    lightPositions: [
+      [12, 12.5],
+      [16.5, 12.5],
+    ],
     furniture: [
       { type: "table", position: [14.25, 0.45, 12.5], size: [3, 0.9, 5.5] },
       ...[11.85, 16.65].flatMap((x) => [10.3, 11.8, 13.3, 14.8].map((z) => ({

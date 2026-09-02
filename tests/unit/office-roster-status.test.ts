@@ -11,6 +11,7 @@ describe("rosterStatusFor (C-46: the roster tells the truth)", () => {
   it("maps the other rooms to their names", () => {
     expect(rosterStatusFor("toilet")).toEqual({ label: "Toilet", available: true });
     expect(rosterStatusFor("meeting")).toEqual({ label: "Meeting room", available: true });
+    expect(rosterStatusFor("reception")).toEqual({ label: "Reception", available: true });
     expect(rosterStatusFor("training")).toEqual({ label: "Training room", available: true });
   });
 

@@ -102,8 +102,10 @@ describe("createNpcController", () => {
     // so the walk bob is legitimate until arrival. The invariant under
     // test is: once settled, the controller pins the ROOT y to baseY
     // (idle animations live on child bones only, never on the root).
-    const object = makeObject("bartek");
-    const controller = createNpcController([npc("bartek")], { bartek: object } as Record<NpcId, THREE.Object3D>, () => "morning", () => 1, () => 0, () => false, { arrivals: false });
+    // Burek is deliberately excluded from Zosia's C-64 morning guest
+    // selection, keeping this test focused on settled root movement.
+    const object = makeObject("burek");
+    const controller = createNpcController([npc("burek")], { burek: object } as Record<NpcId, THREE.Object3D>, () => "morning", () => 1, () => 0, () => false, { arrivals: false });
     controller.update(0);
     // 50 s at 0.25 s steps: comfortably longer than the door -> desk walk.
     for (let step = 0; step < 200; step += 1) controller.update(0.25);

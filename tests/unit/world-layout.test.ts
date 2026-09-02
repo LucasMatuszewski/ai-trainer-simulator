@@ -67,6 +67,12 @@ describe("WORLD_ROOMS", () => {
     expect(meeting.furniture.filter((item) => item.type === "projector-screen")).toHaveLength(1);
     expect(meeting.doorways.some((doorway) => doorway.id === "meeting-to-kitchen")).toBe(true);
     expect(kitchen.doorways.some((doorway) => doorway.id === "kitchen-to-meeting")).toBe(true);
+    expect(meeting.lightPositions).toEqual([[12, 12.5], [16.5, 12.5]]);
+    expect(meeting.signs).toContainEqual(expect.objectContaining({
+      text: "NEXT MEETING: 5 MIN AGO",
+      position: [16.5, 2.2, 7.8],
+      face: 0,
+    }));
   });
 
   it("keeps coplanar wall signs from overlapping in projected extents", () => {

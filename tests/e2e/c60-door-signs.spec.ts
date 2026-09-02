@@ -60,14 +60,14 @@ test("C-60: Kitchen sign visible facing the kitchen door", async ({ page }) => {
   await page.screenshot({ path: `${SCREENSHOT_DIR}/c60-01-kitchen-door-sign.png` });
 });
 
-test("C-60: Meeting Room sign visible facing the meeting room door", async ({ page }) => {
+test("C-64: Reception sign visible facing the reception door", async ({ page }) => {
   test.setTimeout(60_000);
   await continueIntoOffice(page);
   // 5m north of the south wall, level with the sign (x=-2.4), facing
   // +Z (yaw pi): sign dead ahead, doorway in frame to the left.
   await page.evaluate(() => window.__aitrainer!.teleport(-2.4, 4, Math.PI));
   await page.waitForTimeout(300);
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/c60-02-meeting-door-sign.png` });
+  await page.screenshot({ path: `${SCREENSHOT_DIR}/c64-02-reception-door-sign.png` });
 });
 
 test("C-60: SHIP IT sign palette", async ({ page }) => {

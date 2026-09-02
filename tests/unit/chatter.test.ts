@@ -45,21 +45,23 @@ describe("roomAt", () => {
     expect(roomAt(-5, -12)).toBe("ceo");
   });
 
-  it("classifies the toilet (C-57: now east of the kitchen, x [19,24], z [2,7]) and meeting room (z >= 9)", () => {
+  it("classifies the toilet, reception, and relocated C-64 meeting room", () => {
     expect(roomAt(22, 4)).toBe("toilet");
     expect(roomAt(22, 6)).toBe("toilet");
     expect(roomAt(20, 2.5)).toBe("toilet");
-    expect(roomAt(0, 14)).toBe("meeting");
+    expect(roomAt(0, 14)).toBe("reception");
+    expect(roomAt(14, 8)).toBe("meeting");
+    expect(roomAt(14, 14)).toBe("meeting");
   });
 
   it("does NOT classify the old back-SW toilet corner as a toilet (C-57 removed it)", () => {
     // The old toilet room was at x=[-19, -6.5], z=[9, 19]. The
-    // space at x<=-6.5, z>=9 is now the meeting room / office boundary.
+    // space at x<=-6.5, z>=9 is now outside the reception shell.
     // This regression pins the QA-found bug where the legacy
     // `x <= -6.5 ? "toilet" : "meeting"` branch was left in.
     expect(roomAt(-16, 14.5)).not.toBe("toilet");
-    expect(roomAt(-16, 14.5)).toBe("meeting");
-    expect(roomAt(-14, 11.5)).toBe("meeting");
+    expect(roomAt(-16, 14.5)).toBe("corridor");
+    expect(roomAt(-14, 11.5)).toBe("corridor");
   });
 
   it("keeps conversation rooms distinct across the kitchen doorway", () => {

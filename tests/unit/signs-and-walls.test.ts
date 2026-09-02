@@ -46,14 +46,21 @@ describe("sign and wall artifact fixes", () => {
     expect(mount.face).toBeCloseTo(-Math.PI / 2);
   });
 
-  it("mounts the Meeting Room sign on the south wall right of the doorway (C-60)", () => {
+  it("renames the main-office south doorway for the C-64 reception", () => {
     const mount = DOOR_SIGN_MOUNTS.meeting;
     const doorway = MAIN_OFFICE_DOORWAYS[2]!.from;
 
-    expect(mount.text).toBe("Meeting Room");
+    expect(mount.text).toBe("Reception");
     expect(mount.position[2]).toBeCloseTo(OFFICE_BOUNDS.maxZ - 0.16);
     // Right of the door when facing it (west side), clear of the gap.
     expect(mount.position[0] + 0.8).toBeLessThan(doorway.minX);
     expect(mount.face).toBeCloseTo(Math.PI);
+  });
+
+  it("mounts a Meeting Room sign beside the kitchen-to-meeting doorway", () => {
+    const mount = DOOR_SIGN_MOUNTS.kitchenMeeting;
+    expect(mount.text).toBe("Meeting Room");
+    expect(mount.position).toEqual([12.9, 2.1, 6.72]);
+    expect(mount.face).toBe(0);
   });
 });

@@ -107,6 +107,9 @@ export const CORRIDOR_WAYPOINTS: readonly Waypoint[] = [
   { id: "reception-entrance", position: { x: 0, y: 0, z: 18 } },
   { id: "reception-west", position: { x: -4.8, y: 0, z: 17 } },
   { id: "reception-east", position: { x: 4.8, y: 0, z: 10.7 } },
+  // C-64: visitor side of Renata's future counter. This explicit stop
+  // keeps walk-to-face out of the desk volume without special-casing NPCs.
+  { id: "reception-desk-visitor", position: { x: 2.2, y: 0, z: 13.5 } },
 
   // C-64: doorway nodes on both sides of the kitchen boundary,
   // plus clear aisles around the meeting table and the two group

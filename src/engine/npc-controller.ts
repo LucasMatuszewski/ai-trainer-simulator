@@ -732,14 +732,16 @@ export function createNpcController(
     // Everyone re-plans across the office, so any in-flight exchange
     // would end up as bubbles over NPCs walking away from each other.
     conversations.clear();
-    // C-62 (Lucas: "Zosia's meeting with who?"): 1-2 colleagues join
-    // the manager's afternoon meeting at the meeting-room table
-    // instead of her sitting there alone.
+    // C-62/C-64 (Lucas: "Zosia's meeting with who?"): 1-2 colleagues
+    // join whichever period currently contains Zosia's meeting. Reading
+    // the schedule keeps guests aligned if the authored period moves again.
     const meetingGuests = new Map<NpcId, ScheduleEntry>();
-    if (period === "afternoon") {
+    const zosiaMeetingPeriod = (Object.keys(NPC_SCHEDULES.zosia) as Period[])
+      .find((candidatePeriod) => NPC_SCHEDULES.zosia[candidatePeriod].state === "meeting");
+    if (period === zosiaMeetingPeriod) {
       const eligible = npcs
         .filter((npc) => npc.id !== "zosia" && npc.id !== "burek" && npc.id !== "dawid")
-        .filter((npc) => NPC_SCHEDULES[npc.id]!.afternoon!.state === "at-desk")
+        .filter((npc) => NPC_SCHEDULES[npc.id]![period]!.state === "at-desk")
         .map((npc) => npc.id);
       for (let i = eligible.length - 1; i > 0; i -= 1) {
         const j = Math.floor(rng() * (i + 1));

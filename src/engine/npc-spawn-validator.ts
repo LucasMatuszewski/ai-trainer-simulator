@@ -119,6 +119,10 @@ export const ROOM_FURNITURE_AABBS: readonly AABB[] = [
     maxZ: z + 0.22,
   }))),
   { minX: 12, maxX: 16.5, minZ: 17.16, maxZ: 17.28 },
+  // ---- RECEPTION (C-64, x=[-6, 6], z=[9, 19]) ----
+  // The future reception counter blocks NPC routing while leaving a
+  // 0.7m clear visitor gap between its west face and the authored stop.
+  { minX: 2.9, maxX: 4.0, minZ: 12.2, maxZ: 14.8 },
   // ---- TRAINING ROOM (x=[19, 27], z=[-19, -3]) ----
   // Projector screen (a thin wall on the far north wall).
   { minX: 20.5, maxX: 25.5, minZ: -19.06, maxZ: -18.34 },
