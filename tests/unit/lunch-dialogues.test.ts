@@ -10,7 +10,7 @@ const MAX_HUMAN_LENGTH = 60;
 describe("LUNCH_DIALOGUES_HUMAN", () => {
   it("has at least 45 lines (upper bound grew with authored exchanges, C-46 amendment)", () => {
     expect(LUNCH_DIALOGUES_HUMAN.length).toBeGreaterThanOrEqual(45);
-    expect(LUNCH_DIALOGUES_HUMAN.length).toBeLessThanOrEqual(95);
+    expect(LUNCH_DIALOGUES_HUMAN.length).toBeLessThanOrEqual(140);
   });
 
   it("keeps every line at or under 60 characters (bubble canvas limit)", () => {

@@ -41,15 +41,15 @@ export const NPC_GREETING_CATEGORY: Record<string, GreetingCategory> = {
 };
 
 export const GREETINGS_BY_NPC: Record<string, ReadonlyArray<string>> = {
-  // C-61 amendment (Lucas): Burek greets too - MUD conventions, a
-  // bark plus the bracketed translation. Previously the unmapped id
-  // fell through to the generic "office" pool and the dog said
-  // human "Morning." lines.
+  // C-61 amendment (Lucas): Burek greets too - MUD conventions, in
+  // the standardized markers (*sound* / [action] / (thought)).
+  // Previously the unmapped id fell through to the generic "office"
+  // pool and the dog said human "Morning." lines.
   burek: [
-    "*wuff wuff!*\n[means: good morning]",
-    "*aarf!*\n[means: hello. feed me]",
-    "*yawn*\n[means: morning already?]",
-    "*tail thump*\n[means: nice to sniff you]",
+    "[wags tail]\n*woof woof!*",
+    "*aarf!*\n(good morning. feed me)",
+    "[runs to the door]\n*hello!*",
+    "*yawn*\n(morning already?)",
   ],
   // IT (Bartek, Marek, Tomek) - one short IT tag
   bartek: [

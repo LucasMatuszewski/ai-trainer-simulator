@@ -12,17 +12,11 @@ const ASCII = /^[\x20-\x7E]+$/;
 const MAX_LENGTH = 60;
 
 describe("OFFICE_CHATTER (C-46)", () => {
-  it("has exchanges with 1-6 responses each (C-61: 4-6 per starter)", () => {
+  it("has exchanges with 5-6 responses each (C-61 amendment)", () => {
     expect(OFFICE_CHATTER.length).toBeGreaterThanOrEqual(10);
     for (const exchange of OFFICE_CHATTER) {
-      expect(exchange.responses.length).toBeGreaterThanOrEqual(1);
+      expect(exchange.responses.length).toBeGreaterThanOrEqual(5);
       expect(exchange.responses.length).toBeLessThanOrEqual(6);
-    }
-  });
-
-  it("gives every starter at least 3 answers (C-61 amendment)", () => {
-    for (const exchange of OFFICE_CHATTER) {
-      expect(exchange.responses.length, exchange.starter).toBeGreaterThanOrEqual(3);
     }
   });
 

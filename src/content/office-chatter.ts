@@ -15,10 +15,17 @@
  * for Grazyna (accountant) and Zosia (manager), janitor exchanges are
  * Janusz's. Responses are unrestricted - anyone can answer a joke.
  *
- * Amended 2026-09-02 (Lucas): every starter carries 4-6 responses
- * (2-3 new ones each, "try to be funny - IT crowd, Silicon Valley
- * style, stupid IT/tech jokes, corporate humor"), and the
- * sales / marketing / finance pools got dedicated new exchanges.
+ * Amended 2026-09-02 (Lucas): every starter carries 5-6 responses
+ * ("try to be funny - IT crowd, Silicon Valley style, stupid IT/tech
+ * jokes, corporate humor"), and the sales / marketing / finance pools
+ * got dedicated new exchanges.
+ *
+ * Constraints (enforced by tests/unit/office-chatter.test.ts):
+ * - every line <= 60 chars (bubble: 36 chars x 2 lines via fitLine)
+ * - plain ASCII only
+ * - no duplicates inside the pool, no overlap with the lunch pool or
+ *   the dog pool
+ * - every exchange has 5-6 responses
  */
 
 export type ChatterTopic = "it" | "finance" | "janitor" | "sales" | "marketing";
@@ -64,6 +71,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "It's Friday. Whatever happens is canon now.",
       "It went out. So did the users.",
       "Deployed. Now we document. Kidding.",
+      "Deployed. The logs are a mystery now.",
     ],
   },
   {
@@ -84,6 +92,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "The merge conflicts are load-bearing now.",
       "Lunch is a state of mind. So is main.",
       "The rebase will eat first anyway.",
+      "Post-lunch merge is a horror genre.",
     ],
   },
   {
@@ -94,6 +103,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "My horoscope said avoid prod. I ignored it.",
       "Mercury is in retrograde-pull.",
       "My pod crashed. Blame the moon.",
+      "The cluster aligns with Jupiter. Barely.",
     ],
   },
   {
@@ -104,6 +114,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Ancient code works best. Nobody knows why.",
       "TODOs are the real documentation.",
       "That TODO has seniority now.",
+      "Archaeology. But with more cursing.",
     ],
   },
   {
@@ -114,6 +125,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "HR wants a word about that sentence.",
       "Cheapest QA department on the market.",
       "They even file the bugs. For free!",
+      "Prod is our beta. And our gamma.",
     ],
   },
   {
@@ -124,6 +136,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "At least it does not judge. Out loud.",
       "Mine negotiated remote work.",
       "The duck was right though.",
+      "Quack driven development. It stays.",
     ],
   },
   {
@@ -134,6 +147,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "That is our only tool and it never works.",
       "Yes. It apologized and broke again.",
       "I unplugged it. It came back angry.",
+      "Third restart summons the demo gods.",
     ],
   },
   // --- General exchanges (everyone) --------------------------------
@@ -144,6 +158,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "I'm not touching it. It blinked at me last time.",
       "Unplug it. Count to 10. Scream.",
       "It jams when it senses deadlines.",
+      "Paper jam is a lifestyle at this point.",
     ],
   },
   {
@@ -163,6 +178,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "My blood type is espresso.",
       "Amateur. My IV bag is espresso.",
       "Four? That is a warm-up sip.",
+      "Careful. The fifth one sees through time.",
     ],
   },
   {
@@ -172,6 +188,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "It works. Nobody knows why. Touch nothing.",
       "Have you tried believing in it?",
       "It is not weird. It is haunted.",
+      "The router heard you. It is offended.",
     ],
   },
   {
@@ -181,6 +198,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Act natural. Open a spreadsheet.",
       "He knows you ate his pierogi.",
       "Wave back. Assert dominance.",
+      "Slowly raise your sandwich. Claim it.",
     ],
   },
   {
@@ -190,6 +208,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "He bills by the hour. Just like us.",
       "It is a father figure with wings.",
       "Repressed dependencies. Classic.",
+      "Everyone projects onto that bat.",
     ],
   },
   {
@@ -199,6 +218,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "The fridge is a lossy storage system.",
       "Define 'seen'. Define 'your'.",
       "The fridge logs everything now.",
+      "Burek pleads the fifth.",
     ],
   },
   {
@@ -208,6 +228,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Save often. And maybe breathe too.",
       "The architecture has a snore module.",
       "Deploying to dreamland again?",
+      "The deadline moves. The nap stays.",
     ],
   },
   {
@@ -217,6 +238,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "I fell asleep at halftime. Again.",
       "Was it on a screen? Then yes, a spreadsheet.",
       "I watch CI pipelines. Same drama.",
+      "Sports are just IRL matchmaking.",
     ],
   },
   {
@@ -226,6 +248,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Facilities says 18 degrees is 'energy efficient'.",
       "Type faster. It is the only heat source.",
       "HR issued blankets. As a perk.",
+      "Wear the company hoodie. It is branded.",
     ],
   },
   {
@@ -235,6 +258,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "I billed an hour to 'synergy'.",
       "It could have been a sticky note.",
       "I scheduled a meeting about the meeting.",
+      "Subject: 'quick sync'. Immediately doom.",
     ],
   },
   {
@@ -244,6 +268,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "HR said no candles. Fire code.",
       "Cake is a valid deployment trigger.",
       "Save me frosting. This is vital.",
+      "Diet starts after the cake. Standard.",
     ],
   },
   {
@@ -253,6 +278,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Do the bots click the ads though?",
       "And 9,999 are bots. One is a mom.",
       "Do they come to the webinar though?",
+      "Engagement is engaged to the bots.",
     ],
   },
   {
@@ -262,6 +288,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Make it bigger. Make it POP.",
       "Comic Sans. That will show them.",
       "Everything pops if the CDN is down.",
+      "Client asked for 'wow'. That costs extra.",
     ],
   },
   // --- Finance exchanges (Grazyna the accountant, Zosia the manager)
@@ -273,6 +300,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "My budget spreadsheet has trust issues.",
       "Friday? I cannot even close a tab.",
       "Expenses? The coffee counts as R&D.",
+      "My wallet filed for overtime.",
     ],
   },
   {
@@ -283,6 +311,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Write it off as morale.",
       "One bean? Flexing on the budget.",
       "Was it organic? Then it is two lines.",
+      "The bean had better prospects.",
     ],
   },
   {
@@ -293,6 +322,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Net 60 means they pay in 60 years, right?",
       "May they return from the dead.",
       "Stamp it with hope and Net 30.",
+      "Clients pay in exposure and vibes.",
     ],
   },
   {
@@ -303,6 +333,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "We are one coffee run from bankruptcy.",
       "Spoiler: the money dies.",
       "Chapter two is the coffee budget.",
+      "The forecast is 'no'. In red.",
     ],
   },
   {
@@ -312,6 +343,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "The hammock was for ergonomics!",
       "Write it off as team building.",
       "Grazyna smells receipts in her sleep.",
+      "Receipts? In this economy?",
+      "It was labeled 'research'. Legally.",
     ],
   },
   {
@@ -321,6 +354,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Happy tears or net-gross tears?",
       "Brutto to netto is a scam arc.",
       "Gross pay is a rumor started by HR.",
+      "I get paid in coffee and stress.",
+      "Net pay is a jump scare.",
     ],
   },
   {
@@ -330,6 +365,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "RIP the pens that wrote in gold.",
       "Next they take our second monitor.",
       "The pen budget died for our sins.",
+      "The fancy pens fled to a startup.",
+      "First they came for the pens.",
     ],
   },
   {
@@ -339,6 +376,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "You are the chosen accountant.",
       "Did it balance, or did you decide?",
       "The books fear her now.",
+      "She IS the audit. Run.",
+      "The spreadsheet balanced itself. Scary.",
     ],
   },
   // --- Janitor exchanges (Janusz only, C-46 amendment story) -------
@@ -353,6 +392,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Wait, YOU rewrote the deploy script?",
       "The mop pays less. The code ships more.",
       "The Roomba union will hear of this.",
+      "Push to prod with a mop in hand.",
+      "Clean code. Literally. It is mopped.",
     ],
   },
   {
@@ -362,6 +403,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "The Roomba fleet has better uptime than prod.",
       "Did you name them? Please tell me you did.",
       "Do they bill by the square metre?",
+      "Floor two is now self-cleaning.",
+      "Do they do code reviews too?",
     ],
   },
   {
@@ -371,6 +414,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Best uptime per square metre in the building.",
       "The mop is load-bearing. Don't ask.",
       "Closet compute is the future.",
+      "The closet has better AC than us.",
+      "Ping is low. Soap is high.",
     ],
   },
   // --- Sales exchanges (C-47: told AT the Deal Wall) ---------------
@@ -384,6 +429,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "The bar was on the floor anyway.",
       "Screenshot it before Friday.",
       "Number one in spirit. The wall lies.",
+      "The wall is aspirational.",
     ],
   },
   {
@@ -394,6 +440,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Add them to the 'maybe' graveyard.",
       "Their 'no' was a 'not yet'. Probably.",
       "Ghosting is their love language.",
+      "Read at 9:41. Silence since.",
     ],
   },
   {
@@ -404,6 +451,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "I sell hope and dashboard numbers.",
       "Rename it 'stretch goals' and breathe.",
       "Three books. None with an ending.",
+      "The sequel is worse: Q4.",
     ],
   },
   {
@@ -414,6 +462,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "What discount did that renewal cost us?!",
       "Add it to the wall before someone else does.",
       "Acme renewed?! Quick, before they think.",
+      "Invoice before legal reads it.",
     ],
   },
   {
@@ -423,6 +472,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "At least your feed has leads.",
       "Connection requested. Now we pray.",
       "My inbox is 99% 'just circling back'.",
+      "My feed is just influencers suing.",
+      "Did you try liking everything?",
     ],
   },
   {
@@ -432,6 +483,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Does a rubber duck count as AI?",
       "Put a chatbot on the invoice. Done.",
       "It already autocorrects. Half done.",
+      "Monday? So, never. Perfect.",
+      "AI = 'Already Improved'. Ship it.",
     ],
   },
   {
@@ -441,6 +494,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "The taxi fleet? We sell software.",
       "A lead is a lead. Board it up.",
       "Add it to the wall. Any wall.",
+      "Every call is a demo if you believe.",
+      "We pivot to taxis. Write it down.",
     ],
   },
   {
@@ -450,6 +505,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Slides 1 to 12 are one word: trust.",
       "Cut it. The logo pops more now.",
       "The deck is a tarot reading anyway.",
+      "Slide 10 is just the word 'why'.",
+      "The deck has lore now.",
     ],
   },
   // --- Marketing exchanges (C-47: told AT the Content Booth) -------
@@ -462,6 +519,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Can Burek cameo? He sells.",
       "Crop the server rack out. Again.",
       "Wait, we have a brand wall?",
+      "Hold this light. Be the wall.",
     ],
   },
   {
@@ -472,6 +530,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Three likes to twelve. Growth.",
       "The bots love us this quarter.",
       "300% of zero is still zero.",
+      "Chart goes up. Morale goes down.",
     ],
   },
   {
@@ -482,6 +541,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Make it POP. Make it PURPLE.",
       "Tell them the logo IS the product.",
       "Soon the logo will need a desk.",
+      "Bigger logo. Smaller meaning.",
     ],
   },
   {
@@ -492,6 +552,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Is 'synergy' load-bearing this quarter?",
       "Only if there's cake synergy.",
       "I am bringing a dictionary for 'synergy'.",
+      "Post-its are the real deliverable.",
+      "I will bring buzzwords. I have spares.",
     ],
   },
   {
@@ -501,6 +563,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Burek. He works for treats.",
       "A cloud. Named Synergy.",
       "Marketing is mostly mascot science.",
+      "A cloud with sunglasses. Deal.",
+      "The mascot gets equity. Burek agrees.",
     ],
   },
   {
@@ -510,6 +574,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Was it the right city?",
       "Any city is brand awareness.",
       "Screenshot it before it stops.",
+      "Which city? Krasnystaw? Great.",
+      "Trending locally is still trending.",
     ],
   },
   {
@@ -519,6 +585,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "About what? Vision? Bees?",
       "Everyone quits before episode two.",
       "His 'hello, mic check' is already viral.",
+      "Episode one: silence. Iconic.",
+      "He will name it 'Vision Cast'. Run.",
     ],
   },
   {
@@ -528,6 +596,8 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Then the test was a group hug.",
       "Ship both. Let the users fight.",
       "The B was for 'budget', right?",
+      "C testing shipped straight to prod.",
+      "The test tested itself. Passed.",
     ],
   },
 ];

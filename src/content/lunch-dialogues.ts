@@ -14,15 +14,24 @@
  * derived as the union of exchange lines (for the length / ASCII /
  * pool-separation tests and any flat consumer).
  *
+ * Amended 2026-09-02 (Lucas: "every response should be a continuation
+ * or a joke from the starter"): full alignment review. Responses that
+ * did not connect to their starter were either rewritten (answers now
+ * stay in the starter's scene) or promoted to STARTERS of their own
+ * new exchanges ("I rate kitchens in GitHub stars", "That fart
+ * shipped to production", "I identify as a server. Feed me.", "I
+ * asked ChatGPT if this is edible.").
+ *
  * Original lines authored by a 4-way model contest (2026-08-31):
  * grok-4.5, agy / sonnet 4.6, a sonnet subagent, and GLM-5.2 via the
  * opencode CLI (which also contributed the hunger bonus section) -
  * merged quality-first by the orchestrator.
  *
  * Constraints (enforced by tests/unit/lunch-dialogues.test.ts):
- * - every line <= 60 chars (bubble canvas: 32 chars x 2 lines)
+ * - every line <= 60 chars (bubble: 36 chars x 2 lines via fitLine)
  * - plain ASCII only
  * - no duplicates, no overlap with INTER_NPC_LINES or BUREK_LINES
+ * - every exchange has 2-3 responses, written to CONTINUE the starter
  */
 import type { ChatterExchange } from "./office-chatter";
 
@@ -108,31 +117,31 @@ export const LUNCH_CHATTER: readonly ChatterExchange[] = [
     responses: [
       "Dinner is cereal standing over the sink.",
       "Lunch is my only meeting without an agenda.",
-      "I rate kitchens in GitHub stars.",
+      "My desk doubles as a plate holder.",
     ],
   },
   {
     starter: "The fridge is making a weird noise.",
     responses: [
       "The fridge is agile. Nobody knows what's in it.",
-      "Someone put a Jira ticket on my sandwich.",
-      "We're a family. Families steal Tupperware.",
+      "It hums the anthem of expired mayo.",
+      "Nobody has cleaned it since the pivot.",
     ],
   },
   {
     starter: "New cafe opened next door.",
     responses: [
-      "My smartwatch says I'm dead. Anyway, pizza?",
-      "I'd merge anything for a burrito now.",
-      "Cold pizza is a lifestyle, not a failure.",
+      "I went. It is just a fridge with seats.",
+      "Anything is better than the 2019 yogurt.",
+      "Reviews say 'do not ask about the soup'.",
     ],
   },
   {
     starter: "Dawid labeled his yogurt again.",
     responses: [
       "Dawid's yogurt is labeled. Do not test fate.",
-      "The CEO has two monitors and zero mercy.",
-      "Have you tried turning the CEO off and on?",
+      "His label says 'DO NOT EAT'. In bold.",
+      "Last unlabeled yogurt got a P0.",
     ],
   },
   {
@@ -140,23 +149,23 @@ export const LUNCH_CHATTER: readonly ChatterExchange[] = [
     responses: [
       "I'm so hungry my stomach filed a ticket.",
       "My stomach just paged me. It's a P1.",
-      "That fart shipped to production.",
+      "Same. I would merge straight to prod.",
     ],
   },
   {
     starter: "Team lunch on the company card?",
     responses: [
       "Grazyna billed lunch as a meeting. Fair.",
-      "Series A means we finally afford real napkins.",
-      "We're carbon-neutral if you ignore the cloud.",
+      "Yes. Invoice it as 'synergy'.",
+      "Only if Burek orders water. Free.",
     ],
   },
   {
     starter: "Leftovers in the sink again.",
     responses: [
-      "I didn't fart, the floorboard is just uncompressed.",
       "Was that the server cooling fan or your stomach?",
-      "One snack away from read-only mode.",
+      "The sink is a museum now. No touching.",
+      "One more plate and it becomes a P1.",
     ],
   },
   {
@@ -170,17 +179,17 @@ export const LUNCH_CHATTER: readonly ChatterExchange[] = [
   {
     starter: "The vending machine ate my coin.",
     responses: [
-      "I asked ChatGPT if this is edible. It said yes.",
-      "I identify as a server. Feed me.",
-      "I'd code for food. Actually, I do.",
+      "File a ticket. Label it 'snack P0'.",
+      "The machine is pre-revenue too.",
+      "Shake it. That is the agile way.",
     ],
   },
   {
     starter: "Standup moved to 12:30. Who approved that?",
     responses: [
-      "I speedran this kitchen. World record: 45s.",
-      "It works on my machine. Ship my machine to prod.",
-      "Works on my machine. That's my lunch too.",
+      "The calendar gremlin. It feeds on chaos.",
+      "Lunch AND standup? Multitasking P0.",
+      "I will say 'no blockers' with food.",
     ],
   },
   {
@@ -188,14 +197,15 @@ export const LUNCH_CHATTER: readonly ChatterExchange[] = [
     responses: [
       "I muted my stomach. It keeps pinging.",
       "My lunch has a changelog. v2: no pickles.",
-      "Copilot wrote my resignation letter in Rust.",
+      "Please unmute. We can hear the chewing.",
     ],
   },
   {
     starter: "Fair trade beans, sweatshop code.",
     responses: [
       "At least the coffee has ethics.",
-      "My diet: free snacks and regret.",
+      "The beans have a mission statement.",
+      "My conscience runs on decaf.",
     ],
   },
   {
@@ -209,7 +219,41 @@ export const LUNCH_CHATTER: readonly ChatterExchange[] = [
     starter: "Where do vegans get protein?",
     responses: [
       "The backlog. Same as the rest of us.",
-      "If you smelled that, file a ticket.",
+      "From complaints. High fiber.",
+      "Salad is just crunchy nothing.",
+    ],
+  },
+  // --- Promoted from misaligned orphan lines (C-61 review) ---------
+  {
+    starter: "I rate kitchens in GitHub stars.",
+    responses: [
+      "This one? Zero stars. One fork.",
+      "The microwave alone fails CI.",
+      "Fork it. We are ordering out.",
+    ],
+  },
+  {
+    starter: "That fart shipped to production.",
+    responses: [
+      "Roll it back. Open a window.",
+      "Hotfixed by air freshener.",
+      "Nobody saw the diff. Nobody.",
+    ],
+  },
+  {
+    starter: "I identify as a server. Feed me.",
+    responses: [
+      "Then I am the admin. Feed YOU.",
+      "Rack-mounted snacks. Finally.",
+      "Scale out. Straight to the fridge.",
+    ],
+  },
+  {
+    starter: "I asked ChatGPT if this is edible.",
+    responses: [
+      "It said yes. It also likes pineapple.",
+      "The AI has never met our fridge.",
+      "Trust the model. File a ticket after.",
     ],
   },
 ];

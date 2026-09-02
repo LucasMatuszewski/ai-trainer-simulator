@@ -19,13 +19,20 @@ describe("BUREK_LINES", () => {
     }
   });
 
-  it("uses the MUD convention: bark in asterisks + bracketed subtitle", () => {
-    // C-61 amendment (Lucas): the dog speaks in "*sound* [means: x]"
-    // pairs or pure *action* lines - never human sentences.
+  it("uses the three MUD markers: *sound*, [action], (thought)", () => {
+    // C-61 amendment (Lucas): standardized dog-speech. Every row of a
+    // bubble is wrapped in exactly one marker:
+    //   *woof*  = what you HEAR
+    //   [sits]  = what you SEE
+    //   (feed me) = what the dog THINKS
+    // Never bare human sentences.
+    const row = /^(\*[^*\n]+\*|\[[^\]\n]+\]|\([^)\n]+\))$/;
     for (const line of BUREK_LINES) {
-      const isPair = /^\*[^\n]+\*\n\[means: .+\]$/.test(line);
-      const isPureAction = /^\*[^*]+\*$/.test(line);
-      expect(isPair || isPureAction, `not dog-speech: ${JSON.stringify(line)}`).toBe(true);
+      const rows = line.split("\n");
+      expect(rows.length, `too many rows: ${JSON.stringify(line)}`).toBeLessThanOrEqual(2);
+      for (const text of rows) {
+        expect(row.test(text), `unmarked row: ${JSON.stringify(text)}`).toBe(true);
+      }
     }
   });
 
