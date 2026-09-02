@@ -18,6 +18,7 @@ export interface PlayerActionHooks {
   openDialogue: (npcId: NpcId) => boolean;
   pickDialogueOption: (optionId: string) => boolean;
   closeDialogue: () => boolean;
+  advanceTime: () => boolean;
   endDay: () => boolean;
   openMinigame: () => boolean;
   /** Snapshot the currently-open dialogue (text + available options). */
@@ -26,7 +27,7 @@ export interface PlayerActionHooks {
 
 let playerActions: PlayerActionHooks | null = null;
 
-export function registerPlayerActions(hooks: PlayerActionHooks): void {
+export function registerPlayerActions(hooks: PlayerActionHooks | null): void {
   playerActions = hooks;
 }
 
@@ -215,7 +216,9 @@ const implementations: ToolImplementation[] = [
     },
     validate: validateNoParameters,
     execute: () => {
-      game.dispatch({ type: "advance-time" });
+      const actions = requireActions();
+      if ("error" in actions) return { ok: false, error: actions.error };
+      if (!actions.advanceTime()) return { ok: false, error: "time could not be advanced" };
       return { ok: true, data: { day: game.get().day, timeOfDay: game.get().timeOfDay } };
     },
   },

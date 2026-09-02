@@ -300,6 +300,11 @@ function startOffice(playIntro = false): void {
         dialogue.close();
         return true;
       },
+      advanceTime: () => {
+        currentPeriodElapsed = 0;
+        advanceOfficePeriods(1);
+        return true;
+      },
       endDay: () => {
         endDay();
         return true;
