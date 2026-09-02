@@ -19,6 +19,7 @@ import { describe, expect, it } from "vitest";
 import {
   planWalkToFace,
   CONVERSATION_DISTANCE,
+  npcYawToward,
   yawToward,
 } from "../../src/engine/walk-to-face";
 
@@ -60,9 +61,15 @@ describe("planWalkToFace", () => {
     // playerYaw: player should face the NPC, i.e. toward (-x, -z)
     const expectedPlayerYaw = yawToward({ x: r.target[0], z: r.target[2] }, { x: 0, z: 0 });
     expect(r.playerYaw).toBeCloseTo(expectedPlayerYaw, 5);
-    // npcYaw: NPC should face the player at target
-    const expectedNpcYaw = yawToward({ x: 0, z: 0 }, { x: r.target[0], z: r.target[2] });
+    // npcYaw: the NPC should face the player at target. C-63 amendment
+    // (Lucas: "when I talk to somebody, they turn back to me, not
+    // front"): the NPC MESH looks along local +Z, the opposite of the
+    // player camera's yaw convention, so this uses `npcYawToward`.
+    // Using `yawToward` here is what turned the NPC's back to the player.
+    const expectedNpcYaw = npcYawToward({ x: 0, z: 0 }, { x: r.target[0], z: r.target[2] });
     expect(r.npcYaw).toBeCloseTo(expectedNpcYaw, 5);
+    expect(Math.abs(r.npcYaw - yawToward({ x: 0, z: 0 }, { x: r.target[0], z: r.target[2] })))
+      .toBeCloseTo(Math.PI, 5);
   });
 
   it("marks alreadyClose=true when the player is within conversational distance", () => {

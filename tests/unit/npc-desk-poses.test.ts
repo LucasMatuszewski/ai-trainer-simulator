@@ -321,3 +321,80 @@ describe("shrug reaches out to the sides (C-63 amendment)", () => {
     expect(hand.y, "and up, above the shoulder at y=0.95").toBeGreaterThan(SHOULDER_Y);
   });
 });
+
+describe("a desk pose is CANCELLED when the working position is lost (C-63 amendment 2)", () => {
+  /**
+   * Lucas, 2026-09-02: "the typing animation still plays when people are
+   * not on the working position, facing the laptop... they can be even
+   * not on the desk."
+   *
+   * Amendment 1 gated the START of a burst. But poses were designed to
+   * always FINISH once running, so an NPC who turned to talk mid-burst
+   * kept typing for up to nine more seconds. Losing the working position
+   * has to cancel the pose, not just stop the next one.
+   */
+  it("stops a running typing burst within the ease-out ramp", () => {
+    const mesh = human();
+    let state = base({ nextTypeAt: 0 });
+    let now = 0;
+    // Type for a second at the desk.
+    for (let step = 0; step < 30; step += 1) {
+      now += 1 / 30;
+      state = updateIdle(state, 1 / 30, position, 0, mesh, now, () => 0.5, { atDesk: true });
+    }
+    expect(armPitch(mesh, "right")).toBeLessThan(-1);
+    const burstLeft = state.typing!.left;
+    expect(burstLeft, "the burst still had seconds to run").toBeGreaterThan(2);
+
+    // The NPC turns to talk to someone: atDesk goes false mid-burst.
+    for (let step = 0; step < 30; step += 1) {
+      now += 1 / 30;
+      state = updateIdle(state, 1 / 30, position, 0, mesh, now, () => 0.5, { atDesk: false });
+    }
+    expect(state.typing!.left, "the burst was cancelled, not left to run").toBe(0);
+    expect(armPitch(mesh, "right"), "and the arms came back down").toBeCloseTo(0, 5);
+  });
+
+  it("eases the arms down instead of snapping them", () => {
+    const mesh = human();
+    let state = base({ nextTypeAt: 0 });
+    let now = 0;
+    for (let step = 0; step < 30; step += 1) {
+      now += 1 / 30;
+      state = updateIdle(state, 1 / 30, position, 0, mesh, now, () => 0.5, { atDesk: true });
+    }
+    const before = armPitch(mesh, "right");
+    // One frame after losing the position: the arm has moved toward
+    // neutral but is nowhere near it yet.
+    state = updateIdle(state, 1 / 30, position, 0, mesh, now + 1 / 30, () => 0.5, { atDesk: false });
+    const after = armPitch(mesh, "right");
+    expect(Math.abs(after)).toBeLessThan(Math.abs(before));
+    expect(Math.abs(after), "must not snap to zero in one frame").toBeGreaterThan(0.2);
+  });
+
+  it("cancels a running desk gesture too", () => {
+    const mesh = human();
+    let state = base({ nextGestureAt: 0 });
+    let now = 0;
+    state = updateIdle(state, 1 / 30, position, 0, mesh, now, () => 0.3, { atDesk: true });
+    expect(state.gesture?.kind).toBe("coffee-sip");
+    for (let step = 0; step < 20; step += 1) {
+      now += 1 / 30;
+      state = updateIdle(state, 1 / 30, position, 0, mesh, now, () => 0.3, { atDesk: false });
+    }
+    expect(state.gesture ?? null).toBeNull();
+    expect(mesh.getObjectByName("mug")!.visible).toBe(false);
+  });
+
+  it("lets a stretch run to its end - it is not a desk pose", () => {
+    const mesh = human();
+    let state = base({ nextStretchAt: 0 });
+    let now = 0;
+    state = updateIdle(state, 1 / 30, position, 0, mesh, now, () => 0.5, { atDesk: true });
+    for (let step = 0; step < 15; step += 1) {
+      now += 1 / 30;
+      state = updateIdle(state, 1 / 30, position, 0, mesh, now, () => 0.5, { atDesk: false });
+    }
+    expect(state.stretch!.left, "a stretch survives turning around").toBeGreaterThan(1);
+  });
+});

@@ -69,9 +69,10 @@ export const ALREADY_CLOSE_EPSILON = 0.2;
  *  4. Clamp the target to the office bounds (minus a small margin so
  *     the player doesn't end up in a wall).
  *  5. Player yaw = atan2(-(target - npc).x, -(target - npc).z) so the
- *     player faces the NPC.
+ *     player faces the NPC (camera convention: yaw 0 = -Z).
  *  6. NPC yaw = atan2(player.x - npc.x, player.z - npc.z) so the NPC
- *     faces the player.
+ *     faces the player (MESH convention: yaw 0 = +Z). The two
+ *     conventions are opposite; see `npcYawToward`.
  *
  * (These are mirror images of each other; when both arrive, they
  * face each other.)
@@ -92,15 +93,18 @@ export function planWalkToFace(input: WalkToFaceInput): WalkToFaceResult {
     return {
       target: clampToBounds(target, officeBounds),
       alreadyClose: true,
+      // The player is parked at npc.z - CONVERSATION_DISTANCE, i.e. to
+      // the NPC's -Z. Camera yaw 0 already faces -Z; the mesh needs pi
+      // to look the same way.
       playerYaw: 0,
-      npcYaw: 0,
+      npcYaw: Math.PI,
     };
   }
 
   // Already close enough? Skip the walk; just face the NPC.
   if (dist <= CONVERSATION_DISTANCE + ALREADY_CLOSE_EPSILON) {
     const playerYaw = yawToward(player, npc);
-    const npcYaw = yawToward(npc, player);
+    const npcYaw = npcYawToward(npc, player);
     return {
       target: [player.x, player.y, player.z],
       alreadyClose: true,
@@ -124,7 +128,7 @@ export function planWalkToFace(input: WalkToFaceInput): WalkToFaceResult {
   // target position (so the NPC rotates to face where the player
   // lands, not where the player started).
   const playerYaw = yawToward({ x: target[0], z: target[2] }, npc);
-  const npcYaw = yawToward(npc, { x: target[0], z: target[2] });
+  const npcYaw = npcYawToward(npc, { x: target[0], z: target[2] });
 
   return {
     target,
@@ -147,6 +151,30 @@ export function yawToward(
   // Forward = (-sin(yaw), 0, -cos(yaw)). To make this point at (dx, dz),
   // we need -sin(yaw) = dx/r, -cos(yaw) = dz/r. So yaw = atan2(-dx, -dz).
   return Math.atan2(-dx, -dz);
+}
+
+/**
+ * C-63 amendment (Lucas, 2026-09-02: "when I talk to somebody, they turn
+ * back to me, not front").
+ *
+ * The PLAYER and the NPC MESH use opposite yaw conventions, and this is
+ * the one place that had used the player's for both:
+ *
+ *   player camera - forward = (-sin(yaw), 0, -cos(yaw)), so yaw 0 = -Z
+ *   NPC mesh      - the eyes look along local +Z, so yaw 0 = +Z
+ *                   (see the `rotationY` docs on the NPC type)
+ *
+ * Feeding a camera-convention yaw to a mesh turns it exactly 180 degrees
+ * the wrong way, which is why an NPC greeted the player with their back.
+ * The chatter manager in `npc-controller.ts` already used this form
+ * (`Math.atan2(dx, dz)`) - that is why NPC-to-NPC conversations always
+ * looked right while player conversations did not.
+ */
+export function npcYawToward(
+  from: { x: number; z: number },
+  to: { x: number; z: number },
+): number {
+  return Math.atan2(to.x - from.x, to.z - from.z);
 }
 
 function clampToBounds(

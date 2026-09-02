@@ -212,6 +212,13 @@ function trapezoid(elapsed: number, span: number, ramp: number): number {
   return Math.max(0, Math.min(1, Math.min(elapsed, span - elapsed) / ramp));
 }
 
+/**
+ * A cancelled pose keeps its original `span` and only has `left` clamped
+ * to the ramp, so `span - left` lands inside the closing ramp of the
+ * trapezoid and the pose eases out exactly like a natural ending. This
+ * is why the cancel does not need its own envelope.
+ */
+
 interface PoseOutput {
   leftArmPitch: number;
   rightArmPitch: number;
@@ -395,6 +402,27 @@ export function updateIdle(
     ? null
     : { ...state.gesture, left: Math.max(0, state.gesture.left - safeDt) };
   if (gesture !== null && gesture.left <= 0) gesture = null;
+
+  // C-63 amendment 2 (Lucas, 2026-09-02: "the typing animation still
+  // plays when people are not on the working position, facing the
+  // laptop... they can be even not on the desk").
+  //
+  // The first amendment gated the START of a burst on the working
+  // position, but poses were designed to always FINISH once started -
+  // so an NPC who turned to talk mid-burst kept typing for up to nine
+  // more seconds on a keyboard that was no longer in front of them.
+  // Losing the working position now CANCELS the desk poses. Clamping
+  // `left` to the ramp rather than zeroing it means the arms ease back
+  // down over the usual 0.35 s instead of snapping to the sides.
+  //
+  // Stretch is deliberately exempt: it is not a desk pose, and someone
+  // who turns around mid-stretch is still mid-stretch.
+  if (!atDesk) {
+    if (typing.left > POSE_RAMP_S) typing = { ...typing, left: POSE_RAMP_S };
+    if (gesture !== null && gesture.left > GESTURE_RAMP_S) {
+      gesture = { ...gesture, left: GESTURE_RAMP_S };
+    }
+  }
 
   // A pose that is already running always finishes; a new one is never
   // started on top of it, so two poses can never drive the same arm in
