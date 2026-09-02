@@ -21,7 +21,10 @@ export type GreetingCategory =
   | "sales"
   | "facilities"
   | "intern"
-  | "office";
+  | "office"
+  // C-64: receptionist. Keeps Renata's category distinct from
+  // "office" so a save can't misclassify her by accident.
+  | "reception";
 
 export const NPC_GREETING_CATEGORY: Record<string, GreetingCategory> = {
   bartek: "it",
@@ -37,6 +40,9 @@ export const NPC_GREETING_CATEGORY: Record<string, GreetingCategory> = {
   przemek: "sales",
   janusz: "facilities",
   pawel: "intern",
+  // C-64: the receptionist. Her category exists so her pool is
+  // distinct from the generic "office" pool.
+  renata: "reception",
   // burek: dogs don't talk and don't get a line
 };
 
@@ -139,6 +145,14 @@ export const GREETINGS_BY_NPC: Record<string, ReadonlyArray<string>> = {
     "Hello. What is Jira?",
     "Yo. I will work for free.",
   ],
+  // Reception (Renata) - the receptionist. C-64: short
+  // receptionist tag, mostly orientation-y.
+  renata: [
+    "Morning. Welcome desk is open.",
+    "Hi. The coffee is already on.",
+    "Hello. Keys are in the drawer.",
+    "Yo. Printer is jammed. Sorry.",
+  ],
 };
 
 export const GREETINGS_BY_CATEGORY: Record<GreetingCategory, ReadonlyArray<string>> = {
@@ -201,6 +215,15 @@ export const GREETINGS_BY_CATEGORY: Record<GreetingCategory, ReadonlyArray<strin
     "Morning. What is Jira?",
     "Hello. I will learn.",
     "Yo. Coffee?",
+  ],
+  // C-64: receptionist fallback (used by renata if her per-NPC
+  // pool is ever empty - it is not, but the test requires every
+  // category to have a pool).
+  reception: [
+    "Hi. Welcome desk is open.",
+    "Morning. Sign in, please.",
+    "Hello. The kettle is on.",
+    "Yo. Looking for someone?",
   ],
   // generic fallback for any unmapped id
   office: [

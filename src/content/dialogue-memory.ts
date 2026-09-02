@@ -34,6 +34,11 @@ const NPC_IDS: NpcId[] = [
   "maciek",
   "przemek",
   "dawid",
+  // C-64: the receptionist. She needs her own memory so the FAQ
+  // options she answers stay suppressed on the next visit
+  // (L-2026-08-30-02: "NPC must NEVER repeat a dialogue the
+  // player has already answered").
+  "renata",
 ];
 
 function emptyMemory(): NpcMemory {

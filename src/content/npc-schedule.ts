@@ -380,6 +380,21 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
     // evening he does not leave (the preset had him vanish).
     evening: { position: { x: 0, y: 0, z: -17 }, face: 0, state: "at-desk" },
   },
+  // C-64: the receptionist. She lives behind the reception
+  // desk in the renamed reception room (x=[-6, 6], z=[9, 19])
+  // and stays on station in all three periods. The brief calls
+  // her "the last to leave" - mirroring the CEO's evening rule:
+  // her evening row is `at-desk`, not `gone-home`, so the
+  // C-62 evening-departures system leaves her visible. She is
+  // not in ALREADY_IN_AT_DAY_START - she arrives like a normal
+  // employee, but stays all day. The position mirrors the
+  // roster entry (4.4, 0, 13.5) and the face (-PI/2) lets her
+  // look across the lobby at arrivals.
+  renata: {
+    morning: { position: { x: 4.4, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" },
+    afternoon: { position: { x: 4.4, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" },
+    evening: { position: { x: 4.4, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" },
+  },
 };
 
 /**

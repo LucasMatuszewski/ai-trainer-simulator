@@ -3,7 +3,10 @@
  * All game state is JSON-serializable. Save format is GameState under localStorage key `aitrainer:save:v1`.
  */
 
-export type NpcId = "bartek" | "klaudia" | "marek" | "zosia" | "pawel" | "kasia" | "tomek" | "ania" | "janusz" | "burek" | "grazyna" | "maciek" | "przemek" | "dawid";
+// C-64: added "renata" - the receptionist / office manager. She is
+// the tutorial host and the standing help centre (Lucas: "we should
+// use receptionist as the first guide and tutorial at the game start").
+export type NpcId = "bartek" | "klaudia" | "marek" | "zosia" | "pawel" | "kasia" | "tomek" | "ania" | "janusz" | "burek" | "grazyna" | "maciek" | "przemek" | "dawid" | "renata";
 
 export type SpecializationId = "frontend" | "backend" | "devops" | "ai" | "generalist";
 export type TraitId = "coffee-fueled" | "linkedin-influencer" | "debugger" | "wing-it";

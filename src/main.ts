@@ -825,6 +825,14 @@ function openDialogueWith(npc: NPC): void {
     else if (!state.flags["ceo-workshop-offered"]) treeKey = "give-task";
     else if (!state.flags["ceo-reviewed"]) treeKey = "performance-review";
     else treeKey = "fireside";
+  } else if (npc.id === "renata") {
+    // C-64: the receptionist is the player's first guide and the
+    // standing FAQ / help centre. The first time the player meets
+    // her (the `renata-tut-finished` flag is unset) the
+    // `first-meeting` tree runs the orientation; every later
+    // visit opens the `default` FAQ menu. The flag is set by the
+    // first-meeting tree's own effects.
+    if (!state.flags["renata-tut-finished"]) treeKey = "first-meeting";
   }
   const tree = npc.dialogues[treeKey] ?? npc.dialogues.default;
   if (!tree) return;

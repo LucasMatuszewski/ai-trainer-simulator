@@ -85,6 +85,14 @@ export const GOODBYE_BY_NPC: Record<string, ReadonlyArray<string>> = {
     "Leaving. If I am rehired tomorrow.",
     "Night. I will google what I did.",
   ],
+  // C-64: the receptionist. She is the last to leave (her
+  // evening schedule row is at-desk, not gone-home), so these
+  // are only used if the day does end before she does.
+  renata: [
+    "Welcome desk is closed. Tomorrow, then.",
+    "Going home. Keys are in the drawer.",
+    "Night. The printer is still jammed.",
+  ],
 };
 
 const GENERIC: ReadonlyArray<string> = [

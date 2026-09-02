@@ -20,8 +20,11 @@ const DESK_STANDING_DISTANCE = 0.45;
 
 /** NPCs whose "at-desk" spot is NOT a wall desk with a `desk-<id>` AABB:
  *  the CEO has his own executive desk in the CEO office (already 0.3 m
- *  away, untouched by C-63) and Burek is a dog on the floor. */
-const NOT_AT_A_WALL_DESK: ReadonlySet<NpcId> = new Set(["dawid", "burek"]);
+ *  away, untouched by C-63), Burek is a dog on the floor, and Renata
+ *  (C-64) works at the reception desk in the renamed reception room -
+ *  her desk is a 3D prop with a `reception-desk` AABB, not a wall
+ *  desk, and the 0.45 m wall-desk rule does not apply to her. */
+const NOT_AT_A_WALL_DESK: ReadonlySet<NpcId> = new Set(["dawid", "burek", "renata"]);
 
 function distanceToAabb(
   point: { x: number; z: number },

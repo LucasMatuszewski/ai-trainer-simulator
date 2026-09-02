@@ -642,6 +642,102 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Reheated, it is a whole new PR.",
     ],
   },
+  // --- Receptionist-flavoured exchanges (C-64) ---------------------
+  // Renata is the office manager; these cover her actual job:
+  // couriers, walk-ins, room bookings, the fire drill, expense
+  // reports, who's-cake-today, and laptops left in meeting rooms.
+  // These are general-topic (any NPC may start them) so the
+  // existing speaker-topics taxonomy stays unchanged.
+  {
+    starter: "Courier's here, sign for a personal delivery.",
+    responses: [
+      "Whose name is on it? It is everyone's problem.",
+      "I already signed. It is in the lost and found.",
+      "Tell them we moved. To vague direction.",
+      "If it is for the CEO, it is for everyone.",
+      "Another one? I will put it with the others.",
+    ],
+  },
+  {
+    starter: "Visitor with no appointment. Smile?",
+    responses: [
+      "Wide. Then walk them to the lobby.",
+      "Ask who they are selling to.",
+      "Direct them to a competitor. With a map.",
+      "Tell them the boss is in a meeting. Always.",
+      "Offer water. They usually leave after two.",
+    ],
+  },
+  {
+    starter: "Someone left a laptop in the meeting room.",
+    responses: [
+      "It is the third one this month.",
+      "We attach a tag. Owner pays in cake.",
+      "It is fine, no one steals here. Probably.",
+      "I will lock the room and call them.",
+      "It is the intern's. It is always the intern's.",
+    ],
+  },
+  {
+    starter: "Fire drill in ten. Act surprised.",
+    responses: [
+      "Same time as every quarter. Mark it.",
+      "I left my coffee. The drill can wait.",
+      "I have a meeting. The fire does not.",
+      "Where is the assembly point again?",
+      "Walk slow. Make the safety officer work.",
+    ],
+  },
+  {
+    starter: "Whose birthday is it today?",
+    responses: [
+      "The intern's. The cake budget is thin.",
+      "Marketing's. There is no cake, only a deck.",
+      "Nobody's. The calendar lied again.",
+      "The CEO's. We are not celebrating.",
+      "Mine, technically. Bring napkins.",
+    ],
+  },
+  {
+    starter: "Double-booked the small meeting room.",
+    responses: [
+      "Tell sales the room is haunted. Works.",
+      "Whoever booked second gets the kitchen.",
+      "Put one in the lobby. They will cope.",
+      "Book it as a video call. Half will skip.",
+      "Whoever shouts loudest keeps the room.",
+    ],
+  },
+  {
+    starter: "Need a key for the small room. Pronto.",
+    responses: [
+      "It is taped under the reception desk. Always.",
+      "Check Janusz. He has every key.",
+      "Just prop the door. We will fix it never.",
+      "Locks are a suggestion in this office.",
+      "The key is with the spare key. Good luck.",
+    ],
+  },
+  {
+    starter: "The fire alarm is just a drill. Stand up.",
+    responses: [
+      "I will finish this email first. Then fire.",
+      "The fire exits are a maze. On purpose.",
+      "I do not see flames. I see meetings.",
+      "We do this quarterly. It is a tradition.",
+      "The stairs are a team-building exercise.",
+    ],
+  },
+  {
+    starter: "New visitor. Name sounds made up.",
+    responses: [
+      "It is the startup pitch season. Smile.",
+      "Ask for ID. They always lie about titles.",
+      "Sit them in the lobby. They will leave.",
+      "Tell them the boss is in a meeting.",
+      "Offer coffee. They forget why they came.",
+    ],
+  },
 ];
 
 /**

@@ -1041,3 +1041,15 @@ for (const [npcId, trees] of Object.entries(MORE_DIALOGUES)) {
     ...trees,
   };
 }
+
+// C-64: Renata's tutorial + FAQ trees live in their own file
+// (dialogues-renata.ts) to keep this 1000-line file readable.
+// RENATA_DIALOGUES is keyed by tree name (not by npcId) because
+// there is only one NPC for these trees. We merge them under the
+// "renata" key in DIALOGUES - same pattern as MORE_DIALOGUES.
+import { RENATA_DIALOGUES } from "./dialogues-renata";
+const renataExisting = (DIALOGUES as Record<string, Record<string, DialogueTree>>)["renata"] ?? {};
+(DIALOGUES as Record<string, Record<string, DialogueTree>>)["renata"] = {
+  ...renataExisting,
+  ...RENATA_DIALOGUES,
+};

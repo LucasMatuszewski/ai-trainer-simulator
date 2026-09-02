@@ -34,6 +34,10 @@ const EXPECTED_GENDER: Record<NpcId, "male" | "female" | "dog"> = {
   maciek: "male",
   przemek: "male",
   dawid: "male",
+  // C-64: the receptionist. She is a woman, and the
+  // receptionist/office manager role matches the office's
+  // "Warm and unflappable to the player's face" voice.
+  renata: "female",
 };
 
 describe("NPCS data", () => {
@@ -70,7 +74,11 @@ describe("NPCS data", () => {
     // office north of the main office (x=[-8, 8], z=[-19, -9]),
     // so his z is below OFFICE_BOUNDS.minZ by design. Every
     // other NPC stays inside the main office bounds.
+    // C-64: the receptionist (Renata) lives in the reception
+    // room south of the main office (x=[-6, 6], z=[9, 19]),
+    // so her z is above OFFICE_BOUNDS.maxZ by design.
     const CEO_OFFICE_MIN_Z = -19;
+    const RECEPTION_MAX_Z = 19;
     for (const npc of NPCS) {
       expect(
         npc.position.x,
@@ -81,7 +89,7 @@ describe("NPCS data", () => {
         npc.position.z,
         `${npc.id}.z out of bounds`,
       ).toBeGreaterThanOrEqual(npc.id === "dawid" ? CEO_OFFICE_MIN_Z : OFFICE_BOUNDS.minZ);
-      expect(npc.position.z).toBeLessThanOrEqual(OFFICE_BOUNDS.maxZ);
+      expect(npc.position.z).toBeLessThanOrEqual(npc.id === "renata" ? RECEPTION_MAX_Z : OFFICE_BOUNDS.maxZ);
     }
   });
 
