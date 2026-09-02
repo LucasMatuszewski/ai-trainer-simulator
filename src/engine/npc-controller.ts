@@ -286,6 +286,14 @@ const WAIT_RECHECK_S = 3;
 const TRIP_ALLOWANCE_FACTOR = 3;
 const TRIP_ALLOWANCE_GRACE_S = 12;
 
+/** A blocker may be omitted only when it owns the destination. A box
+ * containing the current walker must remain visible to the planner so
+ * the failed plan falls through to the escape rung. */
+export function blockerBoxCoversDestination(box: AABB, destination: THREE.Vector3): boolean {
+  return destination.x >= box.minX && destination.x <= box.maxX &&
+    destination.z >= box.minZ && destination.z <= box.maxZ;
+}
+
 export function advanceAlongPath(
   position: THREE.Vector3,
   path: readonly THREE.Vector3[],
@@ -619,8 +627,12 @@ export function createNpcController(
    *
    *  Only STANDING NPCs become obstacles: someone walking will clear
    *  the way by themselves, and boxing them would rewrite every route
-   *  every frame. A box covering this NPC's own position or its
-   *  destination is skipped, or the plan could never start or finish. */
+   *  every frame. A box covering the destination is skipped so the
+   *  route can finish. A box covering the walker's current position is
+   *  deliberately KEPT: dropping the blocker at exactly the moment the
+   *  walker brushes its box lets A* plan straight back through that
+   *  person. A failed re-plan correctly falls through to the local
+   *  escape rung, which moves the walker clear before the next re-plan. */
   const blockerBoxes = (npcId: NpcId, from: THREE.Vector3, to: THREE.Vector3): AABB[] => {
     const boxes: AABB[] = [];
     for (const other of npcs) {
@@ -636,9 +648,7 @@ export function createNpcController(
         minZ: otherObject.position.z - BLOCKER_BOX_HALF,
         maxZ: otherObject.position.z + BLOCKER_BOX_HALF,
       };
-      const covers = (point: THREE.Vector3): boolean =>
-        point.x >= box.minX && point.x <= box.maxX && point.z >= box.minZ && point.z <= box.maxZ;
-      if (covers(from) || covers(to)) continue;
+      if (blockerBoxCoversDestination(box, to)) continue;
       boxes.push(box);
     }
     return boxes;

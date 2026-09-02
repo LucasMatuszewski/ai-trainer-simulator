@@ -152,6 +152,12 @@ export type ArrivalMode = "already-in" | "arrives";
  *  Burek the dog sleeps here. */
 export const ALREADY_IN_AT_DAY_START: ReadonlySet<NpcId> = new Set([
   "bartek", "marek", "maciek", "dawid", "burek",
+  // C-64: Renata opens the office. This is not a flavour choice - the
+  // player spawns in the reception and she is the tutorial host and help
+  // centre they are meant to meet first, so an empty reception desk at
+  // t=0 breaks the game's opening. A receptionist who arrives after the
+  // visitors is also just wrong.
+  "renata",
 ]);
 
 /** PRD 11.1: "Janusz (the janitor) - arrives late (10am)". Only his

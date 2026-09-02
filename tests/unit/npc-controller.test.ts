@@ -4,7 +4,7 @@ import { INTER_NPC_LINES, OFFICE_CHATTER } from "../../src/content/office-chatte
 import { LUNCH_DIALOGUES_HUMAN } from "../../src/content/lunch-dialogues";
 import { KITCHEN_STOP_DWELL, type Period } from "../../src/content/npc-schedule";
 import { NPCS } from "../../src/content/npcs";
-import { CHAT_PAUSE_S, COPY_RUN_DWELL_S, COPY_RUN_INTERVAL_S, SQUEEZE_SEPARATION, advanceAlongPath, createNpcController, nextBarkDelay } from "../../src/engine/npc-controller";
+import { CHAT_PAUSE_S, COPY_RUN_DWELL_S, COPY_RUN_INTERVAL_S, SQUEEZE_SEPARATION, advanceAlongPath, blockerBoxCoversDestination, createNpcController, nextBarkDelay } from "../../src/engine/npc-controller";
 import { PAIR_COOLDOWN_S, RESPONSE_DELAY_S, roomAt } from "../../src/engine/chatter";
 import { MIN_SEPARATION } from "../../src/engine/npc-avoidance";
 import type { NPC, NpcId } from "../../src/types";
@@ -34,6 +34,17 @@ describe("advanceAlongPath", () => {
     const result = advanceAlongPath(end, [new THREE.Vector3(), end], 1, 0, 4, 10);
     expect(result.position.toArray()).toEqual([2, 0, 3]);
     expect(result.finished).toBe(true);
+  });
+});
+
+describe("blockerBoxCoversDestination", () => {
+  it("keeps a blocker containing only the walker's start in the re-plan", () => {
+    const box = { minX: 7, maxX: 7.9, minZ: 1.55, maxZ: 2.45 };
+    const kasiaStart = new THREE.Vector3(7.75, 0, 2.24);
+    const exit = new THREE.Vector3(0, 0, 18.2);
+
+    expect(blockerBoxCoversDestination(box, kasiaStart)).toBe(true);
+    expect(blockerBoxCoversDestination(box, exit)).toBe(false);
   });
 });
 
@@ -114,6 +125,47 @@ describe("createNpcController", () => {
     period = "evening"; controller.update(0); controller.update(0.5);
     expect(object.position.distanceTo(interrupted)).toBeLessThanOrEqual(npc("pawel").walkSpeed * 0.5 + 1e-6);
     expect(object.userData.npcState).toBe("walking");
+  });
+
+  it("escapes a stationary blocker whose avoidance box already contains the walker", () => {
+    const kasia = makeObject("kasia");
+    const grazyna = makeObject("grazyna");
+    const objects = { kasia, grazyna } as Record<NpcId, THREE.Object3D>;
+    const controller = createNpcController(
+      [npc("kasia"), npc("grazyna")],
+      objects,
+      () => "afternoon",
+      () => 1,
+      lcg(2024),
+      () => false,
+      { arrivals: false, chatter: false },
+    );
+    controller.update(0);
+    // Grazyna's temporary blocker box spans x=7..7.9, z=1.55..2.45.
+    // Starting Kasia just inside its north-east edge reproduces the
+    // C-64 failure: the old re-plan dropped that box and repeatedly
+    // routed her back through Grazyna instead of taking an escape rung.
+    kasia.position.set(7.75, 0, 2.24);
+    controller.setOverride("kasia", {
+      position: { x: 0, y: 0, z: 18.2 },
+      face: Math.PI,
+      state: "gone-home",
+    });
+
+    const dt = 1 / 30;
+    let frozenNow = 0;
+    let worstFreeze = 0;
+    let previous = kasia.position.clone();
+    for (let step = 0; step < 30 / dt && kasia.userData.npcState === "walking"; step += 1) {
+      controller.update(dt);
+      const moved = kasia.position.distanceTo(previous);
+      frozenNow = moved < 1e-4 ? frozenNow + dt : 0;
+      worstFreeze = Math.max(worstFreeze, frozenNow);
+      previous = kasia.position.clone();
+    }
+
+    expect(worstFreeze).toBeLessThan(12);
+    expect(kasia.position.distanceTo(new THREE.Vector3(7.75, 0, 2.24))).toBeGreaterThan(1);
   });
 
   it("visits kitchen stops in order with a dwell between walks", () => {
