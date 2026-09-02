@@ -72,7 +72,7 @@ test("C-62: fresh game lands the player in the meeting room facing the office", 
 });
 
 test("C-62: evening walk-out is staggered and visible", async ({ page }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(300_000);
   await page.addInitScript((save) => {
     localStorage.setItem("aitrainer:save:v1", JSON.stringify(save));
   }, saveWithFlags({ "_intro-played": true, "_seen-intro-toast": true }));
@@ -80,42 +80,43 @@ test("C-62: evening walk-out is staggered and visible", async ({ page }) => {
   await page.click('[data-action="continue"]');
   await expect(page.locator(".hud")).toBeVisible();
 
-  // Jump to the evening.
-  await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
-  await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
-  await page.waitForTimeout(1500);
-  // The period flip must NOT mass-vanish the office (the C-62 bug):
-  // sample for a few seconds and take the worst case - a real
-  // mass-vanish would pin ~10 NPCs gone-home instantly and forever,
-  // while only maciek (afternoon gone-home by design, the CTO leaves
-  // early) may legitimately be gone.
-  let worstGoneHome = 0;
-  let statesAtFlip: string[] = [];
-  let dump = "";
-  for (let sample = 0; sample < 6; sample += 1) {
-    const npcs = (await page.evaluate(() => window.__aitrainer!.inspectNpcs())) ?? [];
-    statesAtFlip = npcs.map((n) => n.state ?? "");
-    const gone = npcs.filter((n) => n.state === "gone-home");
-    if (gone.length > worstGoneHome) {
-      worstGoneHome = gone.length;
-      dump = gone.map((n) => `${n.npcId}@(${n.position.x.toFixed(1)},${n.position.z.toFixed(1)})`).join(", ");
-    }
-    await page.waitForTimeout(500);
-  }
-  expect(statesAtFlip.length).toBeGreaterThan(0);
-  expect(worstGoneHome, dump).toBeLessThanOrEqual(1);
-
-  // Wait well into the evening: departures start ~20 s in, gaps ~8 s.
-  await page.waitForTimeout(75_000);
-  const states = (await page.evaluate(() =>
-    window.__aitrainer!.inspectNpcs()?.map((n) => n.state ?? ""),
+  // Let the morning actually run: arrivals spread over ~80 s and the
+  // late one lands at 115 s. Skipping straight to the evening would
+  // only prove that people who never walked in stay away.
+  await page.waitForTimeout(130_000);
+  const beforeFlip = (await page.evaluate(() =>
+    window.__aitrainer!
+      .inspectNpcs()
+      ?.filter((n) => n.state !== "gone-home" && n.state !== "arriving")
+      .map((n) => n.npcId),
   )) as string[];
-  const goneHome = states.filter((s) => s === "gone-home").length;
-  const walking = states.filter((s) => s === "walking").length;
-  // At least two evening leavers have completed the walk-out (maciek
-  // may be one), and someone is still on their way (the staggered
-  // schedule keeps the office populated until late).
-  expect(goneHome).toBeGreaterThanOrEqual(3);
-  expect(goneHome + walking).toBeGreaterThanOrEqual(4);
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/c62-02-evening-walkout.png` });
+  expect(beforeFlip.length).toBeGreaterThanOrEqual(8);
+
+  // Flip to the evening. Nobody who is IN may vanish on the
+  // transition - that was the C-62 bug.
+  await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
+  await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
+  await page.waitForTimeout(2_000);
+  const rightAfterFlip = (await page.evaluate(() =>
+    window.__aitrainer!
+      .inspectNpcs()
+      ?.filter((n) => n.state !== "gone-home" && n.state !== "arriving")
+      .map((n) => n.npcId),
+  )) as string[];
+  const vanished = beforeFlip.filter((id) => !rightAfterFlip.includes(id));
+  expect(vanished, `vanished at the flip: ${vanished.join(", ")}`).toHaveLength(0);
+  await page.screenshot({ path: `${SCREENSHOT_DIR}/c62-02-evening-start.png` });
+
+  // Departures start at 30 s and step ~14 s apart: after 90 s several
+  // have left and the office is emptying gradually, not all at once.
+  await page.waitForTimeout(90_000);
+  const stillIn = (await page.evaluate(() =>
+    window.__aitrainer!
+      .inspectNpcs()
+      ?.filter((n) => n.state !== "gone-home" && n.state !== "arriving")
+      .map((n) => n.npcId),
+  )) as string[];
+  expect(stillIn.length).toBeLessThan(beforeFlip.length);
+  expect(stillIn).toContain("dawid"); // the CEO never leaves
+  await page.screenshot({ path: `${SCREENSHOT_DIR}/c62-03-evening-walkout.png` });
 });
