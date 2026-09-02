@@ -138,6 +138,16 @@ export function planNpcPath(
     for (const adjacent of neighbors.values()) adjacent.sort((left, right) => left.localeCompare(right));
 
     const goalVector = waypointVector(goal);
+    // Boundary contact along a waypoint edge is fine (grazing a corner
+    // is part of the tie-breaking geometry the tests pin), so the
+    // re-validation shrinks obstacles by an epsilon and only rejects
+    // real crossings.
+    const planningAabbs = obstacles.map((obstacle) => ({
+      minX: obstacle.minX + 1e-6,
+      maxX: obstacle.maxX - 1e-6,
+      minZ: obstacle.minZ + 1e-6,
+      maxZ: obstacle.maxZ - 1e-6,
+    }));
     const open = new MinHeap();
     const cost = new Map<string, number>([[start.id, 0]]);
     const previous = new Map<string, string>();
@@ -159,6 +169,14 @@ export function planNpcPath(
       for (const neighborId of neighbors.get(current.id) ?? []) {
         const neighbor = waypointById.get(neighborId);
         if (neighbor === undefined) continue;
+        // C-62 fix: re-validate each edge against the caller's
+        // obstacles. The static edges are built without the dynamic
+        // blocker boxes (avoid-people replans), so an A* that trusts
+        // them blindly routes straight through the person the replan
+        // is trying to avoid - the Janusz-at-Klaudia's-desk jam.
+        if (!isClear(waypointVector(currentWaypoint), waypointVector(neighbor), planningAabbs)) {
+          continue;
+        }
         const candidateCost = cost.get(current.id)! +
           distanceXZ(waypointVector(currentWaypoint), waypointVector(neighbor));
         const knownCost = cost.get(neighborId);

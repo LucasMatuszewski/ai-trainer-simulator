@@ -94,7 +94,10 @@ describe("office day (C-48 v5 crowd-flow regression)", () => {
     // tuning does not trip them, but a return of the factory-gate
     // morning, the standing-around or the pacing marathons would.
     expect(totalFrozen).toBeLessThan(250);
-    expect(totalEpisodes).toBeLessThan(60);
+    // C-62: the entrance moved deep into the meeting room, so every
+    // arrival and departure walks a longer route through a doorway -
+    // blocked episodes grew with the route length (60 -> 80).
+    expect(totalEpisodes).toBeLessThan(80);
     // Nobody paces: a day of walking is tens of metres, not hundreds.
     // The worst offender covered 905m before this was fixed.
     expect(worstWalked).toBeLessThan(150);

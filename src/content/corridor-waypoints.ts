@@ -19,14 +19,15 @@ export const CORRIDOR_WAYPOINTS: readonly Waypoint[] = [
   { id: "main-north", position: { x: 0, y: 0, z: -5 } },
   { id: "main-south", position: { x: 0, y: 0, z: 5 } },
   // C-57: a waypoint in the SW corner of the main office, bridging
-  // the south aisle to the W-wall desk column (x=-7.7). After the
-  // 2026-09-01 furniture re-layout the server rack moved to
-  // x=[-9, -8], z=[7.9, 8.9] (it now touches the west wall), so the
-  // old x=-8.7 gap west of the rack is gone. The waypoint now sits
-  // in the rack's old spot, ON the desk-column line: the straight
-  // x=-7.7 run down to desk-klaudia clears every AABB (the rack's
-  // maxX is -8, the desks start at -7).
-  { id: "desk-aisle-west", position: { x: -7.7, y: 0, z: 8.6 } },
+  // the south-west aisle to the W-wall desk column. C-62 review: the
+  // 2026-09-01 furniture re-layout pushed the server rack against the
+  // west wall (x=[-9, -8], z=[7.9, 8.9]) - its corner overlaps the
+  // old x=-7.7 column line by 5cm of NPC radius, which is exactly
+  // where Janusz crawled to a standstill. The waypoint now sits SOUTH
+  // of the rack at (-8.7, 7.2), restoring the C-57 west-lane route to
+  // desk-janusz that passes west of both the rack and Klaudia's
+  // standing spot.
+  { id: "desk-aisle-west", position: { x: -8.7, y: 0, z: 7.2 } },
   { id: "door-main-kitchen", position: { x: 9.65, y: 0, z: 0 } },
   { id: "door-main-ceo", position: { x: 0, y: 0, z: -9.8 } },
   { id: "door-main-meeting", position: { x: 0, y: 0, z: 9.9 } },
@@ -69,11 +70,13 @@ export const CORRIDOR_WAYPOINTS: readonly Waypoint[] = [
   // jams forever (measured: Janusz oscillating z=[6.3, 8.5] for the
   // whole morning, never reaching his desk, after the 2026-09-01
   // furniture re-layout moved the server rack against the west wall
-  // and killed the old west detour). This bypass node sits west of
-  // the column, between the desks and the wall band, so
-  // replanFrom(avoidPeople) has a real route around a standing
-  // blocker. It must NOT be on the direct line - that is the point.
-  { id: "desk-aisle-west-bypass", position: { x: -8.4, y: 0, z: 3.5 } },
+  // and killed the old west detour). This bypass node sits directly
+  // abeam of Klaudia's standing spot, 0.9m off her center (the
+  // separation radius is 0.8), so replanFrom(avoidPeople) has a real
+  // route around a standing blocker that separation itself cannot
+  // block. x=-8.6 still clears the wall band (-9.5..-9) with the NPC
+  // radius (0.35).
+  { id: "desk-aisle-west-bypass", position: { x: -8.6, y: 0, z: 5.5 } },
   { id: "desk-marek", position: { x: 7.7, y: 0, z: -5 } },
   { id: "desk-ania", position: { x: 7.7, y: 0, z: -2.5 } },
   { id: "desk-grazyna", position: { x: 7.7, y: 0, z: 2 } },
