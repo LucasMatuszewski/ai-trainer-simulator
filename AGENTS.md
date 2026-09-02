@@ -69,6 +69,7 @@ Per `~/AGENTS.md` global rule HR-6:
 - One logical change per commit. The commit message says WHAT and WHY.
 - `git add -A`, `git add .`, `git commit -a` are forbidden. Always stage explicit paths.
 - The agent commits without being asked (each verified logical step).
+- **Commits happen AS the work is done, not after it.** The failure mode to avoid (Codex's C-67 diff, 2026-09-02): finish an entire feature + QA + review fixes, then face one 30-file diff that must be retro-split. When a logical step is complete and verified, commit it before starting the next step. Never reconstruct fake "intermediate" states at the end to manufacture history — that is riskier and slower than committing live (Lucas, 2026-09-02: "we need them while you work to make it easier to revert").
 - A "logical change" for this project includes: extracting a pure function, adding tests, fixing a bug, adding one new NPC, adding one new dialogue tree, fixing the camera, etc. NOT a whole phase.
 - **Push at the end of each phase**, NOT mid-phase. A phase is "finished" only when ALL of these are true:
   1. All PRD acceptance criteria for the phase are met.
