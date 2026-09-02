@@ -74,16 +74,27 @@ test("visual check: office, new rooms, help, and dialogue", async ({ page }) => 
   await page.waitForTimeout(5_500);
   await expect(page.locator(".hud")).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.__aitrainer!.getScreen())).toBe("office");
-  await page.locator("#game-canvas").click({ position: { x: 200, y: 200 } });
+  // No canvas click: the walk helpers drive window-level key events,
+  // and a world click raycasts the scene — hitting an NPC would open
+  // a dialogue and intentionally block the walk.
 
   await capture(page, screenshots[0]);
 
   await walk(page, "w", 3);
   await capture(page, screenshots[1]);
 
-  // Route around the center table and desk rows, then line up with
-  // the narrow north doorway at x=0.
-  await walkUntil(page, "a", ({ x }) => x <= -8.6, "main west perimeter aisle");
+  // C-62/C-64: the player starts in the reception, so first leave
+  // north through the clear centre doorway (x in [-1.5, 1.5]) into
+  // the main office. Straight-line key walks cannot corner, so every
+  // leg must END inside a collision-free lane: thread the ~1.3 m lane
+  // between Maciek's desk column (x=[-4,-2], z=[-7,-6]) and the west
+  // wall desks (x=[-7,-6], z=[4.5,6.5]), then west into the perimeter
+  // aisle, north past the desk row, and east to line up with the
+  // narrow north doorway at x=0.
+  await walkUntil(page, "w", ({ z }) => z <= 5, "reception doorway into the main office");
+  await walkUntil(page, "a", ({ x }) => x <= -4.4, "lane between the desk columns");
+  await walkUntil(page, "w", ({ z }) => z <= -7.4, "north along the clear lane");
+  await walkUntil(page, "a", ({ x }) => x <= -8.4, "main west perimeter aisle");
   await walkUntil(page, "w", ({ z }) => z <= -8, "north wall approach");
   await walkUntil(page, "d", ({ x }) => x >= 0, "training doorway alignment");
   await capture(page, screenshots[2]);
@@ -91,17 +102,19 @@ test("visual check: office, new rooms, help, and dialogue", async ({ page }) => 
   await walkUntil(page, "w", ({ z }) => z <= -13, "training room interior");
   await capture(page, screenshots[3]);
 
-  // Back through the main office's west aisle, across its clear south
-  // corridor, through the kitchen, then through the CTO doorway.
-  // Stay north of the inflated desk AABBs (north edge z=-7.8) while
-  // crossing east. Stopping at z=-8 could land on the collision boundary
-  // due to frame timing and make the path depend on the current desk mix.
+  // Back south through the same clear lane between the desk columns
+  // used on the outbound leg (the west aisle is not passable south of
+  // z=-7.5: the server rack occupies x=[-9,-8], z=[7.9,8.9]), then
+  // across to the kitchen and through the CTO doorway. Stay north of
+  // the inflated north desk AABBs (edge z=-7.35) while crossing west.
   await walkUntil(page, "s", ({ z }) => z >= -8.5, "return from training", 40);
-  await walkUntil(page, "d", ({ x }) => x >= 4.7, "clear north desks east side");
-  await walkUntil(page, "s", ({ z }) => z >= -4.6, "clear north desk row");
-  await walkUntil(page, "a", ({ x }) => x <= -8.6, "main west perimeter aisle return");
+  await walkUntil(page, "a", ({ x }) => x <= -4.4, "lane between the desk columns (return)");
   await walkUntil(page, "s", ({ z }) => z >= 5, "main south corridor");
-  await walkUntil(page, "w", ({ z }) => z <= -1.5, "clear meeting table north side");
+  // Stop north of the centre but SOUTH of Ania's desk (her inflated
+  // AABB spans z=[-3.85,-1.15] at x=[6,7]): the east crossing needs
+  // z inside (-1.15, 0.65), the lane between Ania's and Grazyna's
+  // desks, even with key-press overshoot.
+  await walkUntil(page, "w", ({ z }) => z <= -0.5, "clear meeting table north side");
   await walkUntil(page, "d", ({ x }) => x >= 8.5, "east wall lane approach");
   await walkUntil(page, "s", ({ z }) => z >= 0, "kitchen doorway alignment", 20);
   await walkUntil(page, "d", ({ x }) => x >= 18, "kitchen interior");

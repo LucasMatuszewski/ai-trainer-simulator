@@ -89,8 +89,9 @@ test("Phase 2 FPS spawn: eye-height camera looking into the office", async ({ pa
   expect(camera.z).toBeCloseTo(player.z, 1);
 
   // Walk forward briefly to confirm WASD is wired and the camera
-  // follows the player.
-  await page.locator("#game-canvas").click({ position: { x: 200, y: 200 } });
+  // follows the player. No canvas click first: the key listeners are
+  // on window, and a world click raycasts the scene — hitting an NPC
+  // would open a dialogue and intentionally block movement.
   await page.waitForTimeout(100);
   const beforeZ = (await page.evaluate(() => window.__aitrainer!.getPlayer().z)) ?? 0;
   await page.keyboard.down("w");

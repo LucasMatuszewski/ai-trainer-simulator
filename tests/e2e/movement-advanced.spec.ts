@@ -41,12 +41,16 @@ test("WASD advanced: full sequence with multiple A presses, asymmetric final pos
   await expect(page.locator(".hud")).toBeVisible();
   await page.waitForTimeout(5_500);
   await expect.poll(() => page.evaluate(() => window.__aitrainer!.getScreen())).toBe("office");
-  await page.locator("#game-canvas").click({ position: { x: 200, y: 200 } });
-
+  // No canvas click: the key listeners are on window, so no focus is
+  // needed — and a world click RAYCASTS the scene, which can hit an
+  // NPC, open a dialogue, and intentionally block movement.
   const start = await playerPosition(page);
+  // C-64 moved the player start into the meeting room (scene.ts
+  // playerStart). This assertion previously pinned the pre-C-64
+  // office spawn (0, 0.5, 6) and has been failing since.
   expect(start.x).toBeCloseTo(0, 5);
-  expect(start.y).toBeCloseTo(0.5, 5);
-  expect(start.z).toBeCloseTo(6, 5);
+  expect(start.y).toBeCloseTo(0, 5);
+  expect(start.z).toBeCloseTo(17.8, 5);
 
   async function pressAndAssertStop(key: MovementKey, durationMs: number) {
     const before = await playerPosition(page);
@@ -78,19 +82,21 @@ test("WASD advanced: full sequence with multiple A presses, asymmetric final pos
     await page.waitForTimeout(BETWEEN_KEYS_MS);
   }
 
-  // Keep the path south of the desk row at z=3.5. Longer forward/right
-  // legs made this controls regression depend on the current desk layout.
-  // The repeated A still catches the reported "works once, then blocks"
-  // failure without routing through furniture.
+  // Keep the path inside the clear centre aisle around the C-64
+  // reception start (x in [-1.5, 1.5] is asserted clear by the
+  // layout tests). Longer forward/right legs made this controls
+  // regression depend on the current desk layout. The repeated A
+  // still catches the reported "works once, then blocks" failure
+  // without routing through furniture.
   await pressAndAssertStop("w", 300);
   await pressAndAssertStop("d", 300);
   await pressAndAssertStop("a", 300);
   await pressAndAssertStop("s", 300);
   await pressAndAssertStop("a", 300);
 
-  // WALK_SPEED=4.5m/s. Expected net displacement:
-  // W -1.35Z, D +1.35X, A -1.35X, S +1.35Z, A -1.35X.
-  const expected = { x: -1.35, y: 0.5, z: 6 };
+  // WALK_SPEED=4.5m/s. Expected net displacement from the (0, 0, 17.8)
+  // start: W -1.35Z, D +1.35X, A -1.35X, S +1.35Z, A -1.35X.
+  const expected = { x: -1.35, y: 0, z: 17.8 };
   const final = await playerPosition(page);
 
   expect(

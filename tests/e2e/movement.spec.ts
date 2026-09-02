@@ -94,7 +94,10 @@ test("WASD moves the player and stops on release (regression: stuck-key bug)", a
   // element, but the keyup/keydown listeners are on window so
   // focus does not matter for our handlers — this is just a
   // safety net for any future handler bound to the canvas).
-  await page.locator("#game-canvas").click({ position: { x: 200, y: 200 } });
+  // No canvas click: the keydown/keyup listeners are on window, so no
+  // focus is needed — and a world click RAYCASTS the scene, which can
+  // hit an NPC, open a dialogue, and intentionally block movement.
+  // UI overlays also legitimately intercept clicks in their own bounds.
 
   for (const [key, dir] of Object.entries(KEY_TO_AXIS) as Array<[keyof typeof KEY_TO_AXIS, typeof KEY_TO_AXIS[keyof typeof KEY_TO_AXIS]]>) {
     const before = await getPlayer(page);
@@ -152,7 +155,10 @@ test("W + D produces diagonal movement, not 2x speed", async ({ page }) => {
   await expect(page.locator(".hud")).toBeVisible();
   await page.waitForTimeout(5500);
 
-  await page.locator("#game-canvas").click({ position: { x: 200, y: 200 } });
+  // No canvas click: the keydown/keyup listeners are on window, so no
+  // focus is needed — and a world click RAYCASTS the scene, which can
+  // hit an NPC, open a dialogue, and intentionally block movement.
+  // UI overlays also legitimately intercept clicks in their own bounds.
   const before = await getPlayer(page);
   await page.keyboard.down("w");
   await page.keyboard.down("d");
