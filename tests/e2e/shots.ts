@@ -9,7 +9,7 @@ import { dirname, resolve } from "node:path";
  * headless runs (ReadPixels stalls that overheat the laptop), most vantage
  * points went stale after the C-62/C-64 layout moves, and nobody analyses
  * them on every run - they are artifacts for occasional vision QA, not
- * assertions. TODO(sacs-xtma.8): re-author the vantage points, then
+ * assertions. TODO(sacs-omcq): re-author the vantage points, then
  * consider making them default again.
  */
 export const SHOTS_ENABLED = process.env.E2E_SCREENSHOTS === "1";

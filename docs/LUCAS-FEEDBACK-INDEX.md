@@ -78,7 +78,7 @@ nothing is lost again.
 - Make screenshots **opt-in via a flag** (implemented: `E2E_SCREENSHOTS=1`, default off), with a package.json script that runs the **full suite with screens included** (`pnpm test:e2e:screens`) that is **not the default**.
 - The longest waiting tests (real-time passes, e.g. morning fill and evening walk-out) should be optional or ordered last. Implemented: `@slow` tag + `pnpm test:e2e:fast`; the default `pnpm test:e2e` still runs everything.
 - The suite "takes CRAZY long and CPU gets so hot even with 1 worker" — one worker stays (parallel SwiftShader instances hang on ReadPixels); further reduction comes from not capturing by default.
-- **Cross-reference:** `tests/e2e/shots.ts`; Beads `sacs-m2b9` (CPU profiling follow-up) and `sacs-xtma.8` (re-author stale vantage points).
+- **Cross-reference:** `tests/e2e/shots.ts`; Beads `sacs-m2b9` (CPU profiling follow-up) and `sacs-omcq` (re-author stale vantage points).
 
 ## 2026-09-02 — workflow directives
 
