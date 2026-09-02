@@ -179,3 +179,5 @@ Beads: `sacs-ab6p`. Lucas found that the `?` modal does not repeat the controls 
 2. Rework the modal into compact **Move & look**, **Talk & act**, and **Interface** groups; retain Goal, Stats, Money, and Cast guidance below them.
 3. Wire the two shortcuts already promised elsewhere but currently inert: **Z = End Day** and **? = Help** (F1 remains an alternative). Do not list planned E/Tab/M controls before they work.
 4. Run typecheck, all unit tests, the focused visual E2E/help flow, and browser QA at the supported viewport. Save and show the screenshot before treating this polish item as accepted.
+
+**Visual acceptance (Lucas, 2026-09-02):** accepted ("it looks fine"). Lucas clarified that the Vite HMR server should remain running; only CPU-heavy finite test runners and automated Chromium sessions should stop after QA. Optional profiling/worker-limit follow-up: `docs/PERFORMANCE.md`, Beads `sacs-m2b9`.

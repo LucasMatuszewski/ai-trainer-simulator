@@ -5,6 +5,13 @@ given. Every item MUST be reflected in `docs/PRD.md` and the
 plan. The agent MUST update this file when Lucas sends feedback so
 nothing is lost again.
 
+## 2026-09-02 — visual acceptance and local CPU usage
+
+**ID: L-2026-09-02-04 — Keep Vite running; optimize test CPU later**
+- Restart and keep the Vite HMR dev server running; Lucas only wanted the CPU-heavy test/QA processes stopped.
+- Test CPU optimization is optional follow-up work. Record it in `docs/PERFORMANCE.md`, including bounded Vitest/Playwright concurrency and reliable automated-browser teardown as investigation candidates.
+- **Cross-reference:** optional Beads task `sacs-m2b9`, `docs/PERFORMANCE.md`, and the active plan's C-66 operational note. No PRD correction or ADR is required until profiling produces a gameplay/runtime architecture decision.
+
 ## 2026-09-02 — repository hygiene
 
 **ID: L-2026-09-02-01 — Ignore Playwright CLI artifacts**
