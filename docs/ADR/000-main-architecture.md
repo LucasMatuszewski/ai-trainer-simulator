@@ -120,7 +120,7 @@ No circular dependencies. `types.ts` is the leaf module.
 ### GameState
 - `cash: number` (zł, integer; 0 to ~1,000,000)
 - `day: number` (integer; starts at 1)
-- `timeOfDay: 'morning' | 'afternoon' | 'evening'`
+- `timeOfDay: 'morning' | 'lunch' | 'afternoon' | 'evening'`
 - `character: { name: string; specialization: SpecializationId; trait: TraitId; }`
 - `stats: { credibility: number; caffeine: number; patience: number; focus: number; }` (0-100 each)
 - `npcRelationships: Record<NpcId, number>` (0-100 each)
@@ -483,7 +483,7 @@ Working title is "AI Trainer Simulator". The real name will come from the GLM br
 
 ## 13. Decisions from user corrections (2026-08-29) — cross-references
 
-These decisions came from Lucas during playtesting. They are captured fully in `docs/PRD.md` §13 (Corrections Log). This section is the technical / architectural summary so the implementing agent (or any future agent) knows exactly what each correction means for the codebase. The PRD's C-NN IDs are the canonical references.
+These decisions came from Lucas during playtesting. Current requirements are in `docs/PRD.md`; the full C-NN history is in `docs/CHANGELOG.md`. This section is the technical / architectural summary so the implementing agent (or any future agent) knows exactly what each correction means for the codebase. The CHANGELOG's C-NN IDs are the canonical references.
 
 ### D-08: First-person camera (PRD C-01) — REPLACES the early D-04 framing
 
@@ -643,16 +643,16 @@ This section covers the corrections C-13..C-24 added to the PRD after the first 
 
 ### D-22: NPC schedule is deterministic + per-day stochastic (PRD C-15)
 
-- **Decision:** Each NPC has a **deterministic per-period schedule** as the backbone (the position, face, and state for morning / afternoon / evening). On top of that, a **per-day random seed** (the day number) controls the stochastic layer: who arrives late, who apologises, who goes to the kitchen for coffee, who stays late to play video games.
+- **Decision:** Each NPC has a **deterministic per-period schedule** as the backbone (the position, face, and state for Morning / Lunch / Afternoon / Evening). On top of that, a **per-day random seed** (the day number) controls the stochastic layer: who arrives late, who apologises, who goes to the kitchen for coffee, who stays late to play video games.
 - **Why this and not "fully random":** Fully random is hard to test (you can't write a regression test for "what did Klaudia do today") and gives a noisy experience. Fully deterministic is boring. The deterministic backbone with stochastic flavor is the right level for 13 NPCs in a 20x20 (now 50x50) room.
 - **Seeded RNG:** `mulberry32(dayNumber ^ npcIdHash)`. The same day always replays the same stochastic decisions, so the QA can write a regression test for "on day 3, Marek is late and apologises."
 - **The stochastic layer is bounded:** max 2-3 late arrivals per day, max 0-1 staying late, max 1-2 in the kitchen in the evening. The player should not see more than 5 stochastic events per day across the whole office.
 - **Implementation:** A new `src/engine/npc-stochastic.ts` with a pure function `getStochasticState(npcId, dayNumber): { isLate, isLateReason, isStayingLate, goesToKitchenEvening, ... }`. Easy to test.
 - **Status:** Phase 3. Already in plan.
 
-### D-23: Time = 5 real minutes per period (300s) (PRD C-16)
+### D-23: Time = 5 real minutes per period (300s) (PRD C-16) — SUPERSEDED BY D-32
 
-- **Decision:** The constant `SECONDS_PER_PERIOD = 300`. Three periods per in-game day = 15 real minutes per in-game day. This is the default for the public demo. A "speed run" mode (Phase 6+ future) can lower it.
+- **Historical decision:** The constant `SECONDS_PER_PERIOD = 300`. Three periods per in-game day = 15 real minutes per in-game day. D-32 replaces this with a four-period 3/2/3/2 schedule after playtesting showed the day still felt too long.
 - **Tunable:** The constant is exported from `src/main.ts` (or a `src/game/time.ts` once extracted) and is the single source of truth. No magic numbers in the frame loop.
 - **Dialogue pause:** `if (!dialogue?.isOpen())` already gates period-advance in `frame()`. This is a hard rule (D-11's "camera never goes through walls" cousin): time NEVER advances while a dialogue is open. The user can read 8 lines of dialogue and only 8 lines of dialogue of game time will pass.
 - **Status:** Phase 0 (already implemented). Logged here for traceability.
@@ -747,6 +747,35 @@ This section covers the corrections C-13..C-24 added to the PRD after the first 
   6. The agent reports to Lucas and shows the user-visible artifact.
 - **Roles for this game that need external help:** character designer (agy or opencode), storyline writer (opencode), dialogue writer (opencode, then agy for review), comedy reviewer (opencode), QA reviewer (Codex or agy), visual QA (agy).
 - **Status:** Cross-cutting rule. Already in project AGENTS.md PR-5/PR-6/PR-7. Logged here for traceability.
+
+### D-32: Four-period 3/2/3/2 simulation clock (PRD C-67)
+
+- **Decision:** The period order is `morning -> lunch -> afternoon -> evening`. One central period definition owns the order, label, start time, end time, and duration:
+
+  | Period | In-game clock | Active real duration |
+  |---|---:|---:|
+  | Morning | 09:00-12:00 | 180 s |
+  | Lunch | 12:00-14:00 | 120 s |
+  | Afternoon | 14:00-17:00 | 180 s |
+  | Evening | 17:00-19:00 | 120 s |
+
+- **Scale:** At 1x, one active real second equals one in-game minute; equivalently, one real minute equals one in-game hour. The full day is 600 active seconds. The HUD quantizes the derived game time down to a 15-minute step, so its visible value changes every 15 active seconds.
+- **Why 3/2/3/2 instead of 3/2/3/3:** Lucas reported that the day already felt long. Ten minutes is only one minute longer than the currently shipped 3/3/3 day and gives a memorable 10x time scale. An 11-minute day would preserve old 165-second departure constants at the cost of pacing. Those constants are data, not architecture: Evening departures are retuned to fit within 120 seconds with a clear buffer before 19:00, while End Day / Z remains available at any point.
+- **Pause model:** The authoritative clock is accumulated active simulation time, not `Date.now() - officeStartedAt`. Dialogue, cinematics, blocking modals, and explicit pause do not add elapsed time, and resuming never catches up. Period transitions, HUD time, Lunch chatter, events, NPC controllers, End Day, and future WebMCP inspection all read this same clock.
+- **Lunch semantics:** Lunch is a first-class period, not the opening window of Afternoon. Lunch movement and lunch chatter use `period === "lunch"`. Afternoon is a clean working period for meetings, training, and client work.
+- **Compatibility:** The persisted `timeOfDay` union gains `lunch`. Existing saves containing `morning`, `afternoon`, or `evening` remain valid. The save-schema `saveVersion` is independent from the visible game build version.
+- **Scope boundary:** This refactor exposes a small period-transition interface but does not build the future appointment/calendar scheduler. Courses, client meetings, challenge design, and multiplayer require their own PRD/Q&A before that general scheduler is designed.
+- **Status:** Approved product direction; implementation follows Lucas's documentation review. Tracked by Beads `sacs-xtma.1`.
+
+### D-33: One immutable CalVer-style game build identifier (PRD C-68)
+
+- **Decision:** Use a user-facing calendar build identifier in the existing form `vYYYY.MM.DD-NN`, where the date is the Europe/Lisbon calendar date and `NN` is a zero-padded daily build ordinal. One source module (planned: `src/version.ts`) exports the value; the startup console and title-screen footer import and display exactly that value.
+- **Why not SemVer:** This continuously deployed browser game has no installed clients and no declared public compatibility API. `MAJOR.MINOR.PATCH` would imply compatibility semantics the project does not currently need. A calendar identifier answers the practical QA question: "Which dated build am I looking at?"
+- **Relation to OpenClaw:** The inspiration is OpenClaw's date-led releases, but this is deliberately not its exact scheme. OpenClaw uses `YYYY.M.PATCH`, where PATCH is a sequential monthly release-train number rather than the day. This game keeps the already established full date plus daily ordinal because it is a local build identity, not an npm release train.
+- **Immutability:** A version identifies one committed build and is never reused for different code. `v2026.09.02-10` already identifies the preceding documentation build; the first later committed gameplay/version-surface change must use `v2026.09.02-11` (or the next date's `-01`).
+- **Package and save versions:** `package.json` may retain a valid private-package SemVer for tooling, and `saveVersion` remains a schema migration integer. Neither is shown to players and neither is coupled to the game build identifier.
+- **Research sources:** [Calendar Versioning](https://calver.org/), [Semantic Versioning 2.0.0](https://semver.org/), and [OpenClaw release policy](https://docs.openclaw.ai/reference/RELEASING).
+- **Status:** Approved product direction; implementation follows Lucas's documentation review. Tracked by Beads `sacs-xtma.4`.
 
 ### Out-of-scope (explicit, from C-12)
 - No "leave the building" gameplay. The player never goes outside during normal play; the exterior is only visible during the intro cinematic.

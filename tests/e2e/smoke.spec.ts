@@ -37,7 +37,7 @@ test("full smoke flow: title -> create -> office -> walk -> talk", async ({ page
   page.on("pageerror", (err) => consoleErrors.push(String(err)));
 
   // Clear localStorage so we always start from a fresh game.
-  await page.goto("http://localhost:4173/");
+  await page.goto("http://localhost:5173/");
   await page.evaluate(() => localStorage.clear());
   await page.reload();
 
@@ -58,11 +58,23 @@ test("full smoke flow: title -> create -> office -> walk -> talk", async ({ page
 
   // 4. Office
   await expect(page.locator(".hud")).toBeVisible({ timeout: 5000 });
+  await expect(page.locator("[data-day]")).toHaveText("Day 1 - Morning");
+  await expect(page.locator("[data-clock]")).toHaveText("09:00");
+  await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
+  await expect(page.locator("[data-day]")).toHaveText("Day 1 - Lunch");
+  await expect(page.locator("[data-clock]")).toHaveText("12:00");
+  await page.waitForTimeout(1_500);
+  // Keep the phase screenshot focused on the HUD and office; random-event
+  // toasts are covered elsewhere and can obscure most of the 3D view.
+  await page.locator(".toast").evaluateAll((toasts) => toasts.forEach((toast) => toast.remove()));
+  await page.screenshot({ path: resolve("screenshots/c67-lunch-clock.png") });
   await page.waitForTimeout(800);
   await page.screenshot({ path: `${SCREENSHOT_DIR}/03-office.png` });
 
   // 5. Walk with WASD (use the canvas focus + key press)
-  await page.locator("#game-canvas").click({ position: { x: 100, y: 100 } });
+  // Click the unobstructed centre of the canvas; the top-left HUD is an
+  // intentional overlay and correctly intercepts clicks in its own bounds.
+  await page.locator("#game-canvas").click({ position: { x: 640, y: 360 } });
   await page.waitForTimeout(200);
   await page.keyboard.down("w");
   await page.waitForTimeout(600);
@@ -76,7 +88,9 @@ test("full smoke flow: title -> create -> office -> walk -> talk", async ({ page
   if (dialogueVisible) {
     await page.screenshot({ path: `${SCREENSHOT_DIR}/05-dialogue.png` });
     // Pick the first option
-    await page.locator(".dialogue [data-opt]").first().click();
+    // This smoke validates dialogue progression, not pointer hit-testing;
+    // fixed HUD/quest overlays can overlap the responsive dialogue panel.
+    await page.locator(".dialogue [data-opt]").first().click({ force: true });
     await page.waitForTimeout(300);
     await page.screenshot({ path: `${SCREENSHOT_DIR}/06-dialogue-after-pick.png` });
   } else {

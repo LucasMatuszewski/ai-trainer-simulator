@@ -89,7 +89,7 @@ describe("planMorningArrivals (C-51)", () => {
     const plan = planMorningArrivals(ALL_IDS, 1, lcg(7));
     for (const arrival of plan) {
       expect(Math.abs(arrival.door.x)).toBeLessThanOrEqual(DOOR_LANE_HALF_WIDTH + 1e-9);
-      // C-62: the spawn is deep inside the meeting room now, not on
+      // C-62: the spawn is deep inside the reception now, not on
       // the office side of the doorway.
       expect(arrival.door.z).toBeCloseTo(18.2, 5);
     }
@@ -174,7 +174,7 @@ describe("morning entry in the controller (C-51)", () => {
   it("walks people in through the door again on day 2 instead of popping them into the office centre", () => {
     const objects = {} as Record<NpcId, THREE.Object3D>;
     for (const n of NPCS) objects[n.id] = makeObject(n.id);
-    let period: "morning" | "afternoon" | "evening" = "morning";
+    let period: "morning" | "lunch" | "afternoon" | "evening" = "morning";
     let day = 1;
     const controller = createNpcController(NPCS, objects, () => period, () => day, lcg(5), () => false);
     const dt = 1 / 30;
@@ -182,6 +182,7 @@ describe("morning entry in the controller (C-51)", () => {
       for (let i = 0; i < Math.round(seconds / dt); i += 1) controller.update(dt);
     };
     run(180);
+    period = "lunch"; run(120);
     period = "afternoon"; run(180);
     period = "evening"; run(180);
     // New day.

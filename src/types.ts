@@ -11,7 +11,7 @@ export type NpcId = "bartek" | "klaudia" | "marek" | "zosia" | "pawel" | "kasia"
 export type SpecializationId = "frontend" | "backend" | "devops" | "ai" | "generalist";
 export type TraitId = "coffee-fueled" | "linkedin-influencer" | "debugger" | "wing-it";
 
-export type TimeOfDay = "morning" | "afternoon" | "evening";
+export type TimeOfDay = "morning" | "lunch" | "afternoon" | "evening";
 
 export interface Character {
   name: string;

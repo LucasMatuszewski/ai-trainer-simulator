@@ -1,8 +1,7 @@
-import type { NPC, NpcId } from "../types";
-import type { GameState } from "../types";
+import type { NPC, NpcId, TimeOfDay } from "../types";
 import { NPCS } from "./npcs";
 
-export type Period = "morning" | "afternoon" | "evening";
+export type Period = TimeOfDay;
 
 export type NpcState =
   | "at-desk"
@@ -109,15 +108,8 @@ export const SOCIAL_LUNCHERS: ReadonlySet<NpcId> = new Set(
   ).map((npc) => npc.id),
 );
 
-export const LUNCH_WINDOW_SECONDS = 120;
-
-export interface LunchContext {
-  period: GameState["timeOfDay"];
-  periodElapsed: number;
-}
-
-export function isLunchWindow(ctx: LunchContext): boolean {
-  return ctx.period === "afternoon" && ctx.periodElapsed < LUNCH_WINDOW_SECONDS;
+export function isLunchPeriod(period: TimeOfDay): boolean {
+  return period === "lunch";
 }
 
 export function LUNCH_STAGGER_OFFSET(
@@ -161,8 +153,8 @@ export const ALREADY_IN_AT_DAY_START: ReadonlySet<NpcId> = new Set([
 ]);
 
 /** PRD 11.1: "Janusz (the janitor) - arrives late (10am)". Only his
- *  arrival TIME is late; his schedule STATE stays `at-desk` in all
- *  three periods (L-2026-08-31-02), so this changes when he walks in,
+ *  arrival TIME is late; his schedule STATE stays `at-desk` throughout
+ *  all four periods (L-2026-08-31-02), so this changes when he walks in,
  *  not where he stands. Seconds into the morning period. */
 export const LATE_ARRIVAL_AT: ReadonlyMap<NpcId, number> = new Map([["janusz", 115]]);
 
@@ -183,21 +175,21 @@ export const MIN_ARRIVAL_GAP_S = 4;
  *  identically while the pecking order stays stable. */
 export const ARRIVAL_JITTER_S = 6;
 
-/** The entrance spawn point, DEEP inside the meeting room (C-62,
+/** The entrance spawn point, DEEP inside the reception (C-62/C-64:
  * Lucas: the old doormat at z=8.4 sat on the office side of the
  * doorway, so arriving NPCs popped into view like a teleport - now
- * they materialize by the entrance at the meeting room's south end
+ * they materialize by the entrance at the reception's south end
  * and walk the whole room before stepping through the door). */
 export const OFFICE_DOOR = { x: 0, y: 0, z: 18.2 } as const;
 
 /** Evening departures (C-62): leavers walk to the entrance zone (deep
- *  meeting room) and only vanish on arrival. Staggered across the
+ *  reception) and only vanish on arrival. Staggered across the
  *  whole evening so the office empties gradually, with a few staying
  *  after hours. */
-export const DEPARTURE_FIRST_AT_S = 30;
-export const DEPARTURE_SPREAD_S = 135;
-export const MIN_DEPARTURE_GAP_S = 14;
-export const DEPARTURE_JITTER_S = 10;
+export const DEPARTURE_FIRST_AT_S = 10;
+export const DEPARTURE_SPREAD_S = 70;
+export const MIN_DEPARTURE_GAP_S = 7;
+export const DEPARTURE_JITTER_S = 6;
 
 /** C-62/C-64: seats around the relocated meeting-room table that
  *  1-2 randomly-picked colleagues occupy during Zosia's meeting. */
@@ -312,67 +304,80 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
   // npc a little closer to the desk, they are a little too far away").
   bartek: {
     morning: { position: { x: -7.45, y: 0, z: -5 }, face: Math.PI / 2, state: "at-desk" },
+    lunch: { position: { x: -7.45, y: 0, z: -5 }, face: Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: -7.45, y: 0, z: -5 }, face: Math.PI / 2, state: "at-desk" },
     evening: { position: { x: -7.45, y: 0, z: -5 }, face: Math.PI / 2, state: "at-desk" },
   },
   klaudia: {
     morning: { position: { x: -7.45, y: 0, z: 5.5 }, face: Math.PI / 2, state: "at-desk" },
+    lunch: { position: { x: -7.45, y: 0, z: 5.5 }, face: Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: -7.45, y: 0, z: 5.5 }, face: Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   marek: {
     morning: { position: { x: 7.45, y: 0, z: -5 }, face: -Math.PI / 2, state: "at-desk" },
+    lunch: { position: { x: 7.45, y: 0, z: -5 }, face: -Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: 7.45, y: 0, z: -5 }, face: -Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   zosia: {
     // C-64: Lucas explicitly moved Zosia's meeting to the morning.
     morning: { position: { x: 10.65, y: 0, z: 11.1 }, face: Math.PI / 2, state: "meeting" },
+    lunch: { position: { x: 3, y: 0, z: 7.45 }, face: Math.PI, state: "at-desk" },
     afternoon: { position: { x: 3, y: 0, z: 7.45 }, face: Math.PI, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   pawel: {
     morning: { position: { x: -3, y: 0, z: 7.45 }, face: Math.PI, state: "at-desk" },
-    afternoon: { position: { x: 7.5, y: 0, z: -7.5 }, face: 0, state: "coffee" },
+    lunch: { position: { x: 7.5, y: 0, z: -7.5 }, face: 0, state: "coffee" },
+    afternoon: { position: { x: -3, y: 0, z: 7.45 }, face: Math.PI, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   kasia: {
     morning: { position: { x: 7.45, y: 0, z: 5.5 }, face: -Math.PI / 2, state: "at-desk" },
+    lunch: { position: { x: 7.45, y: 0, z: 5.5 }, face: -Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: 7.45, y: 0, z: 5.5 }, face: -Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   tomek: {
     morning: { position: { x: -7.45, y: 0, z: -1.5 }, face: Math.PI / 2, state: "at-desk" },
+    lunch: { position: { x: -7.45, y: 0, z: -1.5 }, face: Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: -7.45, y: 0, z: -1.5 }, face: Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   ania: {
     morning: { position: { x: 7.45, y: 0, z: -2.5 }, face: -Math.PI / 2, state: "at-desk" },
+    lunch: { position: { x: 7.45, y: 0, z: -2.5 }, face: -Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: 7.45, y: 0, z: -2.5 }, face: -Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   janusz: {
     morning: { position: { x: -7.45, y: 0, z: 2 }, face: Math.PI / 2, state: "at-desk" },
+    lunch: { position: { x: -7.45, y: 0, z: 2 }, face: Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: -7.45, y: 0, z: 2 }, face: Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   burek: {
     morning: { position: { x: -5, y: 0, z: 4 }, face: Math.PI, state: "at-desk" },
-    afternoon: { position: { x: 7.5, y: 0, z: -7.5 }, face: 0, state: "coffee" },
+    lunch: { position: { x: 7.5, y: 0, z: -7.5 }, face: 0, state: "coffee" },
+    afternoon: { position: { x: -5, y: 0, z: 4 }, face: Math.PI, state: "at-desk" },
     evening: { position: { x: -5, y: 0, z: 4 }, face: Math.PI, state: "at-desk" },
   },
   grazyna: {
     morning: { position: { x: 7.45, y: 0, z: 2 }, face: -Math.PI / 2, state: "at-desk" },
+    lunch: { position: { x: 7.45, y: 0, z: 2 }, face: -Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: 7.45, y: 0, z: 2 }, face: -Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   maciek: {
     morning: { position: { x: -3, y: 0, z: -7.45 }, face: 0, state: "at-desk" },
+    lunch: { position: { x: -3, y: 0, z: -7.45 }, face: 0, state: "at-desk" },
     afternoon: { position: { x: 0, y: 0, z: 0 }, face: 0, state: "gone-home" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
   przemek: {
     morning: { position: { x: 3, y: 0, z: -7.45 }, face: 0, state: "at-desk" },
+    lunch: { position: { x: 3, y: 0, z: -7.45 }, face: 0, state: "at-desk" },
     afternoon: { position: { x: 3, y: 0, z: -7.45 }, face: 0, state: "at-desk" },
     evening: { position: { x: 0, y: 0, z: 18.2 }, face: Math.PI, state: "gone-home" },
   },
@@ -384,6 +389,7 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
   // He does not random-walk.
   dawid: {
     morning: { position: { x: 0, y: 0, z: -17 }, face: 0, state: "at-desk" },
+    lunch: { position: { x: 0, y: 0, z: -17 }, face: 0, state: "at-desk" },
     afternoon: { position: { x: 0, y: 0, z: -17 }, face: 0, state: "at-desk" },
     // C-62 (Lucas): the CEO is ALWAYS on his desk - even in the
     // evening he does not leave (the preset had him vanish).
@@ -391,7 +397,7 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
   },
   // C-64: the receptionist. She lives behind the reception
   // desk in the renamed reception room (x=[-6, 6], z=[9, 19])
-  // and stays on station in all three periods. The brief calls
+  // and stays on station throughout all four periods. The brief calls
   // her "the last to leave" - mirroring the CEO's evening rule:
   // her evening row is `at-desk`, not `gone-home`, so the
   // C-62 evening-departures system leaves her visible. She is
@@ -401,6 +407,7 @@ export const NPC_SCHEDULES: Record<NpcId, Record<Period, ScheduleEntry>> = {
   // look across the lobby at arrivals.
   renata: {
     morning: { position: { x: 4.9, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" },
+    lunch: { position: { x: 4.9, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" },
     afternoon: { position: { x: 4.9, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" },
     evening: { position: { x: 4.9, y: 0, z: 13.5 }, face: -Math.PI / 2, state: "at-desk" },
   },
@@ -513,10 +520,9 @@ export function pickRandomDestination(
   npcId: NpcId,
   rng: () => number,
   _day: number,
-  ctx?: LunchContext,
+  period?: TimeOfDay,
 ): ScheduleEntry | null {
-  const lunchWindow = ctx !== undefined && isLunchWindow(ctx);
-  if (lunchWindow) {
+  if (period !== undefined && isLunchPeriod(period)) {
     if (npcId === "burek") return pickKitchenSequence(npcId, rng)[0]!.entry;
     if (LUNCH_OUTSIDERS.has(npcId)) {
       return rng() < 0.3 ? null : pickKitchenSequence(npcId, rng)[0]!.entry;

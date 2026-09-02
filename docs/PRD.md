@@ -1,6 +1,6 @@
 # PRD — AI Trainer Simulator (working title)
 
-**Status:** Living document. Updated 2026-08-29 with major corrections from Lucas — the full dated history of corrections and decisions (C-xx / L-xx) lives in [`docs/CHANGELOG.md`](./CHANGELOG.md). The corrections were substantial enough to trigger a re-design of the camera, controls, NPC presentation, intro cinematic, and dialogue system; this PRD reflects the post-correction direction.
+**Status:** Living document. Updated 2026-09-02 — the full dated history of corrections and decisions (C-xx / L-xx) lives in [`docs/CHANGELOG.md`](./CHANGELOG.md). This PRD reflects the current product direction, including the four-period 3/2/3/2 day in C-67.
 
 ---
 
@@ -151,7 +151,7 @@ The dialogue system must support:
 6. The whole mini-game is skippable after a few failures (player gets a "maybe IT isn't for you" gag and walks away).
 
 ### 4.5 End of day / economy tick
-1. At the end of each in-game day (or every 5 minutes of real time for the MVP), the game tallies income vs expenses and shows a "Daily Summary" screen:
+1. At 19:00, or when the player chooses **End Day** / presses **Z**, the game tallies income vs expenses and shows a "Daily Summary" screen:
    - **Income:** mini-game payouts, passive contract payments.
    - **Expenses:** rent for the office, coffee, ramen, "LinkedIn Premium" (joke subscription), incidentals.
    - **Net cash change.**
@@ -161,6 +161,21 @@ The dialogue system must support:
 ### 4.6 Game over
 1. Bankruptcy triggers a Game Over screen with a final leaderboard-style line: "You survived X days, earned Y zł, and made it to the rank of [NPC-derogatory title]."
 2. Player can return to title or load a manual save.
+
+### 4.7 Daily schedule and clock
+
+At normal speed, one real minute equals one in-game hour. A complete day lasts **10 minutes of active simulation time** and has four explicit periods:
+
+| Period | In-game clock | Real duration |
+|---|---:|---:|
+| Morning | 09:00-12:00 | 3 minutes (180 s) |
+| Lunch | 12:00-14:00 | 2 minutes (120 s) |
+| Afternoon | 14:00-17:00 | 3 minutes (180 s) |
+| Evening | 17:00-19:00 | 2 minutes (120 s) |
+
+The HUD shows both the named period and a digital clock. The clock is quantized to 15-minute steps (`09:00`, `09:15`, `09:30`, ...), so it visibly changes every 15 real seconds at normal speed. Lunch is a first-class period: lunch movement and lunch chatter are active for the whole Lunch period and never leak into Afternoon. Afternoon remains work time for meetings, courses, client work, and future scheduled activities.
+
+Dialogue, cinematics, blocking modals, and explicit pause freeze the simulation clock. Closing them resumes from the same instant without catching up. End Day / Z remains available throughout the day, so Evening does not need artificial dead time after most colleagues leave.
 
 ---
 
@@ -209,6 +224,12 @@ The dialogue system must support:
 - AC-E-01: The cash counter updates in real time when money is gained or spent.
 - AC-E-02: A daily summary screen appears at the end of each in-game day.
 - AC-E-03: Bankruptcy (cash < 0 for 30 in-game days) triggers a Game Over screen.
+
+### AC-Time
+- AC-T-01: At 1x speed, Morning/Lunch/Afternoon/Evening last 180/120/180/120 active seconds and span 09:00-19:00.
+- AC-T-02: The HUD shows the current period and quarter-hour digital time derived from one simulation clock.
+- AC-T-03: Dialogue and other blocking overlays pause period and clock progress without catch-up.
+- AC-T-04: Lunch chatter is selected only during the Lunch period; Afternoon uses work chatter.
 
 ### AC-Comedy
 - AC-C-01: The MVP has at least 20 distinct dialogue lines and at least 10 hidden Easter eggs (signs, posters, console logs, etc.).
@@ -261,7 +282,7 @@ The dialogue system must support:
 - Full-screen pixel-art splash (the office with the player character standing outside the door).
 - Center: game title in chunky pixel font.
 - Below: two buttons, "New Game" / "Continue". Continue is disabled if no save.
-- Bottom: small text "v0.0.1 MVP — a Lucas Matuszewski project".
+- Bottom: the same canonical calendar build identifier printed in the browser console (`vYYYY.MM.DD-NN`) followed by "a Lucas Matuszewski project". The value comes from one source; it is never maintained separately in the title UI.
 - Background: subtle parallax (ceiling fan turning, pixel-art clouds outside the window).
 
 ### 9.2 Character creation
@@ -271,7 +292,7 @@ The dialogue system must support:
 
 ### 9.3 Office (main game view)
 - 3D viewport, ~70% of the screen.
-- Bottom-left: cash counter, day counter, current time-of-day icon.
+- Bottom-left: cash counter, day counter, current named period, and quarter-hour digital clock.
 - Bottom-right: 4 quick-slot icons (empty for MVP, reserved for future items).
 - Top-right: settings cog, save icon.
 - Bottom-center: context prompt when near an interactable: "[E] Talk to Bartek" / "[E] Use Coffee Machine".
@@ -367,11 +388,11 @@ This section captures all the new "world feels alive" requirements from Lucas's 
 
 ### 11.1 NPC life (per-period schedule) — Phase 3
 
-Each NPC has a per-period schedule (morning / afternoon / evening) that defines where they are, what they're doing, and which way they face. The schedule is deterministic — same NPC, same period, same place — but the player perceives variation because NPCs move at different times and go to different places.
+Each NPC has a per-period schedule (Morning / Lunch / Afternoon / Evening) that defines where they are, what they're doing, and which way they face. The schedule is deterministic — same NPC, same period, same place — but the player perceives variation because NPCs move at different times and go to different places.
 
 Examples:
 - **Marek** — morning: at his desk, head down. Mid-morning: at the coffee machine, talking to Zosia. Afternoon: in a meeting in the meeting room. End of day: gone home.
-- **Pawel** — the social one. Morning: walking around talking to people. Mid-morning: coffee machine. Lunch: gone. Afternoon: meeting. Evening: gone.
+- **Pawel** — the social one. Morning: at his desk and talking to people. Lunch: coffee/kitchen circuit. Afternoon: back at his desk, available for future scheduled meetings. Evening: gone.
 - **Burek** (the office dog) — random walk around the office, follows whoever has food, sleeps under a desk in the afternoon.
 - **The CTO** — only appears in the morning. Afternoon: gone (he's "remote"). Evening: gone.
 - **Janusz** (the janitor) — arrives late (10am), cleans, leaves by 5pm. In between: he tells you the office gossip.
@@ -443,7 +464,7 @@ The NPC controller is a small A* path-follower, not a 2-second linear lerp. The 
 - **Path advance** (in `npc-controller.ts`). Each frame, for each walking NPC: advance `walkSpeed * dt` metres along the current path segment. On segment end, the next segment becomes current; on path end, the NPC arrives at the destination and the state machine transitions to `dwelling` (at a kitchen stop) or `at-desk` (back home). The 2-second `NPC_INTERP_DURATION` is replaced by the per-NPC `walkSpeed` (default 1.2 m/s) and the path's total length.
 - **Walk cycle** (`src/engine/npc-walk-cycle.ts`, pure function `updateWalkCycle(state, dt, speed, progressMetres)`). Leg-swing, arm-swing, and a Y-bob all driven by `distanceTraveled * frequency`, where the phase advances by the metres ACTUALLY moved this frame (`progressMetres`), never by raw time - so a blocked NPC cannot march in place (C-48). `WalkCycleState.amplitude` eases toward 1 while moving and toward 0 while blocked, scaling all three outputs. When `speed === 0` the cycle is frozen - no in-place animation. The cycle writes to the existing `body`, `arm-left`, `arm-right`, `leg-left`, `leg-right` group children; if a mesh lacks a part, that part is a no-op (so Burek the dog, who has different geometry, gets a tail-wag instead).
 - **Kitchen micro-sequence** (in `npc-schedule.ts`, pure data + pure `pickKitchenSequence(rng)`). The 5 candidate stops are `fridge`, `coffee`, `sink`, `microwave`, `table`. Each walk picks a random 3-4-stop permutation (Fisher-Yates). Each stop has a `KITCHEN_STOP_DWELL` time (fridge 5 s, coffee 8 s, microwave 4 s, sink 6 s, table 10 s). The NPC dwells for that long, then walks to the next stop. The sequence ends with a walk back to the desk. Each stop position gets a **deterministic per-(NPC, day) jitter of up to 0.4 m** (seeded RNG): the jitter spreads same-stop dwellers apart at the source (settled-settled pairs are not separated at runtime - the scheduler owns settled positions), while walkers approaching an occupied stop are kept off it by the C-48 hard separation and settle beside the earlier arrival instead of stacking. A **period transition interrupts any in-flight walk or kitchen sequence**: the controller cancels the remaining stops and re-plans from the NPC's *current* position to the new period's destination (an NPC never finishes a microwave trip after the period that started it has ended).
-- **Lunch window + staggering** (in `npc-controller.ts` + `npc-schedule.ts`). During the first 120 s of the afternoon period (≈ 2 minutes; 20% of the 10-minute afternoon at 5/10/5 pacing), `pickRandomDestination` raises the kitchen probability from 10% to 60% for `SOCIAL_LUNCHERS` (default: every human NPC + the dog Burek). **Burek always joins the lunch, no exceptions** — he is in the social-lunchers set with probability 100% during the window and 60% outside it (he wanders to the kitchen when there's food smell any time of day). The lunch fire is staggered per NPC by `LUNCH_STAGGER_OFFSET(npcId, day, rng) ∈ [0, 2] s`. `LUNCH_OUTSIDERS` (default: **Maciek the CTO** and **Marek the DevOps** — confirmed by Lucas on 2026-08-31) instead have a 30% chance to go to the kitchen outside the lunch window (eat alone) and a 30% chance to skip the lunch entirely.
+- **Lunch period + staggering** (in `npc-controller.ts` + `npc-schedule.ts`). Throughout the dedicated 120 s Lunch period, `pickRandomDestination` raises the kitchen probability from 10% to 60% for `SOCIAL_LUNCHERS` (default: every human NPC + the dog Burek). **Burek always joins Lunch, no exceptions** — he is in the social-lunchers set with probability 100% during Lunch and 60% outside it (he wanders to the kitchen when there is food smell at any time). Lunch starts are staggered per NPC by `LUNCH_STAGGER_OFFSET(npcId, day, rng) ∈ [0, 2] s`. `LUNCH_OUTSIDERS` (default: **Maciek the CTO** and **Marek the DevOps** — confirmed by Lucas on 2026-08-31) instead have a 30% chance to eat alone outside Lunch and a 30% chance to skip Lunch entirely.
 - **Lunch-only dialogues + all-day dog barking** (`src/content/lunch-dialogues.ts` and `src/content/dog-dialogues.ts`, NEW). `LUNCH_DIALOGUES_HUMAN: string[]` (exactly 45 lines) of funny lines (IT / startup / gaming / AI / coffee / food / diet / beer / pizza / vege / eco / work). **Burek's lines are NOT lunch-specific** (Lucas, 2026-08-31: "Dog dialogues should not be LUNCH specific, always the same, lunch or outside the lunch"): they live in `src/content/dog-dialogues.ts` as `BUREK_LINES: string[]` (5-8 dog-sound lines: "woof!", "*tail wag*", "*sniff*", etc.) and are the SAME pool in every context. When both NPCs in a bubble pair are in the `kitchen` state, `pickLine` is called with `dialogueContext: "lunch"`; a human speaker draws from `LUNCH_DIALOGUES_HUMAN`; Burek always draws from `BUREK_LINES`, whatever the context. In addition, Burek has a **dedicated ambient bark trigger** independent of pairing and location: a rare random timer fires a `BUREK_LINES` bubble wherever he is, in any period (see the acceptance criteria for cadence — rarely, but many times per day). All pools (`LUNCH_DIALOGUES_HUMAN`, `BUREK_LINES`, `INTER_NPC_LINES`) are kept strictly separate — a line in one is never in another, and no pool contains duplicates. Lines must be ≤ 60 chars (human) / ≤ 25 chars (dog) (the bubble canvas is hardcoded to 32 chars × 2 lines; staying under 60 avoids the `...` truncation in `bubbles.ts:fitLine`) and **plain ASCII only** (no em dashes, smart quotes, or emoji — enforced by a unit test, because contestant models love typographic characters).
 - **Local NPC-vs-NPC collision and avoidance** (C-48 v2; pure helpers in `src/engine/npc-avoidance.ts`, policy in `npc-controller.ts`). DISCRETE straight-line discipline - NPCs always walk straight segments between path points and rotate in place between them; continuous steering arcs (which made v1 pairs "dance in a ring") do not exist:
   1. **Stop at a distance.** A walking NPC whose straight walk line is occupied (capsule check: 1.1 m lookahead, 0.5 m half-width, `walkBlockedAhead`) does not advance at all - it stops ~1 m short, faces the blocker, and the chatter system makes it a meeting ("talk for a while, but from a distance").
@@ -463,7 +484,7 @@ An IT company does not open a gate at 9:00 and let everyone in at once. People t
 
 - **Two arrival modes per NPC.** `already-in` means the NPC is placed directly on their morning schedule entry at day start - no door, no walk, they were here before the player. `arrives` means the NPC is invisible and parked off-scene until their arrival moment, then placed at the front door (0, 8.4) and given a normal path to their morning destination.
 - **Who is already in** (5, per Lucas 2026-09-01 and PRD 11.4's fade-in description): **Bartek** and **Marek** (named in 11.4 as already at their desks), **Maciek** the CTO (11.1: "only appears in the morning", so he opens the office), **Dawid** the CEO (he is in his own office behind glass), and **Burek** the dog (he sleeps here).
-- **Who arrives, and when.** The other 8 humans arrive across the first ~95 s of the 180 s morning period. **Janusz** the janitor is the designated late arrival at ~130 s - this implements 11.1's "arrives late (10am)" without changing his schedule STATE, which stays `at-desk` in all three periods (L-2026-08-31-02 is unaffected: that correction is about where he stands, not when he gets there).
+- **Who arrives, and when.** The other 8 humans arrive across the first ~95 s of the 180 s Morning period. **Janusz** the janitor is the designated late arrival at ~130 s - this implements 11.1's "arrives late (10am)" without changing his authored work destination outside Lunch (L-2026-08-31-02 is unaffected: that correction is about where he stands, not when he gets there).
 - **Minimum inter-arrival gap is the actual crowd fix.** Offsets are sorted and then pushed forward so consecutive arrivals are at least `MIN_ARRIVAL_GAP_S` (4 s) apart. At a 1.2 m/s walk that is ~4.8 m of clearance, so the previous arrival is well out of the doorway before the next one appears. The door crowd is prevented at the source, in data, instead of being handed to the C-48/C-50 avoidance system to untangle.
 - **At most one body in the doorway.** An NPC that has not arrived yet is `visible = false` and parked off-scene; it is moved to the door only on the frame it starts walking. The old behaviour placed all 13 humans on the single door point on frame 0 and let them stand there stacked for up to 9.5 s.
 - **Stable personality, varied day.** The base offset is a hash of the NPC id (Bartek is always early, Janusz is always last), plus a per-day seeded rng jitter and a small lateral door offset (x in [-0.8, 0.8]) so no two mornings replay identically and consecutive arrivals do not retrace one point.
@@ -488,7 +509,7 @@ The Definition of Done for the whole project, not just the MVP, includes:
 - Dialogue is real: 4-8 turns minimum per conversation, NPC reacts to what the player said, NPCs remember past conversations.
 - The game keeps surprising: random events, classroom mode, "Tomek pushed to main" notifications, the coffee machine is broken, etc.
 
-This is a 30+ day project, not a 1-week MVP. The phased plan in `.claude/plans/glistening-napping-hinton.md` is the working roadmap.
+This is a 30+ day project, not a 1-week MVP. Beads epic `sacs-xtma` and its deduplicated child issues are the durable working roadmap.
 
 ---
 

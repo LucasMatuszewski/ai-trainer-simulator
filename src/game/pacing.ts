@@ -1,30 +1,83 @@
 /**
- * Game-time pacing constants.
- *
- * Centralized here so the value can be referenced from main.ts and tested in
- * isolation. The Phase 0 fix for "days go way too fast" was to bump
- * SECONDS_PER_PERIOD from 60 to 180 (so a day is ~9 real minutes instead of
- * ~3). This module is the single source of truth.
- *
- * Why 180s/period?
- *   - 60s/period is what shipped pre-Phase 0; the user reported it as "blink
- *     and you missed it - the day ended before I read the dialogue".
- *   - 180s gives the player time to read intro copy, click 2-3 NPCs, do a
- *     minigame, and end the day without rushing. Roughly 9 real minutes for
- *     a full in-game day.
- *   - If we ever need a "fast" mode for testing or for an end-game state
- *     where you want hours to compress, override the constant via a debug
- *     flag rather than editing this file.
+ * C-67: the office day is ten minutes of ACTIVE simulation time.
+ * One active real second represents one in-game minute. Blocking UI,
+ * dialogue, cinematics, and non-office screens do not feed delta time
+ * into this module, so the game clock never catches up after a pause.
  */
-export const SECONDS_PER_PERIOD = 180;
-export const SECONDS_PER_DAY = SECONDS_PER_PERIOD * 3;
 
-/**
- * C-52: how many `advance-time` dispatches it takes to reach the next
- * day's morning from a given period. The reducer steps morning ->
- * afternoon -> evening -> next-day morning, so ending the day early
- * from the morning costs all three remaining periods.
- */
-export function periodsUntilDayEnd(timeOfDay: "morning" | "afternoon" | "evening"): number {
-  return 3 - ["morning", "afternoon", "evening"].indexOf(timeOfDay);
+import type { TimeOfDay } from "../types";
+
+export const PERIOD_ORDER = ["morning", "lunch", "afternoon", "evening"] as const satisfies readonly TimeOfDay[];
+
+export interface PeriodDefinition {
+  label: string;
+  startMinutes: number;
+  durationSeconds: number;
+}
+
+export const PERIOD_DEFINITIONS: Readonly<Record<TimeOfDay, PeriodDefinition>> = {
+  morning: { label: "Morning", startMinutes: 9 * 60, durationSeconds: 180 },
+  lunch: { label: "Lunch", startMinutes: 12 * 60, durationSeconds: 120 },
+  afternoon: { label: "Afternoon", startMinutes: 14 * 60, durationSeconds: 180 },
+  evening: { label: "Evening", startMinutes: 17 * 60, durationSeconds: 120 },
+};
+
+export const SECONDS_PER_DAY = PERIOD_ORDER.reduce(
+  (total, period) => total + PERIOD_DEFINITIONS[period].durationSeconds,
+  0,
+);
+
+export function periodDuration(period: TimeOfDay): number {
+  return PERIOD_DEFINITIONS[period].durationSeconds;
+}
+
+export function periodsUntilDayEnd(period: TimeOfDay): number {
+  return PERIOD_ORDER.length - PERIOD_ORDER.indexOf(period);
+}
+
+export interface PeriodAdvance {
+  periodsAdvanced: number;
+  elapsedInPeriod: number;
+}
+
+/** Advance an active-time cursor across unequal period durations. */
+export function advancePeriodElapsed(
+  period: TimeOfDay,
+  elapsedInPeriod: number,
+  activeDeltaSeconds: number,
+): PeriodAdvance {
+  let elapsed = Math.max(0, elapsedInPeriod) + Math.max(0, activeDeltaSeconds);
+  let periodIndex = PERIOD_ORDER.indexOf(period);
+  let periodsAdvanced = 0;
+
+  while (elapsed >= periodDuration(PERIOD_ORDER[periodIndex]!)) {
+    elapsed -= periodDuration(PERIOD_ORDER[periodIndex]!);
+    periodIndex = (periodIndex + 1) % PERIOD_ORDER.length;
+    periodsAdvanced += 1;
+  }
+
+  return { periodsAdvanced, elapsedInPeriod: elapsed };
+}
+
+/** Format the in-world time in stable quarter-hour steps. */
+export function formatGameClock(period: TimeOfDay, elapsedInPeriod: number): string {
+  const quarterHour = Math.floor(Math.max(0, elapsedInPeriod) / 15) * 15;
+  const minutes = PERIOD_DEFINITIONS[period].startMinutes + quarterHour;
+  const hours = Math.floor(minutes / 60) % 24;
+  const minutePart = minutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutePart).padStart(2, "0")}`;
+}
+
+export interface SimulationClockBlockers {
+  screen: string;
+  dialogueOpen?: boolean;
+  cinematicPlaying?: boolean;
+  helpOpen?: boolean;
+}
+
+export function shouldAdvanceSimulationClock(blockers: SimulationClockBlockers): boolean {
+  return blockers.screen === "office"
+    && blockers.dialogueOpen !== true
+    && blockers.cinematicPlaying !== true
+    && blockers.helpOpen !== true;
 }

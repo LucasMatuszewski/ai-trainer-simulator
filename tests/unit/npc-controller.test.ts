@@ -194,7 +194,7 @@ describe("createNpcController", () => {
     let period: Period = "morning";
     const object = makeObject("bartek");
     const controller = createNpcController([npc("bartek")], { bartek: object } as Record<NpcId, THREE.Object3D>, () => period, () => 2, () => 0.5, () => false, { arrivals: false });
-    controller.update(0); period = "afternoon"; controller.update(0);
+    controller.update(0); period = "lunch"; controller.update(0);
     controller.setOverride("bartek", { position: { x: 14, y: 0, z: 1.2 }, face: Math.PI, state: "kitchen" });
     const before = object.position.clone();
     controller.update(0.9); expect(object.position.toArray()).toEqual(before.toArray());

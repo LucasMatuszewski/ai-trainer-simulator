@@ -46,7 +46,7 @@ function saveWithFlags(flags: Record<string, boolean>) {
   };
 }
 
-test("C-62: fresh game lands the player in the meeting room facing the office", async ({ page }) => {
+test("C-62: fresh game lands the player in the reception facing the office", async ({ page }) => {
   test.setTimeout(90_000);
   // Fresh localStorage: no save, so the intro cinematic plays.
   await page.goto("/");
@@ -95,6 +95,9 @@ test("C-62: evening walk-out is staggered and visible", async ({ page }) => {
   // Flip to the evening. Nobody who is IN may vanish on the
   // transition - that was the C-62 bug.
   await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
+  await page.waitForTimeout(100);
+  await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
+  await page.waitForTimeout(100);
   await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
   await page.waitForTimeout(2_000);
   const rightAfterFlip = (await page.evaluate(() =>
@@ -107,7 +110,7 @@ test("C-62: evening walk-out is staggered and visible", async ({ page }) => {
   expect(vanished, `vanished at the flip: ${vanished.join(", ")}`).toHaveLength(0);
   await page.screenshot({ path: `${SCREENSHOT_DIR}/c62-02-evening-start.png` });
 
-  // Departures start at 30 s and step ~14 s apart: after 90 s several
+  // Departures start around 10 s and spread across ~70 s: after 90 s several
   // have left and the office is emptying gradually, not all at once.
   await page.waitForTimeout(90_000);
   const stillIn = (await page.evaluate(() =>

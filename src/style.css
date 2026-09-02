@@ -120,6 +120,14 @@ html, body {
   text-transform: uppercase;
 }
 
+.stats-clock {
+  font-family: var(--font-pixel-bold);
+  font-size: 20px;
+  color: var(--accent);
+  letter-spacing: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
 .stats-cash {
   font-family: var(--font-pixel-bold);
   font-size: 22px;

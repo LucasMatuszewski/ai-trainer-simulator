@@ -2,8 +2,12 @@ import { describe, expect, it } from "vitest";
 import { periodsUntilDayEnd } from "../../src/game/pacing";
 
 describe("periodsUntilDayEnd (C-52)", () => {
-  it("needs all three periods from a fresh morning", () => {
-    expect(periodsUntilDayEnd("morning")).toBe(3);
+  it("needs all four periods from a fresh morning", () => {
+    expect(periodsUntilDayEnd("morning")).toBe(4);
+  });
+
+  it("needs three periods from lunch", () => {
+    expect(periodsUntilDayEnd("lunch")).toBe(3);
   });
 
   it("needs two periods from the afternoon", () => {
@@ -15,10 +19,10 @@ describe("periodsUntilDayEnd (C-52)", () => {
   });
 
   it("always lands on the next morning when applied to advance-time", () => {
-    // Mirrors the reducer: advance-time steps morning -> afternoon ->
-    // evening -> next-day morning, so N dispatches from any period
+    // Mirrors the reducer: advance-time steps morning -> lunch ->
+    // afternoon -> evening -> next-day morning, so N dispatches from any period
     // must cross the day boundary exactly once.
-    const order = ["morning", "afternoon", "evening"] as const;
+    const order = ["morning", "lunch", "afternoon", "evening"] as const;
     for (const period of order) {
       let timeOfDay: (typeof order)[number] = period;
       let day = 1;

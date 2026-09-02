@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { NPCS } from "../../src/content/npcs";
 import { createNpcController } from "../../src/engine/npc-controller";
-import type { NpcId } from "../../src/types";
+import type { NpcId, TimeOfDay } from "../../src/types";
 
 /**
  * C-62: the evening walk-out. Regression for "people disappear
@@ -34,7 +34,7 @@ describe("evening departures (C-62)", () => {
   it("staggered walk-out: no mass vanish, everyone walks out, CEO stays", () => {
     const objects = {} as Record<NpcId, THREE.Object3D>;
     for (const n of NPCS) objects[n.id] = makeObject(n.id);
-    let period: "morning" | "afternoon" | "evening" = "morning";
+    let period: TimeOfDay = "morning";
     let day = 1;
     const controller = createNpcController(NPCS, objects, () => period, () => day, lcg(2024), () => false);
     const dt = 1 / 30;
@@ -44,7 +44,10 @@ describe("evening departures (C-62)", () => {
     run(180); // morning: everyone in.
     const visibleAfterMorning = NPCS.filter((n) => objects[n.id]!.visible).map((n) => n.id);
     expect(visibleAfterMorning.length).toBe(NPCS.length);
-    run(180); // afternoon.
+    period = "lunch";
+    run(120);
+    period = "afternoon";
+    run(180);
     expect(objects.dawid!.visible).toBe(true);
 
     // Flip to the evening. Two seconds in, NOBODY may have vanished -
@@ -59,8 +62,9 @@ describe("evening departures (C-62)", () => {
     // Dawid (CEO) is always on his desk, deep in the CEO office.
     expect(objects.dawid!.position.z).toBeLessThan(-9);
 
-    // Run the whole evening plus the walk-out tail.
-    run(300);
+    // Finish the approved 120-second Evening; departures must include
+    // enough walking buffer to be gone by 19:00 without a tail.
+    run(118);
     const visibleAtNight = NPCS.filter((n) => objects[n.id]!.visible).map((n) => n.id);
     // The CEO, the dog, Bartek (schedule) and up to 2 random
     // stay-late humans may remain.

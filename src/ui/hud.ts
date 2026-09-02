@@ -10,12 +10,14 @@
  */
 
 import type { GameState } from "../types";
+import { formatGameClock, PERIOD_DEFINITIONS } from "../game/pacing";
 
 export interface HudElements {
   root: HTMLElement;
   cash: HTMLElement;
   day: HTMLElement;
   time: HTMLElement;
+  clock: HTMLElement;
   prompt: HTMLElement;
   /** Container for stacked toasts. The container itself is always
    * present; the toasts are appended/removed dynamically. */
@@ -45,6 +47,7 @@ export function mountHud(root: HTMLElement): HudElements {
     <div class="player-stats" data-stats-panel aria-label="Player status">
       <div class="stats-row stats-day">
         <span class="stats-day-text" data-day>Day 1 - Morning</span>
+        <span class="stats-clock" data-clock>09:00</span>
       </div>
       <div class="stats-row stats-cash">
         <span class="stats-cash-label">Cash</span>
@@ -73,7 +76,8 @@ export function mountHud(root: HTMLElement): HudElements {
     root,
     cash: root.querySelector("[data-cash]")!,
     day: root.querySelector("[data-day]")!,
-    time: root.querySelector("[data-day]")!, // aliased
+    time: root.querySelector("[data-clock]")!,
+    clock: root.querySelector("[data-clock]")!,
     prompt: root.querySelector("[data-prompt]")!,
     toastStack: root.querySelector("[data-toast-stack]")!,
     statsPanel: root.querySelector("[data-stats-panel]")!,
@@ -111,9 +115,10 @@ function statBarHtml(
 }
 
 const TIME_LABEL: Record<GameState["timeOfDay"], string> = {
-  morning: "Morning",
-  afternoon: "Afternoon",
-  evening: "Evening",
+  morning: PERIOD_DEFINITIONS.morning.label,
+  lunch: PERIOD_DEFINITIONS.lunch.label,
+  afternoon: PERIOD_DEFINITIONS.afternoon.label,
+  evening: PERIOD_DEFINITIONS.evening.label,
 };
 
 /**
@@ -155,6 +160,14 @@ export function renderHud(hud: HudElements, state: Readonly<GameState>): void {
   setBar(hud.bars.credibility, hud.barValues.credibility, state.stats.credibility);
 
   renderCashflow(hud, state);
+}
+
+export function renderHudClock(
+  hud: HudElements,
+  period: GameState["timeOfDay"],
+  elapsedInPeriod: number,
+): void {
+  hud.clock.textContent = formatGameClock(period, elapsedInPeriod);
 }
 
 function setBar(barEl: HTMLElement, valueEl: HTMLElement, value: number): void {

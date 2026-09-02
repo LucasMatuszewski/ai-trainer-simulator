@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  isLunchWindow,
+  isLunchPeriod,
   LUNCH_OUTSIDERS,
   LUNCH_STAGGER_OFFSET,
   MEETING_SEATS,
@@ -17,7 +17,7 @@ import { WORLD_BOUNDS } from "../../src/content/world-layout";
 import { getNpcObstacles, isSpawnBlocked } from "../../src/engine/npc-spawn-validator";
 import type { NpcId } from "../../src/types";
 
-const PERIODS: readonly Period[] = ["morning", "afternoon", "evening"];
+const PERIODS: readonly Period[] = ["morning", "lunch", "afternoon", "evening"];
 
 const getScheduleFor = (npcId: NpcId, period: Period) => NPC_SCHEDULES[npcId][period];
 
@@ -45,7 +45,7 @@ describe("NPC schedules", () => {
     expect(Object.keys(NPC_SCHEDULES).sort()).toEqual(NPCS.map((npc) => npc.id).sort());
   });
 
-  it("covers all three periods for every NPC", () => {
+  it("covers all four periods for every NPC", () => {
     for (const schedule of Object.values(NPC_SCHEDULES)) {
       expect(Object.keys(schedule).sort()).toEqual([...PERIODS].sort());
     }
@@ -99,13 +99,13 @@ describe("NPC schedules", () => {
 
   it("keeps Janusz at his desk in the morning", () => {
     // L-2026-08-31-02: Janusz is at his desk in the morning, not
-    // gone-home. He stays at his desk all three periods.
+    // gone-home. He stays at his desk throughout all four periods.
     expect(getScheduleFor("janusz", "morning").state).toBe("at-desk");
   });
 
   it("keeps Janusz at his desk in the afternoon", () => {
     // L-2026-08-31-02: Janusz's schedule was updated in 2026-08-31
-    // to keep him at his desk all three periods (he is the
+    // to keep him at his desk throughout all four periods (he is the
     // janitor and arrives at his post). The older "back wall"
     // test referenced a schedule that no longer exists.
     const entry = getScheduleFor("janusz", "afternoon");
@@ -119,12 +119,14 @@ describe("NPC schedules", () => {
     expect(getScheduleFor("zosia", "afternoon").state).toBe("at-desk");
   });
 
-  it("sends Pawel for afternoon coffee", () => {
-    expect(getScheduleFor("pawel", "afternoon").state).toBe("coffee");
+  it("sends Pawel for lunch coffee and back to work in the afternoon", () => {
+    expect(getScheduleFor("pawel", "lunch").state).toBe("coffee");
+    expect(getScheduleFor("pawel", "afternoon").state).toBe("at-desk");
   });
 
-  it("sends Burek to the coffee machine in the afternoon", () => {
-    expect(getScheduleFor("burek", "afternoon").state).toBe("coffee");
+  it("sends Burek to the coffee machine at lunch", () => {
+    expect(getScheduleFor("burek", "lunch").state).toBe("coffee");
+    expect(getScheduleFor("burek", "afternoon").state).toBe("at-desk");
   });
 
   it("sends Grazyna home in the evening", () => {
@@ -143,12 +145,11 @@ describe("Random walk destinations (L-2026-08-30-01)", () => {
     expect([...LUNCH_OUTSIDERS].sort()).toEqual(["maciek", "marek"]);
   });
 
-  it("opens lunch only during the first 120 seconds of the afternoon", () => {
-    expect(isLunchWindow({ period: "afternoon", periodElapsed: 0 })).toBe(true);
-    expect(isLunchWindow({ period: "afternoon", periodElapsed: 119.9 })).toBe(true);
-    expect(isLunchWindow({ period: "afternoon", periodElapsed: 120 })).toBe(false);
-    expect(isLunchWindow({ period: "morning", periodElapsed: 0 })).toBe(false);
-    expect(isLunchWindow({ period: "evening", periodElapsed: 0 })).toBe(false);
+  it("opens lunch behavior for the whole Lunch period only", () => {
+    expect(isLunchPeriod("lunch")).toBe(true);
+    expect(isLunchPeriod("morning")).toBe(false);
+    expect(isLunchPeriod("afternoon")).toBe(false);
+    expect(isLunchPeriod("evening")).toBe(false);
   });
 
   it("always sends Burek to a jittered kitchen stop during lunch", () => {
@@ -157,7 +158,7 @@ describe("Random walk destinations (L-2026-08-30-01)", () => {
         "burek",
         () => value,
         1,
-        { period: "afternoon", periodElapsed: 30 },
+        "lunch",
       );
       expect(result?.state).toBe("kitchen");
       expect(result?.position.x).toBeGreaterThanOrEqual(10.2);
@@ -172,7 +173,7 @@ describe("Random walk destinations (L-2026-08-30-01)", () => {
       "bartek",
       () => 0.5,
       1,
-      { period: "afternoon", periodElapsed: 30 },
+      "lunch",
     );
     expect(result?.state).toBe("kitchen");
   });

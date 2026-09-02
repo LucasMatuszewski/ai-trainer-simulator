@@ -1844,7 +1844,7 @@ export function createNpcController(
       }
       if (entry.state === "kitchen") {
         overrides.set(npcId, entry);
-        startKitchen(npcId, scheduleFor(npcId, period), period === "afternoon");
+        startKitchen(npcId, scheduleFor(npcId, period), period === "lunch");
         return;
       }
       const validated = validateOverride(npcId, entry);

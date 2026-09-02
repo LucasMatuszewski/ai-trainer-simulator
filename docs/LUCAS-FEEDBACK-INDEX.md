@@ -46,6 +46,26 @@ nothing is lost again.
 - Agents must search the epic and shared backlog before creating a child, keep one deliverable per issue, and must not attach unrelated work merely because it happens in the same repository.
 - **Cross-reference:** Beads epic `sacs-xtma`; project coordination instructions in `AGENTS.md`. No PRD or ADR change is required because this is workflow metadata, not a gameplay decision.
 
+**ID: L-2026-09-02-10 — Align pacing docs, expose one game version, and decide Evening length**
+- Align every maintained project document to the final four-period pacing model; remove or explicitly supersede stale 3/3/3, 5/5/5, 5/10/5, and 10-minutes-per-period claims.
+- After the documentation gate, implement the dedicated Lunch period, pause-safe clock, HUD clock, schedule/event changes, and tests.
+- **Decision:** keep **3/2/3/2 (09:00-19:00)**. Do not lengthen the day to preserve the old 165-second departure constants; retune departures to fit the 120-second Evening with a buffer. Preserve **1 real minute = 1 in-game hour**.
+- The player can always end the day early with the UI action or `Z`, so Evening does not need to force the player to wait after most colleagues have left.
+- **Research decision:** use one CalVer-style `vYYYY.MM.DD-NN` game build identifier. This browser game needs dated build identity for visual QA more than SemVer compatibility signalling. OpenClaw is inspiration only: its PATCH is a monthly release-train number, while this game keeps a full date and daily ordinal.
+- Show the same canonical version on the start menu and in the browser console; do not maintain unrelated `0.0.1` and date-version strings by hand.
+- `v2026.09.02-10` remains the identity of the preceding committed documentation build and must not be reused for different committed gameplay code; the next committed build will use `v2026.09.02-11` (or the next date's `-01`).
+- **Cross-reference:** Beads epic `sacs-xtma`; Lunch feature `sacs-xtma.1`; versioning task `sacs-xtma.4`; PRD corrections C-67/C-68; architecture D-32/D-33. Gameplay code still waits for Lucas's documentation review.
+
+**ID: L-2026-09-02-11 — Approve C-67/C-68 and make plans repository-local**
+- Lucas approved implementation of the documented 3/2/3/2 Lunch/clock design and canonical CalVer-style build version.
+- Move the formerly referenced global plan `~/.claude/plans/glistening-napping-hinton.md` into the repository's `docs/plans/` directory and give it a descriptive name so every agent can use it.
+- Audit every reference to the old global plan path and update it to the repository-local path.
+- Find any other project plan stored in a Claude-only directory and move it into `docs/plans/` as well.
+- Add project `.claude/settings.json` containing only Claude Code's `plansDirectory` setting pointing to `./docs/plans`, so future Claude plan-mode files are shared through the repository.
+- Add `docs/plans/` to `AGENTS.md` with a brief description.
+- **Discovery:** the referenced `glistening-napping-hinton.md` file is no longer present anywhere under `/home/lucas`; its content cannot be moved byte-for-byte. The repository does contain `.claude/plans/c64-reception-and-meeting-room-move.md`, which will be relocated. The missing roadmap will be reconstructed under a descriptive repository-local name from the current PRD, CHANGELOG, ADR, Beads epic, and surviving references, with the absence recorded rather than hidden.
+- **Cross-reference:** Beads epic `sacs-xtma`; Lunch feature `sacs-xtma.1`; versioning task `sacs-xtma.4`; plan consolidation gets its own deduplicated child issue.
+
 ## 2026-09-02 — visual acceptance and local CPU usage
 
 **ID: L-2026-09-02-04 — Keep Vite running; optimize test CPU later**
@@ -116,8 +136,9 @@ nothing is lost again.
 
 ## Cross-references (pending update in PRD/plan)
 
-These items are NOT yet in `docs/PRD.md` §13 (Corrections Log)
-or in `~/.claude/plans/glistening-napping-hinton.md`. They MUST
+These historical items were not yet in `docs/PRD.md` §13 (Corrections Log)
+or the then-current global roadmap. The obsolete global plan path was
+superseded by `docs/plans/game-roadmap.md` on 2026-09-02. They MUST
 be added before any more code work happens.
 
 - L-2026-08-30-01 → PRD §13 new entry C-27 (NPC walk animations +

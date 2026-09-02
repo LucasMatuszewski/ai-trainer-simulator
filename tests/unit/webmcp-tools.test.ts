@@ -140,7 +140,7 @@ describe("WebMCP tools", () => {
   it("advances time", () => {
     expect(callTool({ name: "advance_time", parameters: {} })).toEqual({
       ok: true,
-      data: { day: 1, timeOfDay: "afternoon" },
+      data: { day: 1, timeOfDay: "lunch" },
     });
   });
 
