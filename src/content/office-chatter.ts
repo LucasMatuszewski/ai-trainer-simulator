@@ -159,6 +159,7 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "Unplug it. Count to 10. Scream.",
       "It jams when it senses deadlines.",
       "Paper jam is a lifestyle at this point.",
+      "Have you tried turning the CEO off and on?",
     ],
   },
   {
@@ -598,6 +599,47 @@ export const OFFICE_CHATTER: readonly ChatterExchange[] = [
       "The B was for 'budget', right?",
       "C testing shipped straight to prod.",
       "The test tested itself. Passed.",
+    ],
+  },
+  // --- General starters promoted from lunch orphans (C-61 review) --
+  {
+    starter: "We're carbon-neutral if you ignore the cloud.",
+    responses: [
+      "The cloud is also where the budget went.",
+      "So is our budget. Perfectly neutral.",
+      "Tell that to the gaming PCs in sales.",
+      "Net zero. Net anything, really.",
+      "HR said stop printing apologies.",
+    ],
+  },
+  {
+    starter: "My smartwatch says I'm dead. Anyway, pizza?",
+    responses: [
+      "The watch also counted typing as cardio.",
+      "Celebration pizza resurrects everyone.",
+      "Mine buzzed. I assume it is haunted.",
+      "10,000 steps to the kitchen. Done.",
+      "Mine gave up and shows ads now.",
+    ],
+  },
+  {
+    starter: "I'd merge anything for a burrito now.",
+    responses: [
+      "Even a rebase? That is hunger talking.",
+      "The burrito has fewer conflicts.",
+      "Merge responsibly. Or at least quietly.",
+      "I would push to main for a taco.",
+      "One burrito. No backward compatibility.",
+    ],
+  },
+  {
+    starter: "Cold pizza is a lifestyle, not a failure.",
+    responses: [
+      "Say it louder for the scrum master.",
+      "Breakfast of champions. Day-old edition.",
+      "It is meal prep if you are lazy enough.",
+      "The fridge agrees. The fridge always does.",
+      "Reheated, it is a whole new PR.",
     ],
   },
 ];

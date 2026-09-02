@@ -132,7 +132,8 @@ export const LUNCH_CHATTER: readonly ChatterExchange[] = [
     starter: "New cafe opened next door.",
     responses: [
       "I went. It is just a fridge with seats.",
-      "Anything is better than the 2019 yogurt.",
+      "Anything is better than our coffee machine.",
+      "Anything is better than our discount coffee.",
       "Reviews say 'do not ask about the soup'.",
     ],
   },
@@ -140,6 +141,7 @@ export const LUNCH_CHATTER: readonly ChatterExchange[] = [
     starter: "Dawid labeled his yogurt again.",
     responses: [
       "Dawid's yogurt is labeled. Do not test fate.",
+      "The CEO has two monitors and zero mercy.",
       "His label says 'DO NOT EAT'. In bold.",
       "Last unlabeled yogurt got a P0.",
     ],
@@ -156,6 +158,7 @@ export const LUNCH_CHATTER: readonly ChatterExchange[] = [
     starter: "Team lunch on the company card?",
     responses: [
       "Grazyna billed lunch as a meeting. Fair.",
+      "Series A means we finally afford real napkins.",
       "Yes. Invoice it as 'synergy'.",
       "Only if Burek orders water. Free.",
     ],
@@ -163,8 +166,9 @@ export const LUNCH_CHATTER: readonly ChatterExchange[] = [
   {
     starter: "Leftovers in the sink again.",
     responses: [
-      "Was that the server cooling fan or your stomach?",
+      "Mugs have formed a support group.",
       "The sink is a museum now. No touching.",
+      "That spoon has been there since Q1.",
       "One more plate and it becomes a P1.",
     ],
   },
@@ -181,6 +185,7 @@ export const LUNCH_CHATTER: readonly ChatterExchange[] = [
     responses: [
       "File a ticket. Label it 'snack P0'.",
       "The machine is pre-revenue too.",
+      "I'd code for food. Actually, I do.",
       "Shake it. That is the agile way.",
     ],
   },
@@ -197,6 +202,7 @@ export const LUNCH_CHATTER: readonly ChatterExchange[] = [
     responses: [
       "I muted my stomach. It keeps pinging.",
       "My lunch has a changelog. v2: no pickles.",
+      "Copilot wrote my resignation letter in Rust.",
       "Please unmute. We can hear the chewing.",
     ],
   },
