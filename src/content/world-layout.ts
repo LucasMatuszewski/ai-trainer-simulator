@@ -341,7 +341,7 @@ export const WORLD_ROOMS: WorldRoom[] = [
       // of the new doorway is +X. The menu moves east to keep the
       // two signs from overlapping.
       { text: "MEETING ROOM", position: [12.9, 2.1, 7], face: Math.PI, color: 0x2255aa, size: [1.4, 0.6] },
-      { text: "TODAY'S MENU: COFFEE", position: [16.5, 2.1, 7], face: Math.PI, color: 0x9b3f2f },
+      { text: "TODAY'S MENU: COFFEE", position: [15.57, 2.1, 7], face: Math.PI, color: 0x9b3f2f },
       // CLEAN AS YOU GO poster: above the counter, against the back
       // wall (z=-6.95, the wall inner face is at z=-7). Face 0 so it
       // faces the room (toward the player walking in).
