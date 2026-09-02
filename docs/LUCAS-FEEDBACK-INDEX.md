@@ -66,6 +66,34 @@ nothing is lost again.
 - **Discovery:** the referenced `glistening-napping-hinton.md` file is no longer present anywhere under `/home/lucas`; its content cannot be moved byte-for-byte. The repository does contain `.claude/plans/c64-reception-and-meeting-room-move.md`, which will be relocated. The missing roadmap will be reconstructed under a descriptive repository-local name from the current PRD, CHANGELOG, ADR, Beads epic, and surviving references, with the absence recorded rather than hidden.
 - **Cross-reference:** Beads epic `sacs-xtma`; Lunch feature `sacs-xtma.1`; versioning task `sacs-xtma.4`; plan consolidation gets its own deduplicated child issue.
 
+**ID: L-2026-09-02-12 — Desktop resolution is the priority for tests and screenshots**
+- Lucas questioned a "640×360 test viewport" as ridiculous; resolved: that is the canvas' internal pixel buffer (retro renderer, CSS-scaled), while the Playwright viewport is already **1280×720**.
+- Standing directive: the game targets **desktop first** (not phones); e2e tests and screenshots must use a popular desktop resolution (1280×720) and stay there.
+- **Cross-reference:** e2e viewport assertions in `tests/e2e/`; no code change required (already conformant). This entry was first written and then accidentally dropped during the C-67 commit split; re-recorded verbatim afterwards.
+
+## 2026-09-02 — e2e suite cost
+
+**ID: L-2026-09-02-13 — E2E screenshots opt-in, long wait-tests slow-gated**
+- Screenshots are low value per run, take work and time, and overheat the CPU; nobody analyses them on every run. They are occasional vision-QA artifacts, not assertions.
+- Make screenshots **opt-in via a flag** (implemented: `E2E_SCREENSHOTS=1`, default off), with a package.json script that runs the **full suite with screens included** (`pnpm test:e2e:screens`) that is **not the default**.
+- The longest waiting tests (real-time passes, e.g. morning fill and evening walk-out) should be optional or ordered last. Implemented: `@slow` tag + `pnpm test:e2e:fast`; the default `pnpm test:e2e` still runs everything.
+- The suite "takes CRAZY long and CPU gets so hot even with 1 worker" — one worker stays (parallel SwiftShader instances hang on ReadPixels); further reduction comes from not capturing by default.
+- **Cross-reference:** `tests/e2e/shots.ts`; Beads `sacs-m2b9` (CPU profiling follow-up) and `sacs-xtma.8` (re-author stale vantage points).
+
+## 2026-09-02 — workflow directives
+
+**ID: L-2026-09-02-14 — Commit granularly as you work, not at the end**
+- Granular commits must happen **while working**, one per logical change, so any step can be reverted; do not accumulate one huge diff and split it synthetically at the end (risky, wastes time — happened twice: Codex's C-67 diff and this session's initial seam reconstruction).
+- No synthetic intermediate states for past work: finish what exists, then follow the rule going forward.
+- The **project** `AGENTS.md` (not the home one) must state this explicitly.
+- **Cross-reference:** project `AGENTS.md` git-workflow section; home `AGENTS.md` already had the staging rule.
+
+**ID: L-2026-09-02-15 — The spawn area is the reception (naming sweep)**
+- Lucas confirmed the C-64 spawn: "we moved spawn to the reception now". The room south of the office where the player starts is the **reception**; "meeting room" for it is stale naming (the actual meeting room is south of the kitchen; its room id stays `meeting-room` per ADR decision D10).
+- Sweep comments, test titles, and docs that still describe the spawn as "meeting room".
+- While auditing spawn definitions, the stale duplicate `PLAYER_START` in `src/content/npcs.ts` was removed; the follow-up recommendation is one home for game-configuration constants (a `config.ts`-style module) rather than per-file constants — tracked as a deduplicated Beads child under the epic.
+- **Cross-reference:** Beads epic `sacs-xtma` children (naming/spawn audit + config consolidation); `src/engine/scene.ts` playerStart.
+
 ## 2026-09-02 — visual acceptance and local CPU usage
 
 **ID: L-2026-09-02-04 — Keep Vite running; optimize test CPU later**
