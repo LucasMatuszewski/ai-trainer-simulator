@@ -5,6 +5,25 @@ given. Every item MUST be reflected in `docs/PRD.md` and the
 plan. The agent MUST update this file when Lucas sends feedback so
 nothing is lost again.
 
+## 2026-09-03 (night) — hackathon pivot, WebMCP agent play, real branding
+
+**ID: L-2026-09-03-02 — Enter the OpenAI WebMCP Challenge, and the MiniMax/GMI contest**
+- Deadline confirmed by research: **2026-09-03, 13:00 PDT = 21:00 Europe/Lisbon**. MiniMax/GMI is **2026-09-06**.
+- Lucas's own assessment of the game: visually nice, well-polished UX and controls, funny, but (1) no challenge - a tech demo rather than a game, and (2) the WebMCP implementation is very basic.
+- **Agent finding that reframed the night:** `src/webmcp/tools.ts` was an internal registry that nothing ever registered with the browser - no `modelContext` reference existed anywhere in `src/`, so an agent opening the page discovered zero tools. A qualification gap, not polish.
+- Decisions Lucas made: build order is real registration -> agent agency -> agent-authored dialogue -> branding; human multiplayer is **out for 03.09 and in for 06.09**; work goes to committed code on a branch but is **not pushed and not deployed**.
+- **Cross-reference:** `docs/briefs/2026-09-03-lucas-hackathon-brief.md` (the full brief, including every deferred idea), `docs/PRD-hackathon-webmcp.md`, `docs/ADR/0008-webmcp-browser-bridge-and-agent-companion.md`, `docs/plans/2026-09-03-hackathon-webmcp.md`, `docs/SUBMISSION.md`, `docs/DEPLOY.md`.
+
+**ID: L-2026-09-03-03 — Branding must be real artwork, not a room sign**
+- Lucas: "where did you took the logo of edukey and devpowers from???" - the agent had shipped placeholder TEXT plaques using the game's room-sign renderer, with invented colours and guessed URLs. No artwork had been copied from anywhere, but the need for real assets should have been raised explicitly rather than left in a commit body.
+- Real SVGs (logo, emblem, favicon, wordmark, horizontal + vertical lockups) were pushed to master under `public/assets/edukey/` and `public/assets/devpowers/`.
+- **A room-name plaque is right for "MEETING ROOM" and wrong for branding.** Requirements: "Made by" as **plain text painted directly on the wall**; below it **both SVG logos rendered**, one under another, DevPowers in its **vertical** version for now; simulate the **3D standoff logos typical of real reception walls**.
+- Implemented as `src/engine/furniture/brand-wall.ts` (painted caption + rasterised SVG marks at a standoff with drop shadows). Marked as first-pass - Lucas: "we can polish it later."
+- **Two asset hazards found and handled:** the Edukey files are pure white (invisible on a light surface), and the DevPowers files draw with `currentColor` plus their own `@media (prefers-color-scheme: dark)` rule, which the browser honours when rasterising - so an untreated DevPowers mark changes colour with **each player's OS theme**. Both are forced to an explicit colour before rendering, in the world and on the title screen.
+- Favicon switched from the placeholder emoji to the DevPowers mark. **Open question for Lucas:** the game is its own product ("Stack Underflow"), so a game-specific favicon may beat either company's.
+- **Also open:** the title-screen links use guessed URLs (`https://edukey.ai`, `https://devpowers.com`) and need confirming.
+- **Cross-reference:** `src/engine/furniture/brand-wall.ts`, `src/ui/title.ts`, `src/content/world-layout.ts` (reception furniture), `index.html`.
+
 ## 2026-09-03 — end-day safety and UI text size
 
 **ID: L-2026-09-03-01 — End Day (Z and button) must confirm; modal copy must be large**
