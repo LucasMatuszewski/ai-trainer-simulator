@@ -29,8 +29,17 @@ export const SUPPLY_TIMEOUT_MS = 12_000;
 
 /** Shown when the agent never answers. In character, never a system message. */
 export const FALLBACK_LINE =
-  "*the robot's status light blinks amber* ...connection to my brain is buffering. Ask me again?";
-export const FALLBACK_OPTIONS: readonly string[] = ["No problem, take your time.", "Never mind."];
+  "*the robot's status light blinks amber* ...hold on, my thoughts are still buffering.";
+
+/**
+ * Only the second option ends the conversation. The first keeps the turn
+ * open, because the agent may still be composing - and if it answers, its
+ * line replaces this fallback in place.
+ */
+export const FALLBACK_OPTIONS: ReadonlyArray<{ text: string; ends: boolean }> = [
+  { text: "No rush, take your time.", ends: false },
+  { text: "Never mind, catch you later.", ends: true },
+];
 
 export interface DialogueRequestContext {
   /** Who the human is talking to. */
@@ -184,6 +193,16 @@ export interface DialogueBroker {
   lastChoice: () => string | null;
   /** True once the wait has elapsed with no supply - render the fallback. */
   hasTimedOut: (nowMs?: number) => boolean;
+  /**
+   * Show the fallback WITHOUT abandoning the turn.
+   *
+   * The turn stays pending, so an agent that answers late still has its line
+   * rendered over the fallback. Returns false if the fallback was already
+   * shown, so the caller (a per-frame check) renders it exactly once.
+   */
+  markLate: () => boolean;
+  /** True while a fallback is on screen and a late supply would replace it. */
+  isLate: () => boolean;
   /** Clear everything when the conversation ends. */
   reset: () => void;
   isPending: () => boolean;
@@ -215,6 +234,8 @@ export function createDialogueBroker(
   let lastOptionIndex: number | null = null;
   let finished = false;
   let turnCounter = 0;
+  /** Set when the bounded wait elapsed and the fallback line went up. */
+  let fallbackShown = false;
   /** Resolvers for agents currently parked in awaitPlayerMessage. */
   let waiters: Array<(message: PlayerMessage) => void> = [];
 
@@ -228,6 +249,7 @@ export function createDialogueBroker(
     request(context) {
       pending = { ...context, lastPlayerChoice };
       requestedAt = now();
+      fallbackShown = false;
     },
 
     peek() {
@@ -246,6 +268,7 @@ export function createDialogueBroker(
       if (!validated.ok) return validated;
 
       pending = null;
+      fallbackShown = false;
       onSupplied(validated.value);
       return validated;
     },
@@ -273,6 +296,18 @@ export function createDialogueBroker(
       return nowMs - requestedAt >= SUPPLY_TIMEOUT_MS;
     },
 
+    markLate() {
+      if (fallbackShown) return false;
+      // Deliberately does NOT clear `pending`. Clearing it was the bug: a
+      // late supply_dialogue then hit "no conversation is waiting" and the
+      // agent's line was dropped on the floor, so a slow agent could never
+      // recover a conversation once the fallback appeared.
+      fallbackShown = true;
+      return true;
+    },
+
+    isLate: () => fallbackShown,
+
     reset() {
       pending = null;
       requestedAt = 0;
@@ -280,6 +315,7 @@ export function createDialogueBroker(
       lastOptionIndex = null;
       finished = false;
       turnCounter = 0;
+      fallbackShown = false;
       // Never strand a waiter across a reset: an agent still holding a
       // promise would hang until its own host gave up.
       wake({ waiting: true, hint: "The conversation ended. Call again if you start a new one." });
@@ -344,6 +380,7 @@ export function createDialogueBroker(
       const validated = validateSupply(line, options);
       if (!validated.ok) return validated;
       finished = false;
+      fallbackShown = false;
       turnCounter = 1;
       pending = null;
       lastPlayerChoice = null;

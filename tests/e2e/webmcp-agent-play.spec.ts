@@ -435,3 +435,57 @@ test("a browser with no WebMCP support still reaches a playable game", async ({ 
   expect(errors, "an unsupported browser must not produce page errors").toEqual([]);
   await expect(page.locator(".agent-status")).toHaveCount(0); // title screen is gone
 });
+
+test("a line supplied AFTER the fallback still reaches the player", { tag: "@slow" }, async ({ page }) => {
+  // Lucas, 2026-09-03: "if I see this fallback about diode amber that Rusty is
+  // thinking longer, then I never see this supplied dialogue". The frame loop
+  // used to reset() the broker when the wait elapsed, which cleared the
+  // pending turn - so the agent's late line hit "no conversation is waiting"
+  // and vanished. Tagged @slow because it must actually wait out the timeout;
+  // the wiring is the bug site, so a unit test alone would not have caught it.
+  await installHost(page);
+  await startGame(page);
+  await call(page, "agent_join", { name: "Rusty", persona: "qa robot" });
+  await page.waitForTimeout(500);
+  await call(page, "start_conversation", { line: "Hey.", options: ["Hi.", "Not now."] });
+  await page.waitForTimeout(400);
+
+  // Answer, which opens a fresh turn the agent deliberately does not fill.
+  await page.locator(".dialogue .options button").first().click();
+  await expect(page.locator(".dialogue .text")).toContainText("status light blinks amber", {
+    timeout: 20_000,
+  });
+
+  // The panel must still be open and the turn still claimable.
+  const LATE = "Sorry - long boot sequence.";
+  await call(page, "supply_dialogue", { line: LATE, options: ["No problem.", "What took you?"] });
+  await expect(page.locator(".dialogue .text")).toHaveText(LATE);
+});
+
+test("a step is walked over time, not applied in one frame", async ({ page }) => {
+  // Lucas: agent_step "works like a teleport or walks crazy fast". It wrote
+  // the whole displacement in a single frame; it now hands the destination to
+  // the same path advance everything else uses.
+  await installHost(page);
+  await startGame(page);
+  await call(page, "agent_join", { name: "Rusty", persona: "qa robot" });
+  await page.waitForTimeout(400);
+
+  const at = async (): Promise<number> =>
+    (await page.evaluate(() => window.__aitrainer!.inspectCompanion!()))!.world!.z;
+
+  const before = await at();
+  const step = (await call(page, "agent_step", { direction: "forward", metres: 3 })) as {
+    walkSeconds: number;
+  };
+  expect(step.walkSeconds).toBeGreaterThan(1);
+
+  // Immediately after the call it has barely moved - that is the whole point.
+  const immediately = await at();
+  expect(Math.abs(immediately - before)).toBeLessThan(0.5);
+
+  // And it keeps going under its own steam.
+  await page.waitForTimeout(2500);
+  const later = await at();
+  expect(Math.abs(later - before)).toBeGreaterThan(2);
+});

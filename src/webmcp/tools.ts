@@ -40,7 +40,7 @@ export interface AgentCompanionHooks {
   lookAround: () => unknown;
   step: (direction: "forward" | "back" | "left" | "right", metres: number) => {
     ok: boolean; reason?: string; movedMetres?: number; blocked?: boolean;
-    position?: { x: number; z: number }; facingDegrees?: number;
+    position?: { x: number; z: number }; facingDegrees?: number; walkSeconds?: number;
   };
   turn: (degrees: number) => {
     ok: boolean; reason?: string; position?: { x: number; z: number }; facingDegrees?: number;
@@ -632,7 +632,9 @@ const implementations: ToolImplementation[] = [
     definition: {
       name: "agent_step",
       description:
-        "Move your character a short distance in one direction, like tapping W/A/S/D. " +
+        "Walk your character a short distance in one direction, like tapping W/A/S/D. The " +
+        "step is ANIMATED at normal walking speed and the result says how long it takes, so " +
+        "the human sees the movement. " +
         "Directions are relative to the way your character is currently facing. Use this for " +
         "fine positioning - to cross the office, use agent_move_to, which paths around " +
         "furniture instead of bumping into it. Walls and desks still block you; the result " +
@@ -672,6 +674,8 @@ const implementations: ToolImplementation[] = [
         ok: true,
         data: {
           movedMetres: result.movedMetres,
+          // The step is WALKED, not teleported - this is how long it takes.
+          walkSeconds: result.walkSeconds,
           blocked: result.blocked,
           position: result.position,
           facingDegrees: result.facingDegrees,

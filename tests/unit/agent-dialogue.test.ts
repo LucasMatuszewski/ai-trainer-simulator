@@ -11,6 +11,7 @@ import {
   createDialogueBroker,
   validateSupply,
   FALLBACK_LINE,
+  FALLBACK_OPTIONS,
   MAX_LINE_LENGTH,
   MAX_OPTIONS,
   MIN_OPTIONS,
@@ -263,5 +264,61 @@ describe("startConversation", () => {
     const broker = createDialogueBroker(() => 0, rendered);
     expect(broker.startConversation("", ["Sure."]).ok).toBe(false);
     expect(rendered).not.toHaveBeenCalled();
+  });
+});
+
+describe("a late supply after the fallback (the dropped-reply bug)", () => {
+  it("keeps the turn pending when the wait elapses, so a late line still lands", () => {
+    // Lucas, 2026-09-03: "if I see this fallback about diode amber that Rusty
+    // is thinking longer, then I never see this supplied dialogue". The frame
+    // loop used to call reset() here, which cleared `pending` - so the
+    // agent's late supply hit "no conversation is waiting" and was dropped.
+    const rendered = vi.fn();
+    let clock = 0;
+    const broker = createDialogueBroker(() => clock, rendered);
+
+    broker.request(CONTEXT);
+    clock += SUPPLY_TIMEOUT_MS;
+    expect(broker.hasTimedOut()).toBe(true);
+    expect(broker.markLate()).toBe(true);
+    expect(broker.isLate()).toBe(true);
+
+    // The turn is still open, so the agent can still answer.
+    expect(broker.isPending()).toBe(true);
+    const late = broker.supply("Sorry - long boot sequence.", ["No problem.", "What took you?"]);
+    expect(late.ok).toBe(true);
+    expect(rendered).toHaveBeenCalledOnce();
+  });
+
+  it("shows the fallback exactly once, however many frames run", () => {
+    // The per-frame check calls markLate() every frame; only the first may
+    // render, or the panel would rebuild itself sixty times a second.
+    let clock = 0;
+    const broker = createDialogueBroker(() => clock);
+    broker.request(CONTEXT);
+    clock += SUPPLY_TIMEOUT_MS;
+
+    expect(broker.markLate()).toBe(true);
+    expect(broker.markLate()).toBe(false);
+    expect(broker.markLate()).toBe(false);
+  });
+
+  it("clears the late flag when a new turn is requested", () => {
+    let clock = 0;
+    const broker = createDialogueBroker(() => clock);
+    broker.request(CONTEXT);
+    clock += SUPPLY_TIMEOUT_MS;
+    broker.markLate();
+
+    broker.request({ ...CONTEXT, turn: 2 });
+    expect(broker.isLate()).toBe(false);
+    expect(broker.markLate()).toBe(true);
+  });
+
+  it("offers a fallback that does not force the conversation to end", () => {
+    // Only the second option ends it; the first keeps the turn open because
+    // the agent may still be composing.
+    expect(FALLBACK_OPTIONS.some((option) => option.ends === false)).toBe(true);
+    expect(FALLBACK_OPTIONS.some((option) => option.ends === true)).toBe(true);
   });
 });

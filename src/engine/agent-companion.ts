@@ -46,6 +46,16 @@ export const COMPANION_RADIUS = 0.3;
 export const SPAWN_FACING = Math.PI;
 
 /**
+ * How far the companion stops from the player when it walks over to talk.
+ *
+ * 1.2 m was too close: in first person the robot filled the view and read as
+ * looming rather than conversational (Lucas, 2026-09-03). 1.9 m is roughly
+ * the social distance people actually hold at work - close enough to be
+ * clearly talking to you, far enough that you can see the whole character.
+ */
+export const CONVERSATION_DISTANCE = 1.9;
+
+/**
  * Gestures the agent may play by name. Deliberately the same vocabulary the
  * scheduled NPCs use (`DESK_GESTURES` in npc-idle.ts) plus the two standing
  * poses, so the robot moves like a member of the cast rather than having its
@@ -228,6 +238,8 @@ export interface StepOutcome {
   reason?: string;
   /** How far it actually got - less than asked when something was in the way. */
   movedMetres?: number;
+  /** How long the walk takes; the step is animated, not instant. */
+  walkSeconds?: number;
   blocked?: boolean;
   position?: XZ;
   facingDegrees?: number;
@@ -457,6 +469,8 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
         : facing - Math.PI / 2;
 
       const before = { x: position.x, z: position.z };
+      // Resolve the destination against collision FIRST, so the reported
+      // distance is honest, then WALK there rather than jumping.
       const after = applyWithCollision(
         before,
         COMPANION_RADIUS,
@@ -465,20 +479,36 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
         deps.bounds,
         deps.obstacles,
       );
-      position.set(after.x, position.y, after.z);
-      // A manual step cancels any walk in progress: the agent has taken
-      // direct control, and leaving the old path running would drag the
-      // companion back the moment update() next ran.
-      path = null;
-      movingTo = null;
 
       const moved = Math.hypot(after.x - before.x, after.z - before.z);
+
+      // A step is a short WALK, not a displacement. Setting the destination
+      // as a two-point path hands it to the same per-frame advance and walk
+      // cycle everything else uses, so the player sees the robot cover the
+      // ground at 1.2 m/s. Writing position directly - which is what this did
+      // first - teleported it (Lucas: "works like a teleport or walks crazy
+      // fast"), because the whole distance landed in a single frame.
+      if (moved > 0.01) {
+        path = [position.clone(), new THREE.Vector3(after.x, position.y, after.z)];
+        segmentIndex = 0;
+        distanceInSegment = 0;
+        movingTo = null;
+      } else {
+        // Nowhere to go - cancel any walk in progress rather than leaving the
+        // companion drifting along a path the agent has overridden.
+        path = null;
+        movingTo = null;
+      }
+
       return {
         ok: true,
         movedMetres: Math.round(moved * 100) / 100,
         blocked: moved < distance - 0.01,
+        // Where it will BE once the step finishes; the walk takes
+        // moved / 1.2 seconds.
         position: { x: after.x, z: after.z },
         facingDegrees: Math.round((facing * 180) / Math.PI),
+        walkSeconds: Math.round((moved / DEFAULT_WALK_SPEED_MPS) * 10) / 10,
       };
     },
 
@@ -511,14 +541,13 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       const dx = position.x - point.x;
       const dz = position.z - point.z;
       const distance = Math.hypot(dx, dz);
-      const STANDOFF = 1.2;
-      if (distance <= STANDOFF + 0.3) {
+      if (distance <= CONVERSATION_DISTANCE + 0.35) {
         // Already close enough - just turn to face them.
         facing = Math.atan2(point.x - position.x, point.z - position.z);
         if (group) group.rotation.y = facing;
         return { arrived: true };
       }
-      const scale = STANDOFF / distance;
+      const scale = CONVERSATION_DISTANCE / distance;
       const destination = new THREE.Vector3(
         point.x + dx * scale,
         0,

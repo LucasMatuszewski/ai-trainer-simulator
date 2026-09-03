@@ -1254,9 +1254,17 @@ function frame(): void {
       // fallback is in character and the panel stays closable (AC-AUTH-05).
       if (agentCompanion?.isActive() === true) {
         agentCompanion.update(dt);
-        if (agentBroker?.hasTimedOut() === true && dialogue?.isAgentTurn() === true) {
-          agentBroker.reset();
-          renderAgentTurn(FALLBACK_LINE, FALLBACK_OPTIONS.map((text) => ({ text, ends: true })));
+        // markLate() keeps the turn PENDING on purpose. Resetting here was a
+        // bug: a supply_dialogue arriving after the fallback then hit "no
+        // conversation is waiting" and the agent's line vanished, so a slow
+        // agent could never recover the conversation. Now a late line simply
+        // replaces the fallback in place.
+        if (
+          agentBroker?.hasTimedOut() === true &&
+          dialogue?.isAgentTurn() === true &&
+          agentBroker.markLate()
+        ) {
+          renderAgentTurn(FALLBACK_LINE, FALLBACK_OPTIONS);
         }
       }
       // Phase 3.5: smooth NPC face-toward-player animation. When a
