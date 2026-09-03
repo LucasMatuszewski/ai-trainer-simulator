@@ -862,7 +862,7 @@
         "renata_intro",
         {
           "kind": "tts",
-          "text": "This is a one-day crash course in not getting fired. I will talk, you walk. You can press Z to skip me anytime.",
+          "text": "Crash course in not getting fired: I talk, you walk, Esc cuts me off. Oh - and your AI agent can work here with you. As a robot. Do not tell Dawid, he will want it on the org chart.",
           "opts": {
             "voice_id": "English_Graceful_Lady",
             "emotion": "happy",
@@ -1016,6 +1016,42 @@
           "meta": {
             "npc": "renata",
             "node": "ready",
+            "use": "C-64 tutorial / help centre"
+          }
+        }
+      ],
+      [
+        "renata_agent-setup",
+        {
+          "kind": "tts",
+          "text": "Two ways in. ChatGPT's browser just works - open the game there and ask your agent to join. Chrome is experimental and still rolling out. I even wrote you a prompt to paste. You are welcome.",
+          "opts": {
+            "voice_id": "English_Graceful_Lady",
+            "emotion": "happy",
+            "speed": 1,
+            "pitch": 1
+          },
+          "meta": {
+            "npc": "renata",
+            "node": "agent-setup",
+            "use": "C-64 tutorial / help centre"
+          }
+        }
+      ],
+      [
+        "renata_webmcp",
+        {
+          "kind": "tts",
+          "text": "One strange one. If your browser has an AI agent, tell it to join us. It walks in as a robot and talks to you. It writes its own lines - not even I know what it will say.",
+          "opts": {
+            "voice_id": "English_Graceful_Lady",
+            "emotion": "happy",
+            "speed": 1,
+            "pitch": 1
+          },
+          "meta": {
+            "npc": "renata",
+            "node": "webmcp",
             "use": "C-64 tutorial / help centre"
           }
         }
