@@ -82,8 +82,10 @@ describe("reducer: flags", () => {
 });
 
 describe("reducer: advance-time", () => {
-  it("advances morning -> afternoon -> evening", () => {
+  it("advances morning -> lunch -> afternoon -> evening", () => {
     let s = baseState();
+    s = reduce(s, { type: "advance-time" });
+    expect(s.timeOfDay).toBe("lunch");
     s = reduce(s, { type: "advance-time" });
     expect(s.timeOfDay).toBe("afternoon");
     s = reduce(s, { type: "advance-time" });
@@ -92,6 +94,7 @@ describe("reducer: advance-time", () => {
 
   it("wraps evening -> next day morning and bumps day", () => {
     let s = baseState();
+    s = reduce(s, { type: "advance-time" });
     s = reduce(s, { type: "advance-time" });
     s = reduce(s, { type: "advance-time" });
     const wrapped = reduce(s, { type: "advance-time" });

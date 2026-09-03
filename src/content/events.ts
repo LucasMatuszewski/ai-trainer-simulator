@@ -1,13 +1,15 @@
 /**
  * Random Office Events pool.
  *
- * Fired by the orchestrator on time-of-day transitions (morning -> afternoon
- * -> evening -> next morning). Each event is a small slice of IT-office life
+ * Fired by the orchestrator on time-of-day transitions (morning -> lunch ->
+ * afternoon -> evening -> next morning). Each event is a small slice of IT-office life
  * with toast copy plus reducer-shaped effects. Comedy style: IT Crowd meets
  * Silicon Valley, trainer-flavored.
  */
 
-export type Period = "morning" | "afternoon" | "evening";
+import type { TimeOfDay } from "../types";
+
+export type Period = TimeOfDay;
 
 export type StatName = "credibility" | "caffeine" | "patience" | "focus";
 
@@ -39,7 +41,7 @@ export interface RandomEvent {
   /** Weight (higher = more likely). Roughly 1-10, sum of all weights should be ~100. */
   weight: number;
   /** Time-of-day filter. If set, event only fires during these periods. */
-  periods?: Array<"morning" | "afternoon" | "evening">;
+  periods?: TimeOfDay[];
   /** Hard requirements: a flag must be set (true) for the event to be available. */
   requiresFlags?: string[];
   /** Hard requirements: a flag must be NOT set (false) for the event to be available. */

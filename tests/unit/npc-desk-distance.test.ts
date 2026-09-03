@@ -37,7 +37,7 @@ function distanceToAabb(
 
 const deskFor = (npcId: NpcId) => OBSTACLES.find((obstacle) => obstacle.id === `desk-${npcId}`);
 
-const PERIODS: readonly Period[] = ["morning", "afternoon", "evening"];
+const PERIODS: readonly Period[] = ["morning", "lunch", "afternoon", "evening"];
 
 describe("working NPCs stand close to their desk (C-63)", () => {
   it("puts every wall-desk NPC 0.45 m from their desk edge in the roster", () => {

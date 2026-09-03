@@ -15,10 +15,11 @@ vi.hoisted(() => {
 
 import { game } from "../../src/game/state";
 import { DIALOGUES } from "../../src/content/dialogues";
-import { callTool, TOOLS } from "../../src/webmcp/tools";
+import { callTool, registerPlayerActions, TOOLS } from "../../src/webmcp/tools";
 
 describe("WebMCP tools", () => {
   beforeEach(() => {
+    registerPlayerActions(null);
     game.dispatch({ type: "reset" });
   });
 
@@ -137,11 +138,27 @@ describe("WebMCP tools", () => {
     expect(game.get().npcRelationships["not-an-npc"]).toBeUndefined();
   });
 
-  it("advances time", () => {
+  it("advances time through the runtime hook so events, NPCs, and the HUD stay synchronized", () => {
+    const advanceTime = vi.fn(() => {
+      game.dispatch({ type: "advance-time" });
+      return true;
+    });
+    registerPlayerActions({
+      isDialogueOpen: () => false,
+      openDialogue: () => false,
+      pickDialogueOption: () => false,
+      closeDialogue: () => false,
+      advanceTime,
+      endDay: () => false,
+      openMinigame: () => false,
+      getDialogueSnapshot: () => null,
+    });
+
     expect(callTool({ name: "advance_time", parameters: {} })).toEqual({
       ok: true,
-      data: { day: 1, timeOfDay: "afternoon" },
+      data: { day: 1, timeOfDay: "lunch" },
     });
+    expect(advanceTime).toHaveBeenCalledOnce();
   });
 
   it("exposes the dialogue greeting and remaining options for a player agent (L-2026-08-30-01)", () => {

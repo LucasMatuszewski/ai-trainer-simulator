@@ -12,7 +12,7 @@
  *  - Hide the cashflow line on day 1 (no prior day to show).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { mountHud, renderHud, setCashflow } from "../../src/ui/hud";
+import { mountHud, renderHud, renderHudClock, setCashflow } from "../../src/ui/hud";
 import { initialGameState } from "../../src/game/initial";
 import type { GameState } from "../../src/types";
 
@@ -50,6 +50,29 @@ describe("Player Stats HUD (L-2026-08-30-02)", () => {
     expect(hud.barValues.caffeine.textContent).toBe("20");
     expect(hud.barValues.patience.textContent).toBe("60");
     expect(hud.barValues.credibility.textContent).toBe("90");
+  });
+
+  it("renders Lunch and a distinct quarter-hour digital clock", () => {
+    const state = makeState({ timeOfDay: "lunch" });
+    renderHud(hud, state);
+    renderHudClock(hud, state.timeOfDay, 45);
+
+    expect(hud.day.textContent).toBe("Day 1 - Lunch");
+    expect(hud.clock.textContent).toBe("12:45");
+    expect(hud.clock).not.toBe(hud.day);
+  });
+
+  it("starts each period at its real office clock time", () => {
+    const expected = {
+      morning: "09:00",
+      lunch: "12:00",
+      afternoon: "14:00",
+      evening: "17:00",
+    } as const;
+    for (const [period, clock] of Object.entries(expected)) {
+      renderHudClock(hud, period as GameState["timeOfDay"], 0);
+      expect(hud.clock.textContent).toBe(clock);
+    }
   });
 
   it("colors negative cash red", () => {

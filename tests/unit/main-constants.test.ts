@@ -1,11 +1,9 @@
 /**
- * Phase 0 TDD: the SECONDS_PER_PERIOD constant.
+ * C-67 TDD: the four-period pacing table.
  *
- * One of the four obvious bugs Lucas hit was that "days go way too fast, I
- * did not even manage to understand anything". The fix was to bump the
- * period-seconds constant and expose it so it's tunable. This test pins the
- * chosen value (180s = 3 real minutes per in-game period, 9 per day) so
- * future refactors don't silently regress it back to 60.
+ * Pins the approved Morning/Lunch/Afternoon/Evening durations and the
+ * ten-minute active day so future refactors cannot silently collapse Lunch
+ * back into Afternoon or lengthen the whole game loop.
  *
  * Imported from src/game/pacing.ts (a pure module) rather than src/main.ts
  * because main.ts touches document and localStorage on import and would
@@ -13,18 +11,22 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { SECONDS_PER_DAY, SECONDS_PER_PERIOD } from "../../src/game/pacing";
+import {
+  PERIOD_DEFINITIONS,
+  PERIOD_ORDER,
+  SECONDS_PER_DAY,
+} from "../../src/game/pacing";
 
-describe("Phase 0: time-pacing constants", () => {
-  it("SECONDS_PER_PERIOD is set to a humane value (>= 120s)", () => {
-    // 60s/period was the value the user complained about as "way too fast".
-    // Anything under 120s re-introduces the "blink and you missed it" bug.
-    expect(SECONDS_PER_PERIOD).toBeGreaterThanOrEqual(120);
+describe("C-67: time-pacing constants", () => {
+  it("uses the approved four-period 3/2/3/2 schedule", () => {
+    expect(PERIOD_ORDER).toEqual(["morning", "lunch", "afternoon", "evening"]);
+    expect(PERIOD_DEFINITIONS.morning.durationSeconds).toBe(180);
+    expect(PERIOD_DEFINITIONS.lunch.durationSeconds).toBe(120);
+    expect(PERIOD_DEFINITIONS.afternoon.durationSeconds).toBe(180);
+    expect(PERIOD_DEFINITIONS.evening.durationSeconds).toBe(120);
   });
 
-  it("SECONDS_PER_DAY is exactly 3 periods", () => {
-    // The game has morning / afternoon / evening. If this drifts, day-end
-    // accounting (rent, daily events) will be off.
-    expect(SECONDS_PER_DAY).toBe(SECONDS_PER_PERIOD * 3);
+  it("keeps the full in-game day at exactly ten active real minutes", () => {
+    expect(SECONDS_PER_DAY).toBe(600);
   });
 });

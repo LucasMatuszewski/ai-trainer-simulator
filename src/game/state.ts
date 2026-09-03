@@ -8,6 +8,7 @@
 
 import type { Action, GameState } from "../types";
 import { initialGameState } from "./initial";
+import { PERIOD_ORDER } from "./pacing";
 
 type Listener = (state: Readonly<GameState>) => void;
 
@@ -145,10 +146,9 @@ export function reduce(state: GameState, action: Action): GameState {
       };
     }
     case "advance-time": {
-      const order: GameState["timeOfDay"][] = ["morning", "afternoon", "evening"];
-      const i = order.indexOf(state.timeOfDay);
-      if (i < order.length - 1) {
-        return { ...state, timeOfDay: order[i + 1]! };
+      const i = PERIOD_ORDER.indexOf(state.timeOfDay);
+      if (i < PERIOD_ORDER.length - 1) {
+        return { ...state, timeOfDay: PERIOD_ORDER[i + 1]! };
       }
       // end of day
       return { ...state, day: state.day + 1, timeOfDay: "morning" };

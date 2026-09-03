@@ -5,6 +5,14 @@ given. Every item MUST be reflected in `docs/PRD.md` and the
 plan. The agent MUST update this file when Lucas sends feedback so
 nothing is lost again.
 
+## 2026-09-03 — end-day safety and UI text size
+
+**ID: L-2026-09-03-01 — End Day (Z and button) must confirm; modal copy must be large**
+- Relayed the C-66 audit finding ("Renata and the UI already promise Z to end the day, but no Z listener exists") for verification. Resolution: the Z listener did ship with C-66, so the tutorial is no longer lying.
+- New requirement: Z and the roster End Day button open a **confirmation modal** first — "modal would prevent accidental Z end day, it's quite easy to hit." Both triggers confirm (Lucas chose "both" over "Z only"). The **WebMCP `end_day` tool bypasses the modal** — a tool call is already deliberate. Implemented as C-69.
+- On seeing the modal live: "this text should be bigger, **never use so small fonts**." Body copy bumped 15px → 19px, buttons 15px → 16px, title 18px → 20px. Standing rule for all future UI surfaces.
+- **Cross-reference:** C-69 in `docs/CHANGELOG.md`; `src/ui/end-day-modal.ts`; `src/style.css` (`.endday-*`).
+
 ## 2026-09-02 — four-period day, real course simulation, and multiplayer vision
 
 **ID: L-2026-09-02-05 — Dedicated Lunch period with a shorter 3/2/3/2 day**
@@ -45,6 +53,54 @@ nothing is lost again.
 - Record this epic ID in the project `AGENTS.md` so every agent knows where to recover game backlog context and where to add new deduplicated child issues.
 - Agents must search the epic and shared backlog before creating a child, keep one deliverable per issue, and must not attach unrelated work merely because it happens in the same repository.
 - **Cross-reference:** Beads epic `sacs-xtma`; project coordination instructions in `AGENTS.md`. No PRD or ADR change is required because this is workflow metadata, not a gameplay decision.
+
+**ID: L-2026-09-02-10 — Align pacing docs, expose one game version, and decide Evening length**
+- Align every maintained project document to the final four-period pacing model; remove or explicitly supersede stale 3/3/3, 5/5/5, 5/10/5, and 10-minutes-per-period claims.
+- After the documentation gate, implement the dedicated Lunch period, pause-safe clock, HUD clock, schedule/event changes, and tests.
+- **Decision:** keep **3/2/3/2 (09:00-19:00)**. Do not lengthen the day to preserve the old 165-second departure constants; retune departures to fit the 120-second Evening with a buffer. Preserve **1 real minute = 1 in-game hour**.
+- The player can always end the day early with the UI action or `Z`, so Evening does not need to force the player to wait after most colleagues have left.
+- **Research decision:** use one CalVer-style `vYYYY.MM.DD-NN` game build identifier. This browser game needs dated build identity for visual QA more than SemVer compatibility signalling. OpenClaw is inspiration only: its PATCH is a monthly release-train number, while this game keeps a full date and daily ordinal.
+- Show the same canonical version on the start menu and in the browser console; do not maintain unrelated `0.0.1` and date-version strings by hand.
+- `v2026.09.02-10` remains the identity of the preceding committed documentation build and must not be reused for different committed gameplay code; the next committed build will use `v2026.09.02-11` (or the next date's `-01`).
+- **Cross-reference:** Beads epic `sacs-xtma`; Lunch feature `sacs-xtma.1`; versioning task `sacs-xtma.4`; PRD corrections C-67/C-68; architecture D-32/D-33. Gameplay code still waits for Lucas's documentation review.
+
+**ID: L-2026-09-02-11 — Approve C-67/C-68 and make plans repository-local**
+- Lucas approved implementation of the documented 3/2/3/2 Lunch/clock design and canonical CalVer-style build version.
+- Move the formerly referenced global plan `~/.claude/plans/glistening-napping-hinton.md` into the repository's `docs/plans/` directory and give it a descriptive name so every agent can use it.
+- Audit every reference to the old global plan path and update it to the repository-local path.
+- Find any other project plan stored in a Claude-only directory and move it into `docs/plans/` as well.
+- Add project `.claude/settings.json` containing only Claude Code's `plansDirectory` setting pointing to `./docs/plans`, so future Claude plan-mode files are shared through the repository.
+- Add `docs/plans/` to `AGENTS.md` with a brief description.
+- **Discovery:** the referenced `glistening-napping-hinton.md` file is no longer present anywhere under `/home/lucas`; its content cannot be moved byte-for-byte. The repository does contain `.claude/plans/c64-reception-and-meeting-room-move.md`, which will be relocated. The missing roadmap will be reconstructed under a descriptive repository-local name from the current PRD, CHANGELOG, ADR, Beads epic, and surviving references, with the absence recorded rather than hidden.
+- **Cross-reference:** Beads epic `sacs-xtma`; Lunch feature `sacs-xtma.1`; versioning task `sacs-xtma.4`; plan consolidation gets its own deduplicated child issue.
+
+**ID: L-2026-09-02-12 — Desktop resolution is the priority for tests and screenshots**
+- Lucas questioned a "640×360 test viewport" as ridiculous; resolved: that is the canvas' internal pixel buffer (retro renderer, CSS-scaled), while the Playwright viewport is already **1280×720**.
+- Standing directive: the game targets **desktop first** (not phones); e2e tests and screenshots must use a popular desktop resolution (1280×720) and stay there.
+- **Cross-reference:** e2e viewport assertions in `tests/e2e/`; no code change required (already conformant). This entry was first written and then accidentally dropped during the C-67 commit split; re-recorded verbatim afterwards.
+
+## 2026-09-02 — e2e suite cost
+
+**ID: L-2026-09-02-13 — E2E screenshots opt-in, long wait-tests slow-gated**
+- Screenshots are low value per run, take work and time, and overheat the CPU; nobody analyses them on every run. They are occasional vision-QA artifacts, not assertions.
+- Make screenshots **opt-in via a flag** (implemented: `E2E_SCREENSHOTS=1`, default off), with a package.json script that runs the **full suite with screens included** (`pnpm test:e2e:screens`) that is **not the default**.
+- The longest waiting tests (real-time passes, e.g. morning fill and evening walk-out) should be optional or ordered last. Implemented: `@slow` tag + `pnpm test:e2e:fast`; the default `pnpm test:e2e` still runs everything.
+- The suite "takes CRAZY long and CPU gets so hot even with 1 worker" — one worker stays (parallel SwiftShader instances hang on ReadPixels); further reduction comes from not capturing by default.
+- **Cross-reference:** `tests/e2e/shots.ts`; Beads `sacs-m2b9` (CPU profiling follow-up) and `sacs-omcq` (re-author stale vantage points).
+
+## 2026-09-02 — workflow directives
+
+**ID: L-2026-09-02-14 — Commit granularly as you work, not at the end**
+- Granular commits must happen **while working**, one per logical change, so any step can be reverted; do not accumulate one huge diff and split it synthetically at the end (risky, wastes time — happened twice: Codex's C-67 diff and this session's initial seam reconstruction).
+- No synthetic intermediate states for past work: finish what exists, then follow the rule going forward.
+- The **project** `AGENTS.md` (not the home one) must state this explicitly.
+- **Cross-reference:** project `AGENTS.md` git-workflow section; home `AGENTS.md` already had the staging rule.
+
+**ID: L-2026-09-02-15 — The spawn area is the reception (naming sweep)**
+- Lucas confirmed the C-64 spawn: "we moved spawn to the reception now". The room south of the office where the player starts is the **reception**; "meeting room" for it is stale naming (the actual meeting room is south of the kitchen; its room id stays `meeting-room` per ADR decision D10).
+- Sweep comments, test titles, and docs that still describe the spawn as "meeting room".
+- While auditing spawn definitions, the stale duplicate `PLAYER_START` in `src/content/npcs.ts` was removed; the follow-up recommendation is one home for game-configuration constants (a `config.ts`-style module) rather than per-file constants — tracked as a deduplicated Beads child under the epic.
+- **Cross-reference:** Beads epic `sacs-xtma` children (naming/spawn audit + config consolidation); `src/engine/scene.ts` playerStart.
 
 ## 2026-09-02 — visual acceptance and local CPU usage
 
@@ -116,8 +172,9 @@ nothing is lost again.
 
 ## Cross-references (pending update in PRD/plan)
 
-These items are NOT yet in `docs/PRD.md` §13 (Corrections Log)
-or in `~/.claude/plans/glistening-napping-hinton.md`. They MUST
+These historical items were not yet in `docs/PRD.md` §13 (Corrections Log)
+or the then-current global roadmap. The obsolete global plan path was
+superseded by `docs/plans/game-roadmap.md` on 2026-09-02. They MUST
 be added before any more code work happens.
 
 - L-2026-08-30-01 → PRD §13 new entry C-27 (NPC walk animations +

@@ -24,9 +24,8 @@ import { runDailyTick, publishCashflow } from "./game/economy";
 import { runPeriodEvent, registerNpcController } from "./game/events";
 import { registerPlayerActions } from "./webmcp/tools";
 import { NPCS, OBSTACLES } from "./content/npcs";
-import { LUNCH_WINDOW_SECONDS } from "./content/npc-schedule";
 import type { GameState, NPC, NpcId } from "./types";
-import { mountHud, renderHud, showToast, type HudElements } from "./ui/hud";
+import { mountHud, renderHud, renderHudClock, showToast, type HudElements } from "./ui/hud";
 import { mountFpsMeter, type FpsMeter } from "./ui/fps-meter";
 import { mountTitleScreen, mountCharacterCreate, showDailySummary, showGameOver } from "./ui/title";
 import { mountOfficeRoster, rosterStatusFor, type OfficeRosterHandle } from "./ui/office-roster";
@@ -38,14 +37,20 @@ import {
 import { mountDebugScript, type DebugScriptHandle } from "./minigames/debug-script";
 import { audio, type MusicId } from "./audio/AudioManager";
 import { resolveUrl, type Manifest, loadManifest } from "./audio/manifest";
-import { SECONDS_PER_PERIOD, periodsUntilDayEnd } from "./game/pacing";
+import {
+  advancePeriodElapsed,
+  periodsUntilDayEnd,
+  shouldAdvanceSimulationClock,
+} from "./game/pacing";
 import { mountQuestLog, type QuestLogHandle } from "./ui/quest-log";
 import { mountHelpModal, type HelpModalHandle } from "./ui/help-modal";
+import { mountEndDayModal, type EndDayModalHandle } from "./ui/end-day-modal";
 import { ndcFromMouse, pickFromCamera } from "./engine/interaction-raycaster";
 import { PLAYER_RADIUS, getMouseSensitivity, setMouseSensitivity } from "./engine/controls";
 import { pushOutOfObstacles } from "./engine/collision";
 import { planWalkToFace } from "./engine/walk-to-face";
 import { WORLD_BOUNDS, WORLD_COLLISION_WALLS } from "./content/world-layout";
+import { GAME_VERSION } from "./version";
 
 type Screen = "title" | "create" | "office" | "summary" | "minigame" | "gameover";
 
@@ -64,17 +69,17 @@ let debugGame: DebugScriptHandle | null = null;
 let roster: OfficeRosterHandle | null = null;
 let questLog: QuestLogHandle | null = null;
 let helpModal: HelpModalHandle | null = null;
+let endDayModal: EndDayModalHandle | null = null;
 let unsubscribeGame: (() => void) | null = null;
 let focusedNpcId: NpcId | null = null;
 // C-54: who the currently-open player dialogue is with (null when
 // none). The dialogue controller is created once, so its close
 // callback cannot capture the per-conversation NPC.
 let dialogueNpcId: NpcId | null = null;
-let officeStartedAt = 0;
 let lastTime = performance.now();
-// C-46: seconds elapsed inside the CURRENT period, updated each frame
-// from the same clock the period advancement uses. The lunch window
-// is the first LUNCH_WINDOW_SECONDS of the afternoon.
+// C-67: ACTIVE seconds elapsed inside the current variable-duration
+// period. Paused frames are never accumulated, so reopening a modal or
+// returning to the office cannot make the clock catch up.
 let currentPeriodElapsed = 0;
 // C-46 hover label state: the last pointer position over the canvas
 // (the raycast itself runs once per frame in updateHoverLabel so the
@@ -113,6 +118,9 @@ window.addEventListener("keydown", (e) => {
   // C-66: Renata and the roster's keycap both promise Z = End Day.
   // Keep it inert outside the office and while the player is reading
   // a modal/dialogue so a stray key cannot discard their current flow.
+  // Since the end-day confirm modal, Z OPENS that modal rather than
+  // ending the day — the key is one slip from WASD (Lucas, 2026-09-02);
+  // the modal's own Z handler cancels it.
   if ((e.code === "KeyZ" || e.key.toLowerCase() === "z") && !e.repeat) {
     const target = e.target;
     const isTextEntry = target instanceof HTMLElement && (
@@ -122,10 +130,11 @@ window.addEventListener("keydown", (e) => {
       !isTextEntry &&
       screen === "office" &&
       !dialogue?.isOpen() &&
-      !helpModal?.isOpen()
+      !helpModal?.isOpen() &&
+      !endDayModal?.isOpen()
     ) {
       e.preventDefault();
-      endDay();
+      endDayModal?.open();
     }
   }
 });
@@ -251,14 +260,8 @@ function focusNpc(id: NpcId | null): void {
   cameraDirector.panTo(target, offset);
 }
 
-/**
- * C-46: the lunch dialogue window is the first LUNCH_WINDOW_SECONDS
- * of the afternoon period, measured on the same wall clock the period
- * advancement uses. Injected into the NPC controller so lunch lines
- * fire by TIME - wherever the NPCs happen to be standing.
- */
 function isLunchActive(): boolean {
-  return game.get().timeOfDay === "afternoon" && currentPeriodElapsed < LUNCH_WINDOW_SECONDS;
+  return game.get().timeOfDay === "lunch";
 }
 
 function startOffice(playIntro = false): void {
@@ -301,6 +304,11 @@ function startOffice(playIntro = false): void {
       closeDialogue: () => {
         if (!dialogue?.isOpen()) return false;
         dialogue.close();
+        return true;
+      },
+      advanceTime: () => {
+        currentPeriodElapsed = 0;
+        advanceOfficePeriods(1);
         return true;
       },
       endDay: () => {
@@ -425,7 +433,7 @@ function startOffice(playIntro = false): void {
   }
   // Always re-frame to the wide office shot when entering office screen.
   focusNpc(null);
-  officeStartedAt = performance.now();
+  currentPeriodElapsed = 0;
   focusedNpcId = null;
 
   hud = mountHud(uiRoot);
@@ -433,12 +441,15 @@ function startOffice(playIntro = false): void {
     uiRoot,
     NPCS,
     (npc) => openDialogueWith(npc),
-    () => endDay(),
+    () => endDayModal?.open(),
     () => openDebugMinigame(),
     game.get().flags["got-acme-contract"] === true,
   );
   questLog = mountQuestLog(uiRoot);
   helpModal = mountHelpModal(uiRoot);
+  // The Z key and the roster's End Day button both confirm here first;
+  // the WebMCP end_day hook below keeps calling endDay() directly.
+  endDayModal = mountEndDayModal(uiRoot, () => endDay());
   // C-46: the NPC hover label lives in uiRoot so it is wiped with the
   // rest of the office UI on screen transitions and remounted here.
   hoverLabel = document.createElement("div");
@@ -552,7 +563,7 @@ async function playIntroCinematic(): Promise<void> {
   const fromPos = cam.position.clone();
   const fromFov = cam.fov;
   // Final framing = the player's own FPS pose: eye height at the
-  // meeting-room start, looking -Z through the doorway into the office.
+  // reception start, looking -Z through the doorway into the office.
   // When the cinematic ends, focusNpc(null) hands the camera to the
   // controls and the view does not move a single frame.
   const toPos = new THREE.Vector3(0, 1.65, 17.8);
@@ -903,7 +914,7 @@ function mountOfficeRosterFresh(): void {
     uiRoot,
     NPCS,
     (npc) => openDialogueWith(npc),
-    () => endDay(),
+    () => endDayModal?.open(),
     () => openDebugMinigame(),
     game.get().flags["got-acme-contract"] === true,
   );
@@ -959,19 +970,18 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") flushPlayerPose();
 });
 
-function advanceOfficePeriods(periodCount: number, now: number): void {
+function advanceOfficePeriods(periodCount: number): void {
   const prevDay = game.get().day;
   for (let i = 0; i < periodCount; i++) {
     game.dispatch({ type: "advance-time" });
     if (game.get().day === prevDay) runPeriodEvent(hud, game.get().timeOfDay);
+    else break;
   }
   if (game.get().day !== prevDay) {
-    officeStartedAt = now;
+    currentPeriodElapsed = 0;
     // The rollover already moved the calendar; endDay must not advance
     // it a second time (C-52).
     endDay(true);
-  } else {
-    officeStartedAt += periodCount * SECONDS_PER_PERIOD * 1000;
   }
 }
 
@@ -991,15 +1001,6 @@ function frame(): void {
     rawFrameMs,
     engine ? { calls: engine.renderer.info.render.calls, triangles: engine.renderer.info.render.triangles } : null,
   );
-
-  // C-46: keep the in-period clock fresh for the lunch window. The
-  // office-start timestamp is rebased on day change and advanced by
-  // whole periods, so the remainder IS the current period's elapsed
-  // time (time "pauses" only because period advancement pauses).
-  if (officeStartedAt !== 0) {
-    const totalElapsed = (now - officeStartedAt) / 1000;
-    currentPeriodElapsed = totalElapsed % SECONDS_PER_PERIOD;
-  }
 
   if (engine) {
     engine.update(dt);
@@ -1067,18 +1068,22 @@ function frame(): void {
     refreshRoster();
   }
 
-  // Time tick: each real second is some fraction of an in-game period.
-  // Time pauses while a dialogue is open (no one likes reading a punchline
-  // and then the day ending under them) and while we're in any other screen.
-  if (screen === "office" && !dialogue?.isOpen()) {
-    if (officeStartedAt === 0) officeStartedAt = now;
-    const elapsed = (now - officeStartedAt) / 1000;
-    // SECONDS_PER_PERIOD = 180 by default; see top of file. 3 periods/day =
-    // ~9 real minutes per in-game day.
-    const periodsElapsed = Math.floor(elapsed / SECONDS_PER_PERIOD);
-    if (periodsElapsed > 0) {
-      advanceOfficePeriods(periodsElapsed, now);
-    }
+  // C-67: one ACTIVE real second is one in-game minute. Only feed the
+  // clock delta while the office simulation is unblocked; unlike the old
+  // performance.now() origin, this cannot catch up after a long dialogue.
+  if (shouldAdvanceSimulationClock({
+    screen,
+    dialogueOpen: dialogue?.isOpen() ?? false,
+    cinematicPlaying,
+    helpOpen: helpModal?.isOpen() ?? false,
+    endDayModalOpen: endDayModal?.isOpen() ?? false,
+  })) {
+    const advanced = advancePeriodElapsed(game.get().timeOfDay, currentPeriodElapsed, dt);
+    currentPeriodElapsed = advanced.elapsedInPeriod;
+    if (advanced.periodsAdvanced > 0) advanceOfficePeriods(advanced.periodsAdvanced);
+  }
+  if (hud && screen === "office") {
+    renderHudClock(hud, game.get().timeOfDay, currentPeriodElapsed);
   }
 
   requestAnimationFrame(frame);
@@ -1215,9 +1220,8 @@ window.__aitrainer = {
     return fpsMeter?.isVisible() ?? false;
   },
   debugSkipPeriod: () => {
-    const now = performance.now();
-    officeStartedAt = now;
-    advanceOfficePeriods(1, now);
+    currentPeriodElapsed = 0;
+    advanceOfficePeriods(1);
   },
 };
 
@@ -1230,7 +1234,7 @@ frame();
 // ---------------------------------------------------------------
 // Build version banner
 //
-// Every commit-worthy change must bump BUILD_VERSION below. The
+// Every commit-worthy change must bump GAME_VERSION in version.ts. The
 // banner prints to the browser console at startup so the user (or
 // the agent) can confirm the browser is running the latest code.
 // Lucas asked for this on 2026-08-29 after the WASD stuck-key fix
@@ -1242,13 +1246,12 @@ frame();
 // matters here; the prod build embeds the same string via
 // `vite build`'s `define` (TODO if/when we add a CI pipeline).
 // ---------------------------------------------------------------
-// Bump after every commit so the console line in the browser
+// Bump GAME_VERSION after every commit so the console line in the browser
 // confirms the user is on the right build. See AGENTS.md
 // "Verify the build you are testing" section.
-const BUILD_VERSION = "v2026.09.02-10";
 // eslint-disable-next-line no-console
 console.info(
-  "%cAI Trainer Simulator %c" + BUILD_VERSION,
+  "%cAI Trainer Simulator %c" + GAME_VERSION,
   "color:#00ff7f;font-weight:bold",
   "color:#888",
 );

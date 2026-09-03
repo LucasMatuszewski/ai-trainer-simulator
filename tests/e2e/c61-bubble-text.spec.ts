@@ -11,6 +11,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { shot } from "./shots";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -84,5 +85,5 @@ test("C-61: inter-NPC bubble renders as sharp DOM text", async ({ page }) => {
   expect(found).not.toBe("");
 
   // Shoot immediately while the bubble is still up.
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/c61-01-bubble-dom-text.png` });
+  await shot(page, `${SCREENSHOT_DIR}/c61-01-bubble-dom-text.png`);
 });

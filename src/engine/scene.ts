@@ -368,8 +368,9 @@ export function buildOfficeScene(
     // Move to the east side of the south wall, well clear of
     // the meeting-room door (which is at x=0), and face them
     // NORTH so the first thing they see is the office interior.
-    // C-62: the player starts INSIDE the meeting room (soon: the
-    // reception), facing north - yaw 0 faces -Z, straight through the
+    // C-62/C-64: the player starts INSIDE the reception (the old
+    // meeting-room shell; the meeting room itself moved south of the
+    // kitchen), facing north - yaw 0 faces -Z, straight through the
     // doorway into the office, with the morning arrivals walking in
     // through the same door.
     playerStart: new THREE.Vector3(0, 0, 17.8),

@@ -1,7 +1,7 @@
 /**
  * Random Office Events dispatcher.
  *
- * On every in-game period transition (morning -> afternoon -> evening ->
+ * On every in-game period transition (morning -> lunch -> afternoon -> evening ->
  * next morning), the orchestrator calls `runPeriodEvent` here. We pick a
  * weighted random event from the pool that is eligible for the current state
  * and time-of-day, dispatch its effects through the standard reducer, and
@@ -64,10 +64,7 @@ function rollRandomNpcDestinations(period: Period): void {
     // roll - they head for their desk when they arrive. Overriding
     // them here would pull them into the office ahead of their time.
     if (!npcControllerHooks.hasArrived(npcId)) continue;
-    const dest = pickRandomDestination(npcId, Math.random, state.day, {
-      period,
-      periodElapsed: 0,
-    });
+    const dest = pickRandomDestination(npcId, Math.random, state.day, period);
     npcControllerHooks.setOverride(npcId, dest);
   }
 }

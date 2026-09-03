@@ -18,6 +18,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { shot } from "./shots";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -83,7 +84,7 @@ test("C-58: Continue restores the saved player position and view rotation", asyn
   expect(pose.camera.x).toBeCloseTo(2, 4);
   expect(pose.camera.z).toBeCloseTo(4.5, 4);
 
-  await page.screenshot({ path: `${SCREENSHOT_DIR}/c58-01-restored-position.png` });
+  await shot(page, `${SCREENSHOT_DIR}/c58-01-restored-position.png`);
 });
 
 test("C-58: the pose tracker persists the live position into the save", async ({ page }) => {
