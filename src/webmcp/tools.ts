@@ -25,6 +25,37 @@ export interface PlayerActionHooks {
   getDialogueSnapshot: () => ReturnType<DialogueController["snapshot"]>;
 }
 
+/**
+ * The agent companion surface (ADR 0008 D-36/D-37). Separate from
+ * PlayerActionHooks because these tools drive the AGENT's own character,
+ * not the human's. main.ts wires them once the office scene exists; they
+ * stay null on the title screen and in tests, where the tools answer with
+ * an explicit "not wired" error rather than crashing.
+ */
+export interface AgentCompanionHooks {
+  join: (name: string, persona: string) => { ok: boolean; reason?: string; name?: string };
+  leave: () => boolean;
+  isActive: () => boolean;
+  lookAround: () => unknown;
+  moveTo: (target: string) => { ok: boolean; reason?: string; candidates?: string[]; target?: string };
+  say: (line: string) => { ok: boolean; reason?: string; spoken?: string };
+  peekDialogueRequest: () => unknown;
+  supplyDialogue: (line: unknown, options: unknown) => { ok: boolean; reason?: string };
+}
+
+let agentCompanion: AgentCompanionHooks | null = null;
+
+export function registerAgentCompanion(hooks: AgentCompanionHooks | null): void {
+  agentCompanion = hooks;
+}
+
+function requireCompanion(): AgentCompanionHooks | { error: string } {
+  if (agentCompanion === null) {
+    return { error: "The office is not loaded yet - start or continue a game first." };
+  }
+  return agentCompanion;
+}
+
 let playerActions: PlayerActionHooks | null = null;
 
 export function registerPlayerActions(hooks: PlayerActionHooks | null): void {
@@ -42,9 +73,12 @@ export interface ToolDefinition {
   name: string;
   description: string;
   parameters: Record<string, {
-    type: "string" | "number" | "boolean";
+    type: "string" | "number" | "boolean" | "array";
     description: string;
     required?: boolean;
+    /** Element type, for `type: "array"` only. Agents need this to build
+     *  a valid call; without it the array is untyped and they guess. */
+    items?: "string";
   }>;
 }
 
@@ -384,6 +418,176 @@ const implementations: ToolImplementation[] = [
       const actions = requireActions();
       if ("error" in actions) return { ok: false, error: actions.error };
       return { ok: true, data: { opened: actions.openMinigame() } };
+    },
+  },
+
+  // -------------------------------------------------------------
+  // Agent companion (ADR 0008). These are the tools that make this a
+  // WebMCP entry rather than a remote control: the agent gets its own
+  // BODY in the world and authors its own character's dialogue. It gets
+  // no capability the human lacks - no cash, no flags, no teleport
+  // (D-40).
+  // -------------------------------------------------------------
+  {
+    definition: {
+      name: "agent_join",
+      description:
+        "Join the office as an AI coworker. Spawns a visible robot character the human " +
+        "player can see, walk up to, and talk to. Call this once before any other agent_* tool.",
+      parameters: {
+        name: { type: "string", description: "Display name for your character, e.g. 'Rusty'", required: true },
+        persona: {
+          type: "string",
+          description:
+            "How your character behaves, in a sentence. You will write this character's " +
+            "dialogue later, so pick something you can play consistently.",
+          required: true,
+        },
+      },
+    },
+    validate: (call) => requiredString(call, "name") ?? requiredString(call, "persona"),
+    execute: (call) => {
+      const companion = requireCompanion();
+      if ("error" in companion) return { ok: false, error: companion.error };
+      const result = companion.join(
+        String(call.parameters.name),
+        String(call.parameters.persona),
+      );
+      if (!result.ok) return { ok: false, error: result.reason ?? "could not join" };
+      return {
+        ok: true,
+        data: {
+          joined: true,
+          name: result.name,
+          hint: "Use agent_look_around to see who is here, then agent_move_to and agent_say.",
+        },
+      };
+    },
+  },
+  {
+    definition: {
+      name: "agent_leave",
+      description: "Remove your robot character from the office and free the companion seat.",
+      parameters: {},
+    },
+    validate: validateNoParameters,
+    execute: () => {
+      const companion = requireCompanion();
+      if ("error" in companion) return { ok: false, error: companion.error };
+      return { ok: true, data: { left: companion.leave() } };
+    },
+  },
+  {
+    definition: {
+      name: "agent_look_around",
+      description:
+        "See the office from your character's position: who is nearby, their roles, and " +
+        "every person and room you can walk to by name.",
+      parameters: {},
+    },
+    validate: validateNoParameters,
+    execute: () => {
+      const companion = requireCompanion();
+      if ("error" in companion) return { ok: false, error: companion.error };
+      if (!companion.isActive()) return { ok: false, error: "call agent_join first" };
+      return { ok: true, data: jsonSnapshot(companion.lookAround()) };
+    },
+  },
+  {
+    definition: {
+      name: "agent_move_to",
+      description:
+        "Walk your character to a person or a room, addressed by name (not coordinates). " +
+        "If the name is unknown the error lists every valid target.",
+      parameters: {
+        target: {
+          type: "string",
+          description: "A person id/name ('bartek', 'Renata') or a room ('kitchen', 'CEO Office')",
+          required: true,
+        },
+      },
+    },
+    validate: (call) => requiredString(call, "target"),
+    execute: (call) => {
+      const companion = requireCompanion();
+      if ("error" in companion) return { ok: false, error: companion.error };
+      if (!companion.isActive()) return { ok: false, error: "call agent_join first" };
+      const result = companion.moveTo(String(call.parameters.target));
+      if (!result.ok) {
+        const list = result.candidates ? ` Valid targets: ${result.candidates.join(", ")}` : "";
+        return { ok: false, error: `${result.reason ?? "could not move"}.${list}` };
+      }
+      return { ok: true, data: { walkingTo: result.target } };
+    },
+  },
+  {
+    definition: {
+      name: "agent_say",
+      description:
+        "Make your character say one line out loud, shown as a speech bubble above its head " +
+        "that the human player can read.",
+      parameters: {
+        line: { type: "string", description: "What your character says. One short line.", required: true },
+      },
+    },
+    validate: (call) => requiredString(call, "line"),
+    execute: (call) => {
+      const companion = requireCompanion();
+      if ("error" in companion) return { ok: false, error: companion.error };
+      const result = companion.say(String(call.parameters.line));
+      if (!result.ok) return { ok: false, error: result.reason ?? "could not speak" };
+      return { ok: true, data: { said: result.spoken } };
+    },
+  },
+  {
+    definition: {
+      name: "get_pending_dialogue_request",
+      description:
+        "Check whether the human player has started a conversation with your character and is " +
+        "waiting for you to write its next line. Returns null when nobody is talking to you. " +
+        "Poll this after agent_join; when it returns a request, answer with supply_dialogue.",
+      parameters: {},
+    },
+    validate: validateNoParameters,
+    execute: () => {
+      const companion = requireCompanion();
+      if ("error" in companion) return { ok: false, error: companion.error };
+      return { ok: true, data: jsonSnapshot(companion.peekDialogueRequest()) };
+    },
+  },
+  {
+    definition: {
+      name: "supply_dialogue",
+      description:
+        "Write your character's next spoken line and the 2-4 replies the human player will " +
+        "choose between. This is YOUR character speaking in the game's own dialogue window - " +
+        "the game's author never wrote these words. Answer a request from " +
+        "get_pending_dialogue_request.",
+      parameters: {
+        line: {
+          type: "string",
+          description: "What your character says on this turn. One or two sentences.",
+          required: true,
+        },
+        options: {
+          type: "array",
+          items: "string",
+          description: "2-4 replies the human can pick from. Write them in the human's voice.",
+          required: true,
+        },
+      },
+    },
+    validate: (call) => {
+      const lineError = requiredString(call, "line");
+      if (lineError) return lineError;
+      return Array.isArray(call.parameters.options) ? null : "options must be an array of 2-4 strings";
+    },
+    execute: (call) => {
+      const companion = requireCompanion();
+      if ("error" in companion) return { ok: false, error: companion.error };
+      const result = companion.supplyDialogue(call.parameters.line, call.parameters.options);
+      if (!result.ok) return { ok: false, error: result.reason ?? "could not supply dialogue" };
+      return { ok: true, data: { delivered: true } };
     },
   },
 ];

@@ -35,7 +35,7 @@ export interface WebmcpToolDescriptor {
 
 export interface JsonSchemaObject {
   type: "object";
-  properties: Record<string, { type: string; description: string }>;
+  properties: Record<string, { type: string; description: string; items?: { type: string } }>;
   required?: string[];
   additionalProperties: false;
 }
@@ -59,7 +59,16 @@ export function toJsonSchema(parameters: ToolDefinition["parameters"]): JsonSche
   const required: string[] = [];
 
   for (const [name, spec] of Object.entries(parameters)) {
-    properties[name] = { type: spec.type, description: spec.description };
+    properties[name] =
+      spec.type === "array"
+        ? {
+            type: "array",
+            description: spec.description,
+            // Without `items` an agent has no idea what to put in the array
+            // and will guess - usually a JSON string.
+            items: { type: spec.items ?? "string" },
+          }
+        : { type: spec.type, description: spec.description };
     if (spec.required === true) required.push(name);
   }
 
