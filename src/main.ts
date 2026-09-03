@@ -124,6 +124,24 @@ let debugGame: DebugScriptHandle | null = null;
 let roster: OfficeRosterHandle | null = null;
 let questLog: QuestLogHandle | null = null;
 let helpModal: HelpModalHandle | null = null;
+let webmcpModal: WebmcpHelpModalHandle | null = null;
+/**
+ * Faux fullscreen: the app fills the viewport via CSS, nothing else.
+ *
+ * Deliberately NOT the Fullscreen API. Chrome reserves native Esc to exit
+ * fullscreen and the page never sees that keypress, so "Esc closes the
+ * modal first, fullscreen only when nothing is open" (Lucas, 2026-09-03)
+ * is impossible to honour with it - measured: the API also refuses a
+ * same-gesture re-request. Owning the class means owning the key.
+ * F11 remains the native option for players who want the tab bar gone.
+ */
+function setFauxFullscreen(on: boolean): void {
+  document.body.classList.toggle("faux-fullscreen", on);
+}
+
+function toggleFullscreen(): void {
+  setFauxFullscreen(!document.body.classList.contains("faux-fullscreen"));
+}
 let endDayModal: EndDayModalHandle | null = null;
 let unsubscribeGame: (() => void) | null = null;
 let focusedNpcId: NpcId | null = null;
@@ -167,7 +185,18 @@ const npcScheduleYaws = new Map<string, number>();    // npcId -> schedule yaw
 
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    if (dialogue?.isOpen()) dialogue.close();
+    // One priority chain, topmost layer first (Lucas, 2026-09-03: Esc
+    // should close modals before it touches fullscreen). Fullscreen is
+    // only exited by us when nothing is open - the browser may still
+    // exit it natively on the same press, which we cannot prevent, but
+    // the modal always goes away first and we re-enter fullscreen in the
+    // same gesture when we can.
+    console.info("[esc-chain] webmcp:", webmcpModal?.isOpen() ?? "null", "help:", helpModal?.isOpen() ?? "null", "endday:", endDayModal?.isOpen() ?? "null", "dialogue:", dialogue?.isOpen() ?? "null");
+    if (webmcpModal?.isOpen()) { webmcpModal.close(); e.preventDefault(); return; }
+    if (helpModal?.isOpen()) { helpModal.close(); e.preventDefault(); return; }
+    if (endDayModal?.isOpen()) { endDayModal.close(); e.preventDefault(); return; }
+    if (dialogue?.isOpen()) { dialogue.close(); e.preventDefault(); return; }
+    setFauxFullscreen(false);
     return;
   }
   // C-66: Renata and the roster's keycap both promise Z = End Day.
@@ -187,7 +216,7 @@ window.addEventListener("keydown", (e) => {
     );
     if (!isTextEntry) {
       e.preventDefault();
-      void toggleFullscreen();
+      toggleFullscreen();
     }
   }
   if ((e.code === "KeyZ" || e.key.toLowerCase() === "z") && !e.repeat) {
@@ -207,19 +236,6 @@ window.addEventListener("keydown", (e) => {
     }
   }
 });
-
-/** Toggle in-page fullscreen. Chrome and Firefox ship the standard API;
- *  the webkit fallback covers Safari even though it is not a supported
- *  browser, because the fallback is three lines. */
-function toggleFullscreen(): Promise<void> {
-  const doc = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => Promise<void> };
-  const root = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
-  const active = document.fullscreenElement ?? doc.webkitFullscreenElement;
-  if (active !== undefined && active !== null) {
-    return document.exitFullscreen?.() ?? doc.webkitExitFullscreen?.() ?? Promise.resolve();
-  }
-  return root.requestFullscreen?.() ?? root.webkitRequestFullscreen?.() ?? Promise.resolve();
-}
 
 function setScreen(next: Screen): void {
   closeDialogueForScreenTransition(dialogue);
@@ -637,7 +653,6 @@ function startOffice(playIntro = false): void {
   helpModal = mountHelpModal(uiRoot);
   // Dialogue buttons and the Help modal both ask for this via a DOM event,
   // so the dialogue layer never imports the modal directly.
-  let webmcpModal: WebmcpHelpModalHandle | null = null;
   window.addEventListener("stack-underflow:open-modal", (event) => {
     if ((event as CustomEvent<{ modal?: string }>).detail?.modal !== "webmcp") return;
     if (!webmcpModal) webmcpModal = mountWebmcpHelpModal(uiRoot);
@@ -1085,7 +1100,10 @@ function openDialogueWith(npc: NPC): void {
       WORLD_BOUNDS,
       [...OBSTACLES, ...WORLD_COLLISION_WALLS],
     );
-    controls.setPlayerPose(spot.x, spot.z, plan.playerYaw);
+    // Slight downward aim: at 2 m the NPC's face sits a touch below the
+    // horizon, and keeping the player's old pitch kept catching the tops of
+    // heads (Lucas, 2026-09-03). ~-10 degrees reads as eye contact.
+    controls.setPlayerPose(spot.x, spot.z, plan.playerYaw, -0.18);
     if (!npcScheduleYaws.has(npc.id)) {
       npcScheduleYaws.set(npc.id, mesh.rotation.y);
     }

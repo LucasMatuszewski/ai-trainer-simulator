@@ -43,6 +43,7 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
    * (the spec), plus the auto-advance wrapper and a _end sentinel.
    */
   "first-meeting": {
+    repeatable: true,
     nodes: {
       greeting: {
         id: "greeting",
@@ -197,10 +198,11 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
    * test (terminates in 10 hops) gets a clean termination path.
    */
   default: {
+    repeatable: true,
     nodes: {
       greeting: {
         id: "greeting",
-        text: "Hi again. What can I help you with?",
+        text: "Back again? Good instinct. The wiki is wrong about everything, so asking me is faster. What do you need?",
         options: [
           { text: "Where is everyone?", id: `${FAQ}-where`, nextNodeId: "where" },
           { text: "How do I make money?", id: `${FAQ}-money`, nextNodeId: "money" },

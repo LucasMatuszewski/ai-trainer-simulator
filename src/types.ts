@@ -92,6 +92,13 @@ export interface DialogueNode {
 }
 
 export interface DialogueTree {
+  /**
+   * Repeatable trees never suppress already-picked options (the per-NPC
+   * option memory). Renata is the support desk: asking her to "run the
+   * controls again" must always work, and her menus must never dead-end
+   * into the out-of-lore "You have already heard this story" panel.
+   */
+  repeatable?: boolean;
   /** Map of node id to node. Root is "greeting". */
   nodes: Record<string, DialogueNode>;
   /**

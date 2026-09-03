@@ -288,7 +288,10 @@ wireActionButtons(container!);
     // has already answered — only re-show un-answered ones"). If every
     // option has been picked we show a "You have heard this story" line
     // so the dialogue is still closeable.
-    const picked = pickedOptionsFor(npc.id, treeId);
+    // Repeatable trees (Renata, the support desk) never hide options, so a
+    // player can ask for the basics as many times as they like and the menu
+    // can never exhaust into the "already heard this story" dead end.
+    const picked = tree.repeatable === true ? new Set<string>() : pickedOptionsFor(npc.id, treeId);
     const availableOptions = node.options.filter(
       (o) => !picked.has(optionId(o)),
     );

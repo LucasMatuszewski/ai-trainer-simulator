@@ -46,13 +46,12 @@ export function mountWebmcpHelpModal(parent: HTMLElement): WebmcpHelpModalHandle
             <p>${path.status} <a href="${path.href}" target="_blank" rel="noopener noreferrer">Read the docs</a>.</p>
           </div>`,
         ).join("")}
-        <p class="webmcp-note">Other agents, like browser extensions that read and click the
-        page for you, currently drive the screen instead of reading site tools - they can
-        watch the robot, but not yet be it. That is their roadmap, not ours.</p>
 
         <h3>Then paste this into your agent</h3>
         <pre class="webmcp-prompt" data-prompt></pre>
-        <button class="dialogue-action" data-copy type="button">Copy prompt to clipboard</button>
+        <div class="webmcp-actions">
+          <button class="dialogue-action" data-copy type="button">Copy prompt to clipboard</button>
+        </div>
 
         <h3>If it does not work</h3>
         <dl class="webmcp-faq">
@@ -97,9 +96,9 @@ export function mountWebmcpHelpModal(parent: HTMLElement): WebmcpHelpModalHandle
         button.textContent = "Copy blocked - prompt selected, press Ctrl+C";
       });
   });
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && isOpen()) close();
-  });
+
+  // Esc is handled ONLY by main.ts's priority chain (see help-modal.ts for
+  // why a local listener would break the ordering).
 
   return { root: wrap, open, close, isOpen };
 }

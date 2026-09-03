@@ -30,9 +30,9 @@ export function mountHelpModal(parent: HTMLElement): HelpModalHandle {
           <section>
             <h3>Move &amp; look</h3>
             <dl class="help-control-list">
-              <div><dt>WASD / Arrow keys</dt><dd>Move relative to where you are looking.</dd></div>
+              <div><dt>WASD / Arrows</dt><dd>Move relative to where you are looking.</dd></div>
               <div><dt>Shift</dt><dd>Hold while moving to run.</dd></div>
-              <div><dt>Right mouse button</dt><dd>Hold and move the mouse to look around.</dd></div>
+              <div><dt>Right button</dt><dd>Hold and move the mouse to look around.</dd></div>
               <div><dt>Space</dt><dd>Toggle locked mouse-look for a mouse or trackpad.</dd></div>
               <div><dt>Escape</dt><dd>Release mouse-look or close the active help/dialogue.</dd></div>
             </dl>
@@ -41,7 +41,7 @@ export function mountHelpModal(parent: HTMLElement): HelpModalHandle {
             <h3>Talk &amp; act</h3>
             <dl class="help-control-list">
               <div><dt>Click an NPC</dt><dd>Walk up and start a conversation.</dd></div>
-              <div><dt>Click the roster</dt><dd>Find a coworker, then walk to them automatically.</dd></div>
+              <div><dt>Click the name</dt><dd>Find a coworker, then walk to them automatically.</dd></div>
               <div><dt>Use computer</dt><dd>Start the debug minigame after getting a contract.</dd></div>
               <div><dt>Z / End Day</dt><dd>Finish today and show the cash-and-stats summary; a confirmation modal guards against stray presses.</dd></div>
             </dl>
@@ -49,9 +49,9 @@ export function mountHelpModal(parent: HTMLElement): HelpModalHandle {
           <section>
             <h3>Interface</h3>
             <dl class="help-control-list">
-              <div><dt>? button / ? / F1</dt><dd>Open or close this help reference.</dd></div>
+              <div><dt>? / F1</dt><dd>Open or close this help reference.</dd></div>
               <div><dt>Quest log</dt><dd>Click the current quest to expand its instructions.</dd></div>
-              <div><dt>Dialogue choices</dt><dd>Click a response; use Skip to leave early.</dd></div>
+              <div><dt>Dialogues</dt><dd>Click a response; use Skip to leave early.</dd></div>
               <div><dt>F3</dt><dd>Show or hide FPS, frame time, 1% low, draws, and triangles.</dd></div>
               <div><dt>F</dt><dd>Toggle fullscreen. Press Esc to leave fullscreen.</dd></div>
             </dl>
@@ -106,13 +106,16 @@ export function mountHelpModal(parent: HTMLElement): HelpModalHandle {
   });
   wrap.querySelector<HTMLButtonElement>("[data-close]")!.addEventListener("click", close);
   wrap.querySelector<HTMLElement>("[data-backdrop]")!.addEventListener("click", close);
+  // Esc is handled ONLY by main.ts's topmost-layer priority chain. This
+  // listener deliberately does not close on Escape: document-level listeners
+  // fire BEFORE main's window-level chain, so closing here would make the
+  // chain see "nothing open" and also drop faux fullscreen - the exact bug
+  // Lucas reported. This listener owns only its open/close shortcut.
   document.addEventListener("keydown", (e) => {
     const isHelpShortcut = e.key === "F1" || e.key === "?" || (
       e.code === "Slash" && e.shiftKey
     );
-    if (e.key === "Escape" && isOpen()) {
-      close();
-    } else if (isHelpShortcut) {
+    if (isHelpShortcut) {
       e.preventDefault();
       if (isOpen()) close();
       else open();

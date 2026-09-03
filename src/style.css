@@ -1558,3 +1558,37 @@ html, body {
 }
 .dialogue-action:disabled { color: #8affc1; border-color: rgba(138, 255, 193, 0.5); cursor: default; }
 .dialogue-link-sep { opacity: 0.5; }
+
+/* ---------------------------------------------------------------
+ * Playtest pass on the two modals (2026-09-03, Lucas screenshots).
+ * Fonts: the smallest size was 15px; L-2026-09-03-01 says never, so
+ * body copy goes to 20px (+33%) and nothing in either modal now sits
+ * below 18px. Spacing: the guidance grid stretched rows to the tallest
+ * section, which read as huge holes between Goal/Money/Cast - items
+ * now top-align on a tighter gap. Dialogue action buttons get real
+ * breathing room above, and the copy button right-aligns under the
+ * prompt where the space already was.
+ * --------------------------------------------------------------- */
+.help-modal-body { font-size: 20px; }
+.help-modal-body h3 { font-size: 19px; margin: 0 0 8px; }
+.help-guidance { gap: 6px 20px; align-items: start; }
+.help-control-list dd { font-size: 20px; line-height: 1.4; }
+.webmcp-modal .help-modal-body p,
+.webmcp-faq dd { font-size: 20px; }
+.webmcp-faq dt { font-size: 20px; margin-top: 12px; }
+.webmcp-note { font-size: 18px !important; }
+.webmcp-modal .help-modal-body h3 { margin: 18px 0 8px; }
+.webmcp-prompt { max-height: 170px; }
+.webmcp-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+.dialogue-actions { margin-top: 10px; }
+.help-modal .dialogue-action { margin-top: 8px; }
+
+/* Faux fullscreen (F key): the app fills the viewport. CSS rather than the
+ * Fullscreen API so Esc stays ours - see setFauxFullscreen in main.ts. */
+body.faux-fullscreen { overflow: hidden; }
+body.faux-fullscreen #app {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+}
