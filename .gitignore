@@ -28,7 +28,16 @@ pnpm-debug.log*
 test-results/
 playwright-report/
 
-# Throwaway screenshots from local debugging
+# QA / debugging screenshots - NEVER committed.
+#
+# Lucas, 2026-09-03: "we should ignore screens from QA everywhere. Only
+# used inside game images are allowed, but probably should stay in
+# assets." Nothing under a screenshots/ directory is a game asset: the
+# game draws itself from procedural geometry and canvas textures, and
+# real runtime assets live under public/assets/ (audio today).
+#
+# `screenshots/` has no leading slash, so it matches at ANY depth - it
+# covers both screenshots/ and tests/e2e/screenshots/.
 office-*.png
 canvas-element.png
 screenshots/
@@ -52,6 +61,8 @@ tests/**/*.js.map
 
 # Stray verification screenshots dropped in the repo root by agents
 # (Lucas: "do not commit all these png! ignore them in git, but don't
-# delete"). Tracked screenshots under tests/e2e/screenshots/ and
-# screenshots/ are unaffected - root-level patterns only.
+# delete"). As of 2026-09-03 NO image is tracked anywhere in the repo,
+# so this no longer needs the "tracked screenshots are unaffected"
+# caveat it used to carry - the rules above already cover every
+# screenshot directory.
 /*.png
