@@ -436,6 +436,13 @@ export const WORLD_ROOMS: WorldRoom[] = [
       [0, 16.8],
     ],
     furniture: [
+      // AC-BRAND-02: the credits wall, on the west band of the wall between
+      // reception and the main office - the player reads it once on the way
+      // in and is never shown it again. West rather than east because the
+      // roster is a permanent right-side HUD covering ~28% of the viewport,
+      // so an east-band mount is half-hidden from the only view this exists
+      // for. face 0 (+Z) points it at a player walking in from the entrance.
+      { type: "brand-wall", position: [-2.7, 0, 9.79], rotationY: 0 },
       { type: "reception-desk", position: [3.4, 0, 13.5], rotationY: -Math.PI / 2 },
       // C-64: local +X is the foliage side, so PI points it west
       // into reception while the backing remains against the east wall.
@@ -461,13 +468,9 @@ export const WORLD_ROOMS: WorldRoom[] = [
       // The inner face of the reception's north wall is z=9.78, and the
       // doorway to the main office is at x=0, so the pair flanks it.
       // face: 0 points +Z, toward a player walking in from the entrance.
-      // Both plaques go on the WEST band, stacked, not one per side. The
-      // roster panel is a permanent right-side HUD covering ~28% of the
-      // viewport, so an east-band plaque is half-hidden behind it from the
-      // walk-in view - which is the one view this branding exists for.
-      { text: "BUILT BY", position: [-2.7, 2.62, 9.8], face: 0, color: 0x9a9a9a, size: [1.5, 0.4] },
-      { text: "EDUKEY", position: [-2.7, 2.02, 9.8], face: 0, color: 0x2fa8d8, size: [2.3, 0.72] },
-      { text: "DEVPOWERS", position: [-2.7, 1.18, 9.8], face: 0, color: 0xf0902f, size: [2.3, 0.72] },
+      // The credits are NOT a sign: see the "brand-wall" furniture entry
+      // below. A room-name plaque is right for "MEETING ROOM" and wrong for
+      // branding (Lucas, 2026-09-03).
     ],
   },
   {
