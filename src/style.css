@@ -1409,3 +1409,48 @@ html, body {
 .fps-meter.visible {
   display: block;
 }
+
+/* ---------------------------------------------------------------
+ * Title screen: WebMCP status + creator credits (2026-09-03)
+ *
+ * The status line is how a contest judge confirms the integration is
+ * live before pressing New Game, so it has to be legible without
+ * being alarming when the browser simply has no support - that is the
+ * common case, not an error.
+ *
+ * The creator strip credits Edukey and DevPowers as the BUILDERS.
+ * Deliberately not "our office": the fictional company in this game
+ * is a comedy of dysfunction (AC-BRAND-03).
+ * Font sizes respect L-2026-09-03-01: never use tiny fonts.
+ * --------------------------------------------------------------- */
+.title-screen .agent-status {
+  margin-top: 10px;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+.title-screen .agent-status.is-live { color: #00ff7f; }
+.title-screen .agent-status.is-off { color: #8a8a8a; }
+
+.title-screen .creators {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 15px;
+  color: #9a9a9a;
+}
+.title-screen .creators-label { opacity: 0.75; }
+.title-screen .creators-sep { opacity: 0.5; }
+.title-screen .creator-link {
+  color: #ffd166;
+  text-decoration: none;
+  border-bottom: 2px solid rgba(255, 209, 102, 0.35);
+  padding-bottom: 1px;
+}
+.title-screen .creator-link:hover,
+.title-screen .creator-link:focus-visible {
+  color: #fff1c9;
+  border-bottom-color: #ffd166;
+}

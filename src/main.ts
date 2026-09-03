@@ -23,6 +23,7 @@ import { game } from "./game/state";
 import { runDailyTick, publishCashflow } from "./game/economy";
 import { runPeriodEvent, registerNpcController } from "./game/events";
 import { registerPlayerActions } from "./webmcp/tools";
+import { registerWebmcpTools, type RegisterResult } from "./webmcp/bridge";
 import { NPCS, OBSTACLES } from "./content/npcs";
 import type { GameState, NPC, NpcId } from "./types";
 import { mountHud, renderHud, renderHudClock, showToast, type HudElements } from "./ui/hud";
@@ -57,6 +58,12 @@ type Screen = "title" | "create" | "office" | "summary" | "minigame" | "gameover
 const uiRoot = document.getElementById("ui-root")!;
 const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
 
+/**
+ * ADR 0008 D-34: the result of the one-time WebMCP registration at boot.
+ * The title screen reads it so a judge can confirm the integration is
+ * live before pressing New Game.
+ */
+let webmcpStatus: RegisterResult = { supported: false, namespace: null, registered: 0, failed: 0 };
 let engine: Engine | null = null;
 let cameraDirector: CameraDirector | null = null;
 let sceneObjects: ReturnType<typeof buildOfficeScene> | null = null;
@@ -181,7 +188,7 @@ function onScreenMusicChange(next: Screen, _prev: Screen): void {
 
 function showTitle(): void {
   setScreen("title");
-  mountTitleScreen(uiRoot, hasSave(), () => showCharacterCreate(), () => startOffice());
+  mountTitleScreen(uiRoot, hasSave(), () => showCharacterCreate(), () => startOffice(), webmcpStatus);
 }
 
 function hasSave(): boolean {
@@ -1255,4 +1262,31 @@ console.info(
   "color:#00ff7f;font-weight:bold",
   "color:#888",
 );
+// ---------------------------------------------------------------
+// WebMCP registration (ADR 0008, D-34/D-35)
+//
+// Registered at BOOT rather than at startGame, for two reasons. An
+// agent should be able to discover the game's tools from the title
+// screen, and the title screen itself reports whether a model-context
+// surface was found - which is how a judge confirms the integration is
+// live without opening devtools.
+//
+// The player-action hooks are not wired until startGame. That is safe:
+// callTool already answers with an explicit "not wired in this
+// environment" error, so an early call gets an honest refusal rather
+// than a crash. Read-only tools (get_state, list_npcs) work immediately.
+// ---------------------------------------------------------------
+webmcpStatus = registerWebmcpTools();
+if (webmcpStatus.supported) {
+  console.info(
+    `[webmcp] registered ${webmcpStatus.registered} tools via ${webmcpStatus.namespace}` +
+      (webmcpStatus.failed > 0 ? ` (${webmcpStatus.failed} rejected)` : ""),
+  );
+} else {
+  console.info(
+    "[webmcp] no model-context surface in this browser - agent play is unavailable and " +
+      "the game is otherwise unaffected. Enable chrome://flags/#enable-webmcp-testing to test.",
+  );
+}
+
 showTitle();
