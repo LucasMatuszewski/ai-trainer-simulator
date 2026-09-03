@@ -22,7 +22,7 @@ import { advanceAlongPath } from "./npc-controller";
 import { planNpcPath } from "./npc-path";
 import { createNpcMesh } from "./npc-mesh";
 import { updateWalkCycle, DEFAULT_WALK_SPEED_MPS, type WalkCycleState } from "./npc-walk-cycle";
-import type { AABB, XZ } from "./collision";
+import { applyWithCollision, type AABB, type XZ } from "./collision";
 import type { Waypoint } from "../content/corridor-waypoints";
 
 /** Bubble text cap. The layer is one line of DOM text; longer strings
@@ -166,6 +166,8 @@ export interface CompanionDeps {
   showBubble: (position: THREE.Vector3, line: string) => void;
   /** Where a joining companion appears (the office entrance). */
   spawn: XZ;
+  /** Outer walkable bounds, for the raw movement controls. */
+  bounds: AABB;
 }
 
 export interface CompanionSnapshot {
@@ -175,6 +177,22 @@ export interface CompanionSnapshot {
   walking: boolean;
   /** The target it is currently walking to, if any. */
   movingTo: string | null;
+}
+
+export type StepDirection = "forward" | "back" | "left" | "right";
+
+/** Longest single step, in metres. A step is a nudge, not a journey - use
+ *  agent_move_to to cross the office. */
+export const MAX_STEP_METRES = 3;
+
+export interface StepOutcome {
+  ok: boolean;
+  reason?: string;
+  /** How far it actually got - less than asked when something was in the way. */
+  movedMetres?: number;
+  blocked?: boolean;
+  position?: XZ;
+  facingDegrees?: number;
 }
 
 export interface MoveOutcome {
@@ -191,6 +209,14 @@ export interface AgentCompanion {
   snapshot: () => CompanionSnapshot;
   /** Begin walking to a named target. Arrival is reported via snapshot. */
   moveTo: (targetName: string) => MoveOutcome;
+  /**
+   * Raw movement, the equivalent of holding W/A/S/D for a moment
+   * (L-2026-09-03-04). `metres` is clamped, collision still applies, and a
+   * step that would end inside furniture stops at the obstacle instead.
+   */
+  step: (direction: StepDirection, metres: number) => StepOutcome;
+  /** Rotate in place, the equivalent of moving the mouse. */
+  turn: (degrees: number) => StepOutcome;
   say: (line: string) => { ok: boolean; reason?: string; spoken?: string };
   lookAround: () => unknown;
   update: (dt: number) => void;
@@ -257,6 +283,8 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
   let distanceInSegment = 0;
   let movingTo: string | null = null;
   let walkCycle: WalkCycleState = { distanceTraveled: 0, amplitude: 0 };
+  /** Facing in radians; 0 looks +Z, matching the NPC mesh convention. */
+  let facing = 0;
 
   function isActive(): boolean {
     return group !== null;
@@ -349,6 +377,61 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       return { ok: true, target: resolved.target.id };
     },
 
+    step(direction, metres) {
+      if (!isActive()) return { ok: false, reason: "no companion has joined the game" };
+      if (!Number.isFinite(metres) || metres <= 0) {
+        return { ok: false, reason: "metres must be a positive number" };
+      }
+      // A raw step is a nudge. Anything longer is a journey and belongs to
+      // agent_move_to, which paths around furniture instead of bumping it.
+      const distance = Math.min(metres, MAX_STEP_METRES);
+
+      // Camera-relative, exactly like the player's WASD: forward is wherever
+      // the companion is currently facing.
+      const heading =
+        direction === "forward" ? facing
+        : direction === "back" ? facing + Math.PI
+        : direction === "left" ? facing + Math.PI / 2
+        : facing - Math.PI / 2;
+
+      const before = { x: position.x, z: position.z };
+      const after = applyWithCollision(
+        before,
+        COMPANION_RADIUS,
+        Math.sin(heading) * distance,
+        Math.cos(heading) * distance,
+        deps.bounds,
+        deps.obstacles,
+      );
+      position.set(after.x, position.y, after.z);
+      // A manual step cancels any walk in progress: the agent has taken
+      // direct control, and leaving the old path running would drag the
+      // companion back the moment update() next ran.
+      path = null;
+      movingTo = null;
+
+      const moved = Math.hypot(after.x - before.x, after.z - before.z);
+      return {
+        ok: true,
+        movedMetres: Math.round(moved * 100) / 100,
+        blocked: moved < distance - 0.01,
+        position: { x: after.x, z: after.z },
+        facingDegrees: Math.round((facing * 180) / Math.PI),
+      };
+    },
+
+    turn(degrees) {
+      if (!isActive()) return { ok: false, reason: "no companion has joined the game" };
+      if (!Number.isFinite(degrees)) return { ok: false, reason: "degrees must be a number" };
+      facing = (facing + (degrees * Math.PI) / 180) % (Math.PI * 2);
+      if (group) group.rotation.y = facing;
+      return {
+        ok: true,
+        position: { x: position.x, z: position.z },
+        facingDegrees: Math.round(((facing * 180) / Math.PI + 360) % 360),
+      };
+    },
+
     say(line) {
       if (!isActive()) return { ok: false, reason: "no companion has joined the game" };
       const spoken = clampSpokenLine(line);
@@ -400,6 +483,7 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
         segmentIndex = result.segmentIndex;
         distanceInSegment = result.distanceInSegment;
         group.rotation.y = result.face;
+        facing = result.face;
 
         if (result.finished) {
           path = null;

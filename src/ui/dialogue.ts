@@ -44,11 +44,17 @@ export interface DialogueController {
   openAgentTurn: (
     speaker: AgentSpeaker,
     line: string,
-    options: readonly string[],
-    onPick: (choice: string, index: number) => void,
+    options: readonly AgentTurnOption[],
+    onPick: (choice: string, index: number, ends: boolean) => void,
   ) => void;
   /** True while an agent-authored conversation is on screen. */
   isAgentTurn: () => boolean;
+}
+
+/** One agent-authored reply. `ends` closes the conversation when picked. */
+export interface AgentTurnOption {
+  text: string;
+  ends?: boolean;
 }
 
 /** A dialogue speaker that is not one of the fixed cast. */
@@ -337,8 +343,8 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
   function openAgentTurn(
     speaker: AgentSpeaker,
     line: string,
-    options: readonly string[],
-    onPick: (choice: string, index: number) => void,
+    options: readonly AgentTurnOption[],
+    onPick: (choice: string, index: number, ends: boolean) => void,
   ): void {
     // An agent turn replaces the previous turn in place; a normal NPC
     // dialogue is closed first so the two can never share the panel.
@@ -358,7 +364,11 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
         <div class="text">${escapeHtml(line)}</div>
         <div class="options">
           ${options
-            .map((text, i) => `<button data-agent-opt="${i}">${escapeHtml(text)}</button>`)
+            .map(
+              (option, i) =>
+                `<button data-agent-opt="${i}"${option.ends === true ? ' class="ends"' : ""}>` +
+                `${escapeHtml(option.text)}</button>`,
+            )
             .join("")}
         </div>
       </div>
@@ -368,9 +378,9 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
     container.querySelectorAll<HTMLButtonElement>("[data-agent-opt]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const index = Number(btn.dataset.agentOpt ?? "-1");
-        const choice = options[index];
-        if (choice === undefined) return;
-        onPick(choice, index);
+        const option = options[index];
+        if (option === undefined) return;
+        onPick(option.text, index, option.ends === true);
       });
     });
 

@@ -43,6 +43,7 @@ import { mountOfficeRoster, rosterStatusFor, type OfficeRosterHandle } from "./u
 import {
   closeDialogueForScreenTransition,
   createDialogue,
+  type AgentTurnOption,
   type DialogueController,
 } from "./ui/dialogue";
 import { mountDebugScript, type DebugScriptHandle } from "./minigames/debug-script";
@@ -387,6 +388,7 @@ function startOffice(playIntro = false): void {
         // from the spawn view, so the robot appeared and was invisible.
         // reception-west is in the graph and beside the desk, in frame.
         spawn: { x: 0, z: 14 },
+        bounds: WORLD_BOUNDS,
       });
       agentCompanion = companion;
 
@@ -405,6 +407,8 @@ function startOffice(playIntro = false): void {
           return companion.leave();
         },
         isActive: () => companion.isActive(),
+        step: (direction, metres) => companion.step(direction, metres),
+        turn: (degrees) => companion.turn(degrees),
         lookAround: () => companion.lookAround(),
         moveTo: (target) => companion.moveTo(target),
         say: (line) => companion.say(line),
@@ -413,6 +417,14 @@ function startOffice(playIntro = false): void {
           const result = broker.supply(line, options);
           return result.ok ? { ok: true } : { ok: false, reason: result.reason };
         },
+        startConversation: (line, options) => {
+          // The agent is walking up and speaking first, so there is no
+          // pending request to answer - the panel simply opens.
+          agentTurn = 1;
+          const result = broker.startConversation(line, options);
+          return result.ok ? { ok: true } : { ok: false, reason: result.reason };
+        },
+        awaitPlayerMessage: (timeoutMs) => broker.awaitPlayerMessage(timeoutMs),
       });
     }
     cameraDirector = createCameraDirector(engine.camera);
@@ -1117,7 +1129,7 @@ function advanceOfficePeriods(periodCount: number): void {
  * get_pending_dialogue_request, then a fresh request is opened so the
  * conversation can continue for as long as either side wants.
  */
-function renderAgentTurn(line: string, options: readonly string[]): void {
+function renderAgentTurn(line: string, options: readonly AgentTurnOption[]): void {
   const companion = agentCompanion;
   const broker = agentBroker;
   if (!companion || !broker) return;
@@ -1127,8 +1139,15 @@ function renderAgentTurn(line: string, options: readonly string[]): void {
     { name: companion.snapshot().name, role: "AI Coworker", emoji: AGENT_PORTRAIT },
     line,
     options,
-    (choice) => {
-      broker.recordChoice(choice);
+    (choice, index, ends) => {
+      broker.recordChoice(choice, index, ends);
+      if (ends) {
+        // The agent marked this option as the one that finishes the
+        // exchange, so we close rather than asking it for another turn.
+        panel.close();
+        agentTurn = 0;
+        return;
+      }
       agentTurn += 1;
       requestAgentTurn();
     },
@@ -1154,7 +1173,7 @@ function requestAgentTurn(): void {
   panel.openAgentTurn(
     { name: companion.snapshot().name, role: "AI Coworker", emoji: AGENT_PORTRAIT },
     "...",
-    ["(waiting for the agent to think)"],
+    [{ text: `(${companion.snapshot().name} is thinking...)` }],
     () => {},
   );
 }
@@ -1197,7 +1216,7 @@ function frame(): void {
         agentCompanion.update(dt);
         if (agentBroker?.hasTimedOut() === true && dialogue?.isAgentTurn() === true) {
           agentBroker.reset();
-          renderAgentTurn(FALLBACK_LINE, [...FALLBACK_OPTIONS]);
+          renderAgentTurn(FALLBACK_LINE, FALLBACK_OPTIONS.map((text) => ({ text, ends: true })));
         }
       }
       // Phase 3.5: smooth NPC face-toward-player animation. When a

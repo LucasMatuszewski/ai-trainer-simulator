@@ -30,17 +30,40 @@ describe("validateSupply", () => {
   it("accepts a well-formed turn", () => {
     const result = validateSupply("Coffee?", ["Yes", "No"]);
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.value.options).toEqual(["Yes", "No"]);
+    if (result.ok) {
+      expect(result.value.options).toEqual([
+        { text: "Yes", ends: false },
+        { text: "No", ends: false },
+      ]);
+    }
   });
 
   it("accepts the maximum option count", () => {
     expect(validateSupply("Pick", ["a", "b", "c", "d"]).ok).toBe(true);
   });
 
-  it("rejects too few options with a reason instead of padding them", () => {
-    const result = validateSupply("Hi", ["only one"]);
+  it("accepts a single option, which an agent-opened conversation may offer", () => {
+    // MIN_OPTIONS dropped to 1 with agent-initiated conversations
+    // (L-2026-09-03-04): "sure, what's up?" is a legitimate lone reply.
+    expect(validateSupply("Got a second?", ["Sure."]).ok).toBe(true);
+  });
+
+  it("rejects an empty option list with a reason instead of inventing one", () => {
+    const result = validateSupply("Hi", []);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toContain(`${MIN_OPTIONS}-${MAX_OPTIONS}`);
+  });
+
+  it("accepts {text, ends} objects and carries the ends flag through", () => {
+    const result = validateSupply("Anyway.", [
+      { text: "Tell me more." },
+      { text: "See you around.", ends: true },
+    ]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.options[0]).toEqual({ text: "Tell me more.", ends: false });
+      expect(result.value.options[1]).toEqual({ text: "See you around.", ends: true });
+    }
   });
 
   it("rejects too many options instead of silently truncating", () => {
@@ -57,7 +80,9 @@ describe("validateSupply", () => {
   });
 
   it("drops blank options before counting, so padding cannot sneak past", () => {
-    expect(validateSupply("Hi", ["real", "  ", ""]).ok).toBe(false);
+    const result = validateSupply("Hi", ["real", "  ", ""]);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value.options).toHaveLength(1);
   });
 
   it("caps an overlong line rather than letting it overflow the panel", () => {
@@ -106,14 +131,20 @@ describe("createDialogueBroker", () => {
     broker.request(CONTEXT);
     broker.supply("Coffee?", ["Yes", "No"]);
 
-    expect(rendered).toHaveBeenCalledWith({ line: "Coffee?", options: ["Yes", "No"] });
+    expect(rendered).toHaveBeenCalledWith({
+      line: "Coffee?",
+      options: [
+        { text: "Yes", ends: false },
+        { text: "No", ends: false },
+      ],
+    });
     expect(broker.isPending()).toBe(false);
   });
 
   it("keeps the turn pending when the supply was invalid", () => {
     const broker = createDialogueBroker();
     broker.request(CONTEXT);
-    broker.supply("Hi", ["one"]);
+    broker.supply("Hi", []);
     expect(broker.isPending()).toBe(true);
   });
 
@@ -166,5 +197,71 @@ describe("createDialogueBroker", () => {
 
   it("ships an in-character fallback, not a system error string", () => {
     expect(FALLBACK_LINE).not.toMatch(/error|timeout|failed/i);
+  });
+});
+
+describe("awaitPlayerMessage (the long-poll that fakes a push)", () => {
+  it("resolves the moment the player answers, not on a timer", async () => {
+    const broker = createDialogueBroker();
+    broker.request(CONTEXT);
+    broker.supply("Coffee?", ["Yes", "No"]);
+
+    const waiting = broker.awaitPlayerMessage(10_000);
+    broker.recordChoice("Yes", 0, false);
+
+    const message = await waiting;
+    expect(message.waiting).toBe(false);
+    expect(message.choice).toBe("Yes");
+    expect(message.optionIndex).toBe(0);
+  });
+
+  it("returns an already-waiting answer immediately instead of blocking", async () => {
+    const broker = createDialogueBroker();
+    broker.recordChoice("Yes", 0, false);
+    const message = await broker.awaitPlayerMessage(10_000);
+    expect(message.choice).toBe("Yes");
+  });
+
+  it("times out cleanly, so a quiet player is not an error", async () => {
+    const broker = createDialogueBroker();
+    const message = await broker.awaitPlayerMessage(1000);
+    expect(message.waiting).toBe(true);
+    expect(message.hint).toContain("again");
+  });
+
+  it("reports when the player picked the option that ends the conversation", async () => {
+    const broker = createDialogueBroker();
+    const waiting = broker.awaitPlayerMessage(10_000);
+    broker.recordChoice("See you around.", 1, true);
+    const message = await waiting;
+    expect(message.conversationEnded).toBe(true);
+    expect(broker.isFinished()).toBe(true);
+  });
+
+  it("never strands a waiter across a reset", async () => {
+    // An agent still holding the promise would otherwise hang until its own
+    // host gave up on the call.
+    const broker = createDialogueBroker();
+    const waiting = broker.awaitPlayerMessage(60_000);
+    broker.reset();
+    expect((await waiting).waiting).toBe(true);
+  });
+});
+
+describe("startConversation", () => {
+  it("renders the agent's opening turn without a pending request", () => {
+    // The agent walked up and spoke first - nobody clicked the robot.
+    const rendered = vi.fn();
+    const broker = createDialogueBroker(() => 0, rendered);
+    const result = broker.startConversation("Got a second?", ["Sure.", "Not now."]);
+    expect(result.ok).toBe(true);
+    expect(rendered).toHaveBeenCalledOnce();
+  });
+
+  it("refuses a malformed opening without opening the panel", () => {
+    const rendered = vi.fn();
+    const broker = createDialogueBroker(() => 0, rendered);
+    expect(broker.startConversation("", ["Sure."]).ok).toBe(false);
+    expect(rendered).not.toHaveBeenCalled();
   });
 });

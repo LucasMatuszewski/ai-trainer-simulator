@@ -33,11 +33,22 @@ export interface WebmcpToolDescriptor {
   execute: (args: Record<string, unknown>) => Promise<WebmcpToolResponse>;
 }
 
+export interface JsonSchemaProperty {
+  type: string;
+  description: string;
+  items?: { type: string };
+  /** Standard JSON Schema. Tool inspectors show these instead of a
+   *  placeholder, so an agent sees a real value rather than "example_string". */
+  examples?: unknown[];
+}
+
 export interface JsonSchemaObject {
   type: "object";
-  properties: Record<string, { type: string; description: string; items?: { type: string } }>;
+  properties: Record<string, JsonSchemaProperty>;
   required?: string[];
   additionalProperties: false;
+  /** Whole-object example. Set to `[{}]` for no-argument tools. */
+  examples?: unknown[];
 }
 
 export interface WebmcpToolResponse {
@@ -59,7 +70,7 @@ export function toJsonSchema(parameters: ToolDefinition["parameters"]): JsonSche
   const required: string[] = [];
 
   for (const [name, spec] of Object.entries(parameters)) {
-    properties[name] =
+    const property: JsonSchemaProperty =
       spec.type === "array"
         ? {
             type: "array",
@@ -69,12 +80,21 @@ export function toJsonSchema(parameters: ToolDefinition["parameters"]): JsonSche
             items: { type: spec.items ?? "string" },
           }
         : { type: spec.type, description: spec.description };
+    // `examples` is standard JSON Schema and is what tool inspectors render
+    // instead of a "example_string" placeholder. An agent reading a schema
+    // with a real value in it does not have to infer the shape from prose.
+    if (spec.example !== undefined) property.examples = [spec.example];
+    properties[name] = property;
     if (spec.required === true) required.push(name);
   }
 
   const schema: JsonSchemaObject = { type: "object", properties, additionalProperties: false };
   // An empty `required: []` is legal JSON Schema but noise in a tool listing.
   if (required.length > 0) schema.required = required;
+  // A no-argument tool otherwise renders as a bare {} with no example at all,
+  // which reads as "the example is missing" rather than "there are no
+  // arguments" (Lucas, 2026-09-03). An explicit {} example says which it is.
+  if (Object.keys(properties).length === 0) schema.examples = [{}];
   return schema;
 }
 
@@ -142,8 +162,11 @@ export function buildDescriptor(definition: ToolDefinition): WebmcpToolDescripto
     name: definition.name,
     description: definition.description,
     inputSchema: toJsonSchema(definition.parameters),
+    // `await` matters: wait_for_player_message returns a promise it holds
+    // open until the human answers, which is how a pull-only protocol
+    // imitates a push.
     execute: async (args: Record<string, unknown>) =>
-      toToolResponse(callTool({ name: definition.name, parameters: args ?? {} })),
+      toToolResponse(await callTool({ name: definition.name, parameters: args ?? {} })),
   };
 }
 

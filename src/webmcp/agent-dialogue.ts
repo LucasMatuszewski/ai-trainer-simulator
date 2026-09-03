@@ -14,7 +14,12 @@
  * so the human is never held hostage to an agent's latency.
  */
 
-export const MIN_OPTIONS = 2;
+/**
+ * One option is legal (L-2026-09-03-04). An agent OPENING a conversation may
+ * reasonably offer a single "sure, what's up?" reply; the old floor of 2 was
+ * written when only the human could start one.
+ */
+export const MIN_OPTIONS = 1;
 export const MAX_OPTIONS = 4;
 export const MAX_LINE_LENGTH = 240;
 export const MAX_OPTION_LENGTH = 120;
@@ -42,9 +47,65 @@ export interface DialogueRequestContext {
   lastPlayerChoice: string | null;
 }
 
+/**
+ * A reply offered to the human. `ends` marks the option that closes the
+ * conversation - the text stays the agent's to write, so the exit can be in
+ * character ("Anyway, I should get back to the build") rather than a generic
+ * Close button (Lucas, 2026-09-03).
+ */
+export interface TurnOption {
+  text: string;
+  ends: boolean;
+}
+
 export interface SuppliedTurn {
   line: string;
-  options: string[];
+  options: TurnOption[];
+}
+
+/** How long a long-poll waits before returning "nothing yet, call again".
+ *
+ *  Deliberately short. We do not know what tool-call timeout ChatGPT's
+ *  browser enforces, and a wait that outlives the host's patience looks like
+ *  a hung tool rather than an empty result. 25s is responsive enough to feel
+ *  like a notification and short enough to stay well inside any plausible
+ *  limit. */
+export const PLAYER_WAIT_TIMEOUT_MS = 25_000;
+
+export interface PlayerMessage {
+  waiting: boolean;
+  choice?: string;
+  /** Index of the option the player picked. */
+  optionIndex?: number;
+  /** True when the player picked the option the agent marked as ending. */
+  conversationEnded?: boolean;
+  turn?: number;
+  hint?: string;
+}
+
+/**
+ * Accept either plain strings or `{text, ends}` objects.
+ *
+ * Agents overwhelmingly send strings, and rejecting those to force an object
+ * shape would be pedantry - so strings are promoted to non-ending options
+ * and everything converges on one internal type.
+ */
+export function normaliseOptions(raw: unknown): TurnOption[] {
+  if (!Array.isArray(raw)) return [];
+  const options: TurnOption[] = [];
+  for (const entry of raw) {
+    if (typeof entry === "string") {
+      const text = clean(entry, MAX_OPTION_LENGTH);
+      if (text.length > 0) options.push({ text, ends: false });
+      continue;
+    }
+    if (typeof entry === "object" && entry !== null) {
+      const record = entry as Record<string, unknown>;
+      const text = clean(record.text, MAX_OPTION_LENGTH);
+      if (text.length > 0) options.push({ text, ends: record.ends === true });
+    }
+  }
+  return options;
 }
 
 export type SupplyValidation =
@@ -78,13 +139,13 @@ export function validateSupply(rawLine: unknown, rawOptions: unknown): SupplyVal
   if (!Array.isArray(rawOptions)) {
     return {
       ok: false,
-      reason: `options must be an array of ${MIN_OPTIONS}-${MAX_OPTIONS} strings`,
+      reason:
+        `options must be an array of ${MIN_OPTIONS}-${MAX_OPTIONS} entries - either plain ` +
+        `strings, or {text, ends} objects where ends:true closes the conversation`,
     };
   }
 
-  const options = rawOptions
-    .map((option) => clean(option, MAX_OPTION_LENGTH))
-    .filter((option) => option.length > 0);
+  const options = normaliseOptions(rawOptions);
 
   if (options.length < MIN_OPTIONS || options.length > MAX_OPTIONS) {
     return {
@@ -106,7 +167,7 @@ export interface DialogueBroker {
   /** The agent answers. Returns the normalised turn, or a reason it failed. */
   supply: (line: unknown, options: unknown) => SupplyValidation;
   /** Record what the human chose, so the agent sees it next turn. */
-  recordChoice: (choice: string) => void;
+  recordChoice: (choice: string, optionIndex?: number, ends?: boolean) => void;
   /** The human's most recent choice. */
   lastChoice: () => string | null;
   /** True once the wait has elapsed with no supply - render the fallback. */
@@ -114,6 +175,22 @@ export interface DialogueBroker {
   /** Clear everything when the conversation ends. */
   reset: () => void;
   isPending: () => boolean;
+  /**
+   * Long-poll: resolves the instant the player answers, or with
+   * `{waiting: true}` when the timeout elapses.
+   *
+   * This is how a pull-only protocol fakes a push. WebMCP gives a page no way
+   * to notify an agent, but `execute()` is async and the host awaits it, so
+   * holding the promise open until the player clicks behaves like a
+   * notification from the agent's side - immediate, and one call instead of
+   * one every few seconds. When it times out it degrades into exactly the
+   * polling loop it replaces, so it is never worse.
+   */
+  awaitPlayerMessage: (timeoutMs?: number) => Promise<PlayerMessage>;
+  /** Open a conversation from the AGENT's side. */
+  startConversation: (line: unknown, options: unknown) => SupplyValidation;
+  /** True once the player picked an option flagged `ends`. */
+  isFinished: () => boolean;
 }
 
 export function createDialogueBroker(
@@ -123,6 +200,17 @@ export function createDialogueBroker(
   let pending: DialogueRequestContext | null = null;
   let requestedAt = 0;
   let lastPlayerChoice: string | null = null;
+  let lastOptionIndex: number | null = null;
+  let finished = false;
+  let turnCounter = 0;
+  /** Resolvers for agents currently parked in awaitPlayerMessage. */
+  let waiters: Array<(message: PlayerMessage) => void> = [];
+
+  function wake(message: PlayerMessage): void {
+    const pendingWaiters = waiters;
+    waiters = [];
+    for (const resolve of pendingWaiters) resolve(message);
+  }
 
   return {
     request(context) {
@@ -150,8 +238,20 @@ export function createDialogueBroker(
       return validated;
     },
 
-    recordChoice(choice) {
+    recordChoice(choice, optionIndex = -1, ends = false) {
       lastPlayerChoice = choice;
+      lastOptionIndex = optionIndex;
+      if (ends) finished = true;
+      turnCounter += 1;
+      // Anyone parked in a long-poll hears about it on this tick, not on
+      // their next scheduled poll.
+      wake({
+        waiting: false,
+        choice,
+        optionIndex: optionIndex < 0 ? undefined : optionIndex,
+        conversationEnded: ends,
+        turn: turnCounter,
+      });
     },
 
     lastChoice: () => lastPlayerChoice,
@@ -165,8 +265,65 @@ export function createDialogueBroker(
       pending = null;
       requestedAt = 0;
       lastPlayerChoice = null;
+      lastOptionIndex = null;
+      finished = false;
+      turnCounter = 0;
+      // Never strand a waiter across a reset: an agent still holding a
+      // promise would hang until its own host gave up.
+      wake({ waiting: true, hint: "The conversation ended. Call again if you start a new one." });
     },
 
     isPending: () => pending !== null,
+    isFinished: () => finished,
+
+    async awaitPlayerMessage(timeoutMs = PLAYER_WAIT_TIMEOUT_MS) {
+      // If the player already answered and the agent has not consumed it,
+      // return immediately rather than making it wait for the next answer.
+      if (lastPlayerChoice !== null) {
+        const message: PlayerMessage = {
+          waiting: false,
+          choice: lastPlayerChoice,
+          optionIndex: lastOptionIndex === null || lastOptionIndex < 0 ? undefined : lastOptionIndex,
+          conversationEnded: finished,
+          turn: turnCounter,
+        };
+        lastPlayerChoice = null;
+        return message;
+      }
+
+      return new Promise<PlayerMessage>((resolve) => {
+        let settled = false;
+        const settle = (message: PlayerMessage): void => {
+          if (settled) return;
+          settled = true;
+          waiters = waiters.filter((w) => w !== onMessage);
+          resolve(message);
+        };
+        const onMessage = (message: PlayerMessage): void => {
+          if (message.choice !== undefined) lastPlayerChoice = null;
+          settle(message);
+        };
+        waiters.push(onMessage);
+        setTimeout(
+          () =>
+            settle({
+              waiting: true,
+              hint: "No reply yet. Call this again to keep waiting - it is not an error.",
+            }),
+          Math.max(1000, timeoutMs),
+        );
+      });
+    },
+
+    startConversation(line, options) {
+      const validated = validateSupply(line, options);
+      if (!validated.ok) return validated;
+      finished = false;
+      turnCounter = 1;
+      pending = null;
+      lastPlayerChoice = null;
+      onSupplied(validated.value);
+      return validated;
+    },
   };
 }

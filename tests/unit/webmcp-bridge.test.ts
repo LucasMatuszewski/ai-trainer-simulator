@@ -54,11 +54,21 @@ describe("toJsonSchema", () => {
   });
 
   it("produces a valid empty-object schema for a no-parameter tool", () => {
+    // The `examples: [{}]` says "there are no arguments" rather than leaving
+    // an inspector to render a bare {} that reads as a missing example.
     expect(toJsonSchema({})).toEqual({
       type: "object",
       properties: {},
       additionalProperties: false,
+      examples: [{}],
     });
+  });
+
+  it("surfaces a parameter's example value as JSON Schema `examples`", () => {
+    const schema = toJsonSchema({
+      target: { type: "string", description: "who to walk to", example: "bartek" },
+    });
+    expect(schema.properties.target!.examples).toEqual(["bartek"]);
   });
 });
 
