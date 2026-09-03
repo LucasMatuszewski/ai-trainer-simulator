@@ -19,7 +19,7 @@
  * dead integration on the judge's machine, so we probe rather than assume.
  */
 
-import { callTool, TOOLS, type ToolDefinition, type ToolResult } from "./tools";
+import { callTool, TOOLS, type ToolDefinition, type ToolResult, type ToolValueSchema } from "./tools";
 
 /** The subset of the WebMCP host object we actually use. */
 export interface ModelContextHost {
@@ -36,7 +36,11 @@ export interface WebmcpToolDescriptor {
 export interface JsonSchemaProperty {
   type: string;
   description: string;
-  items?: { type: string };
+  items?: ToolValueSchema;
+  minItems?: number;
+  maxItems?: number;
+  minLength?: number;
+  maxLength?: number;
   /** Standard JSON Schema. Tool inspectors show these instead of a
    *  placeholder, so an agent sees a real value rather than "example_string". */
   examples?: unknown[];
@@ -77,12 +81,15 @@ export function toJsonSchema(parameters: ToolDefinition["parameters"]): JsonSche
             description: spec.description,
             // Without `items` an agent has no idea what to put in the array
             // and will guess - usually a JSON string.
-            items: { type: spec.items ?? "string" },
+            items: typeof spec.items === "object" ? spec.items : { type: spec.items ?? "string" },
           }
         : { type: spec.type, description: spec.description };
     // `examples` is standard JSON Schema and is what tool inspectors render
     // instead of a "example_string" placeholder. An agent reading a schema
     // with a real value in it does not have to infer the shape from prose.
+    for (const limit of ["minItems", "maxItems", "minLength", "maxLength"] as const) {
+      if (spec[limit] !== undefined) property[limit] = spec[limit];
+    }
     if (spec.example !== undefined) property.examples = [spec.example];
     properties[name] = property;
     if (spec.required === true) required.push(name);

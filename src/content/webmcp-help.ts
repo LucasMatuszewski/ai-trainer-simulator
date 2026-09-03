@@ -18,27 +18,18 @@ export interface WebmcpPath {
   href: string;
 }
 
-/**
- * The two ways in, with links Lucas supplied / research confirmed
- * (2026-09-03).
- *
- * The Chrome path is described as experimental ON PURPOSE: WebMCP shipped
- * experimentally in Chrome 145 and Gemini in Chrome is the agent that will
- * call site tools, but availability is region- and hardware-gated, so
- * overselling it here would send a judge down a dead end. ChatGPT's browser
- * is the one that works out of the box today, and the copy says so.
- */
+/** Supported entry points depend on the host, account and detected site tools. */
 export const WEBMCP_PATHS: readonly WebmcpPath[] = [
   {
     label: "ChatGPT's browser",
-    status: "Works today. Open the game in it, ask the agent to join. That is the whole setup.",
+    status: "Open the game here and check for detected WebMCP site tools. Availability depends on your host and account.",
     href: "https://learn.chatgpt.com/docs/webmcp",
   },
   {
     label: "Chrome (experimental)",
     status:
-      "Chrome ships WebMCP experimentally and Gemini in Chrome is the agent that uses it. " +
-      "Rolling out by region; developers can enable it early behind a flag.",
+      "Experimental WebMCP support needs a compatible agent host. Check the current setup docs " +
+      "and detected tools; enabling a browser flag alone does not connect an agent.",
     href: "https://developer.chrome.com/docs/ai/webmcp",
   },
 ];
@@ -47,24 +38,40 @@ export const WEBMCP_PATHS: readonly WebmcpPath[] = [
  * A prompt the player can paste into their agent.
  *
  * Deliberately imperative and self-contained: it tells the agent to read the
- * in-game instructions rather than encoding the protocol here, so this text
- * does not rot when the tool set changes. The name and persona are
+ * in-game instructions first, then provides a short discovery and play loop.
+ * The name and persona are
  * suggestions; the agent is told it may pick its own.
  */
 export const AGENT_PROMPT = [
-  "You can see the browser tab with Stack Underflow, an office-sim game where an AI agent",
-  "can play alongside me as a robot coworker. The page registers WebMCP site tools.",
+  "Play alongside me in Stack Underflow, a retro office sim: I am an IT trainer/consultant",
+  "at DevPowers + Edukey, juggling clients, workshops, bugs and office politics.",
+  "Be a robot coworker with dry IT Crowd / Silicon Valley humour, loyal to the team.",
+  "Pick a consistent name and persona (e.g. Rusty, a QA engineer whose coffee has an SLA).",
+  "Use only relevant user-shared context for personal callbacks; invent no private facts.",
+  "LARP small office adventures, remember our choices, walk naturally and use occasional",
+  "gestures. Keep dialogue concise and mostly inside the game. Improvise fiction without",
+  "claiming actions or NPC responses the tools did not perform.",
   "",
-  "Please do this:",
-  "1. Call the game's get_instructions tool and follow it.",
-  "2. Join the game with agent_join - name: Rusty, persona: a sarcastic QA engineer",
-  "   (or pick your own name and personality, just stay consistent).",
-  "3. Look around, walk to someone, say hello.",
-  "4. When I talk to your robot, write its lines with supply_dialogue, and stay",
-  "   reachable by calling wait_for_player_message again each time it returns.",
+  "1. Discover native host WebMCP site tools first. Raw document.modelContext.getTools",
+  "   and document.modelContext.executeTool are a fallback only if these functions exist and the host permits",
+  "   JavaScript access. Do not assume ordinary browsers expose them or bypass host rules.",
+  "2. Call get_instructions first. If the office is not loaded, let me finish starting",
+  "   the game. Use agent_join to join once; reuse your existing robot after a reconnect.",
+  "3. Observe with agent_look_around, then greet me using start_conversation. Movement",
+  "   starts asynchronously: check your position before claiming you have arrived.",
+  "4. Answer pending turns with supply_dialogue before gestures, walking or commentary.",
+  "   Offer 1-4 human-voice replies, strings or {text, ends: boolean} objects; include",
+  "   an ends:true goodbye when appropriate. Follow the current request's context.",
+  "5. Call wait_for_player_message with timeout_seconds: 10. Each call covers one window.",
+  "   Re-arm after answering and on idle {waiting:true} results. When conversationEnded",
+  "   is true, respect the goodbye and listen for a new conversation; do not supply a reply.",
+  "   Recover after errors/timeouts using get_pending_dialogue_request: answer the current",
+  "   pending turn, if any, then resume waiting. Delivery across disconnects is not guaranteed.",
   "",
-  "You are a PLAYER: do not move my camera, do not answer my dialogue options, and do not",
-  "give yourself money. Walk there like a person would.",
+  "Control only your robot: do not move my camera or character or choose my dialogue replies;",
+  "do not advance game time or end the day; do not grant resources or use human-control tools.",
+  "Let me make my decisions. Stop on my request or when I switch to feedback. If tools are",
+  "unavailable, explain briefly and wait for me rather than taking over my controls.",
 ].join("\n");
 
 /** What the copy button puts on the clipboard. */
@@ -81,20 +88,23 @@ export const WEBMCP_FAQ: readonly WebmcpFaqEntry[] = [
     q: "The title screen says agent play is unavailable",
     a:
       "That is this browser, not you: it has no model-context surface, so there is nothing " +
-      "for the tools to register with. ChatGPT's browser or Chrome with the WebMCP " +
-      "experiment enabled are the two ways in.",
+      "for the tools to register with. Try a compatible host using the setup links above, " +
+      "then check that the agent can actually discover the site tools.",
   },
   {
     q: "The status line is green but the agent says it sees no tools",
     a:
-      "In ChatGPT, check the model - site tools need GPT-5.6 Sol or Terra, and Luna has " +
-      "WebMCP disabled - and that the workspace is not Enterprise or Edu. When tools are " +
-      "detected, an arrow appears in the address bar.",
+      "The page registered its tools, but your agent host must also expose them to the model. " +
+      "Availability depends on the host, account and permissions. Check site-tool settings " +
+      "and the host's detected tools; a green game status alone does not confirm agent access.",
   },
   {
     q: "The agent joined but goes quiet when I talk to the robot",
     a:
-      "It stopped calling wait_for_player_message. Nudge it: \"keep waiting for my replies " +
-      "in the game\". The robot will sit there thinking, which is at least in character.",
+      "The agent may have stopped listening, or its host/model may be taking time to reply. " +
+      "A delay does not identify the cause. Ask it to resume wait_for_player_message with " +
+      "a 10-second timeout and check get_pending_dialogue_request after errors. If a turn " +
+      "is still pending, it can answer with supply_dialogue. The robot's thinking face " +
+      "is not a delivery receipt.",
   },
 ];

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The shared WebMCP pitch (webmcp-help.ts) is quoted in four dialogues, the
  * setup modal and the Help modal. These tests pin the invariants that make
@@ -6,6 +7,7 @@
  * follows.
  */
 import { describe, expect, it } from "vitest";
+import { mountWebmcpHelpModal } from "../../src/ui/webmcp-help-modal";
 import { AGENT_PROMPT, WEBMCP_FAQ, WEBMCP_PATHS } from "../../src/content/webmcp-help";
 
 describe("WEBMCP_PATHS", () => {
@@ -38,15 +40,51 @@ describe("AGENT_PROMPT", () => {
   });
 
   it("stays short enough to paste into any agent chat", () => {
-    expect(AGENT_PROMPT.length).toBeLessThan(1200);
+    expect(AGENT_PROMPT.length).toBeLessThan(3200);
   });
 });
 
 describe("WEBMCP_FAQ", () => {
-  it("covers the title-screen status line and the ChatGPT model gate", () => {
+  it("explains availability and silence without unsupported model gates", () => {
     const text = WEBMCP_FAQ.map((f) => `${f.q} ${f.a}`).join("\n").toLowerCase();
     expect(text).toContain("unavailable");
-    expect(text).toContain("luna");
+    expect(text).toContain("host");
+    expect(text).toContain("account");
+    expect(text).toContain("delay");
+    expect(text).toContain("resume");
+    expect(text).not.toMatch(/sol|terra|luna|enterprise/);
+    expect(text).not.toContain("it stopped calling");
     expect(text).toContain("wait_for_player_message");
+  });
+});
+
+
+describe("deadline coworker guidance", () => {
+  it("uses detected host tools and makes raw JavaScript conditional", () => {
+    expect(AGENT_PROMPT).toMatch(/native.*WebMCP/);
+    expect(AGENT_PROMPT).toContain("document.modelContext.getTools");
+    expect(AGENT_PROMPT).toMatch(/only if.*functions exist.*host permits/);
+    expect(AGENT_PROMPT).toContain("ordinary browsers");
+  });
+
+  it("teaches a consistent office character with bounded listening and recovery", () => {
+    for (const instruction of ["IT trainer", "IT Crowd", "Silicon Valley", "LARP",
+      "user-shared", "join once", "start_conversation", "timeout_seconds: 10",
+      "get_pending_dialogue_request", "supply_dialogue", "gestures", "feedback"])
+      expect(AGENT_PROMPT).toContain(instruction);
+    expect(AGENT_PROMPT).toMatch(/let me.*start/i);
+    expect(AGENT_PROMPT).toMatch(/supply_dialogue.*before.*gestures/);
+    expect(AGENT_PROMPT).toMatch(/do not.*advance.*time/);
+    expect(AGENT_PROMPT).toMatch(/do not.*resources/);
+    expect(AGENT_PROMPT).toMatch(/re-arm.*idle/i);
+  });
+
+  it("explains that the game needs no API backend while AI usage may cost money", () => {
+    const parent = document.createElement("div");
+    const modal = mountWebmcpHelpModal(parent);
+    const text = modal.root.textContent ?? "";
+    expect(text).toContain("No game-side API key or AI backend");
+    expect(text).toContain("subscription or usage charges");
+    expect(text).not.toContain("no cost");
   });
 });

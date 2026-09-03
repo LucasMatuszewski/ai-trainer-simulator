@@ -179,3 +179,36 @@ describe("registerWebmcpTools", () => {
     expect(result.failed).toBe(1);
   });
 });
+
+
+describe("published dialogue option schemas", () => {
+  it.each(["supply_dialogue", "start_conversation"])("%s publishes strings and ending objects with runtime limits", (name) => {
+    const { registered, host } = makeHost();
+    registerWebmcpTools({ hostOverride: host });
+    const schema = registered.find((tool) => tool.name === name)!.inputSchema;
+    expect(schema.properties.options).toMatchObject({
+      type: "array", minItems: 1, maxItems: 4,
+      items: { oneOf: [
+        { type: "string", minLength: 1, maxLength: 120 },
+        { type: "object", properties: {
+          text: { type: "string", minLength: 1, maxLength: 120 },
+          ends: { type: "boolean" },
+        }, required: ["text"], additionalProperties: false },
+      ] },
+    });
+    const example = schema.properties.options!.examples![0] as unknown[];
+    expect(example.some((option) => typeof option === "string")).toBe(true);
+    expect(example).toContainEqual(expect.objectContaining({ ends: true }));
+    expect(schema.properties.line).toMatchObject({ minLength: 1, maxLength: 240 });
+    expect(schema.required).toEqual(["line", "options"]);
+  });
+
+  it("preserves legacy string arrays and their default element type", () => {
+    const schema = toJsonSchema({
+      explicit: { type: "array", description: "old caller", items: "string" },
+      implicit: { type: "array", description: "old default" },
+    });
+    expect(schema.properties.explicit!.items).toEqual({ type: "string" });
+    expect(schema.properties.implicit!.items).toEqual({ type: "string" });
+  });
+});

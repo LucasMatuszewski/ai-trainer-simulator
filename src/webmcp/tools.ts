@@ -1,4 +1,4 @@
-import { PLAYER_WAIT_MAX_MS } from "./agent-dialogue";
+import { MAX_LINE_LENGTH, MAX_OPTION_LENGTH, MIN_OPTIONS, MAX_OPTIONS, PLAYER_WAIT_MAX_MS } from "./agent-dialogue";
 import { getMemory, pickedOptionsFor } from "../content/dialogue-memory";
 import { DIALOGUES } from "../content/dialogues";
 import { NPCS } from "../content/npcs";
@@ -82,6 +82,33 @@ function requireActions(): PlayerActionHooks | { error: string } {
   return playerActions;
 }
 
+/** Minimal nested JSON Schema support for mixed dialogue reply arrays. */
+export interface ToolValueSchema {
+  type?: "string" | "number" | "boolean" | "array" | "object";
+  description?: string;
+  oneOf?: ToolValueSchema[];
+  properties?: Record<string, ToolValueSchema>;
+  required?: string[];
+  additionalProperties?: boolean;
+  minLength?: number;
+  maxLength?: number;
+}
+
+const DIALOGUE_OPTION_SCHEMA: ToolValueSchema = {
+  oneOf: [
+    { type: "string", minLength: 1, maxLength: MAX_OPTION_LENGTH },
+    {
+      type: "object",
+      properties: {
+        text: { type: "string", minLength: 1, maxLength: MAX_OPTION_LENGTH },
+        ends: { type: "boolean", description: "true closes the conversation; omitted means false." },
+      },
+      required: ["text"],
+      additionalProperties: false,
+    },
+  ],
+};
+
 export interface ToolDefinition {
   name: string;
   description: string;
@@ -91,7 +118,11 @@ export interface ToolDefinition {
     required?: boolean;
     /** Element type, for `type: "array"` only. Agents need this to build
      *  a valid call; without it the array is untyped and they guess. */
-    items?: "string";
+    items?: "string" | ToolValueSchema;
+    minItems?: number;
+    maxItems?: number;
+    minLength?: number;
+    maxLength?: number;
     /**
      * A REAL value an agent could send, surfaced in the JSON Schema as
      * `examples`. Without it, tool inspectors render a placeholder like
@@ -159,49 +190,56 @@ const MAX_STEP_METRES = 3;
  * briefing the agent can ask for.
  */
 const AGENT_INSTRUCTIONS = [
-  "You are a PLAYER in this office game, not an administrator. You control one character.",
-  "You cannot give yourself money or reputation, set game flags, teleport, move the human's",
-  "camera, or answer the human's dialogue for them. Those tools do not exist on purpose.",
+  "STACK UNDERFLOW: you are a robot coworker in a retro IT trainer/consultant office at",
+  "DevPowers + Edukey. Help the human survive client workshops, flaky builds and office politics.",
+  "Use dry IT Crowd / Silicon Valley humour, a consistent persona, and relevant user-shared",
+  "context only. LARP small office adventures and remember choices; invent no private facts.",
+  "",
+  "ACTOR BOUNDARIES",
+  "Control only your robot. Some human-control tools are exposed but prohibited in this",
+  "coworker role: talk_to_npc, pick_dialogue_option, close_dialogue, advance_time, end_day,",
+  "open_minigame. Do not move the human's character/camera, choose their replies, change",
+  "time or grant resources. Read-only state tools are fine. Respect host permissions.",
+  "Stop when the user asks or switches to feedback; do not keep playing through feedback.",
   "",
   "GETTING IN",
-  "1. agent_join({name, persona}) - spawns your robot character. Do this first.",
-  "2. agent_look_around({}) - who is nearby, and the exact names you may walk to.",
+  "Use native host WebMCP discovery first. Raw document.modelContext.getTools/executeTool",
+  "are only a fallback if both functions exist and the host permits JavaScript access.",
+  "These functions are not assumed to exist in ordinary browsers.",
+  "Read get_instructions first. Let the human start/continue the game and create their character.",
+  "Use agent_join({name, persona}) to join once; reuse an existing robot after reconnecting.",
+  "Observe with agent_look_around({}), then greet the human with start_conversation({line, options}).",
   "",
-  "MOVING",
-  "- agent_move_to({target}) walks you to a person or room BY NAME, pathing around furniture.",
-  "  Never send coordinates; they are not accepted. A wrong name returns every valid one.",
-  "- agent_step({direction, metres}) and agent_turn({degrees}) are the raw controls, the",
-  "  equivalent of W/A/S/D and the mouse. Use them for fine positioning only.",
-  "- agent_say({line}) puts a speech bubble over your head that the human can read.",
+  "MOVING AND ROLEPLAY",
+  "agent_move_to({target}) starts walking asynchronously to a person or room BY NAME.",
+  "An accepted move is not arrival: use agent_look_around to check position before claiming it.",
+  "Never send coordinates; a wrong name returns valid targets. agent_step({direction, metres})",
+  "and agent_turn({degrees}) provide fine positioning; a step also takes walking time.",
+  "Use occasional agent_play_animation gestures (wave, facepalm, coffee-sip, fist-pump, shrug,",
+  "stretch, nod). agent_say writes a visible bubble; it does not itself make an NPC answer.",
+  "Do not claim tool actions or NPC responses that did not happen.",
   "",
-  "- agent_play_animation({name}) plays a gesture: wave, facepalm, coffee-sip, fist-pump,",
-  "  shrug, stretch, nod. Gestures layer over walking, so you can wave while crossing a room.",
+  "CONVERSATIONS AND PRIORITY",
+  "The human can click your robot to talk. start_conversation approaches the human before",
+  "opening your dialogue; its call awaits the approach. Check errors before claiming success.",
+  "Answer a pending turn with supply_dialogue before gestures, walking or commentary.",
+  "Write a short robot line (up to 240 characters) and 1-4 replies in the HUMAN's voice",
+  "(up to 120 characters each). Each option is a string or {text, ends: boolean}; omitted",
+  "ends defaults to false. Include an explicit ends:true goodbye when appropriate, e.g.",
+  'options: ["Tell me about the build.", {text: "Back to work. See you!", ends: true}].',
   "",
-  "CONVERSATIONS - BOTH DIRECTIONS",
-  "The human can start one by walking up and clicking you. You can start one with",
-  "start_conversation({line, options}) - your character WALKS OVER to them first, so they see",
-  "you coming; the call returns once you have arrived and spoken.",
-  "",
-  "Either way the loop is the same:",
-  "1. wait_for_player_message({}) BLOCKS until the human answers, then returns their choice.",
-  "2. supply_dialogue({line, options}) writes your next line and the 1-4 replies the human",
-  "   chooses between. Write the options in the HUMAN\u0027s voice, not yours.",
-  "3. Repeat. Mark one option with ends:true when the conversation should finish.",
-  "",
-  "STAYING REACHABLE - READ THIS",
-  "wait_for_player_message covers ONE window (25s by default, up to 120 via timeout_seconds).",
-  "It is not a subscription. To stay reachable, CALL IT AGAIN every time it returns",
-  "{waiting: true} - that is a normal empty result, not an error. Looping it is how you",
-  "notice the human walking up to you five minutes from now.",
-  "",
-  "If you do stop waiting, nothing is lost. A human who starts a conversation while you are",
-  "not listening has their request QUEUED, and your next wait_for_player_message returns it",
-  "straight away. They just see your character thinking for longer. So: loop if you can, and",
-  "check back whenever you can if you cannot.",
-  "",
-  "You are writing this character. The game's author wrote none of your lines. Stay in the",
-  "persona you gave at join time, keep lines short, and remember what the human already said -",
-  "each request tells you their previous choice.",
+  "LISTENING AND RECOVERY",
+  "Prefer wait_for_player_message({timeout_seconds: 10}); 10 seconds is an explicit",
+  "recommendation, not the default (25 seconds; maximum 120). Each wait covers ONE window.",
+  "When a player turn arrives, supply its reply promptly, then re-arm the wait. If the result",
+  "says conversationEnded:true, respect the goodbye: do not supply another line. Listen for",
+  "a new conversation instead. Re-arm on idle {waiting:true} too; it is not an error.",
+  "get_pending_dialogue_request is a recovery/peek tool, not the primary listening loop.",
+  "After an error or timeout, peek at current pending context and answer it if present,",
+  "then resume waiting. Do not blindly resend an old line or restart the conversation.",
+  "Host/model delay and disconnected listeners can both cause silence. Delivery is not",
+  "guaranteed across errors, resets or disconnects; a pending turn is not a full event log.",
+  "Stay in character, keep lines concise and use current context rather than guessing.",
 ].join("\n");
 
 const implementations: ToolImplementation[] = [
@@ -484,7 +522,7 @@ const implementations: ToolImplementation[] = [
         data: {
           joined: true,
           name: result.name,
-          hint: "Use agent_look_around to see who is here, then agent_move_to and agent_say.",
+          hint: "Use agent_look_around, then greet the human with start_conversation.",
         },
       };
     },
@@ -524,6 +562,7 @@ const implementations: ToolImplementation[] = [
       name: "agent_move_to",
       description:
         "Walk your character to a person or a room, addressed by name (not coordinates). " +
+        "Starts asynchronously: walkingTo means accepted, not arrived; check agent_look_around. " +
         "If the name is unknown the error lists every valid target.",
       parameters: {
         target: {
@@ -580,8 +619,9 @@ const implementations: ToolImplementation[] = [
       name: "get_pending_dialogue_request",
       description:
         "Check whether the human player has started a conversation with your character and is " +
-        "waiting for you to write its next line. Returns null when nobody is talking to you. " +
-        "Poll this after agent_join; when it returns a request, answer with supply_dialogue.",
+        "waiting for you to write its next line. Returns null when no turn awaits supply. " +
+        "Use this peek for recovery after errors or timeouts; answer a pending request with " +
+        "supply_dialogue. Prefer wait_for_player_message as the primary listening loop.",
       parameters: {},
     },
     validate: validateNoParameters,
@@ -595,22 +635,26 @@ const implementations: ToolImplementation[] = [
     definition: {
       name: "supply_dialogue",
       description:
-        "Write your character's next spoken line and the 2-4 replies the human player will " +
+        "Write your character's next spoken line and the 1-4 replies the human player will " +
         "choose between. This is YOUR character speaking in the game's own dialogue window - " +
         "the game's author never wrote these words. Answer a request from " +
-        "get_pending_dialogue_request.",
+        "wait_for_player_message or the recovery peek get_pending_dialogue_request.",
       parameters: {
         line: {
           type: "string",
           description: "What your character says on this turn. One or two sentences.",
+          minLength: 1,
+          maxLength: MAX_LINE_LENGTH,
           example: "You must be the new trainer. I do QA, which mostly means I find out what Tomek did.",
           required: true,
         },
         options: {
           type: "array",
-          items: "string",
-          description: "2-4 replies the human can pick from. Write them in the human's voice, not yours.",
-          example: ["What did Tomek do?", "Nice to meet you.", "Are you... a robot?"],
+          items: DIALOGUE_OPTION_SCHEMA,
+          minItems: MIN_OPTIONS,
+          maxItems: MAX_OPTIONS,
+          description: "1-4 human-voice replies: strings or {text, ends: boolean} objects. ends:true closes the conversation.",
+          example: ["What did Tomek do?", { text: "Back to work. See you!", ends: true }],
           required: true,
         },
       },
@@ -618,7 +662,7 @@ const implementations: ToolImplementation[] = [
     validate: (call) => {
       const lineError = requiredString(call, "line");
       if (lineError) return lineError;
-      return Array.isArray(call.parameters.options) ? null : "options must be an array of 2-4 strings";
+      return Array.isArray(call.parameters.options) ? null : "options must be an array of 1-4 strings or {text, ends} objects";
     },
     execute: (call) => {
       const companion = requireCompanion();
@@ -733,17 +777,21 @@ const implementations: ToolImplementation[] = [
         line: {
           type: "string",
           description: "Your character's opening line.",
+          minLength: 1,
+          maxLength: MAX_LINE_LENGTH,
           example: "Hey - you're the new trainer, right? I have a bug with your name on it.",
           required: true,
         },
         options: {
           type: "array",
-          items: "string",
+          items: DIALOGUE_OPTION_SCHEMA,
+          minItems: MIN_OPTIONS,
+          maxItems: MAX_OPTIONS,
           description:
             "1-4 replies for the human, written in THEIR voice. Either plain strings, or " +
             "{text, ends} objects - ends:true marks the reply that finishes the conversation, " +
             "so you can write the goodbye instead of leaving them a bare Close button.",
-          example: ["What bug?", "Not now, I'm busy.", "Who are you?"],
+          example: ["What bug?", { text: "Not now, I'm busy.", ends: true }],
           required: true,
         },
       },
@@ -775,21 +823,19 @@ const implementations: ToolImplementation[] = [
     definition: {
       name: "wait_for_player_message",
       description:
-        "WAIT until the human player replies, then return what they chose. This BLOCKS - it " +
-        "does not return immediately, and that is deliberate: it is how you find out about a " +
-        "reply the moment it happens instead of polling. If it returns {waiting: true} nothing " +
-        "was said in time; that is not an error, CALL IT AGAIN. Re-arming it in a loop is how " +
-        "you stay reachable: each call only covers its own window, and a player who starts " +
-        "talking while you are not waiting has their request QUEUED, so the next call returns " +
-        "it immediately. Nothing is ever lost - the robot just looks like it is thinking for " +
-        "longer.",
+        "Listen for a human reply or conversation request. May return immediately for available " +
+        "context; otherwise waits for a reply or timeout. If it returns {waiting: true}, " +
+        "inspect any hint and re-arm when idle. Re-arming it in a loop is how " +
+        "you stay reachable. Use an explicit 10-second wait initially. Host/model delays and " +
+        "disconnects can interrupt delivery; recover by checking get_pending_dialogue_request. " +
+        "A pending request is not a durable event log.",
       parameters: {
         timeout_seconds: {
           type: "number",
           description:
-            "How long to wait before returning 'nothing yet' (default 25, max 120). Use a " +
-            "longer wait if your host tolerates long tool calls - it covers more time per call.",
-          example: 25,
+            "How long to wait before returning 'nothing yet' (default 25, max 120). Start with " +
+            "an explicit 10 seconds; longer waits depend on host tolerance.",
+          example: 10,
         },
       },
     },

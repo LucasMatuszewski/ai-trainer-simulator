@@ -35,8 +35,8 @@ export function mountWebmcpHelpModal(parent: HTMLElement): WebmcpHelpModalHandle
       <div class="help-modal-body">
         <p>This game hands your browser's AI agent a set of tools - WebMCP site tools. The
         agent joins the office as a <strong>robot coworker</strong>: it walks around, talks,
-        and writes its own lines while you play. No API key, no server, no cost - the model
-        is already in your browser. We only wrote the desk.</p>
+        and writes its own lines while you play. No game-side API key or AI backend is needed.
+        Your AI provider's subscription or usage charges still apply. We only wrote the desk.</p>
 
         <h3>The two ways in</h3>
         ${WEBMCP_PATHS.map(

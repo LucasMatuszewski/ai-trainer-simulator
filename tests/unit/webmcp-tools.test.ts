@@ -172,3 +172,30 @@ describe("DIALOGUES merge (GLM 5.3 enrichment, L-2026-08-30-02)", () => {
     }
   });
 });
+
+
+describe("deadline coworker protocol", () => {
+  it("explains actor boundaries, asynchronous motion and recoverable listening", async () => {
+    const result = await callTool({ name: "get_instructions", parameters: {} });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const text = (result.data as { instructions: string }).instructions;
+    for (const phrase of ["IT trainer", "IT Crowd", "Silicon Valley", "LARP", "user-shared",
+      "join once", "human-control tools are exposed", "prohibited", "asynchronously",
+      "timeout_seconds: 10", "25", "get_pending_dialogue_request", "feedback"])
+      expect(text).toContain(phrase);
+    expect(text).toMatch(/supply_dialogue.*before.*gestures/);
+    expect(text).not.toMatch(/nothing is lost|Those tools do not exist/);
+    for (const name of ["talk_to_npc", "pick_dialogue_option", "close_dialogue", "advance_time", "end_day", "open_minigame"])
+      expect(text).toContain(name);
+  });
+
+  it("recommends wait as primary and pending context for recovery without guaranteeing delivery", () => {
+    const pending = TOOLS.find((tool) => tool.name === "get_pending_dialogue_request")!;
+    const wait = TOOLS.find((tool) => tool.name === "wait_for_player_message")!;
+    expect(pending.description).toMatch(/recovery|recover/i);
+    expect(pending.description).toContain("wait_for_player_message");
+    expect(wait.description).not.toMatch(/nothing is ever lost/i);
+    expect(wait.parameters.timeout_seconds!.example).toBe(10);
+  });
+});
