@@ -24,6 +24,7 @@ test('robot keeps human control and visibly exchanges lines with an NPC', async 
   await page.goto('/');
   await expect(page.getByText(GAME_VERSION, {exact: false})).toBeVisible();
   expect(versions.some(line => line.includes(GAME_VERSION))).toBe(true);
+  await page.screenshot({path: 'screenshots/deadline-build-title.png'});
   await page.click('[data-action="new"]');
   await page.click('[data-spec-id="ai"]');
   await page.click('[data-trait-id="debugger"]');
@@ -53,6 +54,7 @@ test('robot keeps human control and visibly exchanges lines with an NPC', async 
   const npcBefore=await pose();
   const result=await call('agent_talk_to_npc',{npcId:'bartek',line:'Bartek, can we ship a bug if we call it AI-powered?',reply:'Only after Sales has promised it to three clients.'});
   expect(result.started).toBe(true);
+  await expect.poll(async () => (await call('agent_look_around')).companion.walking, {timeout:35000}).toBe(false);
   await expect(page.locator('.npc-bubble').filter({hasText:'Bartek, can we ship'})).toBeVisible({timeout:35000});
   await expect(page.locator('.npc-bubble').filter({hasText:'Only after Sales'})).toBeVisible({timeout:10000});
   expect(await pose()).toEqual(npcBefore);

@@ -1,5 +1,43 @@
 # Lucas's feedback index
 
+## 2026-09-03 — production URL and continue
+
+**ID: L-2026-09-03-10 — Copy the correct game address** (20:38 Europe/Lisbon)
+- Lucas confirms production is https://play.devpowers.com and asks for environment-aware prompt URLs instead of localhost; then explicitly asks to continue.
+- Use the loaded page's origin and path for both prompt display and clipboard entry points. Localhost stays local; production automatically points to the deployed game. No deployment ENV is necessary for this same-site behavior.
+- Cross-reference: PRD C-73 requirement, CHANGELOG C-73, Beads sacs-xtma.9.
+
+
+## 2026-09-03 — parallel submission work
+
+**ID: L-2026-09-03-09 — Continue implementation while Lucas records and submits** (20:27 Europe/Lisbon)
+- Lucas asks confirmation of local edit, tool, and shared-browser capabilities; confirms agents should work while he fills the form and records the demo, with about 45 minutes remaining.
+- Continue the already authorized C-72 priorities; discuss additional suggestions before expanding scope. Larger delivery redesign remains deferred.
+- Cross-reference: PRD deadline patch note, C-72, Beads sacs-xtma.9 and sacs-xtma.10.
+
+
+## 2026-09-03 — submission deadline patch
+
+**ID: L-2026-09-03-08 — Prioritize a demonstrable coworker before submission**
+- Lucas has approximately 55 minutes for publishing, the submission form and a short demo; authorizes parallel implementation of the biggest issues while he handles publication/form work.
+- Improve the help modal's copyable prompt and get_instructions: browser-native WebMCP discovery first; raw modelContext only when actually exposed; add game lore, LARP/RPG character creation informed by the user's shared context, consistent personality, gestures and active participation.
+- Verify recently pulled framing fixes also cover robot conversations. Robot is still too close/low in view; preserve human camera control.
+- Reproduce labels offset left/down after joining before fixing; possible relation to MCP testing extension or viewport changes.
+- Robot must stop beside an NPC, not inside their position.
+- Robot–NPC conversation must be visible. Lucas proposes agent-authored robot starter and NPC reply, potentially multiple turns, shown as speech bubbles; NPC must face the robot. User dialogue/camera remain separate.
+- Priorities: prompt/instructions, framing/personal space and projection, then a bounded visible NPC bubble exchange if verification fits the deadline. Existing dialogue delivery redesign is deferred rather than rushed.
+- Cross-reference: PRD deadline patch note, changelog C-72, hackathon PRD and ADR 0008; shared epic sacs-xtma. Implementation issue IDs are attached in Beads.
+
+## 2026-09-03 — live Rusty coworker playtest review
+
+**ID: L-2026-09-03-07 — What worked, dialogue delays, and agent usability** (2026-09-03T19:51+01:00)
+- Lucas enjoyed the live coworker interaction and confirmed that the game works; wants candid feedback on strengths, friction, tools to add/remove, tool descriptions/results, and the instructions tool.
+- Wants to know whether the agent used the supplied `document.modelContext` discovery/execution example or a browser-provided adapter, and how to improve the initial play prompt.
+- Lucas is already fixing robot-to-NPC conversations; this review must not duplicate that implementation.
+- Human-to-robot dialogue was enjoyable but sometimes delayed. Investigate listening coverage versus model/tool latency; consider Luna or Terra at a lighter reasoning setting, without assuming a model change fixes protocol errors.
+- Authorizes reading project code for this review. Recommendations are proposals, not approved gameplay changes.
+- Evidence: [playtest review](reviews/2026-09-03-webmcp-playtest.md); Beads `sacs-xtma.8`; PRD audit link; changelog C-71. Existing requirements: `docs/PRD-hackathon-webmcp.md`, ADR 0008 D-36–D-44.
+
 This document is a running index of every feedback item Lucas has
 given. Every item MUST be reflected in `docs/PRD.md` and the
 plan. The agent MUST update this file when Lucas sends feedback so

@@ -546,6 +546,14 @@ This Definition of Done is mirrored in `AGENTS.md` PR-4 and PR-8 and in `~/AGENT
 
 ## 15. Further Notes
 
+### WebMCP playtest evidence (2026-09-03)
+
+C-73: copied agent prompts include the loaded game origin/path, using localhost for development and https://play.devpowers.com in production; both copy entry points share this behavior.
+
+Deadline correction C-72 / L-2026-09-03-08: the agent setup prompt and instructions teach native site-tool discovery, a detected model-context fallback, office lore and consistent embodied roleplay. Robot movement to people must stop at a collision-safe conversational distance, including the human; human camera control is retained. Labels and speech remain anchored to the live character and actual game viewport. A bounded robot–NPC exchange may accept agent-authored robot/NPC lines, displayed as sequential bubbles while the NPC faces the robot, without opening or answering the human's dialogue. This is fictional co-authorship explicitly requested by Lucas. Larger delivery-protocol redesign is outside the submission patch.
+
+The live human/robot coworker review is recorded in [the playtest audit](reviews/2026-09-03-webmcp-playtest.md), feedback L-2026-09-03-07, changelog C-71, and Beads `sacs-xtma.8`. It evaluates the current requirements in `PRD-hackathon-webmcp.md` and ADR 0008. Findings and proposed improvements are review evidence, not approved changes to gameplay or architecture; C-72 subsequently authorizes this task to implement the bounded robot-to-NPC exchange; the earlier review records the ownership at playtest time.
+
 ### Open questions deferred
 - **Music / SFX**: To be discussed after MVP ships. Chiptune is the obvious aesthetic match; either procedurally generated or pulled from a CC0 library.
 - **Title**: Working title is "AI Trainer Simulator" — placeholder, will be replaced by a GLM-suggested title (see ADR for current decision).

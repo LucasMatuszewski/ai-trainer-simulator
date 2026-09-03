@@ -11,6 +11,23 @@ itself only keeps the resulting, current requirements.
 
 ## 2026-09-03
 
+### C-73 — Environment-aware copied game URL (L-2026-09-03-10)
+
+Both prompt display and copy buttons include the current page origin/path. Local play points to localhost; deployed play points to https://play.devpowers.com. Query strings and fragments are omitted. This avoids a separate build setting drifting from the page the user is playing.
+
+### C-72 — Deadline coworker usability patch (L-2026-09-03-08)
+
+- Strengthen copyable onboarding and instructions with native discovery, conditional modelContext fallback, lore and LARP participation.
+- Correct robot proximity to people and verify viewport/label anchoring; reproduce reported visual offsets.
+- Add a bounded, explicitly agent-authored robot–NPC bubble exchange if it can be verified before submission; face the NPC toward the robot without commandeering the human dialogue or camera.
+- Lucas handles publication and submission while this task handles verified local fixes. Full event-delivery redesign is deferred. Implementation: ADR 0008 D-44; Beads sacs-xtma.9 (prompt/schema), sacs-xtma.10 (proximity/labels), sacs-xtma.11 (NPC exchange). Human greetings also recheck modal priority and human location after approaching.
+
+### C-71 — Live WebMCP coworker playtest review (L-2026-09-03-07)
+
+- Lucas confirmed that playing with Rusty was fun and requested a code-grounded review of tools, instructions, prompts, latency, and model choice. He owns the robot-to-NPC conversation fix.
+- Evidence is preserved in `docs/reviews/2026-09-03-webmcp-playtest.md`, linked from the PRD and Beads `sacs-xtma.8`.
+- This is an audit record only: no new gameplay requirement or implementation decision is adopted. Proposed protocol, movement, and schema corrections await implementation planning.
+
 ### C-70 - F toggles fullscreen (L-2026-09-03)
 
 - **What changed:** F is a new global key binding toggling in-page fullscreen (`requestFullscreen`, with a webkit fallback). F11 still works but only removes the browser chrome in the other direction; F was chosen because it is reachable without leaving WASD.
@@ -847,4 +864,3 @@ A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
 - **Was:** Z and the roster's End Day button ended the day instantly.
 - **Now:** both triggers open a small confirm modal ("End the day?" / End day / Keep working). Enter or "End day" confirms; Escape, Z, "Keep working," or a backdrop click cancels. The modal freezes the simulation clock like every other blocking modal. The **WebMCP `end_day` tool deliberately bypasses the modal** — a tool call is already deliberate.
 - **Scope:** bounded UI safety polish; new `src/ui/end-day-modal.ts`, one clock blocker (`endDayModalOpen`), help-modal control text updated. No ADR.
-

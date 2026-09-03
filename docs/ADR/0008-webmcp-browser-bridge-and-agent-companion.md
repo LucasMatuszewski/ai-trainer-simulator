@@ -132,3 +132,9 @@ Measured at 2.6 s to resolve in Chrome against the 25 s ceiling.
 `ends` exists so the agent writes the exit line in character ("Anyway, I should get back to the build") instead of the player facing a generic Close button. It also drops the minimum option count from 2 to 1: an opener may reasonably offer a single "sure, what's up?", and the old floor of 2 was written when only the human could start a conversation.
 
 Options accept plain strings as well as `{text, ends}` objects. Agents overwhelmingly send strings, and rejecting those to force an object shape would be pedantry.
+
+## Decision D-44 — Visible, bounded robot–NPC co-authorship (C-72, 2026-09-03)
+
+For the submission, `agent_talk_to_npc({npcId,line,reply})` accepts both fictional lines from the external agent. It does not invoke another model, open the human's dialogue, select human options, or change quest/economy state. One tick-driven exchange holds the NPC, walks the robot to a safe nearby spot, faces both actors, emits the robot line, then the NPC reply three seconds later, and releases the NPC four seconds after that. Unavailable actors, movement failure, a 25-second approach limit, human interaction, or leaving the office cancel the exchange without a delayed reply. The existing NPC conversation hold is reused exclusively; cancellation precedes any human acquisition of that hold.
+
+Human greetings check blocking overlays both before and after the awaited walk and reject a stale human position. NPC approaches prefer 1.75 metres and may widen to 2.75 metres around blocked furniture, with destinations at least 1.5 metres from the human observer. No human camera adjustment is made. This bounded addition is separate from the deferred durable dialogue-delivery redesign. Tracking: sacs-xtma.11; prompt/schema sacs-xtma.9; proximity/labels sacs-xtma.10.
