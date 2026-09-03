@@ -819,3 +819,11 @@ A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
 - **One source:** the title footer and startup console must import the same constant. The private `package.json` version and save-schema `saveVersion` remain separate technical metadata.
 - **Immutable identity:** `v2026.09.02-10` already names the preceding committed documentation build, so it is not reused for different gameplay code. The next committed game build is `v2026.09.02-11` (or the new date's `-01`).
 - **Tracking:** Beads `sacs-xtma.4`; architecture D-33.
+
+### C-69 — End Day asks for confirmation (2026-09-03)
+
+- **Source:** Lucas relaying the C-66 audit finding ("Renata and the UI already promise Z to end the day, but no Z listener exists") — the listener had in fact shipped with C-66, so the tutorial no longer lies; Lucas then asked for a confirmation modal because "modal would prevent accidental Z end day, it's quite easy to hit."
+- **Was:** Z and the roster's End Day button ended the day instantly.
+- **Now:** both triggers open a small confirm modal ("End the day?" / End day / Keep working). Enter or "End day" confirms; Escape, Z, "Keep working," or a backdrop click cancels. The modal freezes the simulation clock like every other blocking modal. The **WebMCP `end_day` tool deliberately bypasses the modal** — a tool call is already deliberate.
+- **Scope:** bounded UI safety polish; new `src/ui/end-day-modal.ts`, one clock blocker (`endDayModalOpen`), help-modal control text updated. No ADR.
+

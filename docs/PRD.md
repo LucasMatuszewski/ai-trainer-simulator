@@ -69,7 +69,7 @@ The user's explicit request: "I want to simulate that I'm moving the direction o
 - **Esc** = open the in-game menu (Career, Inventory, Settings, Save, Quit to title). Also closes the dialogue overlay if one is open.
 - **Tab** = toggle the office roster panel (the right-side card list of coworkers).
 - **M** = mute / unmute audio (when added in a later phase).
-- **Z** = end the current day (same action as the roster's End Day button).
+- **Z** = end the current day (same action as the roster's End Day button); both ask for confirmation first, while the WebMCP `end_day` tool skips it (C-69).
 - **?** (Shift+/) or **F1** = open the help modal; the top-right `?` button opens the same modal (C-66).
 - **F3** = toggle the optional performance meter.
 

@@ -5,6 +5,14 @@ given. Every item MUST be reflected in `docs/PRD.md` and the
 plan. The agent MUST update this file when Lucas sends feedback so
 nothing is lost again.
 
+## 2026-09-03 — end-day safety and UI text size
+
+**ID: L-2026-09-03-01 — End Day (Z and button) must confirm; modal copy must be large**
+- Relayed the C-66 audit finding ("Renata and the UI already promise Z to end the day, but no Z listener exists") for verification. Resolution: the Z listener did ship with C-66, so the tutorial is no longer lying.
+- New requirement: Z and the roster End Day button open a **confirmation modal** first — "modal would prevent accidental Z end day, it's quite easy to hit." Both triggers confirm (Lucas chose "both" over "Z only"). The **WebMCP `end_day` tool bypasses the modal** — a tool call is already deliberate. Implemented as C-69.
+- On seeing the modal live: "this text should be bigger, **never use so small fonts**." Body copy bumped 15px → 19px, buttons 15px → 16px, title 18px → 20px. Standing rule for all future UI surfaces.
+- **Cross-reference:** C-69 in `docs/CHANGELOG.md`; `src/ui/end-day-modal.ts`; `src/style.css` (`.endday-*`).
+
 ## 2026-09-02 — four-period day, real course simulation, and multiplayer vision
 
 **ID: L-2026-09-02-05 — Dedicated Lunch period with a shorter 3/2/3/2 day**
