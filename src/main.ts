@@ -39,6 +39,7 @@ import { approachSpotFor } from "./content/npc-approach";
 import type { GameState, NPC, NpcId } from "./types";
 import { mountHud, renderHud, renderHudClock, showToast, type HudElements } from "./ui/hud";
 import { mountFpsMeter, type FpsMeter } from "./ui/fps-meter";
+import { positionHoverLabel } from "./ui/hover-label-position";
 import { mountTitleScreen, mountCharacterCreate, showDailySummary, showGameOver } from "./ui/title";
 import { mountOfficeRoster, rosterStatusFor, type OfficeRosterHandle } from "./ui/office-roster";
 import {
@@ -908,8 +909,7 @@ function updateHoverLabel(): void {
       head.project(engine.camera);
       if (head.z <= 1 && head.z >= -1) {
         hoverLabel.textContent = `${snapshot.name} - AI Coworker`;
-        hoverLabel.style.left = `${(head.x * 0.5 + 0.5) * rect.width}px`;
-        hoverLabel.style.top = `${(-head.y * 0.5 + 0.5) * rect.height}px`;
+        positionHoverLabel(hoverLabel, head, rect);
         hoverLabel.hidden = false;
         return;
       }
@@ -940,10 +940,8 @@ function updateHoverLabel(): void {
     hoverLabel.hidden = true;
     return;
   }
-  const x = (head.x * 0.5 + 0.5) * rect.width;
-  const y = (-head.y * 0.5 + 0.5) * rect.height;
   hoverLabel.textContent = `${npc.name} - ${npc.role}`;
-  hoverLabel.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
+  positionHoverLabel(hoverLabel, head, rect);
   hoverLabel.hidden = false;
 }
 
