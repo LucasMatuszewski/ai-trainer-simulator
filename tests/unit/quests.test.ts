@@ -33,19 +33,31 @@ describe("getActiveQuest", () => {
     expect(q?.id).toBe("q-intro-1");
   });
 
-  it("advances to 'Talk to Bartek' once the intro cinematic has been seen", () => {
-    // The intro cinematic sets the intro-seen flag; only then is the
-    // walker allowed past q-intro-1.
+  it("sends the player to RENATA first, not Bartek", () => {
+    // Lucas, 2026-09-03: the first quest is the receptionist, because she is
+    // the tutorial. Bartek-first asked the player to cross an office before
+    // anyone had told them how to walk.
     const state = initialGameState();
     state.flags["intro-seen"] = true;
     const q = getActiveQuest(state);
     expect(q).toBeDefined();
-    expect(q?.id).toBe("q-talk-bartek");
+    expect(q?.id).toBe("q-talk-renata");
+    expect(q?.who).toBe("renata");
+  });
+
+  it("advances to 'Talk to Bartek' only once Renata's tutorial is finished", () => {
+    const state = initialGameState();
+    state.flags["intro-seen"] = true;
+    expect(getActiveQuest(state)?.id).toBe("q-talk-renata");
+
+    state.flags["renata-tut-finished"] = true;
+    expect(getActiveQuest(state)?.id).toBe("q-talk-bartek");
   });
 
   it("keeps q-talk-bartek active until the player accepts the contract", () => {
     const state = initialGameState();
     state.flags["intro-seen"] = true;
+    state.flags["renata-tut-finished"] = true;
     const before = getActiveQuest(state);
     expect(before?.id).toBe("q-talk-bartek");
     state.flags["got-acme-contract"] = true;
@@ -74,6 +86,7 @@ describe("getActiveQuest", () => {
     // regression guard: if someone reorders the array, this catches it.)
     const state: GameState = { ...initialGameState(), day: 1 };
     state.flags["intro-seen"] = true;
+    state.flags["renata-tut-finished"] = true; // skip the tutorial
     state.flags["got-acme-contract"] = true; // skip q-talk-bartek
     const afterBartek = getActiveQuest(state);
     expect(afterBartek?.id).toBe("q-accept-tutoring");

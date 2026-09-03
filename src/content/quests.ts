@@ -45,15 +45,31 @@ export const QUESTS: Quest[] = [
   // Day 1
   {
     id: "q-intro-1",
-    title: "Find your desk",
-    description: "You're the new IT trainer. Walk in, look around, don't stare at the receptionist too long.",
+    title: "Get your bearings",
+    description: "First day. You are in reception. Someone behind the desk is already looking at you.",
+    chainsTo: "q-talk-renata",
     completionFlag: "intro-seen",
+    day: 1,
+  },
+  {
+    // The tutorial, and the first thing the player is asked to do
+    // (Lucas, 2026-09-03: "the first quest should be to talk with Renata on
+    // the reception, not Bartek directly"). Renata teaches the controls, so
+    // she has to come before any quest that assumes the player can walk
+    // across the office - which the old Bartek-first order did.
+    id: "q-talk-renata",
+    title: "Check in with Renata",
+    description: "Reception first. Renata runs this office in every way that matters, and she will tell you how anything here works - including how to move.",
+    who: "renata",
+    reward: "You learn how to play",
+    chainsTo: "q-talk-bartek",
+    completionFlag: "renata-tut-finished",
     day: 1,
   },
   {
     id: "q-talk-bartek",
     title: "Talk to Bartek",
-    description: "Bartek is your team lead. He needs to know you exist before HR notices you're not in the system.",
+    description: "Renata radioed ahead. Bartek is on his way over - he is your team lead, and he needs to know you exist before HR notices you are not in the system.",
     who: "bartek",
     reward: "+relationship with Bartek",
     chainsTo: "q-accept-tutoring",

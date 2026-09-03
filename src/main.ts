@@ -35,6 +35,7 @@ import {
 import { CORRIDOR_WAYPOINTS, buildWaypointEdges, DEFAULT_MAX_EDGE_LENGTH } from "./content/corridor-waypoints";
 import { WORLD_ROOMS } from "./content/world-layout";
 import { NPCS, OBSTACLES } from "./content/npcs";
+import { approachSpotFor } from "./content/npc-approach";
 import type { GameState, NPC, NpcId } from "./types";
 import { mountHud, renderHud, renderHudClock, showToast, type HudElements } from "./ui/hud";
 import { mountFpsMeter, type FpsMeter } from "./ui/fps-meter";
@@ -73,6 +74,13 @@ const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
  * The title screen reads it so a judge can confirm the integration is
  * live before pressing New Game.
  */
+/**
+ * Set once Bartek has been sent over after Renata's tutorial, so the summons
+ * fires exactly once per game rather than every time the store publishes.
+ */
+let bartekSummoned = false;
+/** North of this z the player is in reception rather than the main office. */
+const OFFICE_RECEPTION_BOUNDARY_Z = 9.5;
 let webmcpStatus: RegisterResult = { supported: false, namespace: null, registered: 0, failed: 0 };
 /**
  * Portrait glyph for the agent companion. NOT an emoji: the game renders
@@ -222,6 +230,7 @@ function showCharacterCreate(): void {
     uiRoot,
     (data) => {
       game.dispatch({ type: "reset" });
+      bartekSummoned = false;
       game.dispatch({ type: "load", state: { ...game.get(), character: { ...data }, stats: applyTrait(data.trait, game.get().stats) } });
       // First time the player reaches the office: play the day-1 intro
       // cinematic. On Continue (returning save), skip it.
@@ -608,6 +617,14 @@ function startOffice(playIntro = false): void {
     if (hud) renderHud(hud, game.get());
     if (questLog) questLog.refresh(game.get());
     refreshRoster();
+    // Lucas, 2026-09-03: "Bartek comes when it is finished". Renata's
+    // tutorial is now quest one, and the player should not then have to go
+    // hunting for a team lead they have never met - he walks over to them.
+    // Fires once per game; `bartekSummoned` guards against the store
+    // publishing many times while he is still walking.
+    if (!bartekSummoned && game.get().flags["renata-tut-finished"] === true) {
+      summonBartek();
+    }
     // Cash register SFX when cash goes up.
     const cur = game.get();
     if (hud) {
@@ -1166,6 +1183,66 @@ function advanceOfficePeriods(periodCount: number): void {
  * get_pending_dialogue_request, then a fresh request is opened so the
  * conversation can continue for as long as either side wants.
  */
+/**
+ * Send Bartek over to the player after Renata finishes the tutorial.
+ *
+ * Uses the ordinary schedule-override path, so he walks with the same
+ * pathfinding, avoidance and walk cycle as any other NPC trip - no teleport,
+ * and he is interruptible by the next period like everyone else.
+ */
+function summonBartek(): void {
+  const controller = sceneObjects?.npcController;
+  const playerPosition = controls?.getPlayerPosition();
+  if (!controller || !playerPosition) return;
+  // He cannot walk over if he has not arrived at the office yet; leave the
+  // flag unset so this retries on the next store publish.
+  if (!controller.hasArrived("bartek")) return;
+
+  const bartek = sceneObjects?.npcObjects.bartek;
+  const from = bartek
+    ? { x: bartek.position.x, z: bartek.position.z }
+    : { x: NPCS.find((n) => n.id === "bartek")!.position.x, z: NPCS.find((n) => n.id === "bartek")!.position.z };
+
+  // Where he walks to depends on where the player finished the tutorial.
+  //
+  // Renata is in reception, so that is usually where the player is standing,
+  // and Bartek's desk is at the far west of the main office. He meets them at
+  // the office side of the reception door rather than walking into reception:
+  // a shorter, better-connected route, and the more natural thing for a team
+  // lead to do anyway. If the player has already wandered into the office, he
+  // comes to them properly.
+  //
+  // KNOWN LIMITATION, measured 2026-09-03: he sets off every time and the
+  // route always exists (planNpcPath returns it), but he jams in the narrow
+  // west desk aisle around (-8, 7.3) in roughly half of runs and paces there
+  // until the next period re-plans him. That is the C-48 blocked/escape
+  // ladder meeting a crowded corridor - a pre-existing limit of long
+  // cross-office NPC trips, not something this summon introduced, and the
+  // system ADR 0008 D-36 deliberately stayed out of. The quest still advances
+  // correctly either way; the player can walk to him instead of the reverse.
+  const playerInReception = playerPosition.z > OFFICE_RECEPTION_BOUNDARY_Z;
+  const spot = playerInReception
+    ? { position: { x: 0, y: 0, z: 8.4 }, face: 0 }
+    : approachSpotFor(
+        { x: playerPosition.x, z: playerPosition.z },
+        from,
+        WORLD_BOUNDS,
+        [...OBSTACLES, ...WORLD_COLLISION_WALLS],
+      );
+
+  bartekSummoned = true;
+  controller.setOverride("bartek", { position: spot.position, face: spot.face, state: "walking" });
+  if (hud) {
+    showToast(
+      hud,
+      playerInReception
+        ? "Bartek is coming to meet you by the office door."
+        : "Bartek is heading over to meet you.",
+      "info",
+    );
+  }
+}
+
 function renderAgentTurn(line: string, options: readonly AgentTurnOption[]): void {
   const companion = agentCompanion;
   const broker = agentBroker;
