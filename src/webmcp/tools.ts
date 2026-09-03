@@ -228,7 +228,8 @@ const implementations: ToolImplementation[] = [
       parameters: {
         id: {
           type: "string",
-          description: "The NPC identifier, such as bartek.",
+          description: "The NPC identifier.",
+          example: "bartek",
           required: true,
         },
       },
@@ -370,6 +371,7 @@ const implementations: ToolImplementation[] = [
           type: "string",
           description: "The option id returned by get_dialogue or talk_to_npc.",
           required: true,
+          example: "opt-1",
         },
       },
     },

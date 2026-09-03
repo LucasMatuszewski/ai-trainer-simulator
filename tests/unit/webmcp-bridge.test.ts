@@ -155,6 +155,17 @@ describe("registerWebmcpTools", () => {
     expect(navHost.registered.length).toBe(TOOLS.length);
   });
 
+  it("gives every parameter of every tool a concrete example", () => {
+    // L-2026-09-03-04: without this, inspectors render "example_string" and
+    // an agent has to infer the shape from prose. Asserted here as well as
+    // in e2e so a new tool missing an example fails in seconds, not minutes.
+    for (const tool of TOOLS) {
+      for (const [param, spec] of Object.entries(tool.parameters)) {
+        expect(spec.example, `${tool.name}.${param} needs an example`).toBeDefined();
+      }
+    }
+  });
+
   it("survives a host whose registerTool throws, and keeps registering the rest", () => {
     let calls = 0;
     const host = {

@@ -18,6 +18,10 @@
  */
 
 import { test, expect, type Page } from "@playwright/test";
+// Asserting against the real bounds rather than a hardcoded "2-4": the
+// minimum dropped to 1 when agent-initiated conversations landed, and a
+// literal in the test would have to be chased every time they move.
+import { MAX_OPTIONS, MIN_OPTIONS } from "../../src/webmcp/agent-dialogue";
 
 test.use({
   baseURL: "http://localhost:5173",
@@ -248,7 +252,7 @@ test("the agent writes the companion's dialogue and reads back the human's choic
   expect(await callExpectingError(page, "supply_dialogue", {
     line: "too many",
     options: ["a", "b", "c", "d", "e"],
-  })).toContain("2-4");
+  })).toContain(`${MIN_OPTIONS}-${MAX_OPTIONS}`);
 
   // AC-AUTH-02: the agent's words render in the game's own dialogue UI.
   const LINE = "You must be the new trainer. I do QA, which means I find out what Tomek did.";
@@ -272,6 +276,134 @@ test("the agent writes the companion's dialogue and reads back the human's choic
   } | null;
   expect(next!.turn).toBe(2);
   expect(next!.lastPlayerChoice).toBe(OPTIONS[0]);
+});
+
+test("the agent can open the conversation itself, and the long-poll resolves on the click", async ({ page }) => {
+  await installHost(page);
+  await startGame(page);
+  await call(page, "agent_join", { name: "Rusty", persona: "a sarcastic QA robot" });
+  await page.waitForTimeout(500);
+
+  // L-2026-09-03-04: the agent walks up and speaks first - nobody clicked it.
+  await call(page, "start_conversation", {
+    line: "Hey - you're the new trainer, right? I have a bug with your name on it.",
+    options: ["What bug?", "Not now, I'm busy.", { text: "Goodbye, robot.", ends: true }],
+  });
+  await page.waitForTimeout(400);
+
+  await expect(page.locator(".dialogue")).toBeVisible();
+  expect(await page.locator(".dialogue .options button").allTextContents()).toEqual([
+    "What bug?",
+    "Not now, I'm busy.",
+    "Goodbye, robot.",
+  ]);
+  // The agent writes its own goodbye rather than getting a bare Close button.
+  expect(await page.locator(".dialogue .options button.ends").count()).toBe(1);
+
+  // The long-poll must resolve when the human CLICKS, not when it times out.
+  // That is the whole point: WebMCP has no push, so this is how a reply
+  // reaches the agent immediately instead of on a 5-15s poll.
+  const startedAt = Date.now();
+  const waiting = page.evaluate(() => window.__mcp!.call("wait_for_player_message", {}));
+  await page.waitForTimeout(600);
+  await page.locator(".dialogue .options button").first().click();
+
+  const response = await waiting;
+  const message = JSON.parse(response.content[0]!.text) as {
+    waiting: boolean;
+    choice?: string;
+    optionIndex?: number;
+  };
+  expect(message.waiting).toBe(false);
+  expect(message.choice).toBe("What bug?");
+  expect(message.optionIndex).toBe(0);
+  // Far under the 25s ceiling - proof it woke on the click, not the timer.
+  expect(Date.now() - startedAt).toBeLessThan(10_000);
+});
+
+test("picking the option the agent marked as ending closes the conversation", async ({ page }) => {
+  await installHost(page);
+  await startGame(page);
+  await call(page, "agent_join", { name: "Rusty", persona: "qa robot" });
+  await page.waitForTimeout(500);
+  await call(page, "start_conversation", {
+    line: "Anyway.",
+    options: ["Tell me more.", { text: "See you around.", ends: true }],
+  });
+  await page.waitForTimeout(400);
+
+  await page.locator(".dialogue .options button.ends").click();
+  await page.waitForTimeout(400);
+  await expect(page.locator(".dialogue")).toHaveCount(0);
+});
+
+test("the raw movement controls move the companion and respect collision", async ({ page }) => {
+  await installHost(page);
+  await startGame(page);
+  await call(page, "agent_join", { name: "Rusty", persona: "qa robot" });
+  await page.waitForTimeout(400);
+
+  const turned = (await call(page, "agent_turn", { degrees: 90 })) as { facingDegrees: number };
+  expect(turned.facingDegrees).toBe(90);
+
+  const before = await page.evaluate(() => window.__aitrainer!.inspectCompanion!());
+  const stepped = (await call(page, "agent_step", { direction: "forward", metres: 2 })) as {
+    movedMetres: number;
+  };
+  expect(stepped.movedMetres).toBeGreaterThan(0);
+  const after = await page.evaluate(() => window.__aitrainer!.inspectCompanion!());
+  expect(after?.world).not.toEqual(before?.world);
+
+  expect(await callExpectingError(page, "agent_step", { direction: "sideways", metres: 1 }))
+    .toContain("forward, back, left, right");
+});
+
+test("the admin tools are gone and the instructions tool explains the protocol", async ({ page }) => {
+  await installHost(page);
+  await page.goto("http://localhost:5173/");
+  await page.waitForTimeout(1200);
+
+  const names = await page.evaluate(() =>
+    window.__mcp!.list().map((t) => (t as { name: string }).name),
+  );
+  // ADR 0008 D-40 / L-2026-08-30-01: WebMCP is a player surface. An agent
+  // that can grant itself money is not playing the game.
+  expect(names).not.toContain("set_flag");
+  expect(names).not.toContain("add_relationship");
+  expect(names).toContain("get_instructions");
+
+  const instructions = (await call(page, "get_instructions")) as { instructions: string };
+  expect(instructions.instructions).toContain("PLAYER in this office game");
+  expect(instructions.instructions).toContain("wait_for_player_message");
+});
+
+test("every tool parameter carries a concrete example, and no-argument tools say so", async ({ page }) => {
+  // L-2026-09-03-04: inspectors were rendering {"target": "example_string"}.
+  await installHost(page);
+  await page.goto("http://localhost:5173/");
+  await page.waitForTimeout(1200);
+
+  const tools = await page.evaluate(() => window.__mcp!.list());
+  for (const tool of tools) {
+    const t = tool as {
+      name: string;
+      inputSchema: {
+        properties: Record<string, { examples?: unknown[] }>;
+        examples?: unknown[];
+      };
+    };
+    const names = Object.keys(t.inputSchema.properties);
+    if (names.length === 0) {
+      expect(t.inputSchema.examples, `${t.name} should show {} as its example`).toEqual([{}]);
+      continue;
+    }
+    for (const param of names) {
+      expect(
+        t.inputSchema.properties[param]!.examples,
+        `${t.name}.${param} needs a concrete example`,
+      ).toBeDefined();
+    }
+  }
 });
 
 test("agent-supplied markup is shown as text and never executed", async ({ page }) => {
