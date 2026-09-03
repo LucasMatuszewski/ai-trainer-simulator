@@ -472,6 +472,15 @@ html, body {
   position: absolute;
   left: 16px;
   bottom: 16px;
+  /* Above the quest log (z-index 11) and the roster. The panel had no
+   * stacking context at all, so on a 1280px viewport the quest log
+   * (right: 396px, width: 320px) sat on top of the dialogue's option
+   * row and swallowed the clicks - the buttons were visible, enabled
+   * and simply not pressable in that band. Found while driving an
+   * agent-authored conversation, but it affects hand-authored dialogue
+   * exactly the same way. A conversation panel should outrank the
+   * ambient HUD regardless. */
+  z-index: 20;
   background: var(--panel);
   border: 3px solid var(--panel-border);
   padding: 20px;

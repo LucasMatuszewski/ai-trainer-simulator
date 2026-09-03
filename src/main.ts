@@ -370,7 +370,13 @@ function startOffice(playIntro = false): void {
           }),
         listRooms: () => WORLD_ROOMS.map((room) => ({ id: room.id, name: room.name, floor: room.floor })),
         showBubble: (position, line) => built.npcController.showBubble(position, line),
-        spawn: { x: sceneObjects?.playerStart.x ?? 0, z: (sceneObjects?.playerStart.z ?? 0) + 1.5 },
+        // Spawn ON a corridor waypoint, not at an offset from the player
+        // start. The player starts at (0, 17.8) and an offset behind them
+        // landed at (0, 19.3) - past reception-entrance, off the walkable
+        // graph - so planNpcPath could not route anywhere and every
+        // agent_move_to failed with "no walkable route". reception-center
+        // is in the graph and directly in the player's view on spawn.
+        spawn: { x: 0, z: 14 },
       });
       agentCompanion = companion;
 
@@ -865,16 +871,16 @@ function pickFinalLine(state: GameState): string {
   return lines[idx]!;
 }
 
-function openDialogueWith(npc: NPC): void {
-  // Phase 3.3: when the player starts a conversation, clear any
-  // active inter-NPC speech bubble so the player is not visually
-  // overloaded with overlapping text. The bubble system lives in the
-  // NPC controller (C-61); clearing our own copy would be a no-op.
-  sceneObjects?.npcController.clearBubbles();
-  // C-54: the roster stays clickable while a dialogue is open; a new
-  // pick switches the conversation instead of silently keeping the
-  // old one (the controller's open() is a no-op while already open).
-  if (dialogue?.isOpen()) dialogue.close();
+/**
+ * Create the dialogue overlay on first use.
+ *
+ * Extracted from openDialogueWith because the agent companion needs the
+ * same controller (ADR 0008 D-37) and the lazy init used to live inside
+ * the NPC path only - so an agent conversation started before the player
+ * had ever talked to a colleague found `dialogue` still null and silently
+ * did nothing.
+ */
+function ensureDialogue(): DialogueController {
   if (!dialogue) {
     dialogue = createDialogue(uiRoot, () => {
       audio().tts.stop();
@@ -910,6 +916,20 @@ function openDialogueWith(npc: NPC): void {
       })();
     });
   }
+  return dialogue;
+}
+
+function openDialogueWith(npc: NPC): void {
+  // Phase 3.3: when the player starts a conversation, clear any
+  // active inter-NPC speech bubble so the player is not visually
+  // overloaded with overlapping text. The bubble system lives in the
+  // NPC controller (C-61); clearing our own copy would be a no-op.
+  sceneObjects?.npcController.clearBubbles();
+  // C-54: the roster stays clickable while a dialogue is open; a new
+  // pick switches the conversation instead of silently keeping the
+  // old one (the controller's open() is a no-op while already open).
+  if (dialogue?.isOpen()) dialogue.close();
+  const panel = ensureDialogue();
   // C-54: stage the conversation like a conversation. The player is
   // placed at a collision-clear spot 1.6 m from the NPC's LIVE
   // position (they wander - npc.position is just their desk), both
@@ -973,7 +993,7 @@ function openDialogueWith(npc: NPC): void {
   // C-54: no cameraDirector pan - the player IS at the conversation
   // spot now. The roster card keeps its highlight.
   roster?.setFocus(npc.id);
-  dialogue.open(npc, tree, treeKey);
+  panel.open(npc, tree, treeKey);
 }
 
 function openDebugMinigame(): void {
@@ -1090,9 +1110,10 @@ function advanceOfficePeriods(periodCount: number): void {
 function renderAgentTurn(line: string, options: readonly string[]): void {
   const companion = agentCompanion;
   const broker = agentBroker;
-  if (!companion || !broker || !dialogue) return;
+  if (!companion || !broker) return;
+  const panel = ensureDialogue();
 
-  dialogue.openAgentTurn(
+  panel.openAgentTurn(
     { name: companion.snapshot().name, role: "AI Coworker", emoji: "\u{1F916}" },
     line,
     options,
@@ -1108,7 +1129,8 @@ function renderAgentTurn(line: string, options: readonly string[]): void {
 function requestAgentTurn(): void {
   const companion = agentCompanion;
   const broker = agentBroker;
-  if (!companion || !broker || !dialogue) return;
+  if (!companion || !broker) return;
+  const panel = ensureDialogue();
 
   broker.request({
     companionName: companion.snapshot().name,
@@ -1119,7 +1141,7 @@ function requestAgentTurn(): void {
     lastPlayerChoice: broker.lastChoice(),
   });
 
-  dialogue.openAgentTurn(
+  panel.openAgentTurn(
     { name: companion.snapshot().name, role: "AI Coworker", emoji: "\u{1F916}" },
     "...",
     ["(waiting for the agent to think)"],
@@ -1283,10 +1305,32 @@ declare global {
       teleport: (x: number, z: number, yaw: number) => void;
       /** C-65: toggle the F3 frame-time meter; returns its new state. */
       toggleFps: () => boolean;
+      /** ADR 0008: inspect the agent companion, so an e2e can assert it
+       *  is really in the scene rather than eyeballing a screenshot. */
+      inspectCompanion: () => {
+        active: boolean;
+        inScene: boolean;
+        world: { x: number; y: number; z: number } | null;
+        childCount: number;
+      } | null;
     };
   }
 }
 window.__aitrainer = {
+  inspectCompanion: () => {
+    if (!agentCompanion || !engine) return null;
+    let found: THREE.Object3D | null = null;
+    engine.scene.traverse((o) => {
+      if (o.name === "agent-companion-body") found = o;
+    });
+    const node = found as THREE.Object3D | null;
+    return {
+      active: agentCompanion.isActive(),
+      inScene: node !== null,
+      world: node ? node.getWorldPosition(new THREE.Vector3()) : null,
+      childCount: node ? node.children.length : 0,
+    };
+  },
   getPlayer: () => {
     if (!controls) return { x: 0, y: 0, z: 0 };
     const p = controls.getPlayerPosition();
