@@ -25,6 +25,8 @@ import { runPeriodEvent, registerNpcController } from "./game/events";
 import { registerPlayerActions } from "./webmcp/tools";
 import { registerWebmcpTools, type RegisterResult } from "./webmcp/bridge";
 import { registerAgentCompanion } from "./webmcp/tools";
+import { approachHumanConversation } from "./webmcp/companion-conversation";
+import { createNpcExchange, type NpcExchange } from "./webmcp/npc-exchange";
 import { createAgentCompanion, type AgentCompanion } from "./engine/agent-companion";
 import {
   createDialogueBroker,
@@ -111,6 +113,7 @@ let webmcpStatus: RegisterResult = { supported: false, namespace: null, register
 const AGENT_PORTRAIT = "[+]";
 let agentCompanion: AgentCompanion | null = null;
 let agentBroker: DialogueBroker | null = null;
+let npcExchange: NpcExchange | null = null;
 /** Turn counter within the current agent conversation, for context. */
 let agentTurn = 0;
 let engine: Engine | null = null;
@@ -239,6 +242,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 function setScreen(next: Screen): void {
+  npcExchange?.cancel();
   closeDialogueForScreenTransition(dialogue);
   const prevScreen = screen;
   screen = next;
@@ -449,6 +453,7 @@ function startOffice(playIntro = false): void {
                 : npc.position,
             };
           }),
+        getPlayerPosition: () => controls?.getPlayerPosition() ?? null,
         listRooms: () => WORLD_ROOMS.map((room) => ({ id: room.id, name: room.name, floor: room.floor })),
         showBubble: (position, line) => built.npcController.showBubble(position, line),
         // Spawn ON a corridor waypoint, and one the player can SEE.
@@ -471,19 +476,48 @@ function startOffice(playIntro = false): void {
       );
       agentBroker = broker;
 
+      const humanBusy = () => screen !== "office" || !!dialogue?.isOpen() || !!helpModal?.isOpen() || !!webmcpModal?.isOpen() || !!endDayModal?.isOpen() || cinematicPlaying;
+      npcExchange = createNpcExchange({
+        isHumanBusy: humanBusy,
+        isActive: () => companion.isActive(),
+        getNpc: (id) => {
+          const object = built.npcObjects[id as NpcId];
+          return object ? { position: object.position, visible: object.visible } : null;
+        },
+        getRobot: () => companion.snapshot(),
+        moveTo: (id) => companion.moveTo(id),
+        stopRobot: () => companion.stop(),
+        holdNpc: (id) => built.npcController.setTalkingToPlayer(id as NpcId | null),
+        faceEachOther: (id) => {
+          const object = built.npcObjects[id as NpcId];
+          if (!object) return;
+          npcFaceAnimations.delete(id as NpcId);
+          const robot = companion.snapshot().position;
+          companion.faceTowards(object.position);
+          object.rotation.y = Math.atan2(robot.x - object.position.x, robot.z - object.position.z);
+        },
+        sayRobot: (line) => { companion.say(line); },
+        sayNpc: (id, line) => {
+          const object = built.npcObjects[id as NpcId];
+          if (object) built.npcController.showBubble(object.position, line);
+        },
+      });
+
       registerAgentCompanion({
         join: (name, persona) => companion.join(name, persona),
         leave: () => {
+          npcExchange?.cancel();
           broker.reset();
           agentTurn = 0;
           if (dialogue?.isAgentTurn()) dialogue.close();
           return companion.leave();
         },
         isActive: () => companion.isActive(),
-        step: (direction, metres) => companion.step(direction, metres),
+        step: (direction, metres) => { npcExchange?.cancel(); return companion.step(direction, metres); },
         turn: (degrees) => companion.turn(degrees),
-        lookAround: () => companion.lookAround(),
-        moveTo: (target) => companion.moveTo(target),
+        lookAround: () => ({ ...(companion.lookAround() as Record<string, unknown>), npcExchange: npcExchange?.snapshot() ?? null }),
+        talkToNpc: (id, line, reply) => npcExchange!.start(id, line, reply),
+        moveTo: (target) => { npcExchange?.cancel(); return companion.moveTo(target); },
         say: (line) => companion.say(line),
         peekDialogueRequest: () => broker.peek(),
         supplyDialogue: (line, options) => {
@@ -491,14 +525,16 @@ function startOffice(playIntro = false): void {
           return result.ok ? { ok: true } : { ok: false, reason: result.reason };
         },
         startConversation: async (line, options) => {
-          // Walk over BEFORE speaking (Lucas, 2026-09-03): a robot that opens
-          // a dialogue from across the room reads as a popup, not a coworker.
-          // The walk is the same pathfinding + walk cycle the NPCs use, so
-          // the player watches it approach.
-          const playerPosition = controls?.getPlayerPosition();
-          if (playerPosition) {
-            await companion.walkToPoint({ x: playerPosition.x, z: playerPosition.z });
-          }
+          npcExchange?.cancel();
+          const approach = await approachHumanConversation({
+            isBusy: humanBusy,
+            getHuman: () => controls?.getPlayerPosition() ?? null,
+            getRobot: () => companion.snapshot().position,
+            walk: (point) => companion.walkToPoint(point),
+          });
+          if (!approach.ok) return approach;
+          const human = controls?.getPlayerPosition();
+          if (human) companion.faceTowards(human);
           agentTurn = 1;
           const result = broker.startConversation(line, options);
           return result.ok ? { ok: true } : { ok: false, reason: result.reason };
@@ -1064,6 +1100,7 @@ function ensureDialogue(): DialogueController {
 }
 
 function openDialogueWith(npc: NPC): void {
+  npcExchange?.cancel();
   // Phase 3.3: when the player starts a conversation, clear any
   // active inter-NPC speech bubble so the player is not visually
   // overloaded with overlapping text. The bubble system lives in the
@@ -1349,10 +1386,14 @@ function requestAgentTurn(): void {
 
 /** The human walked up to the robot and clicked it. */
 function startAgentConversation(): void {
+  npcExchange?.cancel();
   if (agentCompanion?.isActive() !== true) return;
   // C-39's rule applies to the robot too: you talk to a face, not a back.
   const playerPosition = controls?.getPlayerPosition();
-  if (playerPosition) agentCompanion.faceTowards({ x: playerPosition.x, z: playerPosition.z });
+  if (playerPosition) {
+    agentCompanion.faceTowards({ x: playerPosition.x, z: playerPosition.z });
+    void agentCompanion.walkToPoint({ x: playerPosition.x, z: playerPosition.z });
+  }
   sceneObjects?.npcController.clearBubbles();
   if (dialogue?.isOpen()) dialogue.close();
   agentTurn = 1;
@@ -1444,6 +1485,7 @@ function frame(): void {
       // fallback is in character and the panel stays closable (AC-AUTH-05).
       if (agentCompanion?.isActive() === true) {
         agentCompanion.update(dt);
+        npcExchange?.update(dt);
         // markLate() keeps the turn PENDING on purpose. Resetting here was a
         // bug: a supply_dialogue arriving after the fallback then hit "no
         // conversation is waiting" and the agent's line vanished, so a slow

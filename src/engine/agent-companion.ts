@@ -211,6 +211,8 @@ export interface CompanionDeps {
   /** Live NPC positions, so a "walk to Bartek" tracks where Bartek is now. */
   listNpcs: () => readonly NpcLike[];
   listRooms: () => readonly RoomLike[];
+  /** Keep approach destinations clear of the human observer too. */
+  getPlayerPosition?: () => XZ | null;
   /** Speak through the shared bubble layer, keeping one pool and one style. */
   showBubble: (position: THREE.Vector3, line: string) => void;
   /** Where a joining companion appears (the office entrance). */
@@ -258,6 +260,8 @@ export interface AgentCompanion {
   leave: () => boolean;
   isActive: () => boolean;
   snapshot: () => CompanionSnapshot;
+  /** Cancel movement and any outstanding arrival wait. */
+  stop: () => void;
   /** Begin walking to a named target. Arrival is reported via snapshot. */
   moveTo: (targetName: string) => MoveOutcome;
   /** Begin a named move and wait for actual arrival; timeout stops the walk. */
@@ -398,19 +402,23 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       minX: o.minX - clearance, maxX: o.maxX + clearance,
       minZ: o.minZ - clearance, maxZ: o.maxZ + clearance,
     }));
+    for (const radius of distance === NPC_CONVERSATION_DISTANCE ? [distance, 2.25, 2.75] : [distance]) {
     for (let i = 0; i < 16; i++) {
       // Alternate sides, trying the shortest approach first.
       const offset = Math.ceil(i / 2) * (i % 2 ? 1 : -1) * Math.PI / 8;
       const destination = new THREE.Vector3(
-        point.x + Math.sin(heading + offset) * distance, 0,
-        point.z + Math.cos(heading + offset) * distance,
+        point.x + Math.sin(heading + offset) * radius, 0,
+        point.z + Math.cos(heading + offset) * radius,
       );
+      const human = deps.getPlayerPosition?.();
+      if (human && Math.hypot(destination.x - human.x, destination.z - human.z) < 1.5) continue;
       if (destination.x < deps.bounds.minX + clearance || destination.x > deps.bounds.maxX - clearance ||
           destination.z < deps.bounds.minZ + clearance || destination.z > deps.bounds.maxZ - clearance) continue;
       if (obstacles.some((o) => destination.x >= o.minX && destination.x <= o.maxX &&
           destination.z >= o.minZ && destination.z <= o.maxZ)) continue;
       const planned = planNpcPath(position, destination, deps.waypoints, deps.edges, obstacles);
       if (planned !== null) return planned;
+    }
     }
     return null;
   }
@@ -483,6 +491,8 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       movingTo = null;
       return true;
     },
+
+    stop: () => stopWalk({ arrived: false, reason: "walk cancelled" }),
 
     snapshot() {
       return {
@@ -714,7 +724,7 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
             stopWalk({ arrived: false, reason: "target person is no longer present" });
           } else if (npc !== undefined && trackedNpc !== null) {
             const separation = Math.hypot(npc.position.x - position.x, npc.position.z - position.z);
-            if (separation < 1.5 || separation > 2) {
+            if (separation < 1.5 || separation > 3) {
               const planned = trackedNpc.replans < 20 ? planApproach(npc.position, NPC_CONVERSATION_DISTANCE) : null;
               if (planned === null) {
                 stopWalk({ arrived: false, reason: "could not settle beside the target person" });

@@ -46,6 +46,7 @@ export interface AgentCompanionHooks {
     ok: boolean; reason?: string; position?: { x: number; z: number }; facingDegrees?: number;
   };
   moveTo: (target: string) => { ok: boolean; reason?: string; candidates?: string[]; target?: string };
+  talkToNpc?: (npcId: string, line: string, reply: string) => { ok: boolean; reason?: string };
   say: (line: string) => { ok: boolean; reason?: string; spoken?: string };
   peekDialogueRequest: () => unknown;
   supplyDialogue: (line: unknown, options: unknown) => { ok: boolean; reason?: string };
@@ -217,6 +218,10 @@ const AGENT_INSTRUCTIONS = [
   "and agent_turn({degrees}) provide fine positioning; a step also takes walking time.",
   "Use occasional agent_play_animation gestures (wave, facepalm, coffee-sip, fist-pump, shrug,",
   "stretch, nod). agent_say writes a visible bubble; it does not itself make an NPC answer.",
+  "Use agent_talk_to_npc({npcId, line, reply}) for a staged NPC exchange: author both short",
+  "fictional lines in character. The robot approaches; both face each other and speak in bubbles.",
+  "This is roleplay, not an independent NPC model or a quest action. Wait until npcExchange",
+  "in agent_look_around is null before another exchange. Human interaction takes priority.",
   "Do not claim tool actions or NPC responses that did not happen.",
   "",
   "CONVERSATIONS AND PRIORITY",
@@ -243,6 +248,26 @@ const AGENT_INSTRUCTIONS = [
 ].join("\n");
 
 const implementations: ToolImplementation[] = [
+  {
+    definition: {
+      name: "agent_talk_to_npc",
+      description: "Roleplay a visible exchange between YOUR robot and an NPC. You author both fictional lines; this does not open or choose the human's dialogue or change quests. The robot walks to a safe distance, both face each other, then robot and NPC speak in sequential bubbles. Returns immediately; inspect agent_look_around.npcExchange until it becomes null before another exchange. Human interaction cancels it.",
+      parameters: {
+        npcId: { type: "string", required: true, example: "bartek", description: "Exact NPC id from list_npcs, e.g. bartek." },
+        line: { type: "string", required: true, maxLength: 120, example: "Can we call this bug AI-powered?", description: "Your robot's opening line, at most 120 characters. Keep it short for overhead bubbles." },
+        reply: { type: "string", required: true, maxLength: 120, example: "Only if Sales has already sold it.", description: "The fictional NPC reply you author in that coworker's voice, at most 120 characters." },
+      },
+    },
+    validate: (call) => requiredString(call, "npcId") || requiredString(call, "line") || requiredString(call, "reply"),
+    execute: (call) => {
+      const companion = requireCompanion();
+      if ("error" in companion) return { ok: false, error: companion.error };
+      if (!companion.isActive()) return { ok: false, error: "call agent_join first" };
+      if (!companion.talkToNpc) return { ok: false, error: "NPC exchanges are not available in this scene" };
+      const result = companion.talkToNpc(call.parameters.npcId as string, call.parameters.line as string, call.parameters.reply as string);
+      return result.ok ? { ok: true, data: { started: true, npcId: call.parameters.npcId, next: "Watch npcExchange in agent_look_around; keep listening for the human." } } : { ok: false, error: result.reason ?? "could not start NPC exchange" };
+    },
+  },
   {
     definition: {
       name: "get_state",

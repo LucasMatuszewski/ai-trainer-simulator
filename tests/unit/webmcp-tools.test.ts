@@ -199,3 +199,11 @@ describe("deadline coworker protocol", () => {
     expect(wait.parameters.timeout_seconds!.example).toBe(10);
   });
 });
+
+it("exposes NPC co-authorship separately from human dialogue controls", () => {
+  const tool = TOOLS.find((tool) => tool.name === "agent_talk_to_npc");
+  expect(tool).toBeDefined();
+  expect(tool!.parameters.line!.required).toBe(true);
+  expect(tool!.parameters.reply!.required).toBe(true);
+  expect(tool!.description).toContain("does not open or choose the human's dialogue");
+});

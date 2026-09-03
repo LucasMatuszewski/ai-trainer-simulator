@@ -329,3 +329,32 @@ describe("bounded named approach", () => {
     expect(companion.getPosition().length()).toBe(0);
   });
 });
+
+it("stops a cancelled social approach without drifting or leaving an arrival waiter", async () => {
+  const { companion } = companionFixture();
+  companion.join("Rusty", "QA");
+  const arrival = companion.awaitMoveTo("bartek");
+  companion.stop();
+  const position = companion.snapshot().position;
+  companion.update(1);
+  expect(companion.snapshot().walking).toBe(false);
+  expect(companion.snapshot().position).toEqual(position);
+  expect((await arrival).arrived).toBe(false);
+});
+
+it("leaves room for a human already standing beside the target NPC", () => {
+  const human = { x: 6.5, z: 0 };
+  const { companion } = companionFixture({ getPlayerPosition: () => human });
+  expect(companion.moveTo("bartek").ok).toBe(true);
+  finishWalk(companion);
+  const robot = companion.snapshot().position;
+  expect(Math.hypot(robot.x - human.x, robot.z - human.z)).toBeGreaterThanOrEqual(1.5);
+});
+
+it("tries a slightly wider conversational distance when a desk fills the inner ring", () => {
+  const { companion } = companionFixture({ obstacles: [{ minX: 6.1, maxX: 9.9, minZ: -1.9, maxZ: 1.9 }] });
+  expect(companion.moveTo("bartek").ok).toBe(true);
+  finishWalk(companion);
+  expect(Math.hypot(companion.getPosition().x - 8, companion.getPosition().z)).toBeLessThanOrEqual(3);
+  expect(companion.snapshot().walking).toBe(false);
+});

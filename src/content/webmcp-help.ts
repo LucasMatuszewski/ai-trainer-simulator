@@ -59,6 +59,8 @@ export const AGENT_PROMPT = [
   "   the game. Use agent_join to join once; reuse your existing robot after a reconnect.",
   "3. Observe with agent_look_around, then greet me using start_conversation. Movement",
   "   starts asynchronously: check your position before claiming you have arrived.",
+  "   Use agent_talk_to_npc to stage an exchange: author the robot line and NPC reply;",
+  "   the game walks you over, faces the pair and displays both as speech bubbles.",
   "4. Answer pending turns with supply_dialogue before gestures, walking or commentary.",
   "   Offer 1-4 human-voice replies, strings or {text, ends: boolean} objects; include",
   "   an ends:true goodbye when appropriate. Follow the current request's context.",
