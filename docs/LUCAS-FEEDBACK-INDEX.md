@@ -5,6 +5,29 @@ given. Every item MUST be reflected in `docs/PRD.md` and the
 plan. The agent MUST update this file when Lucas sends feedback so
 nothing is lost again.
 
+## 2026-09-03 — agent tool surface and two-way conversations
+
+**ID: L-2026-09-03-04 — The tool surface must be self-describing, player-only, and two-way**
+- **Schemas are not self-describing.** The WebMCP extension renders `agent_move_to` as `{"target": "example_string"}` and `agent_look_around` as a bare `{}` with "no example at all". Every parameter needs a concrete example value; a no-argument tool must say so explicitly.
+- **Coordinates: no.** Lucas asked whether `agent_move_to` should take coordinates. Decision: it should not, and the reason must be IN the tool description so an agent stops looking for one - an agent has not seen the floor plan, and coordinates would let it place the companion inside furniture, bypassing the collision guarantee every other character obeys.
+- **Add direct movement controls** that mirror WASD - step forward/back, strafe, turn - alongside the high-level `agent_move_to`, so an agent can drive the companion the way a human drives the player.
+- **Remove the admin hacks.** Lucas: *"We should not have hacks like set relationship, afaik we already discussed it and decided to keep only normal game controls, should be somewhere in docs already."* He is right: L-2026-08-30-01 set the player-only policy and ADR 0008 D-40 restated it while leaving `set_flag` and `add_relationship` in place. They go.
+- **Two-way conversations.** The agent should be able to START a conversation with the player: main text plus 1-4 options, a spinner while waiting, and one option flagged as the one that ends the exchange (its text still written by the agent). The player must KEEP the ability to start one too - agent-only would be a regression.
+- **The notification question, in his words:** *"The question is if agent can receive any notification that user responded?"* If not, instruct the agent - via a `get_instructions`-style tool, "similar to a skill" - to open a conversation, then poll every 5-15s using a tool that returns the conversation history.
+- **His fallback ideas, all recorded:** a starter conversation opened at join time so one is always in flight; letting the agent post an ARRAY of pre-configured turns with branching on previous responses; or a tool that opens a stream/notification channel so the agent can listen for the player starting a conversation.
+- **His instruction:** *"Something to research and consider all options and test what works best!"*
+- **Research answer:** WebMCP is pull-only - the spec gives a page no way to push to an agent. But `execute()` is async and the host awaits it, so a **long-poll** (`wait_for_player_message`) resolves the instant the player answers and behaves like a notification. It strictly dominates the 5-15s polling loop: immediate, one call per wait instead of one every few seconds, and it degrades into exactly that polling loop when it times out. Ship both, and tell the agent to prefer the long-poll.
+
+**ID: L-2026-09-03-05 — ChatGPT's built-in browser shows no site tools**
+- Lucas sees the tools in Chrome (experimental flag + a WebMCP extension) but **not** in ChatGPT's built-in browser.
+- Not our bug - the same registration serves both. Known OpenAI-side gating, in order of likelihood: site tools require **GPT-5.6 Sol or Terra** and are **disabled on GPT-5.6 Luna**; they are **unavailable in Enterprise and Edu workspaces**; there is a Browser settings -> Permissions -> *Enable site tools* toggle; support landed for ChatGPT Work and Codex in the desktop app.
+- **The distinguishing signal:** when tools are detected an arrow appears in the address bar. Our title screen already prints "Agent play ready - N WebMCP tools live". Status line ready + no address-bar arrow = gating on their side, not ours.
+
+**ID: L-2026-09-03-06 — The SVG assets may be edited in the repo**
+- Lucas: *"you can edit these svg files if you need, e.g. change color, remove some attribute etc. it is in the repo, only this app uses them."*
+- This removes the need to strip the embedded `@media (prefers-color-scheme: dark)` rules at runtime; they can be taken out of the files, so the marks stop depending on each player's OS theme at the source.
+- **Cross-reference:** `public/assets/devpowers/*.svg`, `src/engine/furniture/brand-wall.ts`.
+
 ## 2026-09-03 (night) — hackathon pivot, WebMCP agent play, real branding
 
 **ID: L-2026-09-03-02 — Enter the OpenAI WebMCP Challenge, and the MiniMax/GMI contest**
