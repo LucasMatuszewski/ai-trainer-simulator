@@ -68,7 +68,7 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
       },
       intro: {
         id: "intro",
-        text: "This is a one-day crash course in not getting fired. I will talk, you walk. You can press Z to skip me anytime.",
+        text: "This is a one-day crash course in not getting fired. I will talk, you walk. You can press Esc anytime to cut me off - no hard feelings.",
         options: [
           { text: "How do I move?", id: `${FM}-walk`, nextNodeId: "walk" },
           { text: "How do I look around?", id: `${FM}-look`, nextNodeId: "look" },
@@ -117,6 +117,7 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
         options: [
           { text: "What are these stats on the HUD?", id: `${FM}-stats`, nextNodeId: "stats" },
           { text: "I am ready. Thanks, Renata.", id: `${FM}-ready-2`, nextNodeId: "ready" },
+          { text: "Anything else I should know?", id: `${FM}-webmcp-2`, nextNodeId: "webmcp" },
         ],
       },
       stats: {
@@ -124,6 +125,23 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
         text: "Four stats. Credibility wins you contracts. Caffeine keeps you focused. Patience keeps dialogue options open. Focus wins the debug games. Drink coffee, avoid Zosia, you will be fine.",
         options: [
           { text: "I am ready. Thanks, Renata.", id: `${FM}-ready-3`, nextNodeId: "ready" },
+          { text: "Anything else I should know?", id: `${FM}-webmcp`, nextNodeId: "webmcp" },
+        ],
+      },
+      // Lucas, 2026-09-03: Renata should tell the player they can bring
+      // their own AI agent in as a robot coworker. It is the headline
+      // feature and nothing in the game mentioned it, so a player with a
+      // WebMCP browser had no way to discover it existed.
+      webmcp: {
+        id: "webmcp",
+        text: "One strange one. If your browser has an AI agent, tell it to join us. It walks in as a robot and talks to you. It writes its own lines - not even I know what it will say.",
+        link: {
+          text: "How to switch that on (WebMCP setup)",
+          href: "https://developer.chrome.com/docs/ai/webmcp",
+        },
+        options: [
+          { text: "A robot coworker. Sure. Why not.", id: `${FM}-webmcp-ok`, nextNodeId: "ready" },
+          { text: "What are these stats on the HUD?", id: `${FM}-webmcp-stats`, nextNodeId: "stats" },
         ],
       },
       ready: {

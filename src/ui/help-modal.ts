@@ -75,6 +75,10 @@ export function mountHelpModal(parent: HTMLElement): HelpModalHandle {
             <p>You start with 1,500 zl. Rent is 100 zl/day; contracts pay 200-500 zl. Staying below -500 for 3 days means bankruptcy.</p>
           </section>
           <section>
+            <h3>Play with an AI agent</h3>
+            <p>If your browser has an AI agent, it can join as a robot coworker and talk to you. Ask Renata, or see the setup link in her intro.</p>
+          </section>
+          <section>
             <h3>The cast</h3>
             <p>14 coworkers and one office dog, each with a schedule, memories, opinions, gossip, and the occasional Friday push to main.</p>
           </section>

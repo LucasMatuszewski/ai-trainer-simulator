@@ -50,9 +50,22 @@ export interface DialogueOption {
   id?: string;
 }
 
+/** An external link offered alongside a dialogue line. */
+export interface DialogueLink {
+  text: string;
+  href: string;
+}
+
 export interface DialogueNode {
   id: string;
   text: string;
+  /**
+   * Optional clickable link shown under the line. Added so Renata can point
+   * the player at the WebMCP setup docs (Lucas, 2026-09-03) - a URL read
+   * aloud in a speech line is not something anyone is going to retype.
+   * Opens in a new tab; the dialogue stays where it is.
+   */
+  link?: DialogueLink;
   options?: DialogueOption[];
   next?: string; // auto-advance to a node id (no options shown)
   effects?: Effect[]; // applied when the node is entered

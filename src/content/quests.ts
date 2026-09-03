@@ -59,7 +59,7 @@ export const QUESTS: Quest[] = [
     // across the office - which the old Bartek-first order did.
     id: "q-talk-renata",
     title: "Check in with Renata",
-    description: "Reception first. Renata runs this office in every way that matters, and she will tell you how anything here works - including how to move.",
+    description: "Reception first. Click Renata's card in the list on the right and your character walks over to her. She runs this office in every way that matters, and she will teach you the controls. Stuck at any point? Press ? for the full list.",
     who: "renata",
     reward: "You learn how to play",
     chainsTo: "q-talk-bartek",

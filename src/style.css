@@ -1481,3 +1481,26 @@ html, body {
 .title-screen .creator-link:focus-visible {
   opacity: 1;
 }
+
+/* ---------------------------------------------------------------
+ * Dialogue link (2026-09-03)
+ *
+ * Renata points the player at the WebMCP setup docs. A URL spoken in a
+ * line is not something anyone retypes, so it is a real anchor.
+ * Font size follows L-2026-09-03-01 - no tiny text.
+ * --------------------------------------------------------------- */
+.dialogue .dialogue-link {
+  margin: 8px 0 2px;
+  font-size: 16px;
+}
+.dialogue .dialogue-link a {
+  color: #7fd8ff;
+  text-decoration: none;
+  border-bottom: 2px solid rgba(127, 216, 255, 0.4);
+  padding-bottom: 1px;
+}
+.dialogue .dialogue-link a:hover,
+.dialogue .dialogue-link a:focus-visible {
+  color: #c9edff;
+  border-bottom-color: #7fd8ff;
+}

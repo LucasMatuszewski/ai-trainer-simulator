@@ -2,7 +2,7 @@
  * UI: dialogue overlay.
  */
 
-import type { DialogueNode, DialogueTree, NPC } from "../types";
+import type { DialogueLink, DialogueNode, DialogueTree, NPC } from "../types";
 import { game } from "../game/state";
 import { getMemory, setMemory, pickedOptionsFor, markOptionPicked } from "../content/dialogue-memory";
 
@@ -98,6 +98,30 @@ interface DialogueState {
   currentNodeId: string;
 }
 
+/**
+ * Render an optional external link under a dialogue line.
+ *
+ * Both the label and the href are escaped, and the href is checked against an
+ * https allowlist before it is emitted at all - dialogue content is authored
+ * data today, but this is the one place a URL reaches the DOM, and a
+ * javascript: href here would be an XSS with a friendly face.
+ */
+function renderLink(link: DialogueLink | undefined): string {
+  if (link === undefined) return "";
+  let parsed: URL;
+  try {
+    parsed = new URL(link.href);
+  } catch {
+    return "";
+  }
+  if (parsed.protocol !== "https:") return "";
+  return (
+    `<div class="dialogue-link">` +
+    `<a href="${escapeHtml(parsed.toString())}" target="_blank" rel="noopener noreferrer">` +
+    `${escapeHtml(link.text)}</a></div>`
+  );
+}
+
 export function createDialogue(root: HTMLElement, onClose: () => void): DialogueController {
   let state: DialogueState | null = null;
   let container: HTMLElement | null = null;
@@ -178,6 +202,7 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
         <div class="content">
           <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
           <div class="text">${escapeHtml(node.text)}</div>
+          ${renderLink(node.link)}
           <div class="options"><button data-continue>Continue</button></div>
         </div>
         <button class="skip" data-skip>Skip</button>
@@ -212,6 +237,7 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
         <div class="content">
           <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
           <div class="text">${escapeHtml(node.text)}</div>
+          ${renderLink(node.link)}
           <div class="text memory-note">You have already heard this story.</div>
           <div class="options"><button data-continue>OK</button></div>
         </div>
@@ -227,6 +253,7 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
       <div class="content">
         <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
         <div class="text">${escapeHtml(node.text)}</div>
+          ${renderLink(node.link)}
         <div class="options">
           ${availableOptions
             .map(
