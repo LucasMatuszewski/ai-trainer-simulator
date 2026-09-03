@@ -48,12 +48,14 @@ export const SPAWN_FACING = Math.PI;
 /**
  * How far the companion stops from the player when it walks over to talk.
  *
- * 1.2 m was too close: in first person the robot filled the view and read as
- * looming rather than conversational (Lucas, 2026-09-03). 1.9 m is roughly
- * the social distance people actually hold at work - close enough to be
- * clearly talking to you, far enough that you can see the whole character.
+ * Tuned by eye, twice. 1.2 m filled the first-person view and read as
+ * looming; 1.9 m was still too close (Lucas, 2026-09-03). 2.5 m it is - the
+ * whole robot is in frame with room around it, which is what "someone came
+ * over to talk to you" actually looks like rather than "someone is standing
+ * on your feet". First-person cameras compress distance, so the number that
+ * feels right in-game is larger than the real-world equivalent.
  */
-export const CONVERSATION_DISTANCE = 1.9;
+export const CONVERSATION_DISTANCE = 2.5;
 
 /**
  * Gestures the agent may play by name. Deliberately the same vocabulary the
