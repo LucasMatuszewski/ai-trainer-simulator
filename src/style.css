@@ -1504,3 +1504,57 @@ html, body {
   color: #c9edff;
   border-bottom-color: #7fd8ff;
 }
+
+/* ---------------------------------------------------------------
+ * WebMCP setup modal (2026-09-03)
+ * Reuses .help-modal chrome; these are the content styles only.
+ * Font sizes respect L-2026-09-03-01.
+ * --------------------------------------------------------------- */
+.webmcp-modal .help-modal-body p { font-size: 17px; line-height: 1.45; }
+.webmcp-path { margin: 10px 0; }
+.webmcp-path-label a {
+  color: #ffd166;
+  font-size: 18px;
+  text-decoration: none;
+  border-bottom: 2px solid rgba(255, 209, 102, 0.4);
+}
+.webmcp-path-label a:hover { color: #fff1c9; }
+.webmcp-path p { margin: 4px 0 0; }
+.webmcp-path p a { color: #7fd8ff; }
+.webmcp-note { color: #9a9a9a; font-size: 15px !important; }
+.webmcp-prompt {
+  background: #101418;
+  border: 2px solid var(--panel-border);
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  max-height: 260px;
+  overflow-y: auto;
+  color: #cde3d8;
+}
+.webmcp-faq dt { font-weight: bold; margin-top: 10px; font-size: 16px; }
+.webmcp-faq dd { margin: 2px 0 0 0; font-size: 16px; color: #c9c9c9; line-height: 1.4; }
+
+/* Dialogue action buttons (copy prompt / open guide) */
+.dialogue-actions {
+  margin: 8px 0 2px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dialogue-action {
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  background: #101418;
+  color: #7fd8ff;
+  border: 2px solid rgba(127, 216, 255, 0.5);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.dialogue-action:hover:not(:disabled) {
+  color: #c9edff;
+  border-color: #7fd8ff;
+}
+.dialogue-action:disabled { color: #8affc1; border-color: rgba(138, 255, 193, 0.5); cursor: default; }
+.dialogue-link-sep { opacity: 0.5; }

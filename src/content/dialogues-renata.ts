@@ -24,6 +24,7 @@
  * about everyone else.
  */
 
+import { WEBMCP_PATHS } from "./webmcp-help";
 import type { DialogueTree } from "../types";
 
 /**
@@ -68,8 +69,13 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
       },
       intro: {
         id: "intro",
-        text: "This is a one-day crash course in not getting fired. I will talk, you walk. You can press Esc anytime to cut me off - no hard feelings.",
+        // The WebMCP hint lives on the SECOND line of the tutorial, per
+        // Lucas: agent play is the headline feature of the contest entry,
+        // and it was buried under "anything else I should know?" where a
+        // player could finish the whole tutorial and never hear of it.
+        text: "Crash course in not getting fired: I talk, you walk, Esc cuts me off. Oh - and your AI agent can work here with you. As a robot. Do not tell Dawid, he will want it on the org chart.",
         options: [
+          { text: "Wait, my AI agent can join?", id: `${FM}-agent`, nextNodeId: "agent-setup" },
           { text: "How do I move?", id: `${FM}-walk`, nextNodeId: "walk" },
           { text: "How do I look around?", id: `${FM}-look`, nextNodeId: "look" },
         ],
@@ -128,10 +134,26 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
           { text: "Anything else I should know?", id: `${FM}-webmcp`, nextNodeId: "webmcp" },
         ],
       },
-      // Lucas, 2026-09-03: Renata should tell the player they can bring
-      // their own AI agent in as a robot coworker. It is the headline
-      // feature and nothing in the game mentioned it, so a player with a
-      // WebMCP browser had no way to discover it existed.
+      // The flagship setup node: the only dialogue place carrying both
+      // links. Every other NPC branch points here or at the guide modal,
+      // so the URLs stay authored in exactly one content file
+      // (webmcp-help.ts) even though four coworkers talk about this.
+      "agent-setup": {
+        id: "agent-setup",
+        text: "Two ways in. ChatGPT's browser just works - open the game there and ask your agent to join. Chrome is experimental and still rolling out. I even wrote you a prompt to paste. You are welcome.",
+        links: WEBMCP_PATHS.map((path) => ({ text: path.label, href: path.href })),
+        buttons: [
+          { text: "Copy a prompt for your agent", copyPrompt: true },
+          { text: "Open the full setup guide", modal: "webmcp" },
+        ],
+        options: [
+          { text: "How do I move?", id: `${FM}-agent-walk`, nextNodeId: "walk" },
+          { text: "How do I look around?", id: `${FM}-agent-look`, nextNodeId: "look" },
+        ],
+      },
+      // Kept as the fallback reminder (Lucas: "we can also keep this 'what
+      // else' as fallback"), reachable from cast and stats, now with the
+      // same actions so it is a real answer and not a teaser.
       webmcp: {
         id: "webmcp",
         text: "One strange one. If your browser has an AI agent, tell it to join us. It walks in as a robot and talks to you. It writes its own lines - not even I know what it will say.",
@@ -139,7 +161,12 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
           text: "How to switch that on (WebMCP setup)",
           href: "https://developer.chrome.com/docs/ai/webmcp",
         },
+        buttons: [
+          { text: "Copy a prompt for your agent", copyPrompt: true },
+          { text: "Open the full setup guide", modal: "webmcp" },
+        ],
         options: [
+          { text: "How do I set it up?", id: `${FM}-webmcp-setup`, nextNodeId: "agent-setup" },
           { text: "A robot coworker. Sure. Why not.", id: `${FM}-webmcp-ok`, nextNodeId: "ready" },
           { text: "What are these stats on the HUD?", id: `${FM}-webmcp-stats`, nextNodeId: "stats" },
         ],
@@ -171,6 +198,7 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
           { text: "What are these stats?", id: `${FAQ}-stats`, nextNodeId: "stats" },
           { text: "Who is who around here?", id: `${FAQ}-who`, nextNodeId: "who" },
           { text: "Where is the toilet?", id: `${FAQ}-toilet`, nextNodeId: "toilet" },
+          { text: "How do I set up my AI agent?", id: `${FAQ}-agent`, nextNodeId: "agent-help" },
           { text: "Run me through the controls again.", id: `${FAQ}-controls`, nextNodeId: "controls" },
           { text: "I am good, thanks.", id: `${FAQ}-bye`, nextNodeId: "_end" },
         ],
@@ -213,6 +241,20 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
         options: [
           { text: "Thanks, that is all I needed.", id: `${FAQ}-toilet-thanks`, nextNodeId: "_end" },
           { text: "Back to the menu.", id: `${FAQ}-toilet-back`, nextNodeId: "greeting" },
+        ],
+      },
+      // Re-enterable rule: like every FAQ answer, routes back to the menu.
+      "agent-help": {
+        id: "agent-help",
+        text: "Same story, any day. ChatGPT's browser works out of the box, Chrome is catching up, and the prompt is written for you. A robot coworker is still a coworker, so HR has a form for it.",
+        links: WEBMCP_PATHS.map((path) => ({ text: path.label, href: path.href })),
+        buttons: [
+          { text: "Copy a prompt for your agent", copyPrompt: true },
+          { text: "Open the full setup guide", modal: "webmcp" },
+        ],
+        options: [
+          { text: "Thanks, that is all I needed.", id: `${FAQ}-agent-thanks`, nextNodeId: "_end" },
+          { text: "Back to the menu.", id: `${FAQ}-agent-back`, nextNodeId: "greeting" },
         ],
       },
       controls: {

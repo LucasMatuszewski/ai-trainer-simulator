@@ -56,6 +56,22 @@ export interface DialogueLink {
   href: string;
 }
 
+/**
+ * A button rendered under a dialogue line.
+ *
+ * Deliberately DATA, not functions: dialogue content is serializable,
+ * testable and diffable, and every action we need is a named kind. If a
+ * fourth kind ever appears, it gets a field here rather than a closure in
+ * the content tree.
+ */
+export interface DialogueButton {
+  text: string;
+  /** Open the named in-game modal. Currently only "webmcp". */
+  modal?: "webmcp";
+  /** Copy the ready-made agent prompt to the clipboard. */
+  copyPrompt?: boolean;
+}
+
 export interface DialogueNode {
   id: string;
   text: string;
@@ -66,6 +82,10 @@ export interface DialogueNode {
    * Opens in a new tab; the dialogue stays where it is.
    */
   link?: DialogueLink;
+  /** Any number of links; rendered under the line after `link`. */
+  links?: DialogueLink[];
+  /** Action buttons; rendered after the links. */
+  buttons?: DialogueButton[];
   options?: DialogueOption[];
   next?: string; // auto-advance to a node id (no options shown)
   effects?: Effect[]; // applied when the node is entered

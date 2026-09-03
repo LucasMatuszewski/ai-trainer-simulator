@@ -56,6 +56,7 @@ import {
   shouldAdvanceSimulationClock, formatGameClock } from "./game/pacing";
 import { mountQuestLog, type QuestLogHandle } from "./ui/quest-log";
 import { mountHelpModal, type HelpModalHandle } from "./ui/help-modal";
+import { mountWebmcpHelpModal, type WebmcpHelpModalHandle } from "./ui/webmcp-help-modal";
 import { mountEndDayModal, type EndDayModalHandle } from "./ui/end-day-modal";
 import { ndcFromMouse, pickFromCamera } from "./engine/interaction-raycaster";
 import { PLAYER_RADIUS, getMouseSensitivity, setMouseSensitivity } from "./engine/controls";
@@ -607,6 +608,14 @@ function startOffice(playIntro = false): void {
   );
   questLog = mountQuestLog(uiRoot);
   helpModal = mountHelpModal(uiRoot);
+  // Dialogue buttons and the Help modal both ask for this via a DOM event,
+  // so the dialogue layer never imports the modal directly.
+  let webmcpModal: WebmcpHelpModalHandle | null = null;
+  window.addEventListener("stack-underflow:open-modal", (event) => {
+    if ((event as CustomEvent<{ modal?: string }>).detail?.modal !== "webmcp") return;
+    if (!webmcpModal) webmcpModal = mountWebmcpHelpModal(uiRoot);
+    webmcpModal.open();
+  });
   // The Z key and the roster's End Day button both confirm here first;
   // the WebMCP end_day hook below keeps calling endDay() directly.
   endDayModal = mountEndDayModal(uiRoot, () => endDay());

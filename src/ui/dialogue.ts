@@ -2,7 +2,8 @@
  * UI: dialogue overlay.
  */
 
-import type { DialogueLink, DialogueNode, DialogueTree, NPC } from "../types";
+import { AGENT_PROMPT, COPY_HINT } from "../content/webmcp-help";
+import type { DialogueButton, DialogueLink, DialogueNode, DialogueTree, NPC } from "../types";
 import { game } from "../game/state";
 import { getMemory, setMemory, pickedOptionsFor, markOptionPicked } from "../content/dialogue-memory";
 
@@ -108,18 +109,85 @@ interface DialogueState {
  */
 function renderLink(link: DialogueLink | undefined): string {
   if (link === undefined) return "";
-  let parsed: URL;
+  return renderLinks([link]);
+}
+
+/** Render every link; each href is https-checked exactly like renderLink. */
+function renderLinks(links: readonly DialogueLink[] | undefined): string {
+  if (links === undefined || links.length === 0) return "";
+  const anchors = links
+    .map((link) => {
+      let parsed: URL;
+      try {
+        parsed = new URL(link.href);
+      } catch {
+        return "";
+      }
+      if (parsed.protocol !== "https:") return "";
+      return (
+        `<a href="${escapeHtml(parsed.toString())}" target="_blank" rel="noopener noreferrer">` +
+        `${escapeHtml(link.text)}</a>`
+      );
+    })
+    .filter((anchor) => anchor.length > 0);
+  if (anchors.length === 0) return "";
+  return `<div class="dialogue-link">${anchors.join('<span class="dialogue-link-sep"> | </span>')}</div>`;
+}
+
+/**
+ * Render the action buttons.
+ *
+ * Copying is done right here (clipboard is pure UI); opening a modal is
+ * dispatched as a DOM event so the dialogue layer stays decoupled from which
+ * modals exist - main.ts owns that.
+ */
+function renderButtons(buttons: readonly DialogueButton[] | undefined): string {
+  if (buttons === undefined || buttons.length === 0) return "";
+  const els = buttons
+    .map((button, index) => {
+      const action =
+        button.modal !== undefined
+          ? `data-open-modal="${escapeHtml(button.modal)}"`
+          : button.copyPrompt === true
+            ? `data-copy-prompt="${index}"`
+            : "";
+      if (action === "") return "";
+      return `<button type="button" class="dialogue-action" ${action}>${escapeHtml(button.text)}</button>`;
+    })
+    .filter((el) => el.length > 0);
+  if (els.length === 0) return "";
+  return `<div class="dialogue-actions">${els.join("")}</div>`;
+}
+
+/** Modal-open events are consumed by main.ts, which owns the modals. */
+function wireActionButtons(container: HTMLElement): void {
+  container.querySelectorAll<HTMLButtonElement>("[data-copy-prompt]").forEach((button) => {
+    button.addEventListener("click", () => void copyAgentPrompt(button));
+  });
+  container.querySelectorAll<HTMLButtonElement>("[data-open-modal]").forEach((button) => {
+    button.addEventListener("click", () => {
+      window.dispatchEvent(
+        new CustomEvent("stack-underflow:open-modal", { detail: { modal: button.dataset.openModal } }),
+      );
+    });
+  });
+}
+
+async function copyAgentPrompt(button: HTMLButtonElement): Promise<void> {
+  const original = button.textContent;
   try {
-    parsed = new URL(link.href);
+    await navigator.clipboard.writeText(AGENT_PROMPT);
+    button.textContent = COPY_HINT;
+    button.disabled = true;
   } catch {
-    return "";
+    // Clipboard can be denied (permissions policy, non-secure context). The
+    // prompt is short enough to show in place of the button label.
+    button.textContent = "Copy blocked - select it in the setup guide";
   }
-  if (parsed.protocol !== "https:") return "";
-  return (
-    `<div class="dialogue-link">` +
-    `<a href="${escapeHtml(parsed.toString())}" target="_blank" rel="noopener noreferrer">` +
-    `${escapeHtml(link.text)}</a></div>`
-  );
+  setTimeout(() => {
+    button.textContent = original;
+    button.disabled = false;
+  }, 2500);
 }
 
 export function createDialogue(root: HTMLElement, onClose: () => void): DialogueController {
@@ -203,10 +271,13 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
           <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
           <div class="text">${escapeHtml(node.text)}</div>
           ${renderLink(node.link)}
+          ${renderLinks(node.links)}
+          ${renderButtons(node.buttons)}
           <div class="options"><button data-continue>Continue</button></div>
         </div>
         <button class="skip" data-skip>Skip</button>
       `;
+wireActionButtons(container!);
       container!.querySelector<HTMLButtonElement>("[data-continue]")!.addEventListener("click", finish);
       container!.querySelector<HTMLButtonElement>("[data-skip]")!.addEventListener("click", finish);
       return;
@@ -238,11 +309,14 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
           <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
           <div class="text">${escapeHtml(node.text)}</div>
           ${renderLink(node.link)}
+          ${renderLinks(node.links)}
+          ${renderButtons(node.buttons)}
           <div class="text memory-note">You have already heard this story.</div>
           <div class="options"><button data-continue>OK</button></div>
         </div>
         <button class="skip" data-skip>Skip</button>
       `;
+wireActionButtons(container!);
       container!.querySelector<HTMLButtonElement>("[data-continue]")!.addEventListener("click", finish);
       container!.querySelector<HTMLButtonElement>("[data-skip]")!.addEventListener("click", finish);
       return;
@@ -254,6 +328,8 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
         <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
         <div class="text">${escapeHtml(node.text)}</div>
           ${renderLink(node.link)}
+          ${renderLinks(node.links)}
+          ${renderButtons(node.buttons)}
         <div class="options">
           ${availableOptions
             .map(
@@ -266,6 +342,7 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
       <button class="skip" data-skip>Skip</button>
     `;
 
+wireActionButtons(container!);
     container!.querySelectorAll<HTMLButtonElement>("[data-opt]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const optId = btn.dataset.opt ?? "";

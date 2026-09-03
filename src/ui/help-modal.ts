@@ -76,7 +76,8 @@ export function mountHelpModal(parent: HTMLElement): HelpModalHandle {
           </section>
           <section>
             <h3>Play with an AI agent</h3>
-            <p>If your browser has an AI agent, it can join as a robot coworker and talk to you. Ask Renata, or see the setup link in her intro.</p>
+            <p>This game talks to the AI agent in your browser over WebMCP: the agent joins as a robot coworker, walks around, and writes its own lines. Two ways in - ChatGPT's browser works today; Chrome is experimental. Ask Renata, or open the full guide:</p>
+            <button class="dialogue-action" data-open-modal type="button">Open the agent setup guide</button>
           </section>
           <section>
             <h3>The cast</h3>
@@ -98,6 +99,10 @@ export function mountHelpModal(parent: HTMLElement): HelpModalHandle {
   };
   const isOpen = (): boolean => wrap.classList.contains("open");
 
+  wrap.querySelector<HTMLButtonElement>("[data-open-modal]")?.addEventListener("click", () => {
+    window.dispatchEvent(new CustomEvent("stack-underflow:open-modal", { detail: { modal: "webmcp" } }));
+    close();
+  });
   wrap.querySelector<HTMLButtonElement>("[data-close]")!.addEventListener("click", close);
   wrap.querySelector<HTMLElement>("[data-backdrop]")!.addEventListener("click", close);
   document.addEventListener("keydown", (e) => {
