@@ -27,6 +27,35 @@ export interface DialogueController {
   onNodeShown: (cb: (npc: NPC, nodeId: string) => void) => void;
   /** Subscribe to close events. */
   onClose: (cb: () => void) => void;
+  /**
+   * ADR 0008 D-37: render one AGENT-AUTHORED turn.
+   *
+   * Separate from `open` on purpose. It takes a plain speaker rather than an
+   * NPC, because the agent companion has no NpcId - that union is
+   * exhaustively mapped by the schedule and gender tables, so widening it to
+   * fit a runtime character would break both.
+   *
+   * It also bypasses the per-NPC option memory deliberately. That memory
+   * exists to stop a hand-authored NPC repeating a story the player already
+   * answered (L-2026-08-30-02), but an agent legitimately re-offers similar
+   * replies across turns, and filtering them would silently blank the
+   * companion's options.
+   */
+  openAgentTurn: (
+    speaker: AgentSpeaker,
+    line: string,
+    options: readonly string[],
+    onPick: (choice: string, index: number) => void,
+  ) => void;
+  /** True while an agent-authored conversation is on screen. */
+  isAgentTurn: () => boolean;
+}
+
+/** A dialogue speaker that is not one of the fixed cast. */
+export interface AgentSpeaker {
+  name: string;
+  role: string;
+  emoji: string;
 }
 
 export interface DialogueSnapshot {
@@ -72,6 +101,8 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
   // pickOption / snapshot can read it without scraping the DOM).
   let currentNode: DialogueNode | null = null;
   let currentAvailableOptions: DialogueSnapshot["availableOptions"] = [];
+  /** Set while an agent-authored turn owns the panel. */
+  let agentTurnActive = false;
 
   function open(npc: NPC, tree: DialogueTree, treeId: string = "default"): void {
     if (state) return; // already open
@@ -87,7 +118,8 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
   }
 
   function close(): void {
-    if (!state) return;
+    if (!state && !agentTurnActive) return;
+    agentTurnActive = false;
     state = null;
     currentNode = null;
     currentAvailableOptions = [];
@@ -100,7 +132,7 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
   }
 
   function isOpen(): boolean {
-    return state !== null;
+    return state !== null || agentTurnActive;
   }
 
   function render(): void {
@@ -293,8 +325,65 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
     nodeListener?.(state.npc, nodeId);
   }
 
+  /**
+   * Render a single agent-authored turn (D-37).
+   *
+   * Markup in the agent's text is escaped exactly like authored copy, so a
+   * model that emits HTML gets it shown as characters rather than parsed.
+   * The panel is the same .dialogue element the hand-authored trees use, so
+   * an agent turn is visually indistinguishable from a written one - which is
+   * the point.
+   */
+  function openAgentTurn(
+    speaker: AgentSpeaker,
+    line: string,
+    options: readonly string[],
+    onPick: (choice: string, index: number) => void,
+  ): void {
+    // An agent turn replaces the previous turn in place; a normal NPC
+    // dialogue is closed first so the two can never share the panel.
+    if (state !== null) close();
+    agentTurnActive = true;
+
+    if (!container) {
+      container = document.createElement("div");
+      container.className = "dialogue";
+      root.appendChild(container);
+    }
+
+    container.innerHTML = `
+      <div class="portrait">${escapeHtml(speaker.emoji)}</div>
+      <div class="content">
+        <div><span class="name">${escapeHtml(speaker.name)}</span><span class="role">${escapeHtml(speaker.role)}</span></div>
+        <div class="text">${escapeHtml(line)}</div>
+        <div class="options">
+          ${options
+            .map((text, i) => `<button data-agent-opt="${i}">${escapeHtml(text)}</button>`)
+            .join("")}
+        </div>
+      </div>
+      <button class="skip" data-skip>Leave</button>
+    `;
+
+    container.querySelectorAll<HTMLButtonElement>("[data-agent-opt]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const index = Number(btn.dataset.agentOpt ?? "-1");
+        const choice = options[index];
+        if (choice === undefined) return;
+        onPick(choice, index);
+      });
+    });
+
+    container.querySelector<HTMLButtonElement>("[data-skip]")!.addEventListener("click", () => {
+      game.dispatch({ type: "increment-total", key: "dialoguesFinished" });
+      close();
+    });
+  }
+
   return {
     open,
+    openAgentTurn,
+    isAgentTurn: () => agentTurnActive,
     close,
     isOpen,
     pickOption,

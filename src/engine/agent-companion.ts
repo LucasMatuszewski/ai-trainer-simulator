@@ -260,6 +260,9 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
         shirt: "teal",
       });
       applyRobotSkin(group);
+      // Tagged so main.ts's click raycast can identify the companion:
+      // it is not in npcMeshes, because it has no NpcId.
+      group.name = "agent-companion-body";
       group.position.copy(position);
       deps.scene.add(group);
 

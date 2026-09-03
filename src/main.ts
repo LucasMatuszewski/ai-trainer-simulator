@@ -24,6 +24,16 @@ import { runDailyTick, publishCashflow } from "./game/economy";
 import { runPeriodEvent, registerNpcController } from "./game/events";
 import { registerPlayerActions } from "./webmcp/tools";
 import { registerWebmcpTools, type RegisterResult } from "./webmcp/bridge";
+import { registerAgentCompanion } from "./webmcp/tools";
+import { createAgentCompanion, type AgentCompanion } from "./engine/agent-companion";
+import {
+  createDialogueBroker,
+  FALLBACK_LINE,
+  FALLBACK_OPTIONS,
+  type DialogueBroker,
+} from "./webmcp/agent-dialogue";
+import { CORRIDOR_WAYPOINTS, buildWaypointEdges, DEFAULT_MAX_EDGE_LENGTH } from "./content/corridor-waypoints";
+import { WORLD_ROOMS } from "./content/world-layout";
 import { NPCS, OBSTACLES } from "./content/npcs";
 import type { GameState, NPC, NpcId } from "./types";
 import { mountHud, renderHud, renderHudClock, showToast, type HudElements } from "./ui/hud";
@@ -41,8 +51,7 @@ import { resolveUrl, type Manifest, loadManifest } from "./audio/manifest";
 import {
   advancePeriodElapsed,
   periodsUntilDayEnd,
-  shouldAdvanceSimulationClock,
-} from "./game/pacing";
+  shouldAdvanceSimulationClock, formatGameClock } from "./game/pacing";
 import { mountQuestLog, type QuestLogHandle } from "./ui/quest-log";
 import { mountHelpModal, type HelpModalHandle } from "./ui/help-modal";
 import { mountEndDayModal, type EndDayModalHandle } from "./ui/end-day-modal";
@@ -64,6 +73,10 @@ const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
  * live before pressing New Game.
  */
 let webmcpStatus: RegisterResult = { supported: false, namespace: null, registered: 0, failed: 0 };
+let agentCompanion: AgentCompanion | null = null;
+let agentBroker: DialogueBroker | null = null;
+/** Turn counter within the current agent conversation, for context. */
+let agentTurn = 0;
 let engine: Engine | null = null;
 let cameraDirector: CameraDirector | null = null;
 let sceneObjects: ReturnType<typeof buildOfficeScene> | null = null;
@@ -328,6 +341,64 @@ function startOffice(playIntro = false): void {
       },
       getDialogueSnapshot: () => dialogue?.snapshot() ?? null,
     });
+
+    // ADR 0008 D-36/D-37: the agent companion and its dialogue broker.
+    // Built here because it needs the live scene, the NPC positions and
+    // the shared bubble layer; registered with the WebMCP tool surface so
+    // the agent_* tools have something behind them.
+    {
+      const obstacles = [...OBSTACLES, ...WORLD_COLLISION_WALLS];
+      const edges = buildWaypointEdges(CORRIDOR_WAYPOINTS, obstacles, DEFAULT_MAX_EDGE_LENGTH);
+      const companion = createAgentCompanion({
+        scene: engine.scene,
+        obstacles,
+        waypoints: CORRIDOR_WAYPOINTS,
+        edges,
+        listNpcs: () =>
+          NPCS.filter((npc) => built.npcObjects[npc.id]?.visible !== false).map((npc) => {
+            const object = built.npcObjects[npc.id];
+            return {
+              id: npc.id,
+              name: npc.name,
+              role: npc.role,
+              // Live position: "walk to Bartek" must track where Bartek
+              // is now, not where he was authored.
+              position: object
+                ? { x: object.position.x, y: object.position.y, z: object.position.z }
+                : npc.position,
+            };
+          }),
+        listRooms: () => WORLD_ROOMS.map((room) => ({ id: room.id, name: room.name, floor: room.floor })),
+        showBubble: (position, line) => built.npcController.showBubble(position, line),
+        spawn: { x: sceneObjects?.playerStart.x ?? 0, z: (sceneObjects?.playerStart.z ?? 0) + 1.5 },
+      });
+      agentCompanion = companion;
+
+      const broker = createDialogueBroker(
+        () => Date.now(),
+        (turn) => renderAgentTurn(turn.line, turn.options),
+      );
+      agentBroker = broker;
+
+      registerAgentCompanion({
+        join: (name, persona) => companion.join(name, persona),
+        leave: () => {
+          broker.reset();
+          agentTurn = 0;
+          if (dialogue?.isAgentTurn()) dialogue.close();
+          return companion.leave();
+        },
+        isActive: () => companion.isActive(),
+        lookAround: () => companion.lookAround(),
+        moveTo: (target) => companion.moveTo(target),
+        say: (line) => companion.say(line),
+        peekDialogueRequest: () => broker.peek(),
+        supplyDialogue: (line, options) => {
+          const result = broker.supply(line, options);
+          return result.ok ? { ok: true } : { ok: false, reason: result.reason };
+        },
+      });
+    }
     cameraDirector = createCameraDirector(engine.camera);
     // Phase 2: WASD walk + first-person camera (C-01) + Pattern D
     // mouse-look (ADR-0007). The player starts at the office door
@@ -411,6 +482,24 @@ function startOffice(playIntro = false): void {
         // shot) and the CEO behind his glass are hoverable/clickable.
         maxDistance: 25,
       });
+      // The companion is not in npcMeshes (it has no NpcId), so it gets
+      // its own pick before the normal one.
+      if (agentCompanion?.isActive() === true) {
+        const companionHits = raycaster!.intersectObject(engine.scene, true)
+          .filter((h) => h.distance <= 25);
+        const hitCompanion = companionHits.some((h) => {
+          let node: THREE.Object3D | null = h.object;
+          while (node !== null) {
+            if (node.name === "agent-companion-body") return true;
+            node = node.parent;
+          }
+          return false;
+        });
+        if (hitCompanion) {
+          startAgentConversation();
+          return;
+        }
+      }
       if (hit.kind === "npc") {
         // C-46: an NPC who is not in the office (gone-home) cannot be
         // talked to - same rule as the disabled roster card.
@@ -992,6 +1081,62 @@ function advanceOfficePeriods(periodCount: number): void {
   }
 }
 
+/**
+ * Render one agent-authored turn in the normal dialogue panel (D-37).
+ * The human's pick is recorded and handed back to the agent on its next
+ * get_pending_dialogue_request, then a fresh request is opened so the
+ * conversation can continue for as long as either side wants.
+ */
+function renderAgentTurn(line: string, options: readonly string[]): void {
+  const companion = agentCompanion;
+  const broker = agentBroker;
+  if (!companion || !broker || !dialogue) return;
+
+  dialogue.openAgentTurn(
+    { name: companion.snapshot().name, role: "AI Coworker", emoji: "\u{1F916}" },
+    line,
+    options,
+    (choice) => {
+      broker.recordChoice(choice);
+      agentTurn += 1;
+      requestAgentTurn();
+    },
+  );
+}
+
+/** Ask the agent for the next line and show the waiting state. */
+function requestAgentTurn(): void {
+  const companion = agentCompanion;
+  const broker = agentBroker;
+  if (!companion || !broker || !dialogue) return;
+
+  broker.request({
+    companionName: companion.snapshot().name,
+    persona: companion.getPersona(),
+    location: companion.snapshot().position,
+    clock: formatGameClock(game.get().timeOfDay, currentPeriodElapsed),
+    turn: agentTurn,
+    lastPlayerChoice: broker.lastChoice(),
+  });
+
+  dialogue.openAgentTurn(
+    { name: companion.snapshot().name, role: "AI Coworker", emoji: "\u{1F916}" },
+    "...",
+    ["(waiting for the agent to think)"],
+    () => {},
+  );
+}
+
+/** The human walked up to the robot and clicked it. */
+function startAgentConversation(): void {
+  if (agentCompanion?.isActive() !== true) return;
+  sceneObjects?.npcController.clearBubbles();
+  if (dialogue?.isOpen()) dialogue.close();
+  agentTurn = 1;
+  agentBroker?.reset();
+  requestAgentTurn();
+}
+
 function frame(): void {
   const now = performance.now();
   const rawFrameMs = now - lastTime;
@@ -1013,6 +1158,16 @@ function frame(): void {
     engine.update(dt);
     if (sceneObjects) {
       for (const u of sceneObjects.updatables) u(dt);
+      // ADR 0008: step the agent companion, then honour the bounded wait.
+      // A silent agent must never leave the human staring at "..." - the
+      // fallback is in character and the panel stays closable (AC-AUTH-05).
+      if (agentCompanion?.isActive() === true) {
+        agentCompanion.update(dt);
+        if (agentBroker?.hasTimedOut() === true && dialogue?.isAgentTurn() === true) {
+          agentBroker.reset();
+          renderAgentTurn(FALLBACK_LINE, [...FALLBACK_OPTIONS]);
+        }
+      }
       // Phase 3.5: smooth NPC face-toward-player animation. When a
       // player starts a conversation with an NPC, the NPC's body
       // rotates to face the player. When the conversation closes, it

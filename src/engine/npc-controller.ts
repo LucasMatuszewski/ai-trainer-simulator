@@ -143,6 +143,13 @@ export interface NpcController {
   clearBubbles: () => void;
   /** C-61 fix: the real engine camera for DOM bubble projection. */
   setBubblesCamera: (camera: THREE.Camera | null) => void;
+  /**
+   * ADR 0008: let a non-NPC speaker (the agent companion) use the same
+   * bubble layer. Sharing the pool keeps one style, one push-apart pass
+   * and one visibility gate, instead of a second layer that would float
+   * over the summary and minigame panels.
+   */
+  showBubble: (position: THREE.Vector3, line: string) => void;
 }
 
 export interface PathAdvanceResult {
@@ -1818,6 +1825,7 @@ export function createNpcController(
     },
     setBubblesVisible: (visible) => bubbleSystem?.setVisible(visible),
     clearBubbles: () => bubbleSystem?.clear(),
+    showBubble: (position, line) => bubbleSystem?.show(position, line),
     setBubblesCamera: (camera) => bubbleSystem?.setCamera(camera),
     getActiveConversations: () => [...conversations.values()].map((conversation) => ({
       a: conversation.aId,
