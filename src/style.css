@@ -1241,6 +1241,58 @@ html, body {
 }
 
 /* ============================================================================
+ * End-day confirmation modal. Reuses the help-modal backdrop/card/header
+ * classes; only the small body and button row are its own. Same z-index
+ * tier as the help modal: nothing else in the office UI sits above it.
+ * ============================================================================ */
+.endday-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-pixel);
+  image-rendering: pixelated;
+}
+
+.endday-modal.open {
+  display: flex;
+}
+
+.endday-card {
+  width: min(440px, calc(100vw - 32px));
+}
+
+/* Lucas (2026-09-03): never use such small fonts in modal copy. */
+.endday-card .help-modal-title {
+  font-size: 20px;
+}
+
+.endday-actions .roster-action {
+  font-size: 16px;
+  padding: 12px 16px;
+}
+
+.endday-body {
+  padding: 18px 22px 22px;
+  font-size: 19px;
+}
+
+.endday-body p {
+  margin: 0 0 16px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.endday-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* ============================================================================
  * Intro cinematic fade overlay. Black-on-top-of-canvas that fades in/out
  * to mask the establishing shot and the dolly-in. Plain DOM, no animation
  * library — JS swaps the .visible class to fade.

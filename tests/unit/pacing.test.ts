@@ -34,6 +34,7 @@ describe("C-67 variable-period simulation clock", () => {
     expect(shouldAdvanceSimulationClock({ screen: "office", dialogueOpen: true })).toBe(false);
     expect(shouldAdvanceSimulationClock({ screen: "office", cinematicPlaying: true })).toBe(false);
     expect(shouldAdvanceSimulationClock({ screen: "office", helpOpen: true })).toBe(false);
+    expect(shouldAdvanceSimulationClock({ screen: "office", endDayModalOpen: true })).toBe(false);
     expect(shouldAdvanceSimulationClock({ screen: "summary" })).toBe(false);
   });
 });

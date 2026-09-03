@@ -43,7 +43,7 @@ export function mountHelpModal(parent: HTMLElement): HelpModalHandle {
               <div><dt>Click an NPC</dt><dd>Walk up and start a conversation.</dd></div>
               <div><dt>Click the roster</dt><dd>Find a coworker, then walk to them automatically.</dd></div>
               <div><dt>Use computer</dt><dd>Start the debug minigame after getting a contract.</dd></div>
-              <div><dt>Z / End Day</dt><dd>Finish today and show the cash-and-stats summary.</dd></div>
+              <div><dt>Z / End Day</dt><dd>Finish today and show the cash-and-stats summary; a confirmation modal guards against stray presses.</dd></div>
             </dl>
           </section>
           <section>

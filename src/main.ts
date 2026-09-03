@@ -44,6 +44,7 @@ import {
 } from "./game/pacing";
 import { mountQuestLog, type QuestLogHandle } from "./ui/quest-log";
 import { mountHelpModal, type HelpModalHandle } from "./ui/help-modal";
+import { mountEndDayModal, type EndDayModalHandle } from "./ui/end-day-modal";
 import { ndcFromMouse, pickFromCamera } from "./engine/interaction-raycaster";
 import { PLAYER_RADIUS, getMouseSensitivity, setMouseSensitivity } from "./engine/controls";
 import { pushOutOfObstacles } from "./engine/collision";
@@ -68,6 +69,7 @@ let debugGame: DebugScriptHandle | null = null;
 let roster: OfficeRosterHandle | null = null;
 let questLog: QuestLogHandle | null = null;
 let helpModal: HelpModalHandle | null = null;
+let endDayModal: EndDayModalHandle | null = null;
 let unsubscribeGame: (() => void) | null = null;
 let focusedNpcId: NpcId | null = null;
 // C-54: who the currently-open player dialogue is with (null when
@@ -116,6 +118,9 @@ window.addEventListener("keydown", (e) => {
   // C-66: Renata and the roster's keycap both promise Z = End Day.
   // Keep it inert outside the office and while the player is reading
   // a modal/dialogue so a stray key cannot discard their current flow.
+  // Since the end-day confirm modal, Z OPENS that modal rather than
+  // ending the day — the key is one slip from WASD (Lucas, 2026-09-02);
+  // the modal's own Z handler cancels it.
   if ((e.code === "KeyZ" || e.key.toLowerCase() === "z") && !e.repeat) {
     const target = e.target;
     const isTextEntry = target instanceof HTMLElement && (
@@ -125,10 +130,11 @@ window.addEventListener("keydown", (e) => {
       !isTextEntry &&
       screen === "office" &&
       !dialogue?.isOpen() &&
-      !helpModal?.isOpen()
+      !helpModal?.isOpen() &&
+      !endDayModal?.isOpen()
     ) {
       e.preventDefault();
-      endDay();
+      endDayModal?.open();
     }
   }
 });
@@ -435,12 +441,15 @@ function startOffice(playIntro = false): void {
     uiRoot,
     NPCS,
     (npc) => openDialogueWith(npc),
-    () => endDay(),
+    () => endDayModal?.open(),
     () => openDebugMinigame(),
     game.get().flags["got-acme-contract"] === true,
   );
   questLog = mountQuestLog(uiRoot);
   helpModal = mountHelpModal(uiRoot);
+  // The Z key and the roster's End Day button both confirm here first;
+  // the WebMCP end_day hook below keeps calling endDay() directly.
+  endDayModal = mountEndDayModal(uiRoot, () => endDay());
   // C-46: the NPC hover label lives in uiRoot so it is wiped with the
   // rest of the office UI on screen transitions and remounted here.
   hoverLabel = document.createElement("div");
@@ -905,7 +914,7 @@ function mountOfficeRosterFresh(): void {
     uiRoot,
     NPCS,
     (npc) => openDialogueWith(npc),
-    () => endDay(),
+    () => endDayModal?.open(),
     () => openDebugMinigame(),
     game.get().flags["got-acme-contract"] === true,
   );
@@ -1067,6 +1076,7 @@ function frame(): void {
     dialogueOpen: dialogue?.isOpen() ?? false,
     cinematicPlaying,
     helpOpen: helpModal?.isOpen() ?? false,
+    endDayModalOpen: endDayModal?.isOpen() ?? false,
   })) {
     const advanced = advancePeriodElapsed(game.get().timeOfDay, currentPeriodElapsed, dt);
     currentPeriodElapsed = advanced.elapsedInPeriod;

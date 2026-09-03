@@ -73,11 +73,13 @@ export interface SimulationClockBlockers {
   dialogueOpen?: boolean;
   cinematicPlaying?: boolean;
   helpOpen?: boolean;
+  endDayModalOpen?: boolean;
 }
 
 export function shouldAdvanceSimulationClock(blockers: SimulationClockBlockers): boolean {
   return blockers.screen === "office"
     && blockers.dialogueOpen !== true
     && blockers.cinematicPlaying !== true
-    && blockers.helpOpen !== true;
+    && blockers.helpOpen !== true
+    && blockers.endDayModalOpen !== true;
 }

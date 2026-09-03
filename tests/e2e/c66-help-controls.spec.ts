@@ -40,10 +40,39 @@ test("? opens the complete controls help", async ({ page }) => {
   await expect(help).toBeHidden();
 });
 
-test("Z ends the current day from the office", async ({ page }) => {
+test("Z opens the end-day confirmation; confirming ends the day", async ({ page }) => {
   test.setTimeout(30_000);
   await startOffice(page);
 
+  // Z alone must NOT end the day anymore: it opens the confirm modal.
+  // The key sits next to WASD and was ending the day on a stray press
+  // (Lucas, 2026-09-02). The WebMCP end_day tool keeps bypassing this.
   await page.keyboard.press("z");
+  const modal = page.locator(".endday-modal.open");
+  await expect(modal).toBeVisible();
+  await expect(page.locator(".endday-card")).toContainText("End the day?");
+
+  // Escape cancels and stays in the office.
+  await page.keyboard.press("Escape");
+  await expect(modal).toBeHidden();
+  await expect.poll(() => page.evaluate(() => window.__aitrainer!.getScreen())).toBe("office");
+
+  // Confirming ends the day and shows the summary.
+  await page.keyboard.press("z");
+  await expect(modal).toBeVisible();
+  await modal.locator("[data-confirm]").click();
   await expect(page.getByRole("heading", { name: /day \d+ summary/i })).toBeVisible();
+});
+
+test("The roster End Day button confirms before ending the day", async ({ page }) => {
+  test.setTimeout(30_000);
+  await startOffice(page);
+
+  await page.locator('[data-action="end-day"]').click();
+  const modal = page.locator(".endday-modal.open");
+  await expect(modal).toBeVisible();
+
+  await modal.locator("[data-cancel]").click();
+  await expect(modal).toBeHidden();
+  await expect.poll(() => page.evaluate(() => window.__aitrainer!.getScreen())).toBe("office");
 });
