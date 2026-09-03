@@ -199,25 +199,51 @@ export interface AgentCompanion {
   destroy: () => void;
 }
 
-/** Recolor the reused human mesh into a robot (Lucas: "same mesh
- *  different textures, better for performance"). Metal body, dark
- *  joints, and an emissive visor so it reads as a machine at a glance. */
+/**
+ * Recolor the reused human mesh into a robot (Lucas: "same mesh different
+ * textures, better for performance" - so no new geometry, only materials).
+ *
+ * Matches on the child NAMES the mesh builder assigns rather than on child
+ * order, which was fragile: an index-based guess put the visor on whichever
+ * part happened to come first.
+ */
 function applyRobotSkin(group: THREE.Group): void {
-  const METAL = 0xb8c2cc;
-  const DARK = 0x39424d;
-  const VISOR = 0x22e0ff;
+  const CHASSIS = 0x9aa7b4;   // brushed metal body
+  const FACEPLATE = 0x2b3138; // dark faceplate, so the visor reads
+  const VISOR = 0x2ce8ff;     // emissive cyan
+  const TRIM = 0x596570;
 
-  let index = 0;
   group.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
     const material = child.material;
-    if (Array.isArray(material) || !(material instanceof THREE.MeshLambertMaterial)) return;
-    // Give the head an emissive visor; everything else alternates metal
-    // and dark so panel lines read at the game's low internal resolution.
-    const isHead = child.name === "head" || index === 0;
-    material.color.setHex(isHead ? METAL : index % 2 === 0 ? METAL : DARK);
-    if (isHead) material.emissive = new THREE.Color(VISOR).multiplyScalar(0.25);
-    index += 1;
+    if (Array.isArray(material) || !(material instanceof THREE.MeshLambertMaterial)) {
+      // The eyes use MeshBasicMaterial; turn them into glowing lamps.
+      if (!Array.isArray(material) && material instanceof THREE.MeshBasicMaterial) {
+        if (child.name === "left-eye" || child.name === "right-eye") {
+          material.color.setHex(VISOR);
+          // Widen the eye into a visor slit - the single clearest robot cue.
+          child.scale.set(2.6, 1.4, 1);
+        }
+      }
+      return;
+    }
+
+    switch (child.name) {
+      case "head-mesh":
+        material.color.setHex(FACEPLATE);
+        material.emissive = new THREE.Color(VISOR).multiplyScalar(0.08);
+        break;
+      case "hair":
+      case "clothing-skirt":
+      case "breast":
+        // No hair, no skirt on a robot: hide rather than recolor, so the
+        // silhouette reads as a machine.
+        child.visible = false;
+        break;
+      default:
+        material.color.setHex(child.name.includes("arm") || child.name.includes("leg") ? TRIM : CHASSIS);
+        break;
+    }
   });
 }
 

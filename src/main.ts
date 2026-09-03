@@ -73,6 +73,13 @@ const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
  * live before pressing New Game.
  */
 let webmcpStatus: RegisterResult = { supported: false, namespace: null, registered: 0, failed: 0 };
+/**
+ * Portrait glyph for the agent companion. NOT an emoji: the game renders
+ * in VT323 / Press Start 2P, neither of which carries emoji glyphs, so
+ * U+1F916 came out as a tofu box in the dialogue panel. ASCII reads as a
+ * robot face and rasterizes in the same font as everything else.
+ */
+const AGENT_PORTRAIT = "[+]";
 let agentCompanion: AgentCompanion | null = null;
 let agentBroker: DialogueBroker | null = null;
 /** Turn counter within the current agent conversation, for context. */
@@ -370,12 +377,15 @@ function startOffice(playIntro = false): void {
           }),
         listRooms: () => WORLD_ROOMS.map((room) => ({ id: room.id, name: room.name, floor: room.floor })),
         showBubble: (position, line) => built.npcController.showBubble(position, line),
-        // Spawn ON a corridor waypoint, not at an offset from the player
-        // start. The player starts at (0, 17.8) and an offset behind them
-        // landed at (0, 19.3) - past reception-entrance, off the walkable
-        // graph - so planNpcPath could not route anywhere and every
+        // Spawn ON a corridor waypoint, and one the player can SEE.
+        //
+        // Two earlier attempts were wrong in different ways. An offset from
+        // the player start landed at (0, 19.3) - past reception-entrance and
+        // off the walkable graph - so planNpcPath could not route and every
         // agent_move_to failed with "no walkable route". reception-center
-        // is in the graph and directly in the player's view on spawn.
+        // (0, 14) routes fine but sits directly behind the reception desk
+        // from the spawn view, so the robot appeared and was invisible.
+        // reception-west is in the graph and beside the desk, in frame.
         spawn: { x: 0, z: 14 },
       });
       agentCompanion = companion;
@@ -1114,7 +1124,7 @@ function renderAgentTurn(line: string, options: readonly string[]): void {
   const panel = ensureDialogue();
 
   panel.openAgentTurn(
-    { name: companion.snapshot().name, role: "AI Coworker", emoji: "\u{1F916}" },
+    { name: companion.snapshot().name, role: "AI Coworker", emoji: AGENT_PORTRAIT },
     line,
     options,
     (choice) => {
@@ -1142,7 +1152,7 @@ function requestAgentTurn(): void {
   });
 
   panel.openAgentTurn(
-    { name: companion.snapshot().name, role: "AI Coworker", emoji: "\u{1F916}" },
+    { name: companion.snapshot().name, role: "AI Coworker", emoji: AGENT_PORTRAIT },
     "...",
     ["(waiting for the agent to think)"],
     () => {},

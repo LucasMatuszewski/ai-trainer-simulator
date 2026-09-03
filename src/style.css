@@ -1433,8 +1433,9 @@ html, body {
  * Font sizes respect L-2026-09-03-01: never use tiny fonts.
  * --------------------------------------------------------------- */
 .title-screen .agent-status {
-  margin-top: 10px;
-  font-size: 15px;
+  margin-top: 14px;
+  /* L-2026-09-03-01: "never use so small fonts". */
+  font-size: 18px;
   letter-spacing: 0.02em;
 }
 .title-screen .agent-status.is-live { color: #00ff7f; }
@@ -1447,8 +1448,8 @@ html, body {
   justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
-  font-size: 15px;
-  color: #9a9a9a;
+  font-size: 18px;
+  color: #b0b0b0;
 }
 .title-screen .creators-label { opacity: 0.75; }
 .title-screen .creators-sep { opacity: 0.5; }
