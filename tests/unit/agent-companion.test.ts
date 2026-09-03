@@ -10,6 +10,8 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  AGENT_ANIMATIONS,
+  SPAWN_FACING,
   buildTargetCatalog,
   resolveTarget,
   MAX_SAY_LENGTH,
@@ -109,5 +111,31 @@ describe("clampSpokenLine", () => {
 
   it("returns an empty string for whitespace, so callers can reject it", () => {
     expect(clampSpokenLine("   \n  ")).toBe("");
+  });
+});
+
+describe("AGENT_ANIMATIONS", () => {
+  it("offers the same gesture vocabulary the human coworkers use", () => {
+    // The robot should read as a member of the cast, not as a thing with its
+    // own private animation set - so the names come from DESK_GESTURES plus
+    // the two standing poses.
+    for (const gesture of ["facepalm", "coffee-sip", "fist-pump", "shrug"]) {
+      expect(AGENT_ANIMATIONS).toContain(gesture);
+    }
+    expect(AGENT_ANIMATIONS).toContain("wave");
+    expect(AGENT_ANIMATIONS).toContain("stretch");
+  });
+
+  it("has no duplicates, so a name always means one gesture", () => {
+    expect(new Set(AGENT_ANIMATIONS).size).toBe(AGENT_ANIMATIONS.length);
+  });
+});
+
+describe("SPAWN_FACING", () => {
+  it("looks into the office, not back at the door", () => {
+    // The mesh convention (types.ts) is that rotation.y = PI looks -Z. The
+    // reception spawn sits between the entrance and the office door, so 0
+    // pointed the robot at a door it never walked through.
+    expect(SPAWN_FACING).toBeCloseTo(Math.PI);
   });
 });

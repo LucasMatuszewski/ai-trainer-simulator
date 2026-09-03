@@ -1,3 +1,4 @@
+import { PLAYER_WAIT_MAX_MS } from "./agent-dialogue";
 import { getMemory, pickedOptionsFor } from "../content/dialogue-memory";
 import { DIALOGUES } from "../content/dialogues";
 import { NPCS } from "../content/npcs";
@@ -48,8 +49,11 @@ export interface AgentCompanionHooks {
   say: (line: string) => { ok: boolean; reason?: string; spoken?: string };
   peekDialogueRequest: () => unknown;
   supplyDialogue: (line: unknown, options: unknown) => { ok: boolean; reason?: string };
-  startConversation: (line: unknown, options: unknown) => { ok: boolean; reason?: string };
+  /** Async: the companion walks to the player before it speaks. */
+  startConversation: (line: unknown, options: unknown) => Promise<{ ok: boolean; reason?: string }>;
   awaitPlayerMessage: (timeoutMs?: number) => Promise<unknown>;
+  playAnimation: (name: string) => boolean;
+  animationNames: () => readonly string[];
 }
 
 let agentCompanion: AgentCompanionHooks | null = null;
@@ -170,18 +174,30 @@ const AGENT_INSTRUCTIONS = [
   "  equivalent of W/A/S/D and the mouse. Use them for fine positioning only.",
   "- agent_say({line}) puts a speech bubble over your head that the human can read.",
   "",
+  "- agent_play_animation({name}) plays a gesture: wave, facepalm, coffee-sip, fist-pump,",
+  "  shrug, stretch, nod. Gestures layer over walking, so you can wave while crossing a room.",
+  "",
   "CONVERSATIONS - BOTH DIRECTIONS",
   "The human can start one by walking up and clicking you. You can start one with",
-  "start_conversation({line, options}).",
+  "start_conversation({line, options}) - your character WALKS OVER to them first, so they see",
+  "you coming; the call returns once you have arrived and spoken.",
   "",
   "Either way the loop is the same:",
   "1. wait_for_player_message({}) BLOCKS until the human answers, then returns their choice.",
-  "   Prefer it over polling get_pending_dialogue_request in a loop - it returns the instant",
-  "   they reply, and costs one call instead of one every few seconds. If it returns",
-  "   {waiting: true} it simply timed out; call it again.",
-  "2. supply_dialogue({line, options}) writes your character's next line and the 2-4 replies",
-  "   the human chooses between. Write the options in the HUMAN's voice, not yours.",
+  "2. supply_dialogue({line, options}) writes your next line and the 1-4 replies the human",
+  "   chooses between. Write the options in the HUMAN\u0027s voice, not yours.",
   "3. Repeat. Mark one option with ends:true when the conversation should finish.",
+  "",
+  "STAYING REACHABLE - READ THIS",
+  "wait_for_player_message covers ONE window (25s by default, up to 120 via timeout_seconds).",
+  "It is not a subscription. To stay reachable, CALL IT AGAIN every time it returns",
+  "{waiting: true} - that is a normal empty result, not an error. Looping it is how you",
+  "notice the human walking up to you five minutes from now.",
+  "",
+  "If you do stop waiting, nothing is lost. A human who starts a conversation while you are",
+  "not listening has their request QUEUED, and your next wait_for_player_message returns it",
+  "straight away. They just see your character thinking for longer. So: loop if you can, and",
+  "check back whenever you can if you cannot.",
   "",
   "You are writing this character. The game's author wrote none of your lines. Stay in the",
   "persona you gave at join time, keep lines short, and remember what the human already said -",
@@ -733,16 +749,19 @@ const implementations: ToolImplementation[] = [
       if (lineError) return lineError;
       return Array.isArray(call.parameters.options) ? null : "options must be an array of 1-4 replies";
     },
-    execute: (call) => {
+    execute: async (call) => {
       const companion = requireCompanion();
       if ("error" in companion) return { ok: false, error: companion.error };
       if (!companion.isActive()) return { ok: false, error: "call agent_join first" };
-      const result = companion.startConversation(call.parameters.line, call.parameters.options);
+      // Resolves after the walk, so the agent's own call reflects the fact
+      // that its character physically crossed the room to speak.
+      const result = await companion.startConversation(call.parameters.line, call.parameters.options);
       if (!result.ok) return { ok: false, error: result.reason ?? "could not start the conversation" };
       return {
         ok: true,
         data: {
           started: true,
+          walkedToPlayer: true,
           next: "Call wait_for_player_message to hear their reply.",
         },
       };
@@ -755,15 +774,64 @@ const implementations: ToolImplementation[] = [
         "WAIT until the human player replies, then return what they chose. This BLOCKS - it " +
         "does not return immediately, and that is deliberate: it is how you find out about a " +
         "reply the moment it happens instead of polling. If it returns {waiting: true} nothing " +
-        "was said in time; that is not an error, just call it again. Takes no arguments; " +
-        "call with {}.",
-      parameters: {},
+        "was said in time; that is not an error, CALL IT AGAIN. Re-arming it in a loop is how " +
+        "you stay reachable: each call only covers its own window, and a player who starts " +
+        "talking while you are not waiting has their request QUEUED, so the next call returns " +
+        "it immediately. Nothing is ever lost - the robot just looks like it is thinking for " +
+        "longer.",
+      parameters: {
+        timeout_seconds: {
+          type: "number",
+          description:
+            "How long to wait before returning 'nothing yet' (default 25, max 120). Use a " +
+            "longer wait if your host tolerates long tool calls - it covers more time per call.",
+          example: 25,
+        },
+      },
     },
-    validate: validateNoParameters,
-    execute: async () => {
+    validate: (call) => {
+      if (call.parameters.timeout_seconds === undefined) return null;
+      return requiredNumber(call, "timeout_seconds");
+    },
+    execute: async (call) => {
       const companion = requireCompanion();
       if ("error" in companion) return { ok: false, error: companion.error };
-      return { ok: true, data: jsonSnapshot(await companion.awaitPlayerMessage()) };
+      const requested = call.parameters.timeout_seconds;
+      const timeoutMs =
+        typeof requested === "number" && Number.isFinite(requested)
+          ? Math.min(Math.max(requested, 1) * 1000, PLAYER_WAIT_MAX_MS)
+          : undefined;
+      return { ok: true, data: jsonSnapshot(await companion.awaitPlayerMessage(timeoutMs)) };
+    },
+  },
+  {
+    definition: {
+      name: "agent_play_animation",
+      description:
+        "Play a gesture on your character - the same body language the human coworkers use. " +
+        "Gestures layer over walking, so you can wave while crossing the room.",
+      parameters: {
+        name: {
+          type: "string",
+          description: "One of: wave, facepalm, coffee-sip, fist-pump, shrug, stretch, nod.",
+          example: "wave",
+          required: true,
+        },
+      },
+    },
+    validate: (call) => requiredString(call, "name"),
+    execute: (call) => {
+      const companion = requireCompanion();
+      if ("error" in companion) return { ok: false, error: companion.error };
+      if (!companion.isActive()) return { ok: false, error: "call agent_join first" };
+      const name = String(call.parameters.name);
+      if (!companion.playAnimation(name)) {
+        return {
+          ok: false,
+          error: `unknown animation "${name}". Valid: ${companion.animationNames().join(", ")}`,
+        };
+      }
+      return { ok: true, data: { playing: name } };
     },
   },
 ];

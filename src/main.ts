@@ -417,13 +417,21 @@ function startOffice(playIntro = false): void {
           const result = broker.supply(line, options);
           return result.ok ? { ok: true } : { ok: false, reason: result.reason };
         },
-        startConversation: (line, options) => {
-          // The agent is walking up and speaking first, so there is no
-          // pending request to answer - the panel simply opens.
+        startConversation: async (line, options) => {
+          // Walk over BEFORE speaking (Lucas, 2026-09-03): a robot that opens
+          // a dialogue from across the room reads as a popup, not a coworker.
+          // The walk is the same pathfinding + walk cycle the NPCs use, so
+          // the player watches it approach.
+          const playerPosition = controls?.getPlayerPosition();
+          if (playerPosition) {
+            await companion.walkToPoint({ x: playerPosition.x, z: playerPosition.z });
+          }
           agentTurn = 1;
           const result = broker.startConversation(line, options);
           return result.ok ? { ok: true } : { ok: false, reason: result.reason };
         },
+        playAnimation: (name: string) => companion.playAnimation(name),
+        animationNames: () => companion.animationNames(),
         awaitPlayerMessage: (timeoutMs) => broker.awaitPlayerMessage(timeoutMs),
       });
     }
@@ -792,6 +800,35 @@ function updateHoverLabel(): void {
     // Same reach as the click so hover and click always agree.
     maxDistance: 25,
   });
+  // The companion is not in npcMeshes (it has no NpcId), so it needs its own
+  // hover pass - otherwise the one clickable character in the office is the
+  // only one without a label (Lucas, 2026-09-03).
+  if (agentCompanion?.isActive() === true) {
+    const companionHit = raycaster
+      .intersectObject(engine.scene, true)
+      .filter((h) => h.distance <= 25)
+      .some((h) => {
+        let node: THREE.Object3D | null = h.object;
+        while (node !== null) {
+          if (node.name === "agent-companion-body") return true;
+          node = node.parent;
+        }
+        return false;
+      });
+    if (companionHit) {
+      const snapshot = agentCompanion.snapshot();
+      const head = new THREE.Vector3(snapshot.position.x, 2.1, snapshot.position.z);
+      head.project(engine.camera);
+      if (head.z <= 1 && head.z >= -1) {
+        hoverLabel.textContent = `${snapshot.name} - AI Coworker`;
+        hoverLabel.style.left = `${(head.x * 0.5 + 0.5) * rect.width}px`;
+        hoverLabel.style.top = `${(-head.y * 0.5 + 0.5) * rect.height}px`;
+        hoverLabel.hidden = false;
+        return;
+      }
+    }
+  }
+
   let id: NpcId | null = null;
   if (hit.kind === "npc") {
     const object = sceneObjects.npcObjects[hit.npcId as NpcId];
@@ -1181,6 +1218,9 @@ function requestAgentTurn(): void {
 /** The human walked up to the robot and clicked it. */
 function startAgentConversation(): void {
   if (agentCompanion?.isActive() !== true) return;
+  // C-39's rule applies to the robot too: you talk to a face, not a back.
+  const playerPosition = controls?.getPlayerPosition();
+  if (playerPosition) agentCompanion.faceTowards({ x: playerPosition.x, z: playerPosition.z });
   sceneObjects?.npcController.clearBubbles();
   if (dialogue?.isOpen()) dialogue.close();
   agentTurn = 1;

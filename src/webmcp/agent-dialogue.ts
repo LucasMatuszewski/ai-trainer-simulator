@@ -63,14 +63,26 @@ export interface SuppliedTurn {
   options: TurnOption[];
 }
 
-/** How long a long-poll waits before returning "nothing yet, call again".
+/** Default long-poll duration.
  *
  *  Deliberately short. We do not know what tool-call timeout ChatGPT's
  *  browser enforces, and a wait that outlives the host's patience looks like
  *  a hung tool rather than an empty result. 25s is responsive enough to feel
  *  like a notification and short enough to stay well inside any plausible
- *  limit. */
+ *  limit. An agent on a tolerant host can ask for longer. */
 export const PLAYER_WAIT_TIMEOUT_MS = 25_000;
+
+/** Ceiling on a caller-requested wait. */
+export const PLAYER_WAIT_MAX_MS = 120_000;
+
+/**
+ * The long-poll is COVERAGE, not a subscription: it lasts one call, and an
+ * agent stays reachable by re-arming it. That is why nothing is lost when it
+ * lapses - a player who opens a conversation while no agent is waiting has
+ * their request QUEUED, and the next wait (or peek) returns it immediately.
+ * The player is never talking into a void; the robot simply looks like it is
+ * thinking for longer.
+ */
 
 export interface PlayerMessage {
   waiting: boolean;
@@ -277,6 +289,19 @@ export function createDialogueBroker(
     isFinished: () => finished,
 
     async awaitPlayerMessage(timeoutMs = PLAYER_WAIT_TIMEOUT_MS) {
+      // A conversation the player opened while nobody was listening is still
+      // pending: report it immediately rather than making them wait out a
+      // full poll for a request that already exists.
+      if (pending !== null && lastPlayerChoice === null) {
+        return {
+          waiting: false,
+          turn: pending.turn,
+          hint:
+            "The player opened a conversation and is waiting for your first line. " +
+            "Answer with supply_dialogue.",
+        };
+      }
+
       // If the player already answered and the agent has not consumed it,
       // return immediately rather than making it wait for the next answer.
       if (lastPlayerChoice !== null) {

@@ -35,6 +35,44 @@ export const ARRIVAL_RADIUS = 1.1;
 /** Body radius, matching the NPC bodies so collision reads the same. */
 export const COMPANION_RADIUS = 0.3;
 
+/**
+ * Facing the companion spawns with, in radians.
+ *
+ * PI looks -Z, which is INTO the office. The reception spawn sits between the
+ * entrance and the office door, and the previous value of 0 pointed the robot
+ * back at the door it never came through (Lucas, 2026-09-03: "should spawn
+ * looking on the office"). Exported so the rule is testable without three.js.
+ */
+export const SPAWN_FACING = Math.PI;
+
+/**
+ * Gestures the agent may play by name. Deliberately the same vocabulary the
+ * scheduled NPCs use (`DESK_GESTURES` in npc-idle.ts) plus the two standing
+ * poses, so the robot moves like a member of the cast rather than having its
+ * own private animation set.
+ */
+export const AGENT_ANIMATIONS = [
+  "wave",
+  "facepalm",
+  "coffee-sip",
+  "fist-pump",
+  "shrug",
+  "stretch",
+  "nod",
+] as const;
+export type AgentAnimation = (typeof AGENT_ANIMATIONS)[number];
+
+/** How long each gesture holds before easing back to neutral, in seconds. */
+const ANIMATION_DURATION_S: Readonly<Record<AgentAnimation, number>> = {
+  wave: 2.0,
+  facepalm: 1.6,
+  "coffee-sip": 1.3,
+  "fist-pump": 1.8,
+  shrug: 1.4,
+  stretch: 2.2,
+  nod: 1.2,
+};
+
 export type TargetKind = "npc" | "room";
 
 export interface CompanionTarget {
@@ -217,6 +255,18 @@ export interface AgentCompanion {
   step: (direction: StepDirection, metres: number) => StepOutcome;
   /** Rotate in place, the equivalent of moving the mouse. */
   turn: (degrees: number) => StepOutcome;
+  /** Turn to look at a world point - used to face the player on dialogue. */
+  faceTowards: (point: XZ) => void;
+  /**
+   * Walk to a raw world point and resolve when the companion arrives (or when
+   * `timeoutMs` elapses). Used by start_conversation so the robot walks over
+   * to the player instead of speaking from across the room.
+   */
+  walkToPoint: (point: XZ, timeoutMs?: number) => Promise<{ arrived: boolean; reason?: string }>;
+  /** Play a named gesture. Returns false for an unknown name. */
+  playAnimation: (name: string) => boolean;
+  /** Every gesture name playAnimation accepts. */
+  animationNames: () => readonly string[];
   say: (line: string) => { ok: boolean; reason?: string; spoken?: string };
   lookAround: () => unknown;
   update: (dt: number) => void;
@@ -283,8 +333,18 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
   let distanceInSegment = 0;
   let movingTo: string | null = null;
   let walkCycle: WalkCycleState = { distanceTraveled: 0, amplitude: 0 };
-  /** Facing in radians; 0 looks +Z, matching the NPC mesh convention. */
-  let facing = 0;
+  /**
+   * Facing in radians; 0 looks +Z, matching the NPC mesh convention.
+   *
+   * Spawns at PI, looking INTO the office (-Z). The reception spawn sits
+   * between the entrance and the office door, and facing 0 pointed the robot
+   * back at the door it did not come through (Lucas, 2026-09-03).
+   */
+  let facing = SPAWN_FACING;
+  /** Currently playing gesture, or null. */
+  let animation: { name: AgentAnimation; elapsed: number; duration: number } | null = null;
+  /** Resolver for an in-flight walkToPoint. */
+  let arrivalResolver: ((result: { arrived: boolean; reason?: string }) => void) | null = null;
 
   function isActive(): boolean {
     return group !== null;
@@ -304,6 +364,7 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       displayName = clampSpokenLine(name) || "Rusty";
       persona = clampSpokenLine(personaText);
       position.set(deps.spawn.x, 0, deps.spawn.z);
+      facing = SPAWN_FACING;
       path = null;
       movingTo = null;
       walkCycle = { distanceTraveled: 0, amplitude: 0 };
@@ -318,6 +379,7 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       // it is not in npcMeshes, because it has no NpcId.
       group.name = "agent-companion-body";
       group.position.copy(position);
+      group.rotation.y = facing;
       deps.scene.add(group);
 
       return { ok: true, name: displayName };
@@ -432,6 +494,73 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       };
     },
 
+    faceTowards(point) {
+      const dx = point.x - position.x;
+      const dz = point.z - position.z;
+      if (Math.abs(dx) < 1e-4 && Math.abs(dz) < 1e-4) return;
+      facing = Math.atan2(dx, dz);
+      if (group) group.rotation.y = facing;
+    },
+
+    async walkToPoint(point, timeoutMs = 15_000) {
+      if (!isActive()) return { arrived: false, reason: "no companion has joined the game" };
+
+      // Stop a polite distance short: walking INTO the player would end with
+      // the two of them overlapping, and the collision pass would then shove
+      // the robot away mid-conversation.
+      const dx = position.x - point.x;
+      const dz = position.z - point.z;
+      const distance = Math.hypot(dx, dz);
+      const STANDOFF = 1.2;
+      if (distance <= STANDOFF + 0.3) {
+        // Already close enough - just turn to face them.
+        facing = Math.atan2(point.x - position.x, point.z - position.z);
+        if (group) group.rotation.y = facing;
+        return { arrived: true };
+      }
+      const scale = STANDOFF / distance;
+      const destination = new THREE.Vector3(
+        point.x + dx * scale,
+        0,
+        point.z + dz * scale,
+      );
+
+      const planned = planNpcPath(position, destination, deps.waypoints, deps.edges, deps.obstacles);
+      if (planned === null) return { arrived: false, reason: "no walkable route to the player" };
+
+      path = planned;
+      segmentIndex = 0;
+      distanceInSegment = 0;
+      movingTo = "player";
+
+      return new Promise((resolve) => {
+        let settled = false;
+        const finish = (result: { arrived: boolean; reason?: string }): void => {
+          if (settled) return;
+          settled = true;
+          arrivalResolver = null;
+          // Whatever happened, look at them before speaking.
+          facing = Math.atan2(point.x - position.x, point.z - position.z);
+          if (group) group.rotation.y = facing;
+          resolve(result);
+        };
+        arrivalResolver = finish;
+        // Never hang: a blocked walk still has to let the conversation open,
+        // or the agent's tool call sits there until its host gives up.
+        setTimeout(() => finish({ arrived: false, reason: "could not reach the player in time" }), timeoutMs);
+      });
+    },
+
+    playAnimation(name) {
+      if (!isActive()) return false;
+      if (!(AGENT_ANIMATIONS as readonly string[]).includes(name)) return false;
+      const gesture = name as AgentAnimation;
+      animation = { name: gesture, elapsed: 0, duration: ANIMATION_DURATION_S[gesture] };
+      return true;
+    },
+
+    animationNames: () => AGENT_ANIMATIONS,
+
     say(line) {
       if (!isActive()) return { ok: false, reason: "no companion has joined the game" };
       const spoken = clampSpokenLine(line);
@@ -488,6 +617,7 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
         if (result.finished) {
           path = null;
           movingTo = null;
+          arrivalResolver?.({ arrived: true });
         }
       }
 
@@ -510,6 +640,65 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       if (legRight) legRight.rotation.x = -output.legSwing;
       if (armLeft) armLeft.rotation.x = -output.armSwing;
       if (armRight) armRight.rotation.x = output.armSwing;
+
+      // A gesture plays OVER the walk cycle rather than replacing it, so a
+      // wave while walking still swings the legs. It is written after the
+      // cycle for that reason - last write wins on the limbs it touches.
+      if (animation !== null) {
+        animation.elapsed += dt;
+        const t = Math.min(1, animation.elapsed / animation.duration);
+        // Sine ease in and out, so a gesture never snaps on or off.
+        const amount = Math.sin(t * Math.PI);
+        const head = group.getObjectByName("head");
+
+        switch (animation.name) {
+          case "wave":
+            // Right arm up, forearm oscillating.
+            if (armRight) {
+              armRight.rotation.x = -2.2 * amount;
+              armRight.rotation.z = Math.sin(animation.elapsed * 9) * 0.5 * amount;
+            }
+            break;
+          case "facepalm":
+            if (armRight) {
+              armRight.rotation.x = -2.5 * amount;
+              armRight.rotation.z = 0.6 * amount;
+            }
+            if (head) head.rotation.x = 0.35 * amount;
+            break;
+          case "coffee-sip":
+            if (armRight) armRight.rotation.x = -2.1 * amount;
+            if (head) head.rotation.x = -0.3 * amount;
+            break;
+          case "fist-pump":
+            // Two pumps across the gesture.
+            if (armLeft) armLeft.rotation.x = -2.4 * amount * Math.abs(Math.sin(t * Math.PI * 2));
+            if (armRight) armRight.rotation.x = -2.4 * amount * Math.abs(Math.sin(t * Math.PI * 2));
+            break;
+          case "shrug":
+            if (armLeft) armLeft.rotation.z = -1.75 * amount;
+            if (armRight) armRight.rotation.z = 1.75 * amount;
+            break;
+          case "stretch":
+            if (armLeft) armLeft.rotation.x = -2.6 * amount;
+            if (armRight) armRight.rotation.x = -2.6 * amount;
+            if (head) head.rotation.x = -0.4 * amount;
+            break;
+          case "nod":
+            if (head) head.rotation.x = Math.sin(animation.elapsed * 7) * 0.35 * amount;
+            break;
+        }
+
+        if (t >= 1) {
+          animation = null;
+          // Return the head to neutral; the limbs are rewritten every frame
+          // by the walk cycle above, but the head is not.
+          const restingHead = group.getObjectByName("head");
+          if (restingHead) restingHead.rotation.x = 0;
+          if (armLeft) armLeft.rotation.z = 0;
+          if (armRight) armRight.rotation.z = 0;
+        }
+      }
     },
 
     destroy() {
