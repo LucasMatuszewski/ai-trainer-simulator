@@ -16,15 +16,19 @@
  * its own soft drop shadow behind it - is what the eye actually reads as
  * "raised letters", and it costs two textured planes per logo.
  *
- * TWO ASSET HAZARDS, BOTH HANDLED IN normaliseSvg():
- *  - The Edukey marks are pure white (fill="#fff"), which is invisible on a
- *    light wall.
- *  - The DevPowers marks are drawn with `currentColor` plus an internal
- *    `@media (prefers-color-scheme: dark)` rule, so rasterising them as-is
- *    makes the wall logo change colour with the VIEWER'S OS THEME.
- * Both are recoloured to an explicit ink before rasterising, so the wall
- * looks the same for everyone. Both marks are single-colour, so recolouring
- * is faithful rather than a distortion of the brand.
+ * ASSET HANDLING
+ * Both marks are single-colour, so recolouring them to one ink is faithful
+ * rather than a distortion. normaliseSvg() does that before rasterising.
+ *
+ * It also strips any `@media (prefers-color-scheme: dark)` rule, which the
+ * browser honours when it rasterises an SVG - left in, a wall logo would
+ * change colour with the VIEWER'S OS THEME. Those rules have since been
+ * removed from the source files themselves (Lucas okayed editing them,
+ * 2026-09-03), so this is now belt-and-braces rather than the fix: it keeps
+ * the guarantee if someone re-exports a mark from a tool that adds one back.
+ * The favicon deliberately KEEPS its dark-mode rule - a browser tab really
+ * should adapt to the browser's theme - which is exactly why the strip has
+ * to live here rather than being assumed of every asset in the folder.
  */
 
 import * as THREE from "three";
