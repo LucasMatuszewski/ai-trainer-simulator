@@ -28,6 +28,7 @@ import type { Waypoint } from "../content/corridor-waypoints";
 /** Bubble text cap. The layer is one line of DOM text; longer strings
  *  push the bubble wider than the viewport rather than wrapping. */
 export const MAX_SAY_LENGTH = 120;
+export const MAX_PERSONA_LENGTH = 500;
 
 /** How close the companion must get before a move is reported as arrived. */
 export const ARRIVAL_RADIUS = 1.1;
@@ -48,14 +49,12 @@ export const SPAWN_FACING = Math.PI;
 /**
  * How far the companion stops from the player when it walks over to talk.
  *
- * Tuned by eye, twice. 1.2 m filled the first-person view and read as
- * looming; 1.9 m was still too close (Lucas, 2026-09-03). 2.5 m it is - the
- * whole robot is in frame with room around it, which is what "someone came
- * over to talk to you" actually looks like rather than "someone is standing
- * on your feet". First-person cameras compress distance, so the number that
- * feels right in-game is larger than the real-world equivalent.
+ * Three metres leaves the full robot comfortably in the human's view.
  */
-export const CONVERSATION_DISTANCE = 2.5;
+export const CONVERSATION_DISTANCE = 3;
+
+/** Personal space for approaching another coworker. */
+const NPC_CONVERSATION_DISTANCE = 1.75;
 
 /**
  * Gestures the agent may play by name. Deliberately the same vocabulary the
@@ -261,6 +260,8 @@ export interface AgentCompanion {
   snapshot: () => CompanionSnapshot;
   /** Begin walking to a named target. Arrival is reported via snapshot. */
   moveTo: (targetName: string) => MoveOutcome;
+  /** Begin a named move and wait for actual arrival; timeout stops the walk. */
+  awaitMoveTo: (targetName: string, timeoutMs?: number) => Promise<{ arrived: boolean; reason?: string }>;
   /**
    * Raw movement, the equivalent of holding W/A/S/D for a moment
    * (L-2026-09-03-04). `metres` is clamped, collision still applies, and a
@@ -360,6 +361,72 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
   /** Resolver for an in-flight walkToPoint. */
   let arrivalResolver: ((result: { arrived: boolean; reason?: string }) => void) | null = null;
 
+  let trackedNpc: { id: string; position: XZ; replans: number } | null = null;
+  let retargetElapsed = 0;
+
+  function stopWalk(result: { arrived: boolean; reason?: string }): void {
+    path = null;
+    movingTo = null;
+    trackedNpc = null;
+    const resolve = arrivalResolver;
+    arrivalResolver = null;
+    resolve?.(result);
+  }
+
+  function beginPath(planned: THREE.Vector3[], target: string | null): void {
+    path = planned;
+    segmentIndex = 0;
+    distanceInSegment = 0;
+    movingTo = target;
+  }
+
+  function facePoint(point: XZ): void {
+    const dx = point.x - position.x;
+    const dz = point.z - position.z;
+    if (Math.hypot(dx, dz) < 1e-4) return;
+    facing = Math.atan2(dx, dz);
+    if (group) group.rotation.y = facing;
+  }
+
+  // A bounded ring search is the variable-distance equivalent of
+  // approachSpotFor. Reject blocked spots rather than depenetrating one
+  // into the person's space. The existing path planner owns routing.
+  function planApproach(point: XZ, distance: number): THREE.Vector3[] | null {
+    const heading = Math.atan2(position.x - point.x, position.z - point.z);
+    const clearance = COMPANION_RADIUS + 0.001;
+    const obstacles = deps.obstacles.map((o) => ({
+      minX: o.minX - clearance, maxX: o.maxX + clearance,
+      minZ: o.minZ - clearance, maxZ: o.maxZ + clearance,
+    }));
+    for (let i = 0; i < 16; i++) {
+      // Alternate sides, trying the shortest approach first.
+      const offset = Math.ceil(i / 2) * (i % 2 ? 1 : -1) * Math.PI / 8;
+      const destination = new THREE.Vector3(
+        point.x + Math.sin(heading + offset) * distance, 0,
+        point.z + Math.cos(heading + offset) * distance,
+      );
+      if (destination.x < deps.bounds.minX + clearance || destination.x > deps.bounds.maxX - clearance ||
+          destination.z < deps.bounds.minZ + clearance || destination.z > deps.bounds.maxZ - clearance) continue;
+      if (obstacles.some((o) => destination.x >= o.minX && destination.x <= o.maxX &&
+          destination.z >= o.minZ && destination.z <= o.maxZ)) continue;
+      const planned = planNpcPath(position, destination, deps.waypoints, deps.edges, obstacles);
+      if (planned !== null) return planned;
+    }
+    return null;
+  }
+
+  function waitForArrival(timeoutMs: number): Promise<{ arrived: boolean; reason?: string }> {
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        stopWalk({ arrived: false, reason: "could not reach the destination in time" });
+      }, timeoutMs);
+      arrivalResolver = (result) => {
+        clearTimeout(timer);
+        resolve(result);
+      };
+    });
+  }
+
   function isActive(): boolean {
     return group !== null;
   }
@@ -376,7 +443,7 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       }
 
       displayName = clampSpokenLine(name) || "Rusty";
-      persona = clampSpokenLine(personaText);
+      persona = personaText.replace(/\s+/g, " ").trim().slice(0, MAX_PERSONA_LENGTH);
       position.set(deps.spawn.x, 0, deps.spawn.z);
       facing = SPAWN_FACING;
       path = null;
@@ -401,6 +468,7 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
 
     leave() {
       if (group === null) return false;
+      stopWalk({ arrived: false, reason: "companion left the game" });
       deps.scene.remove(group);
       group.traverse((child) => {
         if (child instanceof THREE.Mesh) {
@@ -436,8 +504,11 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
         return { ok: false, reason: resolved.reason, candidates: resolved.candidates };
       }
 
+      stopWalk({ arrived: false, reason: "walk replaced by a new move" });
       const destination = new THREE.Vector3(resolved.target.position.x, 0, resolved.target.position.z);
-      const planned = planNpcPath(position, destination, deps.waypoints, deps.edges, deps.obstacles);
+      const planned = resolved.target.kind === "npc"
+        ? planApproach(resolved.target.position, NPC_CONVERSATION_DISTANCE)
+        : planNpcPath(position, destination, deps.waypoints, deps.edges, deps.obstacles);
       if (planned === null) {
         return {
           ok: false,
@@ -446,11 +517,18 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
         };
       }
 
-      path = planned;
-      segmentIndex = 0;
-      distanceInSegment = 0;
-      movingTo = resolved.target.id;
+      beginPath(planned, resolved.target.id);
+      if (resolved.target.kind === "npc") {
+        trackedNpc = { id: resolved.target.id, position: { ...resolved.target.position }, replans: 0 };
+        retargetElapsed = 0;
+      }
       return { ok: true, target: resolved.target.id };
+    },
+
+    async awaitMoveTo(targetName, timeoutMs = 15_000) {
+      const result = this.moveTo(targetName);
+      if (!result.ok) return { arrived: false, reason: result.reason };
+      return waitForArrival(timeoutMs);
     },
 
     step(direction, metres) {
@@ -461,6 +539,7 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       // A raw step is a nudge. Anything longer is a journey and belongs to
       // agent_move_to, which paths around furniture instead of bumping it.
       const distance = Math.min(metres, MAX_STEP_METRES);
+      stopWalk({ arrived: false, reason: "walk replaced by a step" });
 
       // Camera-relative, exactly like the player's WASD: forward is wherever
       // the companion is currently facing.
@@ -526,60 +605,18 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       };
     },
 
-    faceTowards(point) {
-      const dx = point.x - position.x;
-      const dz = point.z - position.z;
-      if (Math.abs(dx) < 1e-4 && Math.abs(dz) < 1e-4) return;
-      facing = Math.atan2(dx, dz);
-      if (group) group.rotation.y = facing;
-    },
+    faceTowards: facePoint,
 
     async walkToPoint(point, timeoutMs = 15_000) {
       if (!isActive()) return { arrived: false, reason: "no companion has joined the game" };
-
-      // Stop a polite distance short: walking INTO the player would end with
-      // the two of them overlapping, and the collision pass would then shove
-      // the robot away mid-conversation.
-      const dx = position.x - point.x;
-      const dz = position.z - point.z;
-      const distance = Math.hypot(dx, dz);
-      if (distance <= CONVERSATION_DISTANCE + 0.35) {
-        // Already close enough - just turn to face them.
-        facing = Math.atan2(point.x - position.x, point.z - position.z);
-        if (group) group.rotation.y = facing;
-        return { arrived: true };
-      }
-      const scale = CONVERSATION_DISTANCE / distance;
-      const destination = new THREE.Vector3(
-        point.x + dx * scale,
-        0,
-        point.z + dz * scale,
-      );
-
-      const planned = planNpcPath(position, destination, deps.waypoints, deps.edges, deps.obstacles);
+      stopWalk({ arrived: false, reason: "walk replaced by a new approach" });
+      const destinationPerson = { x: point.x, z: point.z };
+      const planned = planApproach(destinationPerson, CONVERSATION_DISTANCE);
       if (planned === null) return { arrived: false, reason: "no walkable route to the player" };
-
-      path = planned;
-      segmentIndex = 0;
-      distanceInSegment = 0;
-      movingTo = "player";
-
-      return new Promise((resolve) => {
-        let settled = false;
-        const finish = (result: { arrived: boolean; reason?: string }): void => {
-          if (settled) return;
-          settled = true;
-          arrivalResolver = null;
-          // Whatever happened, look at them before speaking.
-          facing = Math.atan2(point.x - position.x, point.z - position.z);
-          if (group) group.rotation.y = facing;
-          resolve(result);
-        };
-        arrivalResolver = finish;
-        // Never hang: a blocked walk still has to let the conversation open,
-        // or the agent's tool call sits there until its host gives up.
-        setTimeout(() => finish({ arrived: false, reason: "could not reach the player in time" }), timeoutMs);
-      });
+      beginPath(planned, "player");
+      const result = await waitForArrival(timeoutMs);
+      if (result.arrived) facePoint(destinationPerson);
+      return result;
     },
 
     playAnimation(name) {
@@ -596,7 +633,7 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       if (!isActive()) return { ok: false, reason: "no companion has joined the game" };
       const spoken = clampSpokenLine(line);
       if (spoken.length === 0) return { ok: false, reason: "line must contain visible text" };
-      deps.showBubble(position.clone(), spoken);
+      deps.showBubble(position, spoken);
       return { ok: true, spoken };
     },
 
@@ -620,6 +657,8 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       return {
         companion: {
           name: displayName,
+          walking: path !== null,
+          movingTo,
           position: { x: position.x, z: position.z },
           // Which way it is facing, so an agent can reason about what
           // "forward" means for agent_step without guessing.
@@ -633,6 +672,24 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
 
     update(dt) {
       if (group === null) return;
+
+      retargetElapsed += dt;
+      if (path !== null && trackedNpc !== null && retargetElapsed >= 0.5) {
+        retargetElapsed = 0;
+        const npc = deps.listNpcs().find((npc) => npc.id === trackedNpc!.id);
+        if (npc === undefined) {
+          stopWalk({ arrived: false, reason: "target person is no longer present" });
+        } else if (Math.hypot(npc.position.x - trackedNpc.position.x, npc.position.z - trackedNpc.position.z) >= 0.5) {
+          const planned = trackedNpc.replans < 20 ? planApproach(npc.position, NPC_CONVERSATION_DISTANCE) : null;
+          if (planned === null) {
+            stopWalk({ arrived: false, reason: "could not keep up with the target person" });
+          } else {
+            trackedNpc.position = { x: npc.position.x, z: npc.position.z };
+            trackedNpc.replans++;
+            beginPath(planned, trackedNpc.id);
+          }
+        }
+      }
 
       let movedThisFrame = 0;
       if (path !== null) {
@@ -652,9 +709,27 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
         facing = result.face;
 
         if (result.finished) {
-          path = null;
-          movingTo = null;
-          arrivalResolver?.({ arrived: true });
+          const npc = trackedNpc === null ? undefined : deps.listNpcs().find((npc) => npc.id === trackedNpc!.id);
+          if (trackedNpc !== null && npc === undefined) {
+            stopWalk({ arrived: false, reason: "target person is no longer present" });
+          } else if (npc !== undefined && trackedNpc !== null) {
+            const separation = Math.hypot(npc.position.x - position.x, npc.position.z - position.z);
+            if (separation < 1.5 || separation > 2) {
+              const planned = trackedNpc.replans < 20 ? planApproach(npc.position, NPC_CONVERSATION_DISTANCE) : null;
+              if (planned === null) {
+                stopWalk({ arrived: false, reason: "could not settle beside the target person" });
+              } else {
+                trackedNpc.position = { x: npc.position.x, z: npc.position.z };
+                trackedNpc.replans++;
+                beginPath(planned, trackedNpc.id);
+              }
+            } else {
+              facePoint(npc.position);
+              stopWalk({ arrived: true });
+            }
+          } else {
+            stopWalk({ arrived: true });
+          }
         }
       }
 
