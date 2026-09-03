@@ -149,3 +149,33 @@ Removed: `set_flag`, `add_relationship`.
 - A real animated spinner rather than a disabled "(thinking...)" option.
 - The §5 host-behaviour questions, which need a live ChatGPT session to answer.
 - Whether an unprompted panel is intrusive; the soft-open idea (bubble first, panel only on engagement) is untested.
+
+---
+
+## 10. "What if the user starts talking after a minute?" (Lucas, 2026-09-03)
+
+The long-poll covers 25 s. Lucas asked the obvious follow-up: what about minute two? He floated two answers — the agent sets a monitor and checks often, or we stand up a push channel (Cloudflare or a small backend) that the agent subscribes to out-of-band.
+
+### The reframe that makes it a smaller problem
+
+**The long-poll is coverage, not a subscription — and nothing is lost when it lapses.** A player who opens a conversation while no agent is waiting has their request **queued**. The next `wait_for_player_message` returns it immediately. The player is never talking into a void; the robot just looks like it is thinking for longer. So a missed window costs latency, not the conversation.
+
+That turns "how do we notify the agent" into "how do we shorten the gap", which is a much cheaper question.
+
+### Recommendation, in order
+
+1. **Re-arm the loop.** An agent that calls `wait_for_player_message` again whenever it returns `{waiting: true}` has continuous coverage at ~1 call per 25 s. `get_instructions` now says this explicitly, under its own heading, because an agent will not infer it.
+2. **Let the agent widen the window.** `timeout_seconds` (max 120) lets an agent on a tolerant host cover four times the ground per call. The default stays 25 s because ChatGPT's tool-call ceiling is unmeasured.
+3. **Queue and report.** Already shipped: a pending player-initiated conversation is returned by the very next wait, so an agent that comes back after five minutes still picks it up.
+
+### Why NOT the external push channel — for this contest
+
+Lucas's channel idea is sound engineering and wrong for the target. The judged surface is **an agent running inside ChatGPT's browser**, and that agent's entire vocabulary is *the tools this page registers*. It cannot `curl` an SSE endpoint, cannot hold a WebSocket, and cannot run a shell. A push channel would therefore notify **nobody who matters for the submission**, while adding a deployed service, an auth story, and a second failure mode to the one thing that has to work on stage.
+
+It becomes genuinely attractive in exactly one scenario: **shell-capable agents** (Claude Code, a local runner) driving the game, where subscribing to a stream is trivial and a long-poll is wasteful. That is a real future audience — and it is also the multiplayer transport question, since a room relay and an event channel are the same infrastructure. Both belong to the 2026-09-06 window, not to today.
+
+**Decision: no external channel now.** Revisit it together with multiplayer, where one Durable Object can serve both.
+
+### The one thing still unmeasured
+
+What tool-call duration ChatGPT's browser tolerates. If it is under ~25 s the long-poll degrades to ordinary polling (still correct, just chattier), and that is the scenario where §4.3's pre-scripted branching turns finally earn their place — a posted tree keeps a conversation moving with no round trip at all.
