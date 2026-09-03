@@ -343,8 +343,14 @@ test("the raw movement controls move the companion and respect collision", async
   await call(page, "agent_join", { name: "Rusty", persona: "qa robot" });
   await page.waitForTimeout(400);
 
+  // agent_turn is RELATIVE, so assert the delta rather than an absolute
+  // bearing. The original assertion expected 90 and broke the moment the
+  // spawn facing moved from 0 to 180 - it was testing where the robot
+  // happens to start, not what the tool promises.
+  const start = (await call(page, "agent_look_around")) as { companion: { facingDegrees?: number } };
   const turned = (await call(page, "agent_turn", { degrees: 90 })) as { facingDegrees: number };
-  expect(turned.facingDegrees).toBe(90);
+  const expected = (((start.companion.facingDegrees ?? 180) + 90) % 360 + 360) % 360;
+  expect(turned.facingDegrees).toBe(expected);
 
   const before = await page.evaluate(() => window.__aitrainer!.inspectCompanion!());
   const stepped = (await call(page, "agent_step", { direction: "forward", metres: 2 })) as {

@@ -616,7 +616,13 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
         .slice(0, 6);
 
       return {
-        companion: { name: displayName, position: { x: position.x, z: position.z } },
+        companion: {
+          name: displayName,
+          position: { x: position.x, z: position.z },
+          // Which way it is facing, so an agent can reason about what
+          // "forward" means for agent_step without guessing.
+          facingDegrees: Math.round(((facing * 180) / Math.PI + 360) % 360),
+        },
         nearbyPeople: near,
         // The full addressable set, so the agent never has to guess a name.
         canWalkTo: catalog.map((t) => ({ id: t.id, what: t.description })),
