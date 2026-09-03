@@ -79,8 +79,26 @@ const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
  * fires exactly once per game rather than every time the store publishes.
  */
 let bartekSummoned = false;
-/** North of this z the player is in reception rather than the main office. */
-const OFFICE_RECEPTION_BOUNDARY_Z = 9.5;
+/**
+ * True while Bartek is walking over after the tutorial. He re-targets the
+ * player as they move and greets them on arrival; cleared once he has.
+ */
+let bartekApproaching = false;
+/**
+ * Re-aiming is event-driven, not on a timer.
+ *
+ * Every setOverride restarts the NPC's path, so re-aiming on a short interval
+ * makes him thrash in place - measured at a 1.5 s interval he never left his
+ * desk. He is only re-aimed when the player has actually walked away from the
+ * point he is heading for, and never more often than the floor below.
+ */
+const BARTEK_RETARGET_PLAYER_DRIFT_M = 3;
+const BARTEK_RETARGET_MIN_INTERVAL_S = 4;
+/** Close enough to stop walking and start talking. */
+const BARTEK_GREET_RADIUS = 3.2;
+let bartekRetargetTimer = 0;
+/** The player position the current walk was aimed at. */
+let bartekAimedAt: { x: number; z: number } | null = null;
 let webmcpStatus: RegisterResult = { supported: false, namespace: null, registered: 0, failed: 0 };
 /**
  * Portrait glyph for the agent companion. NOT an emoji: the game renders
@@ -231,6 +249,7 @@ function showCharacterCreate(): void {
     (data) => {
       game.dispatch({ type: "reset" });
       bartekSummoned = false;
+      bartekApproaching = false;
       game.dispatch({ type: "load", state: { ...game.get(), character: { ...data }, stats: applyTrait(data.trait, game.get().stats) } });
       // First time the player reaches the office: play the day-1 intro
       // cinematic. On Continue (returning save), skip it.
@@ -762,7 +781,7 @@ async function playIntroCinematic(): Promise<void> {
   // After 600ms, also show the intro toast. This is intentionally after
   // the cinematic so the toast doesn't fight the camera for attention.
   setTimeout(() => {
-    if (hud) showToast(hud, "Welcome to DevPowers. Click Bartek's card to start.", "info");
+    if (hud) showToast(hud, "Welcome to DevPowers. Talk to Renata at reception - click her card on the right.", "info");
   }, 600);
 }
 
@@ -1203,43 +1222,27 @@ function summonBartek(): void {
     ? { x: bartek.position.x, z: bartek.position.z }
     : { x: NPCS.find((n) => n.id === "bartek")!.position.x, z: NPCS.find((n) => n.id === "bartek")!.position.z };
 
-  // Where he walks to depends on where the player finished the tutorial.
-  //
-  // Renata is in reception, so that is usually where the player is standing,
-  // and Bartek's desk is at the far west of the main office. He meets them at
-  // the office side of the reception door rather than walking into reception:
-  // a shorter, better-connected route, and the more natural thing for a team
-  // lead to do anyway. If the player has already wandered into the office, he
-  // comes to them properly.
-  //
-  // KNOWN LIMITATION, measured 2026-09-03: he sets off every time and the
-  // route always exists (planNpcPath returns it), but he jams in the narrow
-  // west desk aisle around (-8, 7.3) in roughly half of runs and paces there
-  // until the next period re-plans him. That is the C-48 blocked/escape
-  // ladder meeting a crowded corridor - a pre-existing limit of long
-  // cross-office NPC trips, not something this summon introduced, and the
-  // system ADR 0008 D-36 deliberately stayed out of. The quest still advances
-  // correctly either way; the player can walk to him instead of the reverse.
-  const playerInReception = playerPosition.z > OFFICE_RECEPTION_BOUNDARY_Z;
-  const spot = playerInReception
-    ? { position: { x: 0, y: 0, z: 8.4 }, face: 0 }
-    : approachSpotFor(
-        { x: playerPosition.x, z: playerPosition.z },
-        from,
-        WORLD_BOUNDS,
-        [...OBSTACLES, ...WORLD_COLLISION_WALLS],
-      );
+  // He comes all the way to the player (Lucas: "Bartek comes when it is
+  // finished"). An earlier version stopped him at the office side of the
+  // reception door, because the ~18 m trip out of the narrow west desk aisle
+  // reliably jammed on the C-48 blocked/escape ladder. That turned out to be
+  // caused by re-aiming him on a timer - every setOverride restarts the path,
+  // so frequent re-aims left him walking on the spot. With the re-aim made
+  // drift-based he completes the walk, so the compromise is no longer needed.
+  const spot = approachSpotFor(
+    { x: playerPosition.x, z: playerPosition.z },
+    from,
+    WORLD_BOUNDS,
+    [...OBSTACLES, ...WORLD_COLLISION_WALLS],
+  );
 
   bartekSummoned = true;
+  bartekApproaching = true;
+  bartekRetargetTimer = 0;
+  bartekAimedAt = { x: playerPosition.x, z: playerPosition.z };
   controller.setOverride("bartek", { position: spot.position, face: spot.face, state: "walking" });
   if (hud) {
-    showToast(
-      hud,
-      playerInReception
-        ? "Bartek is coming to meet you by the office door."
-        : "Bartek is heading over to meet you.",
-      "info",
-    );
+    showToast(hud, "Bartek is heading over to meet you.", "info");
   }
 }
 
@@ -1326,6 +1329,64 @@ function frame(): void {
     engine.update(dt);
     if (sceneObjects) {
       for (const u of sceneObjects.updatables) u(dt);
+      // Lucas, 2026-09-03: "he just passed me and got probably to the point
+      // where I was and did not start the conversation". Two bugs in one
+      // sentence. The summon aimed at wherever the player stood at the moment
+      // the tutorial ended, so a player who moved was walking to a stale
+      // point - and nothing ever CHECKED whether he had reached them, so
+      // arriving did nothing at all. He now re-aims while he walks and greets
+      // on proximity rather than on reaching a coordinate.
+      if (bartekApproaching && sceneObjects && controls) {
+        const player = controls.getPlayerPosition();
+        const bartek = sceneObjects.npcObjects.bartek;
+        if (bartek) {
+          const gap = Math.hypot(bartek.position.x - player.x, bartek.position.z - player.z);
+          if (gap <= BARTEK_GREET_RADIUS) {
+            bartekApproaching = false;
+            // Stop him where he is, facing the player, and let him speak
+            // first - walking up and saying nothing is what looked broken.
+            sceneObjects.npcController.setOverride("bartek", {
+              position: { x: bartek.position.x, y: bartek.position.y, z: bartek.position.z },
+              face: Math.atan2(player.x - bartek.position.x, player.z - bartek.position.z),
+              state: "at-desk",
+            });
+            sceneObjects.npcController.showBubble(
+              new THREE.Vector3(bartek.position.x, bartek.position.y, bartek.position.z),
+              "There you are. Got a minute?",
+            );
+            const npc = NPCS.find((candidate) => candidate.id === "bartek");
+            if (npc && !dialogue?.isOpen()) openDialogueWith(npc);
+          } else {
+            bartekRetargetTimer += dt;
+            const drift =
+              bartekAimedAt === null
+                ? Infinity
+                : Math.hypot(player.x - bartekAimedAt.x, player.z - bartekAimedAt.z);
+            // Only re-plan when the player has genuinely moved on, and never
+            // more often than the floor: setOverride restarts the path, so
+            // frequent re-aims leave him walking on the spot.
+            if (
+              drift > BARTEK_RETARGET_PLAYER_DRIFT_M &&
+              bartekRetargetTimer >= BARTEK_RETARGET_MIN_INTERVAL_S
+            ) {
+              bartekRetargetTimer = 0;
+              bartekAimedAt = { x: player.x, z: player.z };
+              const spot = approachSpotFor(
+                { x: player.x, z: player.z },
+                { x: bartek.position.x, z: bartek.position.z },
+                WORLD_BOUNDS,
+                [...OBSTACLES, ...WORLD_COLLISION_WALLS],
+              );
+              sceneObjects.npcController.setOverride("bartek", {
+                position: spot.position,
+                face: spot.face,
+                state: "walking",
+              });
+            }
+          }
+        }
+      }
+
       // ADR 0008: step the agent companion, then honour the bounded wait.
       // A silent agent must never leave the human staring at "..." - the
       // fallback is in character and the panel stays closable (AC-AUTH-05).
