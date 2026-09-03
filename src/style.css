@@ -1446,7 +1446,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 16px;
   flex-wrap: wrap;
   font-size: 18px;
   color: #b0b0b0;
@@ -1454,13 +1454,30 @@ html, body {
 .title-screen .creators-label { opacity: 0.75; }
 .title-screen .creators-sep { opacity: 0.5; }
 .title-screen .creator-link {
-  color: #ffd166;
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
-  border-bottom: 2px solid rgba(255, 209, 102, 0.35);
-  padding-bottom: 1px;
+  opacity: 0.82;
+  transition: opacity 120ms ease-out;
+}
+.title-screen .creator-link img {
+  height: 26px;
+  width: auto;
+  display: block;
+  /* Force both marks to pure white.
+   *
+   * Neither file can be trusted to pick its own colour here: the Edukey
+   * artwork is already white, but the DevPowers files draw with
+   * currentColor plus their own @media (prefers-color-scheme: dark) rule,
+   * which the browser honours when rendering the <img>. Left alone, the
+   * DevPowers logo turns dark navy on this black title screen for every
+   * player whose OS is in LIGHT mode - invisible, and invisible only for
+   * some people. brightness(0) flattens whatever colour the file chose to
+   * black, invert(1) lifts it to white, so the result is the same for
+   * everyone regardless of theme or source artwork. */
+  filter: brightness(0) invert(1);
 }
 .title-screen .creator-link:hover,
 .title-screen .creator-link:focus-visible {
-  color: #fff1c9;
-  border-bottom-color: #ffd166;
+  opacity: 1;
 }

@@ -19,9 +19,15 @@ export interface WebmcpStatusView {
  * worded as creators: the fictional office in this game is a comedy of
  * dysfunction, and neither company is being depicted by it (AC-BRAND-03).
  */
-const CREATORS: ReadonlyArray<{ name: string; href: string }> = [
-  { name: "Edukey", href: "https://edukey.ai" },
-  { name: "DevPowers", href: "https://devpowers.com" },
+const CREATORS: ReadonlyArray<{ name: string; href: string; logo: string }> = [
+  { name: "Edukey", href: "https://edukey.ai", logo: "/assets/edukey/logo-edukey.svg" },
+  {
+    name: "DevPowers",
+    href: "https://devpowers.com",
+    // Horizontal lockup here: the title footer is a wide, short strip, so
+    // the vertical version used on the reception wall would tower over it.
+    logo: "/assets/devpowers/logo-horizontal.svg",
+  },
 ];
 
 export function mountTitleScreen(
@@ -51,7 +57,9 @@ export function mountTitleScreen(
         <span class="creators-label">Built by</span>
         ${CREATORS.map(
           (c) =>
-            `<a class="creator-link" href="${c.href}" target="_blank" rel="noopener noreferrer">${c.name}</a>`,
+            `<a class="creator-link" href="${c.href}" target="_blank" rel="noopener noreferrer" title="${c.name}">` +
+            `<img src="${c.logo}" alt="${c.name}" />` +
+            `</a>`,
         ).join('<span class="creators-sep">+</span>')}
       </div>
     </div>
