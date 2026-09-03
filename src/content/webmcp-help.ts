@@ -110,3 +110,9 @@ export const WEBMCP_FAQ: readonly WebmcpFaqEntry[] = [
       "is not a delivery receipt.",
   },
 ];
+
+/** Use the page being played, without copying query parameters or fragments. */
+export function buildAgentPrompt(pageUrl: string): string {
+  const url = new URL(pageUrl);
+  return `Open ${url.origin}${url.pathname} in your built-in browser.\n\n${AGENT_PROMPT}`;
+}

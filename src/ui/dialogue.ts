@@ -2,7 +2,7 @@
  * UI: dialogue overlay.
  */
 
-import { AGENT_PROMPT, COPY_HINT } from "../content/webmcp-help";
+import { buildAgentPrompt, COPY_HINT } from "../content/webmcp-help";
 import type { DialogueButton, DialogueLink, DialogueNode, DialogueTree, NPC } from "../types";
 import { game } from "../game/state";
 import { getMemory, setMemory, pickedOptionsFor, markOptionPicked } from "../content/dialogue-memory";
@@ -176,7 +176,7 @@ function wireActionButtons(container: HTMLElement): void {
 async function copyAgentPrompt(button: HTMLButtonElement): Promise<void> {
   const original = button.textContent;
   try {
-    await navigator.clipboard.writeText(AGENT_PROMPT);
+    await navigator.clipboard.writeText(buildAgentPrompt(window.location.href));
     button.textContent = COPY_HINT;
     button.disabled = true;
   } catch {

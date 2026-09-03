@@ -1,2 +1,2 @@
 /** Visible game build. Keep the private package version independent. */
-export const GAME_VERSION = "v2026.09.03-06";
+export const GAME_VERSION = "v2026.09.03-07";

@@ -11,7 +11,7 @@
  * buttons, so the links and the prompt are authored exactly once.
  */
 
-import { AGENT_PROMPT, COPY_HINT, WEBMCP_FAQ, WEBMCP_PATHS } from "../content/webmcp-help";
+import { buildAgentPrompt, COPY_HINT, WEBMCP_FAQ, WEBMCP_PATHS } from "../content/webmcp-help";
 
 export interface WebmcpHelpModalHandle {
   root: HTMLElement;
@@ -61,7 +61,7 @@ export function mountWebmcpHelpModal(parent: HTMLElement): WebmcpHelpModalHandle
     </div>
   `;
   parent.appendChild(wrap);
-  wrap.querySelector<HTMLPreElement>("[data-prompt]")!.textContent = AGENT_PROMPT;
+  wrap.querySelector<HTMLPreElement>("[data-prompt]")!.textContent = buildAgentPrompt(window.location.href);
 
   const isOpen = (): boolean => wrap.getAttribute("aria-hidden") === "false";
 
@@ -79,7 +79,7 @@ export function mountWebmcpHelpModal(parent: HTMLElement): WebmcpHelpModalHandle
   wrap.querySelector<HTMLButtonElement>("[data-copy]")!.addEventListener("click", (e) => {
     const button = e.currentTarget as HTMLButtonElement;
     void navigator.clipboard
-      .writeText(AGENT_PROMPT)
+      .writeText(buildAgentPrompt(window.location.href))
       .then(() => {
         button.textContent = COPY_HINT;
         setTimeout(() => {

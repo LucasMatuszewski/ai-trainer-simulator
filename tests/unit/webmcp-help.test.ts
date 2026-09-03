@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { mountWebmcpHelpModal } from "../../src/ui/webmcp-help-modal";
-import { AGENT_PROMPT, WEBMCP_FAQ, WEBMCP_PATHS } from "../../src/content/webmcp-help";
+import { buildAgentPrompt, AGENT_PROMPT, WEBMCP_FAQ, WEBMCP_PATHS } from "../../src/content/webmcp-help";
 
 describe("WEBMCP_PATHS", () => {
   it("offers exactly the two entry paths Lucas specified", () => {
@@ -86,5 +86,15 @@ describe("deadline coworker guidance", () => {
     expect(text).toContain("No game-side API key or AI backend");
     expect(text).toContain("subscription or usage charges");
     expect(text).not.toContain("no cost");
+  });
+});
+
+
+describe("game URL in the copied agent prompt", () => {
+  it.each(["http://localhost:5173/", "https://play.devpowers.com/"])("opens the actual game at %s", url => {
+    const prompt = buildAgentPrompt(url + "?debug=private#section");
+    expect(prompt).toContain(`Open ${url} in your built-in browser`);
+    expect(prompt).not.toContain("debug=private");
+    expect(prompt).not.toContain("#section");
   });
 });
