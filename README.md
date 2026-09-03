@@ -12,9 +12,10 @@ screenshot the page and guess at pixels - it calls real tools that drive the
 same code paths the human player's input drives.
 
 The agent is a **player, not an administrator**. It can join as a visible
-robot coworker, look around, walk to named people and places, and speak. It
-cannot give itself money, set flags, teleport, move your camera, or answer
-your dialogue choices for you.
+robot coworker, look around, walk to named people and places (by name, never
+by coordinate), step and turn like a human on WASD, and speak. It cannot give
+itself money, set flags, teleport, move your camera, or answer your dialogue
+choices for you - those tools do not exist.
 
 The capability worth looking at is **agent-authored dialogue**: when you talk
 to the robot, the game hands the agent the conversation context, and the agent
@@ -33,14 +34,24 @@ nothing per player.
    unavailable, the browser has no model-context surface and the game will
    still play normally, just without the agent. The browser console carries
    the same result under `[webmcp]`.
-3. Ask your agent to play along - for example, *"join my game as a coworker
-   called Rusty, walk over to Bartek, and say hello."*
-4. Walk up to the robot and press the interact control to start a
-   conversation with it.
+3. Ask your agent to play along - for example, *"read the game's
+   instructions, then join as a coworker called Rusty who is a sarcastic QA
+   engineer, walk over to Bartek, and say hello."* The `get_instructions`
+   tool hands it the whole protocol, so it does not have to guess.
+4. Walk up to the robot and click it to start a conversation - or let the
+   agent open one itself with `start_conversation`. Conversations work in
+   both directions.
 
 ### How it is built
 
 - `src/webmcp/tools.ts` - the tool implementations and their validation.
+- `src/webmcp/agent-dialogue.ts` - the conversation handshake, including the
+  long-poll (`wait_for_player_message`) that lets the agent hear a reply the
+  moment it happens. WebMCP has no way for a page to push to an agent, but
+  tool calls are awaited, so holding one open is the closest thing to a
+  notification - and it degrades into ordinary polling when it times out.
+- `src/engine/agent-companion.ts` - the robot itself: pathing, walking,
+  speaking, and the raw movement controls.
 - `src/webmcp/bridge.ts` - registration with the browser. Probes
   `document.modelContext`, then `navigator.modelContext`, then the testing
   shim, because the specification is still moving and sources disagree on the

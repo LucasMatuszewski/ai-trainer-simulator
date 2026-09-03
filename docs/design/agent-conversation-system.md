@@ -1,6 +1,6 @@
 # Design — two-way agent/player conversation over WebMCP
 
-**Status:** Design capture, not yet built. Written 2026-09-03 from Lucas's brief. Nothing here is implemented except where marked SHIPPED.
+**Status:** **Largely SHIPPED 2026-09-03.** Written from Lucas's brief, then built the same night. Sections 3-5 are implemented; section 4.3 (pre-scripted branching turns) is the one deliberate deferral. Section 6 is diagnosis, not work.
 **Parent:** [`docs/PRD-hackathon-webmcp.md`](../PRD-hackathon-webmcp.md), [`ADR 0008`](../ADR/0008-webmcp-browser-bridge-and-agent-companion.md).
 
 ---
@@ -37,7 +37,9 @@ This is strictly better than the 5-15 second polling loop Lucas sketched, for th
 
 The risk to test: **host-side tool-call timeouts.** We do not know what ChatGPT's browser allows. The mitigation is to keep our own timeout well under any plausible host limit (start at **25s**), always resolve rather than reject, and return an explicit `{ waiting: true, call_again: true }` so the agent knows to re-arm. A long-poll that times out cleanly degrades into exactly the polling loop Lucas described, so this design strictly dominates: it is the polling fallback, plus immediacy when the host cooperates.
 
-**Both mechanisms should ship.** `get_conversation` (cheap, immediate, stateless) for an agent that just wants to check, and `wait_for_player_message` (long-poll) for an agent that wants to be responsive. The instructions tool tells the agent to prefer the second.
+**Both mechanisms shipped.** `get_pending_dialogue_request` (cheap, immediate, stateless) for an agent that just wants to check, and `wait_for_player_message` (long-poll) for an agent that wants to be responsive. `get_instructions` tells the agent to prefer the second.
+
+**Measured:** in Chrome, the long-poll resolved **2.6 s** after being armed — i.e. on the player's click, against a 25 s ceiling. The mechanism works; what remains untested is ChatGPT's own tool-call timeout (see §5).
 
 ## 4. Proposed model
 
@@ -46,7 +48,7 @@ The risk to test: **host-side tool-call timeouts.** We do not know what ChatGPT'
 A single conversation exists between the player and the companion. Either side can open it:
 
 - **Player-initiated** (SHIPPED): the player clicks the robot. A pending request appears for the agent, which answers with `supply_dialogue`.
-- **Agent-initiated** (proposed): the agent calls `start_conversation` with its opening line and 1-4 options. The dialogue panel opens on the player's screen unprompted — the robot walked over and said something.
+- **Agent-initiated** (SHIPPED): the agent calls `start_conversation` with its opening line and 1-4 options. The dialogue panel opens on the player's screen unprompted — the robot walked over and said something.
 
 Both converge on the same state machine, so the agent's turn-writing tool is the same in both cases.
 
@@ -67,7 +69,7 @@ Note this widens the current 2-4 range to **1-4**: an agent-opened exchange may 
 
 ### 4.3 Pre-scripted branching turns
 
-Lucas's idea of submitting an array of turns with branching, so an exchange can run without round trips. Worth building **as an optimisation, not as the primary path**:
+**NOT BUILT — the one deliberate deferral.** Lucas's idea of submitting an array of turns with branching, so an exchange can run without round trips. Worth building **as an optimisation, not as the primary path**, and it lost to the long-poll on the night: with replies arriving in ~2.6 s there is no latency problem left for it to solve, and it would add a second authoring format to maintain. Revisit if the ChatGPT host turns out to cap tool-call duration low enough to make the long-poll unreliable — that is exactly the scenario a posted tree survives.
 
 ```
 {
@@ -83,14 +85,14 @@ The agent posts a small graph; the game walks it locally as the player picks. Th
 
 Two distinct spinners, and they must not be confused:
 
-- **Agent composing** — the player has answered and we are waiting on the agent. Already exists as the "..." state; should become a real spinner with the companion's name ("Rusty is thinking...").
+- **Agent composing** (SHIPPED) — the player has answered and we are waiting on the agent. Shows as a single disabled option reading "(Rusty is thinking...)", named after the companion. A literal animated spinner is still worth doing; the named waiting state was the part that mattered.
 - **Player deciding** — the agent is in a `wait_for_player_message` call. Invisible to the player by design; it is the agent that is waiting, and showing the player a spinner for their own turn would be nonsense.
 
 The existing bounded-wait fallback stays: if the agent never answers, the panel shows an in-character line and remains closable. A silent agent must never freeze the human's game.
 
 ### 4.5 Discoverable instructions
 
-A `get_instructions` tool, modelled on a skill: no arguments, returns the protocol in plain language — how to join, that conversations are two-way, that `wait_for_player_message` should be preferred over polling, what `ends` means, and a worked example of a full exchange. Tool descriptions alone are too small to carry a protocol, and an agent that has to infer the loop will get it wrong.
+SHIPPED. A `get_instructions` tool, modelled on a skill: no arguments, returns the protocol in plain language — how to join, that conversations are two-way, that `wait_for_player_message` should be preferred over polling, what `ends` means, and a worked example of a full exchange. Tool descriptions alone are too small to carry a protocol, and an agent that has to infer the loop will get it wrong.
 
 ## 5. Open questions to test
 
@@ -113,9 +115,37 @@ Our own diagnostic is the title-screen line: **"Agent play ready - N WebMCP tool
 
 Sources: [OpenAI Help Center — using site tools](https://help.openai.com/en/articles/20001423-using-site-tools-in-the-chatgpt-desktop-app), [ChatGPT Learn — site tools](https://learn.chatgpt.com/docs/webmcp).
 
-## 7. Tool-surface corrections Lucas asked for (separate from the conversation work)
+## 7. Tool-surface corrections Lucas asked for — all SHIPPED
 
-- **Self-describing schemas.** The extension renders `{"target": "example_string"}` because our JSON Schema carries only a type and a description. Every parameter needs a concrete `examples` value, and every no-argument tool should say so explicitly rather than showing a bare `{}`.
-- **No coordinates.** Lucas asked whether `agent_move_to` should take coordinates. **It should not**, and the reason belongs in the tool description so an agent never goes looking: an agent has not seen the floor plan, and coordinates would let it place itself inside furniture, bypassing the collision guarantee every other character obeys. Names are the interface; the failure path lists every valid name.
-- **Direct movement controls.** Alongside `agent_move_to`, expose the raw controls a human has — step forward/back, strafe, turn — so an agent can drive the companion the way WASD drives the player, instead of only issuing high-level destinations.
-- **Remove the admin hacks.** `set_flag` and `add_relationship` contradict the standing player-only policy (L-2026-08-30-01, ADR 0008 D-40) and must go. Lucas: *"We should not have hacks like set relationship, afaik we already discussed it and decided to keep only normal game controls, should be somewhere in docs already."* He is right — it was documented, and the tools were left in place anyway.
+All four landed on 2026-09-03.
+
+- **Self-describing schemas.** SHIPPED. The extension rendered `{"target": "example_string"}` because our JSON Schema carries only a type and a description. Every parameter needs a concrete `examples` value, and every no-argument tool should say so explicitly rather than showing a bare `{}`.
+- **No coordinates.** SHIPPED — the reason is now in the tool description itself. Lucas asked whether `agent_move_to` should take coordinates. **It should not**, and the reason belongs in the tool description so an agent never goes looking: an agent has not seen the floor plan, and coordinates would let it place itself inside furniture, bypassing the collision guarantee every other character obeys. Names are the interface; the failure path lists every valid name.
+- **Direct movement controls.** SHIPPED as `agent_step` (forward/back/left/right, camera-relative, collision-checked, clamped to 3 m) and `agent_turn` (degrees). Alongside `agent_move_to`, these expose the raw controls a human has — step forward/back, strafe, turn — so an agent can drive the companion the way WASD drives the player, instead of only issuing high-level destinations.
+- **Remove the admin hacks.** SHIPPED — both deleted, with their tests. `set_flag` and `add_relationship` contradicted the standing player-only policy (L-2026-08-30-01, ADR 0008 D-40) and must go. Lucas: *"We should not have hacks like set relationship, afaik we already discussed it and decided to keep only normal game controls, should be somewhere in docs already."* He is right — it was documented, and the tools were left in place anyway.
+
+---
+
+## 8. What shipped, in one list
+
+| Tool | What it does |
+|---|---|
+| `get_instructions` | The protocol in plain language. Skill-style briefing. |
+| `agent_join` / `agent_leave` | Take or release the single companion seat. |
+| `agent_look_around` | Nearby people with roles, plus every name that can be walked to. |
+| `agent_move_to` | Walk to a person or room **by name**; failures list every valid name. |
+| `agent_step` / `agent_turn` | Raw WASD-equivalent controls for fine positioning. |
+| `agent_say` | Speech bubble over the companion's head. |
+| `start_conversation` | **Agent opens** a conversation: line + 1-4 options. |
+| `wait_for_player_message` | **Long-poll.** Resolves the instant the player answers. |
+| `get_pending_dialogue_request` | Immediate, non-blocking check. The fallback. |
+| `supply_dialogue` | Write the next line + the replies offered to the player. |
+
+Removed: `set_flag`, `add_relationship`.
+
+## 9. Still open
+
+- §4.3 pre-scripted branching turns — deferred, see above.
+- A real animated spinner rather than a disabled "(thinking...)" option.
+- The §5 host-behaviour questions, which need a live ChatGPT session to answer.
+- Whether an unprompted panel is intrusive; the soft-open idea (bubble first, panel only on engagement) is untested.

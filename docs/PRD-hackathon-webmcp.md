@@ -113,6 +113,11 @@ The current workaround for a user who wants agent assistance is the generic one 
 - **AC-COMP-06:** While walking, the companion plays the same movement animation used by existing NPCs.
 
 ### AC-ACT — Agent agency
+- **AC-ACT-00:** The tool surface contains no capability the human lacks. No tool sets a game flag, grants cash, reputation or relationship, or teleports past collision.
+- **AC-ACT-07:** Every tool parameter publishes a concrete example value in its schema, and a no-argument tool publishes an empty-object example, so no inspector renders a placeholder.
+- **AC-ACT-08:** No movement tool accepts coordinates. Destinations are named, and the tool's own description states why coordinates are refused.
+- **AC-ACT-09:** Raw movement controls exist alongside named destinations: a bounded step in one of four directions relative to current facing, and a turn in degrees. A step obeys the same collision as the player and reports how far it actually travelled.
+- **AC-ACT-10:** An instructions tool returns the full protocol in plain language, including the conversation loop and the preference for the blocking wait over polling.
 - **AC-ACT-01:** A move call naming a valid NPC, object, or room walks the companion to that target and returns success only after movement has settled.
 - **AC-ACT-02:** A move call naming an unknown or unreachable target returns a failure that enumerates valid targets, and the companion does not move.
 - **AC-ACT-03:** An observation call returns, at minimum: the companion's room, nearby NPC names and roles, nearby interactive objects, the in-game clock, and the active quest.
@@ -128,6 +133,11 @@ The current workaround for a user who wants agent assistance is the generic one 
 - **AC-AUTH-05:** If the agent supplies nothing within a bounded wait, the dialogue shows a graceful in-character fallback line rather than hanging, and the conversation remains closable.
 - **AC-AUTH-06:** Agent-supplied text is rendered as text only; any markup it contains is displayed literally and is never interpreted by the page.
 - **AC-AUTH-07:** Agent-supplied text longer than the rendering limit is truncated rather than overflowing the dialogue panel.
+- **AC-AUTH-08:** The agent can open a conversation itself, without the human having initiated one; the dialogue panel appears with the agent's line and its offered replies.
+- **AC-AUTH-09:** The human retains the ability to open a conversation. Agent-initiated openings do not replace that path.
+- **AC-AUTH-10:** A reply option may be marked as ending the conversation. Its text is written by the agent, and picking it closes the dialogue without requesting a further turn.
+- **AC-AUTH-11:** A blocking wait call returns as soon as the human answers, rather than on a fixed interval, and returns an explicit non-error "still waiting" result if no answer arrives before its deadline.
+- **AC-AUTH-12:** A blocking wait never outlives the conversation: ending or resetting a conversation resolves any outstanding wait rather than leaving it hanging.
 
 ### AC-BRAND — Credentials
 - **AC-BRAND-01:** The title screen displays both the Edukey and DevPowers logos with working links, in a footer position that does not obscure the menu.
@@ -155,11 +165,13 @@ The current workaround for a user who wants agent assistance is the generic one 
 
 **Server-side state of any kind.** No accounts, no cloud saves, no backend. Local browser storage only.
 
-**Admin or omniscient agent tools.** Consistent with the existing player-agent policy, the agent gets no capability the human lacks. It cannot set flags, grant itself money, alter relationships, or teleport.
+**Admin or omniscient agent tools.** Consistent with the existing player-agent policy, the agent gets no capability the human lacks. It cannot set flags, grant itself money, alter relationships, or teleport. The two inherited tools that violated this (`set_flag`, `add_relationship`) were removed on 2026-09-03 rather than carried into the submission.
 
 **More than one agent companion at a time.** A single companion seat.
 
 **Voice.** The companion does not speak aloud. Regenerating the too-slow TTS audio noted in the brief is deferred.
+
+**Agent-posted branching dialogue trees.** Lucas raised submitting an array of pre-scripted turns with branching, so an exchange could run without round trips. Deferred: with replies reaching the agent in around two and a half seconds there is no latency problem left for it to solve, and it would add a second authoring format to maintain. Recorded in `docs/design/agent-conversation-system.md` §4.3 with the condition that would justify building it.
 
 **Deeper game mechanics.** The multi-step quest engine, the fatigue and coffee loop, the training-room course simulation, clickable equipment with hover labels, the junior-developer debugging terminal, the training-materials-and-printer errand, the player's own desk and computer, the Renata-first tutorial reordering, and the Janusz and CEO characterisation rewrites are all specified in the brief and remain wanted, but are **not in this deliverable**. Chosen by Lucas on 2026-09-03 in favour of the WebMCP work. They are the primary candidates for the 2026-09-06 window.
 

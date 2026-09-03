@@ -83,7 +83,9 @@ Every string the agent supplies is written with `textContent`, never `innerHTML`
 
 ## Decision D-40 — The agent gets no capability the human lacks
 
-The new tools add movement, observation, speech, and authorship for the *companion*. They do not add stat mutation, flag setting, teleportation, or camera control. The pre-existing `set_flag` and `add_relationship` tools are inherited from an earlier phase and are inconsistent with this rule; they are left in place for this deadline and flagged for removal, since removing tools hours before a submission is a larger risk than the inconsistency itself.
+The new tools add movement, observation, speech, and authorship for the *companion*. They do not add stat mutation, flag setting, teleportation, or camera control.
+
+**Amended 2026-09-03 (L-2026-09-03-04).** This decision originally noted that the inherited `set_flag` and `add_relationship` tools violated the rule, then kept them anyway on the grounds that removing tools near a deadline was the larger risk. Lucas rejected that reasoning — *"We should not have hacks like set relationship, afaik we already discussed it and decided to keep only normal game controls, should be somewhere in docs already"* — and he was right on both counts: the policy was already written down, and the deadline argument was protecting an inconsistency rather than a working feature. Both tools and their tests are deleted. A judge assessing whether an agent is genuinely *playing* would have found the ability to grant itself relationship points, and drawn the obvious conclusion.
 
 *Why.* This follows the standing player-agent policy from L-2026-08-30-01: WebMCP is a player surface, not an admin surface. An agent that can grant itself money is not playing the game, and a judge assessing "WebMCP Leverage" is looking for genuine participation rather than state manipulation.
 
@@ -108,3 +110,25 @@ Out of scope for this deadline per the PRD, but the shape is recorded so the nex
 The companion abstraction from D-36 is deliberately the right seam. A remote human player and a local agent companion are the same thing from the renderer's perspective: an externally-driven character with a position, a facing, a walk-cycle state, and a speech channel. Generalising `agent-companion.ts` from one seat to N seats is the actual multiplayer work; the transport is comparatively mechanical.
 
 Recommended transport when it is built: an authoritative relay keyed by room code, with clients sending intent and receiving positions, rather than peer-to-peer. Peer-to-peer avoids a server but pushes NAT traversal, authority, and cheat surface onto a feature we would be building in a day. Edge durable-object-style hosting fits the room-code model directly, since a room is exactly one durable object with a short-lived identity. Deciding this properly needs its own ADR and is explicitly not decided here.
+
+---
+
+## Decision D-43 — Long-poll, not client polling, for player replies (2026-09-03)
+
+`wait_for_player_message` holds its tool call open until the human answers, resolving immediately on their click, or after 25 s with an explicit non-error `{waiting: true}`.
+
+*Why.* Lucas asked directly whether the agent can be notified that the user responded. It cannot: WebMCP gives a page no channel to push to an agent, and every interaction is agent-initiated. His fallback was to instruct the agent to poll every 5-15 s. But `execute()` is async and the host awaits the promise, so simply *not resolving it yet* is a legal way to make the agent wait — and that beats polling on every axis. The reply arrives in the moment rather than up to fifteen seconds later, which is the difference between a conversation and a walkie-talkie. It costs one call per wait instead of one every few seconds, so it does not burn the user's context on empty checks. And because a timeout resolves cleanly rather than erroring, it *degrades into exactly the polling loop it replaces* — the design has no downside case.
+
+Measured at 2.6 s to resolve in Chrome against the 25 s ceiling.
+
+*The risk we accept.* We do not know what tool-call timeout the ChatGPT browser enforces. 25 s is chosen to sit well inside any plausible limit, and `get_pending_dialogue_request` remains as the immediate, non-blocking alternative if a host turns out to dislike long calls. `callTool` became uniformly async as a consequence: one asynchronous tool in a synchronous union would have pushed the awkwardness onto every caller and every test.
+
+## Decision D-44 — Conversations open from either side, and the agent writes its own goodbye
+
+`start_conversation` lets the agent speak first; the human's click still opens one too. A reply option may carry `ends: true`.
+
+*Why.* Agent-initiated conversation was the point of Lucas's request, but agent-*only* would have been a regression — he was explicit that the player must keep the ability to start one. Both paths converge on the same turn-writing tool, so there is one state machine rather than two.
+
+`ends` exists so the agent writes the exit line in character ("Anyway, I should get back to the build") instead of the player facing a generic Close button. It also drops the minimum option count from 2 to 1: an opener may reasonably offer a single "sure, what's up?", and the old floor of 2 was written when only the human could start a conversation.
+
+Options accept plain strings as well as `{text, ends}` objects. Agents overwhelmingly send strings, and rejecting those to force an object shape would be pedantry.
