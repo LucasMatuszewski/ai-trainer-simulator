@@ -82,8 +82,17 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
       },
       already: {
         id: "already",
+        // The dedicated answer to "I have been here a week already" (Lucas:
+        // "we should have dedicated answer to this option, it is funny"). It
+        // used to auto-advance via next:"walk", so it never rendered - and
+        // its voice line was instantly overlapped by the walk node's line,
+        // leaving the player with two Renatas and unrelated WASD text.
+        // Spoken nodes must offer options and stay put; pinned by a test.
         text: "A week. Good. Then you know the coffee is bad and the printer is worse. Stay for the controls anyway, the new hires keep walking into the glass wall.",
-        next: "walk",
+        options: [
+          { text: "Fair. Teach me the controls.", id: `${FM}-already-walk`, nextNodeId: "walk" },
+          { text: "How do I end my day?", id: `${FM}-already-end`, nextNodeId: "end" },
+        ],
       },
       walk: {
         id: "walk",
@@ -259,7 +268,7 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
       },
       controls: {
         id: "controls",
-        text: "WASD to walk, Shift to run, right mouse to look around, Space toggles mouse-look on a trackpad, click the roster to talk to someone, Z to end the day. Escape closes any open dialogue.",
+        text: "WASD to walk, Shift to run, right mouse to look around, Space toggles mouse-look on a trackpad, click the roster to talk to someone, Z to end the day, F for fullscreen. Escape closes any open dialogue.",
         options: [
           { text: "Thanks, that is all I needed.", id: `${FAQ}-controls-thanks`, nextNodeId: "_end" },
           { text: "Back to the menu.", id: `${FAQ}-controls-back`, nextNodeId: "greeting" },

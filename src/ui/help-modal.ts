@@ -53,6 +53,7 @@ export function mountHelpModal(parent: HTMLElement): HelpModalHandle {
               <div><dt>Quest log</dt><dd>Click the current quest to expand its instructions.</dd></div>
               <div><dt>Dialogue choices</dt><dd>Click a response; use Skip to leave early.</dd></div>
               <div><dt>F3</dt><dd>Show or hide FPS, frame time, 1% low, draws, and triangles.</dd></div>
+              <div><dt>F</dt><dd>Toggle fullscreen. Press Esc to leave fullscreen.</dd></div>
             </dl>
           </section>
         </div>

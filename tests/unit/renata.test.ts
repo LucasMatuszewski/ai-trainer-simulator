@@ -223,3 +223,26 @@ describe("roster ordering", () => {
     expect(renata!.role.length).toBeLessThanOrEqual(26);
   });
 });
+
+describe("spoken nodes never auto-advance (the duplicated-voice bug)", () => {
+  const trees = Object.values(renata);
+
+  it("never chains a spoken node straight into another spoken node", () => {
+    // The "I have been here a week" answer used `next: "walk"`, so it never
+    // rendered and its voice line was overlapped by the walk node's line.
+    // Any node with speakable text must stop and offer options, or hand off
+    // only to an empty sentinel (_end).
+    for (const tree of trees) {
+      for (const node of Object.values(tree.nodes)) {
+        if (node.text.trim().length === 0) continue;
+        if (node.next !== undefined && node.next !== "_end") {
+          const target = tree.nodes[node.next];
+          expect(
+            target?.text.trim().length ?? 0,
+            `${node.id} auto-advances into spoken node ${node.next} - the lines would overlap`,
+          ).toBe(0);
+        }
+      }
+    }
+  });
+});

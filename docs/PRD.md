@@ -205,7 +205,7 @@ Dialogue, cinematics, blocking modals, and explicit pause freeze the simulation 
 - AC-M-03: The camera follows the player and rotates with mouse movement, clamped between -45° and +60° pitch.
 
 ### AC-Help
-- AC-H-01: The `?` help modal names every shipped player control: WASD/arrows, Shift, RMB hold, Space toggle, Esc release/close, in-world and roster clicks, Z/End Day, computer/minigame button, quest-log expansion, `?`/F1 help, and F3 performance meter.
+- AC-H-01: The `?` help modal names every shipped player control: WASD/arrows, Shift, RMB hold, Space toggle, Esc release/close, in-world and roster clicks, Z/End Day, computer/minigame button, quest-log expansion, `?`/F1 help, F3 performance meter, and F fullscreen.
 - AC-H-02: The modal and Renata's controls answer agree; no displayed shortcut is inert.
 - AC-H-03: The complete controls remain readable at the game's supported desktop viewport; the modal body scrolls without clipping its close button.
 - AC-H-04: An automated DOM test fails if a required control disappears from the modal.

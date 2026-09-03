@@ -176,6 +176,20 @@ window.addEventListener("keydown", (e) => {
   // Since the end-day confirm modal, Z OPENS that modal rather than
   // ending the day — the key is one slip from WASD (Lucas, 2026-09-02);
   // the modal's own Z handler cancels it.
+  // Lucas, 2026-09-03: F for fullscreen - easier to reach than F11, and
+  // in-page fullscreen drops the browser chrome, not just the tabs. Works
+  // on any screen (the title screen benefits most), never inside a text
+  // field, and exiting is left to the browser (Esc) or a second press.
+  if ((e.code === "KeyF" || e.key.toLowerCase() === "f") && !e.repeat) {
+    const target = e.target;
+    const isTextEntry = target instanceof HTMLElement && (
+      target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable
+    );
+    if (!isTextEntry) {
+      e.preventDefault();
+      void toggleFullscreen();
+    }
+  }
   if ((e.code === "KeyZ" || e.key.toLowerCase() === "z") && !e.repeat) {
     const target = e.target;
     const isTextEntry = target instanceof HTMLElement && (
@@ -193,6 +207,19 @@ window.addEventListener("keydown", (e) => {
     }
   }
 });
+
+/** Toggle in-page fullscreen. Chrome and Firefox ship the standard API;
+ *  the webkit fallback covers Safari even though it is not a supported
+ *  browser, because the fallback is three lines. */
+function toggleFullscreen(): Promise<void> {
+  const doc = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => Promise<void> };
+  const root = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
+  const active = document.fullscreenElement ?? doc.webkitFullscreenElement;
+  if (active !== undefined && active !== null) {
+    return document.exitFullscreen?.() ?? doc.webkitExitFullscreen?.() ?? Promise.resolve();
+  }
+  return root.requestFullscreen?.() ?? root.webkitRequestFullscreen?.() ?? Promise.resolve();
+}
 
 function setScreen(next: Screen): void {
   closeDialogueForScreenTransition(dialogue);

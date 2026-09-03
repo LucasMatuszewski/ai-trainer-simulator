@@ -9,6 +9,16 @@ itself only keeps the resulting, current requirements.
 
 ---
 
+## 2026-09-03
+
+### C-70 - F toggles fullscreen (L-2026-09-03)
+
+- **What changed:** F is a new global key binding toggling in-page fullscreen (`requestFullscreen`, with a webkit fallback). F11 still works but only removes the browser chrome in the other direction; F was chosen because it is reachable without leaving WASD.
+- **Why:** Lucas asked for it on 2026-09-03 ("maybe F is easier to remember and reach?").
+- **Guards:** inert while typing in any text field; exiting is the browser's Esc or a second press.
+- **Sync:** the `?` modal, Renata's controls answer, and the C-66 coverage test all name F in the same commit, per the complete-help rule (C-66).
+
+
 ## Corrections Log (2026-08-29 onward)
 
 This section is the authoritative list of corrections Lucas has given. New corrections are appended with the date and a unique ID. Each correction IDs the section it changes.

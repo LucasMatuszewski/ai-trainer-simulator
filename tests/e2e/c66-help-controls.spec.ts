@@ -35,6 +35,9 @@ test("? opens the complete controls help", async ({ page }) => {
   await expect(help.getByText(/Right mouse button/i)).toBeVisible();
   await expect(help.getByText(/Space/i)).toBeVisible();
   await expect(help.getByText(/Shift/i)).toBeVisible();
+  // L-2026-09-03: F toggles in-page fullscreen; the modal is the complete
+  // reference, so if this row disappears the binding must have gone too.
+  await expect(help.getByText(/fullscreen/i)).toBeVisible();
 
   await page.keyboard.press("Escape");
   await expect(help).toBeHidden();
