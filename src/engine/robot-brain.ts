@@ -408,6 +408,11 @@ export function createRobotBrain(options: RobotBrainOptions): RobotBrain {
       }
 
       case "working": {
+        if (isEvening()) {
+          state = "to-dock";
+          beginLeg({ x: route.dock.x, z: route.dock.z });
+          break;
+        }
         dwellRemaining -= dt;
         if (dwellRemaining <= 0) {
           afterDwell();
@@ -431,12 +436,18 @@ export function createRobotBrain(options: RobotBrainOptions): RobotBrain {
         }
         const distance = Math.hypot(x - janusz.x, z - janusz.z);
         if (distance <= standoffDistance + 0.35) {
-          // Parked at the master's side; linger, then break off.
+          // Parked at the master's side; linger CONTINUOUSLY, then
+          // break off. Stepping back out of range (Janusz moved, or
+          // an obstacle sidestep nudged the robot) resets the count -
+          // a linger is one uninterrupted visit, not an accumulated
+          // total across several brief approaches.
           followHeld += dt;
           if (followHeld >= lingerS) {
             endFollow();
             break;
           }
+        } else {
+          followHeld = 0;
         }
         retargetIn -= dt;
         if (retargetIn <= 0) {
