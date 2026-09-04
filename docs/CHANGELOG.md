@@ -864,3 +864,12 @@ A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
 - **Was:** Z and the roster's End Day button ended the day instantly.
 - **Now:** both triggers open a small confirm modal ("End the day?" / End day / Keep working). Enter or "End day" confirms; Escape, Z, "Keep working," or a backdrop click cancels. The modal freezes the simulation clock like every other blocking modal. The **WebMCP `end_day` tool deliberately bypasses the modal** — a tool call is already deliberate.
 - **Scope:** bounded UI safety polish; new `src/ui/end-day-modal.ts`, one clock blocker (`endDayModalOpen`), help-modal control text updated. No ADR.
+
+### C-70 — Janusz's robot fleet (2026-09-04)
+
+- **Source (Lucas, 2026-09-04):** "he uses robots to clean, manages a fleet of robots! He is for sure the most technical savy janitor on the planet [...] he was employed as a janitor but it got clear very fast he is not gonna clean... but the position name stayed and he don't mind, details"; plus the follow-up "Janusz's robots mop around all of them? keep it in lore and irony".
+- **Was:** Renata's FAQ said "Janusz mops around all of them" / "Janusz mops", and no robots existed in the world.
+- **Now:** the mopping irony stays but is re-attributed - it is Janusz's ROBOTS that mop. Renata's FAQ lines and Janusz's tree carry the lore (he built the fleet; the janitor title is stale bureaucracy he does not mind). Three robots visibly patrol: a white flat vacuum (wall-to-wall lanes, room changes), a gardener (arm + shears + hose, tours the plants), and a mug-runner (tray of mugs, desks -> dishwasher loop, matching the existing "reorder toner / one has opinions about the dishwasher" line already in Janusz's tree). A charging dock sits in the kitchen dining area by the south wall next to the tables; robots dock there in the Evening and charge with pulsing LEDs. Rarely, a robot detours to trail Janusz for a few seconds - the visual tell that the fleet is his.
+- **Audio constraint honored:** the audio manifest covers bartek, klaudia, marek, pawel, zosia only. Renata and Janusz have NO recorded lines, so their trees may be edited; none of the five audio-covered trees change.
+- **Architecture:** pure route data (`src/content/robot-patrols.ts`) + pure state-machine brain (`src/engine/robot-brain.ts`, injectable rng + clock) + mesh wrapper; unit-tested routes against the shared obstacle AABBs. No ADR needed - the pattern follows the existing schedule/controller split.
+- **Tracking:** branch `feat/janusz-robot-fleet`.

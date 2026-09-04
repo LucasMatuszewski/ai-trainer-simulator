@@ -497,6 +497,24 @@ An IT company does not open a gate at 9:00 and let everyone in at once. People t
 
 **Acceptance criteria:** (1) At day start the player sees several colleagues already working and several walking in through the door behind them. (2) No more than a small handful of NPCs are ever near the door at once. (3) Janusz arrives visibly later than everyone else. (4) Day 2 and later mornings arrive through the door exactly like day 1 - nobody materializes in the middle of the office. (5) The measured morning door-jam metrics stay under the ceilings in `tests/unit/npc-morning-arrivals.test.ts`.
 
+### 11.8 Janusz's robot fleet (C-70)
+
+Janusz is not a janitor who cleans - he is the office's de-facto engineer who runs a fleet of robots he built himself, and the "janitor" title is a piece of bureaucracy nobody bothered to update (he does not mind; "details"). Three of his robots are visibly on duty in the office. The lore is told by Renata's FAQ (ironic one-liners, keeping the mop joke: it is Janusz's ROBOTS that mop) and by new options in Janusz's own dialogue tree. Neither Renata nor Janusz has recorded audio in the audio manifest, so their existing lines may be edited freely; the trees with recorded audio (bartek, klaudia, marek, pawel, zosia) are not touched.
+
+**The fleet** (all procedural low-poly meshes, Lambert materials, matching the 90s office style):
+
+1. **The vacuum** - a round, flat, white roomba-style disc. It cleans the main office in wall-to-wall lanes (a lawnmower pattern down the clear central strip plus the perimeter lanes), occasionally changes rooms through the main-to-kitchen doorway, and pauses at lane ends with a small working wiggle and a blinking status LED.
+2. **The gardener** - a small wheeled base carrying a two-joint robotic arm with shears and a coiled hose to a water tank. It tours every plant the robots can reach: the two main-office floor plants, the counter plant in the kitchen, and the reception planters. At each stop it parks facing the plant and the arm bobs (watering/shearing).
+3. **The runner** (third design, aligning with Janusz's own dialogue lore: "they reorder toner, and one has opinions about the dishwasher") - a small box robot with LED eyes and a tray of mugs on its back. It runs a mug-collection loop between the desks and the kitchen dishwasher, pausing at each desk. Its tray and the dishwasher round-trip are the visual punchline for the dishwasher-opinion lore.
+
+**Docking.** A charging station stands in the kitchen's dining area, along the south wall next to the two round tables (three pads at z≈6.4, clear of the meeting-room doorway traffic). Each robot owns one pad. When the day's work is done (the Evening period) each robot drives home, docks, and idles with a slow-pulsing charge LED until the next morning.
+
+**Movement.** Robots follow hand-authored waypoint loops (pure data in `src/content/robot-patrols.ts`), the same style as the NPC schedule: pure, unit-testable data consumed by a pure state-machine "brain" (`src/engine/robot-brain.ts`) and a thin mesh wrapper. The brain has five states: `docked` -> `to-work` -> `working` (pause at duty stops) -> `to-dock` -> `docked`, plus a rare `following-janusz` detour. Routes never cross furniture AABBs (a unit test pins every waypoint and every segment against the same obstacle lists the NPCs use, doorways only through their gaps). Robots do not use the NPC collision/avoidance systems - they are floor-level props on authored paths.
+
+**Follow Janusz (rare).** On finishing a patrol loop, a robot rolls a low-probability check (roughly once per several loops, with a long cooldown): if Janusz is visible (he arrives late, C-51), the robot drives to him, trails his position at a respectful ~0.8 m for a few seconds, then breaks off and resumes. This is the visual "they belong to Janusz" tell; it is rare by design.
+
+**Acceptance criteria:** (1) All three robots are visible on duty during Morning-Afternoon, each with its own animation tell (LED blink / arm bob / tray bob). (2) In Evening all three are docked on the kitchen charging station. (3) Route segments never intersect furniture AABBs or walls (unit-tested). (4) The follow-Janusz detour fires only rarely and only while Janusz is visible, and always times out. (5) Renata's FAQ and Janusz's tree carry the robot lore; no tree with recorded audio changes. (6) The docking station is in the kitchen dining area and does not block the meeting-room doorway.
+
 ### 11.5 The "real playable game" promise
 
 The user's mandate: "Remember, your goal is to make this game perfect, real playable game, best game in this category on the market!" and "Continue until you make this game perfect!"
