@@ -3,6 +3,7 @@ import type { WorldFurniture, WorldRoom } from "../content/world-layout";
 import { drawBatmanEmblem } from "./furniture/batman-emblem";
 import { makeBin } from "./furniture/bin";
 import { makeBookshelf } from "./furniture/bookshelf";
+import { makeBrandWall } from "./furniture/brand-wall";
 import { makeCeilingLight } from "./furniture/ceiling-light";
 import { makeCoffeeGrinder } from "./furniture/coffee-grinder";
 import { makeCoffeeMachineKitchen } from "./furniture/coffee-machine";
@@ -32,6 +33,7 @@ import { makeReceptionCoffeeTable } from "./furniture/reception-coffee-table";
 import { makeLobbyPlanter } from "./furniture/lobby-planter";
 import { makeGlassDoors } from "./furniture/glass-doors";
 import { makeXeroxPrinter } from "./furniture/xerox-printer";
+import { makeRobotDock } from "./furniture/robot-dock";
 
 /**
  * Furniture types rendered by dedicated 3D-model factories
@@ -39,6 +41,8 @@ import { makeXeroxPrinter } from "./furniture/xerox-printer";
  * Anything not listed here falls back to the simple box.
  */
 const FURNITURE_FACTORIES: Record<string, () => THREE.Group> = {
+  // Reception credits (AC-BRAND-02): painted caption + standoff SVG logos.
+  "brand-wall": makeBrandWall,
   "executive-desk": makeExecutiveDesk,
   "executive-chair": makeExecutiveChair,
   bookshelf: makeBookshelf,
@@ -73,6 +77,8 @@ const FURNITURE_FACTORIES: Record<string, () => THREE.Group> = {
   "lobby-planter": makeLobbyPlanter,
   "glass-doors": makeGlassDoors,
   "xerox-printer": makeXeroxPrinter,
+  // Janusz's robot fleet (C-70): charging pads in the kitchen dining area.
+  "robot-dock": makeRobotDock,
 };
 
 const WALL_HEIGHT = 3;

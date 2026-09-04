@@ -20,6 +20,51 @@ export const NPCS: NPC[] = [
   // NPC 0.25m closer in, to 0.45m from the desk edge. See the desk AABB in
   // OBSTACLES below: desks are 2m wide × 1m deep, so the chair is at
   // maxZ + 0.5 along the Z axis.
+  // Renata is FIRST in the array, which puts her first in the roster.
+  // She is the tutorial and the first quest (Lucas, 2026-09-03:
+  // "Renata should be higher on the list of employes to find her
+  // easily"), so a new player is not asked to scroll a list of
+  // strangers to find the one person the game just told them to see.
+  {
+    // C-64 (Lucas, 2026-09-02): the new receptionist / office
+    // manager. She lives behind the reception desk in the
+    // renamed "reception" room (the old meeting room, floor
+    // x=[-6, 6], z=[9, 19]). The desk sits at (3.4, 0, 13.5)
+    // and she stands clear behind it at (4.9, 0, 13.5), looking
+    // -X across the lobby at whoever walks in through the
+    // glass doors on the south wall.
+    //
+    // She is the tutorial host and the standing FAQ / help
+    // centre (Lucas: "use receptionist as the first guide and
+    // tutorial at the game start"). Two trees:
+    //   first-meeting -> the orientation (8-12 TTS-able lines)
+    //   default       -> the re-enterable FAQ menu
+    //
+    // C-63: every NPC needs an authored appearance so the
+    // office is not 14 copies of the same skin+hair+shirt
+    // combo. Brown skin, auburn hair, navy shirt - a warm
+    // professional look that no existing colleague has.
+    id: "renata",
+    name: "Renata",
+    // Short on purpose: "Receptionist / Office Manager" wrapped to two
+    // lines and overflowed the roster card (Lucas, 2026-09-03).
+    role: "Support / Office Manager",
+    emoji: "R",
+    gender: "female",
+    appearance: { skin: "brown", hair: "auburn", shirt: "navy" },
+    // Standing behind the reception desk with her full 0.3 m body
+    // clear of its east edge. face -PI/2 means
+    // yaw = -90 deg = looking at -X (toward the lobby and the
+    // glass doors on the south wall).
+    position: { x: 4.9, y: 0, z: 13.5 },
+    rotationY: -Math.PI / 2,
+    walkSpeed: 1.2,
+    triggerRadius: 1.8,
+    dialogues: {
+      default: DIALOGUES.renata!.default!,
+      "first-meeting": DIALOGUES.renata!["first-meeting"]!,
+    },
+  },
   {
     id: "bartek",
     name: "Bartek",
@@ -257,44 +302,6 @@ export const NPCS: NPC[] = [
       "give-task": DIALOGUES.dawid!["give-task"]!,
       "performance-review": DIALOGUES.dawid!["performance-review"]!,
       fireside: DIALOGUES.dawid!.fireside!,
-    },
-  },
-  {
-    // C-64 (Lucas, 2026-09-02): the new receptionist / office
-    // manager. She lives behind the reception desk in the
-    // renamed "reception" room (the old meeting room, floor
-    // x=[-6, 6], z=[9, 19]). The desk sits at (3.4, 0, 13.5)
-    // and she stands clear behind it at (4.9, 0, 13.5), looking
-    // -X across the lobby at whoever walks in through the
-    // glass doors on the south wall.
-    //
-    // She is the tutorial host and the standing FAQ / help
-    // centre (Lucas: "use receptionist as the first guide and
-    // tutorial at the game start"). Two trees:
-    //   first-meeting -> the orientation (8-12 TTS-able lines)
-    //   default       -> the re-enterable FAQ menu
-    //
-    // C-63: every NPC needs an authored appearance so the
-    // office is not 14 copies of the same skin+hair+shirt
-    // combo. Brown skin, auburn hair, navy shirt - a warm
-    // professional look that no existing colleague has.
-    id: "renata",
-    name: "Renata",
-    role: "Receptionist / Office Manager",
-    emoji: "R",
-    gender: "female",
-    appearance: { skin: "brown", hair: "auburn", shirt: "navy" },
-    // Standing behind the reception desk with her full 0.3 m body
-    // clear of its east edge. face -PI/2 means
-    // yaw = -90 deg = looking at -X (toward the lobby and the
-    // glass doors on the south wall).
-    position: { x: 4.9, y: 0, z: 13.5 },
-    rotationY: -Math.PI / 2,
-    walkSpeed: 1.2,
-    triggerRadius: 1.8,
-    dialogues: {
-      default: DIALOGUES.renata!.default!,
-      "first-meeting": DIALOGUES.renata!["first-meeting"]!,
     },
   },
 ];

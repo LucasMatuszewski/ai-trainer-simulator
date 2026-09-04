@@ -32,9 +32,18 @@ test("? opens the complete controls help", async ({ page }) => {
   await expect(help).toBeVisible();
   await expect(help.getByRole("heading", { name: "Move & look" })).toBeVisible();
   await expect(help.getByText(/WASD/i)).toBeVisible();
-  await expect(help.getByText(/Right mouse button/i)).toBeVisible();
+  await expect(help.getByText(/Right button/i)).toBeVisible();
+  // Lucas trimmed the labels for space (2026-09-03); pinned here so the
+  // shorter wording is not "fixed" back by accident.
+  await expect(help.getByText(/WASD \/ Arrows/i)).toBeVisible();
+  await expect(help.getByText(/Click the name/i)).toBeVisible();
+  await expect(help.getByText(/\? \/ F1/i)).toBeVisible();
+  await expect(help.getByText(/^Dialogues$/)).toBeVisible();
   await expect(help.getByText(/Space/i)).toBeVisible();
   await expect(help.getByText(/Shift/i)).toBeVisible();
+  // L-2026-09-03: F toggles in-page fullscreen; the modal is the complete
+  // reference, so if this row disappears the binding must have gone too.
+  await expect(help.getByText(/fullscreen/i)).toBeVisible();
 
   await page.keyboard.press("Escape");
   await expect(help).toBeHidden();

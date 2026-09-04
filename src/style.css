@@ -472,6 +472,15 @@ html, body {
   position: absolute;
   left: 16px;
   bottom: 16px;
+  /* Above the quest log (z-index 11) and the roster. The panel had no
+   * stacking context at all, so on a 1280px viewport the quest log
+   * (right: 396px, width: 320px) sat on top of the dialogue's option
+   * row and swallowed the clicks - the buttons were visible, enabled
+   * and simply not pressable in that band. Found while driving an
+   * agent-authored conversation, but it affects hand-authored dialogue
+   * exactly the same way. A conversation panel should outrank the
+   * ambient HUD regardless. */
+  z-index: 20;
   background: var(--panel);
   border: 3px solid var(--panel-border);
   padding: 20px;
@@ -1408,4 +1417,178 @@ html, body {
 
 .fps-meter.visible {
   display: block;
+}
+
+/* ---------------------------------------------------------------
+ * Title screen: WebMCP status + creator credits (2026-09-03)
+ *
+ * The status line is how a contest judge confirms the integration is
+ * live before pressing New Game, so it has to be legible without
+ * being alarming when the browser simply has no support - that is the
+ * common case, not an error.
+ *
+ * The creator strip credits Edukey and DevPowers as the BUILDERS.
+ * Deliberately not "our office": the fictional company in this game
+ * is a comedy of dysfunction (AC-BRAND-03).
+ * Font sizes respect L-2026-09-03-01: never use tiny fonts.
+ * --------------------------------------------------------------- */
+.title-screen .agent-status {
+  margin-top: 14px;
+  /* L-2026-09-03-01: "never use so small fonts". */
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+.title-screen .agent-status.is-live { color: #00ff7f; }
+.title-screen .agent-status.is-off { color: #8a8a8a; }
+
+.title-screen .creators {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 18px;
+  color: #b0b0b0;
+}
+.title-screen .creators-label { opacity: 0.75; }
+.title-screen .creators-sep { opacity: 0.5; }
+.title-screen .creator-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  opacity: 0.82;
+  transition: opacity 120ms ease-out;
+}
+.title-screen .creator-link img {
+  height: 26px;
+  width: auto;
+  display: block;
+  /* Force both marks to pure white.
+   *
+   * Neither file can be trusted to pick its own colour here: the Edukey
+   * artwork is already white, but the DevPowers files draw with
+   * currentColor plus their own @media (prefers-color-scheme: dark) rule,
+   * which the browser honours when rendering the <img>. Left alone, the
+   * DevPowers logo turns dark navy on this black title screen for every
+   * player whose OS is in LIGHT mode - invisible, and invisible only for
+   * some people. brightness(0) flattens whatever colour the file chose to
+   * black, invert(1) lifts it to white, so the result is the same for
+   * everyone regardless of theme or source artwork. */
+  filter: brightness(0) invert(1);
+}
+.title-screen .creator-link:hover,
+.title-screen .creator-link:focus-visible {
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------
+ * Dialogue link (2026-09-03)
+ *
+ * Renata points the player at the WebMCP setup docs. A URL spoken in a
+ * line is not something anyone retypes, so it is a real anchor.
+ * Font size follows L-2026-09-03-01 - no tiny text.
+ * --------------------------------------------------------------- */
+.dialogue .dialogue-link {
+  margin: 8px 0 2px;
+  font-size: 16px;
+}
+.dialogue .dialogue-link a {
+  color: #7fd8ff;
+  text-decoration: none;
+  border-bottom: 2px solid rgba(127, 216, 255, 0.4);
+  padding-bottom: 1px;
+}
+.dialogue .dialogue-link a:hover,
+.dialogue .dialogue-link a:focus-visible {
+  color: #c9edff;
+  border-bottom-color: #7fd8ff;
+}
+
+/* ---------------------------------------------------------------
+ * WebMCP setup modal (2026-09-03)
+ * Reuses .help-modal chrome; these are the content styles only.
+ * Font sizes respect L-2026-09-03-01.
+ * --------------------------------------------------------------- */
+.webmcp-modal .help-modal-body p { font-size: 17px; line-height: 1.45; }
+.webmcp-path { margin: 10px 0; }
+.webmcp-path-label a {
+  color: #ffd166;
+  font-size: 18px;
+  text-decoration: none;
+  border-bottom: 2px solid rgba(255, 209, 102, 0.4);
+}
+.webmcp-path-label a:hover { color: #fff1c9; }
+.webmcp-path p { margin: 4px 0 0; }
+.webmcp-path p a { color: #7fd8ff; }
+.webmcp-note { color: #9a9a9a; font-size: 15px !important; }
+.webmcp-prompt {
+  background: #101418;
+  border: 2px solid var(--panel-border);
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  max-height: 260px;
+  overflow-y: auto;
+  color: #cde3d8;
+}
+.webmcp-faq dt { font-weight: bold; margin-top: 10px; font-size: 16px; }
+.webmcp-faq dd { margin: 2px 0 0 0; font-size: 16px; color: #c9c9c9; line-height: 1.4; }
+
+/* Dialogue action buttons (copy prompt / open guide) */
+.dialogue-actions {
+  margin: 8px 0 2px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dialogue-action {
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  background: #101418;
+  color: #7fd8ff;
+  border: 2px solid rgba(127, 216, 255, 0.5);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.dialogue-action:hover:not(:disabled) {
+  color: #c9edff;
+  border-color: #7fd8ff;
+}
+.dialogue-action:disabled { color: #8affc1; border-color: rgba(138, 255, 193, 0.5); cursor: default; }
+.dialogue-link-sep { opacity: 0.5; }
+
+/* ---------------------------------------------------------------
+ * Playtest pass on the two modals (2026-09-03, Lucas screenshots).
+ * Fonts: the smallest size was 15px; L-2026-09-03-01 says never, so
+ * body copy goes to 20px (+33%) and nothing in either modal now sits
+ * below 18px. Spacing: the guidance grid stretched rows to the tallest
+ * section, which read as huge holes between Goal/Money/Cast - items
+ * now top-align on a tighter gap. Dialogue action buttons get real
+ * breathing room above, and the copy button right-aligns under the
+ * prompt where the space already was.
+ * --------------------------------------------------------------- */
+.help-modal-body { font-size: 20px; }
+.help-modal-body h3 { font-size: 19px; margin: 0 0 8px; }
+.help-guidance { gap: 6px 20px; align-items: start; }
+.help-control-list dd { font-size: 20px; line-height: 1.4; }
+.webmcp-modal .help-modal-body p,
+.webmcp-faq dd { font-size: 20px; }
+.webmcp-faq dt { font-size: 20px; margin-top: 12px; }
+.webmcp-note { font-size: 18px !important; }
+.webmcp-modal .help-modal-body h3 { margin: 18px 0 8px; }
+.webmcp-prompt { max-height: 170px; }
+.webmcp-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+.dialogue-actions { margin-top: 10px; }
+.help-modal .dialogue-action { margin-top: 8px; }
+
+/* Faux fullscreen (F key): the app fills the viewport. CSS rather than the
+ * Fullscreen API so Esc stays ours - see setFauxFullscreen in main.ts. */
+body.faux-fullscreen { overflow: hidden; }
+body.faux-fullscreen #app {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
 }

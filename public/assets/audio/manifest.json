@@ -402,8 +402,8 @@
         "node": "intro",
         "use": "C-64 tutorial / help centre"
       },
-      "bytes": 168971,
-      "ms": 13384
+      "bytes": 259188,
+      "ms": 55125
     },
     "renata_already": {
       "path": "public/assets/audio/speech/renata_already.mp3",
@@ -501,12 +501,38 @@
       },
       "bytes": 34052,
       "ms": 13342
+    },
+    "renata_webmcp": {
+      "path": "public/assets/audio/speech/renata_webmcp.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "renata",
+        "node": "webmcp",
+        "use": "C-64 tutorial / help centre"
+      },
+      "bytes": 248244,
+      "ms": 23204
+    },
+    "renata_agent-setup": {
+      "path": "public/assets/audio/speech/renata_agent-setup.mp3",
+      "kind": "tts",
+      "meta": {
+        "npc": "renata",
+        "node": "agent-setup",
+        "use": "C-64 tutorial / help centre"
+      },
+      "bytes": 245940,
+      "ms": 55246
     }
   },
   "failed": {
     "bartek_tutorial": {
       "error": "poll timeout after 180000ms",
       "ts": 1787973297351
+    },
+    "renata_agent-setup": {
+      "error": "poll timeout after 180000ms",
+      "ts": 1788449569856
     }
   }
 }

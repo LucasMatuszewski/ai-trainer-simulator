@@ -23,15 +23,34 @@ import { game } from "./game/state";
 import { runDailyTick, publishCashflow } from "./game/economy";
 import { runPeriodEvent, registerNpcController } from "./game/events";
 import { registerPlayerActions } from "./webmcp/tools";
+import { registerWebmcpTools, type RegisterResult } from "./webmcp/bridge";
+import { drainPendingAgentJoin, notifyOfficeLoaded, registerAgentCompanion } from "./webmcp/tools";
+import { approachHumanConversation } from "./webmcp/companion-conversation";
+import { createNpcExchange, type NpcExchange } from "./webmcp/npc-exchange";
+import { createAgentCompanion, type AgentCompanion } from "./engine/agent-companion";
+import {
+  createDialogueBroker,
+  FALLBACK_LINE,
+  FALLBACK_OPTIONS,
+  WAKE_LINE,
+  WAKE_OPTIONS,
+  type DialogueBroker,
+} from "./webmcp/agent-dialogue";
+import { CORRIDOR_WAYPOINTS, buildWaypointEdges, DEFAULT_MAX_EDGE_LENGTH } from "./content/corridor-waypoints";
+import { WORLD_ROOMS } from "./content/world-layout";
 import { NPCS, OBSTACLES } from "./content/npcs";
+import { approachSpotFor } from "./content/npc-approach";
+import { getActiveQuest } from "./content/quests";
 import type { GameState, NPC, NpcId } from "./types";
 import { mountHud, renderHud, renderHudClock, showToast, type HudElements } from "./ui/hud";
 import { mountFpsMeter, type FpsMeter } from "./ui/fps-meter";
+import { positionHoverLabel } from "./ui/hover-label-position";
 import { mountTitleScreen, mountCharacterCreate, showDailySummary, showGameOver } from "./ui/title";
 import { mountOfficeRoster, rosterStatusFor, type OfficeRosterHandle } from "./ui/office-roster";
 import {
   closeDialogueForScreenTransition,
   createDialogue,
+  type AgentTurnOption,
   type DialogueController,
 } from "./ui/dialogue";
 import { mountDebugScript, type DebugScriptHandle } from "./minigames/debug-script";
@@ -40,10 +59,10 @@ import { resolveUrl, type Manifest, loadManifest } from "./audio/manifest";
 import {
   advancePeriodElapsed,
   periodsUntilDayEnd,
-  shouldAdvanceSimulationClock,
-} from "./game/pacing";
+  shouldAdvanceSimulationClock, formatGameClock } from "./game/pacing";
 import { mountQuestLog, type QuestLogHandle } from "./ui/quest-log";
 import { mountHelpModal, type HelpModalHandle } from "./ui/help-modal";
+import { mountWebmcpHelpModal, type WebmcpHelpModalHandle } from "./ui/webmcp-help-modal";
 import { mountEndDayModal, type EndDayModalHandle } from "./ui/end-day-modal";
 import { ndcFromMouse, pickFromCamera } from "./engine/interaction-raycaster";
 import { PLAYER_RADIUS, getMouseSensitivity, setMouseSensitivity } from "./engine/controls";
@@ -57,6 +76,51 @@ type Screen = "title" | "create" | "office" | "summary" | "minigame" | "gameover
 const uiRoot = document.getElementById("ui-root")!;
 const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
 
+/**
+ * ADR 0008 D-34: the result of the one-time WebMCP registration at boot.
+ * The title screen reads it so a judge can confirm the integration is
+ * live before pressing New Game.
+ */
+/**
+ * Set once Bartek has been sent over after Renata's tutorial, so the summons
+ * fires exactly once per game rather than every time the store publishes.
+ */
+let bartekSummoned = false;
+/** Consecutive fallbacks in one conversation: 2+ means the agent is gone. */
+let agentFallbackCount = 0;
+/**
+ * True while Bartek is walking over after the tutorial. He re-targets the
+ * player as they move and greets them on arrival; cleared once he has.
+ */
+let bartekApproaching = false;
+/**
+ * Re-aiming is event-driven, not on a timer.
+ *
+ * Every setOverride restarts the NPC's path, so re-aiming on a short interval
+ * makes him thrash in place - measured at a 1.5 s interval he never left his
+ * desk. He is only re-aimed when the player has actually walked away from the
+ * point he is heading for, and never more often than the floor below.
+ */
+const BARTEK_RETARGET_PLAYER_DRIFT_M = 3;
+const BARTEK_RETARGET_MIN_INTERVAL_S = 4;
+/** Close enough to stop walking and start talking. */
+const BARTEK_GREET_RADIUS = 3.2;
+let bartekRetargetTimer = 0;
+/** The player position the current walk was aimed at. */
+let bartekAimedAt: { x: number; z: number } | null = null;
+let webmcpStatus: RegisterResult = { supported: false, namespace: null, registered: 0, failed: 0 };
+/**
+ * Portrait glyph for the agent companion. NOT an emoji: the game renders
+ * in VT323 / Press Start 2P, neither of which carries emoji glyphs, so
+ * U+1F916 came out as a tofu box in the dialogue panel. ASCII reads as a
+ * robot face and rasterizes in the same font as everything else.
+ */
+const AGENT_PORTRAIT = "[+]";
+let agentCompanion: AgentCompanion | null = null;
+let agentBroker: DialogueBroker | null = null;
+let npcExchange: NpcExchange | null = null;
+/** Turn counter within the current agent conversation, for context. */
+let agentTurn = 0;
 let engine: Engine | null = null;
 let cameraDirector: CameraDirector | null = null;
 let sceneObjects: ReturnType<typeof buildOfficeScene> | null = null;
@@ -69,6 +133,24 @@ let debugGame: DebugScriptHandle | null = null;
 let roster: OfficeRosterHandle | null = null;
 let questLog: QuestLogHandle | null = null;
 let helpModal: HelpModalHandle | null = null;
+let webmcpModal: WebmcpHelpModalHandle | null = null;
+/**
+ * Faux fullscreen: the app fills the viewport via CSS, nothing else.
+ *
+ * Deliberately NOT the Fullscreen API. Chrome reserves native Esc to exit
+ * fullscreen and the page never sees that keypress, so "Esc closes the
+ * modal first, fullscreen only when nothing is open" (Lucas, 2026-09-03)
+ * is impossible to honour with it - measured: the API also refuses a
+ * same-gesture re-request. Owning the class means owning the key.
+ * F11 remains the native option for players who want the tab bar gone.
+ */
+function setFauxFullscreen(on: boolean): void {
+  document.body.classList.toggle("faux-fullscreen", on);
+}
+
+function toggleFullscreen(): void {
+  setFauxFullscreen(!document.body.classList.contains("faux-fullscreen"));
+}
 let endDayModal: EndDayModalHandle | null = null;
 let unsubscribeGame: (() => void) | null = null;
 let focusedNpcId: NpcId | null = null;
@@ -112,7 +194,18 @@ const npcScheduleYaws = new Map<string, number>();    // npcId -> schedule yaw
 
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    if (dialogue?.isOpen()) dialogue.close();
+    // One priority chain, topmost layer first (Lucas, 2026-09-03: Esc
+    // should close modals before it touches fullscreen). Fullscreen is
+    // only exited by us when nothing is open - the browser may still
+    // exit it natively on the same press, which we cannot prevent, but
+    // the modal always goes away first and we re-enter fullscreen in the
+    // same gesture when we can.
+    console.info("[esc-chain] webmcp:", webmcpModal?.isOpen() ?? "null", "help:", helpModal?.isOpen() ?? "null", "endday:", endDayModal?.isOpen() ?? "null", "dialogue:", dialogue?.isOpen() ?? "null");
+    if (webmcpModal?.isOpen()) { webmcpModal.close(); e.preventDefault(); return; }
+    if (helpModal?.isOpen()) { helpModal.close(); e.preventDefault(); return; }
+    if (endDayModal?.isOpen()) { endDayModal.close(); e.preventDefault(); return; }
+    if (dialogue?.isOpen()) { dialogue.close(); e.preventDefault(); return; }
+    setFauxFullscreen(false);
     return;
   }
   // C-66: Renata and the roster's keycap both promise Z = End Day.
@@ -121,6 +214,20 @@ window.addEventListener("keydown", (e) => {
   // Since the end-day confirm modal, Z OPENS that modal rather than
   // ending the day — the key is one slip from WASD (Lucas, 2026-09-02);
   // the modal's own Z handler cancels it.
+  // Lucas, 2026-09-03: F for fullscreen - easier to reach than F11, and
+  // in-page fullscreen drops the browser chrome, not just the tabs. Works
+  // on any screen (the title screen benefits most), never inside a text
+  // field, and exiting is left to the browser (Esc) or a second press.
+  if ((e.code === "KeyF" || e.key.toLowerCase() === "f") && !e.repeat) {
+    const target = e.target;
+    const isTextEntry = target instanceof HTMLElement && (
+      target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable
+    );
+    if (!isTextEntry) {
+      e.preventDefault();
+      toggleFullscreen();
+    }
+  }
   if ((e.code === "KeyZ" || e.key.toLowerCase() === "z") && !e.repeat) {
     const target = e.target;
     const isTextEntry = target instanceof HTMLElement && (
@@ -140,6 +247,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 function setScreen(next: Screen): void {
+  npcExchange?.cancel();
   closeDialogueForScreenTransition(dialogue);
   const prevScreen = screen;
   screen = next;
@@ -181,7 +289,7 @@ function onScreenMusicChange(next: Screen, _prev: Screen): void {
 
 function showTitle(): void {
   setScreen("title");
-  mountTitleScreen(uiRoot, hasSave(), () => showCharacterCreate(), () => startOffice());
+  mountTitleScreen(uiRoot, hasSave(), () => showCharacterCreate(), () => startOffice(), webmcpStatus);
 }
 
 function hasSave(): boolean {
@@ -194,6 +302,8 @@ function showCharacterCreate(): void {
     uiRoot,
     (data) => {
       game.dispatch({ type: "reset" });
+      bartekSummoned = false;
+      bartekApproaching = false;
       game.dispatch({ type: "load", state: { ...game.get(), character: { ...data }, stats: applyTrait(data.trait, game.get().stats) } });
       // First time the player reaches the office: play the day-1 intro
       // cinematic. On Continue (returning save), skip it.
@@ -321,6 +431,138 @@ function startOffice(playIntro = false): void {
       },
       getDialogueSnapshot: () => dialogue?.snapshot() ?? null,
     });
+
+    // ADR 0008 D-36/D-37: the agent companion and its dialogue broker.
+    // Built here because it needs the live scene, the NPC positions and
+    // the shared bubble layer; registered with the WebMCP tool surface so
+    // the agent_* tools have something behind them.
+    {
+      const obstacles = [...OBSTACLES, ...WORLD_COLLISION_WALLS];
+      const edges = buildWaypointEdges(CORRIDOR_WAYPOINTS, obstacles, DEFAULT_MAX_EDGE_LENGTH);
+      const companion = createAgentCompanion({
+        scene: engine.scene,
+        obstacles,
+        waypoints: CORRIDOR_WAYPOINTS,
+        edges,
+        listNpcs: () =>
+          NPCS.filter((npc) => built.npcObjects[npc.id]?.visible !== false).map((npc) => {
+            const object = built.npcObjects[npc.id];
+            return {
+              id: npc.id,
+              name: npc.name,
+              role: npc.role,
+              // Live position: "walk to Bartek" must track where Bartek
+              // is now, not where he was authored.
+              position: object
+                ? { x: object.position.x, y: object.position.y, z: object.position.z }
+                : npc.position,
+            };
+          }),
+        getPlayerPosition: () => controls?.getPlayerPosition() ?? null,
+        listRooms: () => WORLD_ROOMS.map((room) => ({ id: room.id, name: room.name, floor: room.floor })),
+        showBubble: (position, line) => built.npcController.showBubble(position, line),
+        // Spawn ON a corridor waypoint, and one the player can SEE.
+        //
+        // Two earlier attempts were wrong in different ways. An offset from
+        // the player start landed at (0, 19.3) - past reception-entrance and
+        // off the walkable graph - so planNpcPath could not route and every
+        // agent_move_to failed with "no walkable route". reception-center
+        // (0, 14) routes fine but sits directly behind the reception desk
+        // from the spawn view, so the robot appeared and was invisible.
+        // reception-west is in the graph and beside the desk, in frame.
+        spawn: { x: 0, z: 14 },
+        bounds: WORLD_BOUNDS,
+        getWorldInfo: () => {
+          const state = game.get();
+          return {
+            day: state.day,
+            period: state.timeOfDay,
+            clock: formatGameClock(state.timeOfDay, currentPeriodElapsed),
+            quest: getActiveQuest(state)?.title ?? null,
+            cash: state.cash,
+          };
+        },
+      });
+      agentCompanion = companion;
+
+      const broker = createDialogueBroker(
+        () => Date.now(),
+        (turn) => {
+          // A REAL supply from the agent: the fallback escalation is over.
+          agentFallbackCount = 0;
+          renderAgentTurn(turn.line, turn.options);
+        },
+      );
+      agentBroker = broker;
+
+      const humanBusy = () => screen !== "office" || !!dialogue?.isOpen() || !!helpModal?.isOpen() || !!webmcpModal?.isOpen() || !!endDayModal?.isOpen() || cinematicPlaying;
+      npcExchange = createNpcExchange({
+        isHumanBusy: humanBusy,
+        isActive: () => companion.isActive(),
+        getNpc: (id) => {
+          const object = built.npcObjects[id as NpcId];
+          return object ? { position: object.position, visible: object.visible } : null;
+        },
+        getRobot: () => companion.snapshot(),
+        moveTo: (id) => companion.moveTo(id),
+        stopRobot: () => companion.stop(),
+        holdNpc: (id) => built.npcController.setTalkingToPlayer(id as NpcId | null),
+        faceEachOther: (id) => {
+          const object = built.npcObjects[id as NpcId];
+          if (!object) return;
+          npcFaceAnimations.delete(id as NpcId);
+          const robot = companion.snapshot().position;
+          companion.faceTowards(object.position);
+          object.rotation.y = Math.atan2(robot.x - object.position.x, robot.z - object.position.z);
+        },
+        sayRobot: (line) => { companion.say(line); },
+        sayNpc: (id, line) => {
+          const object = built.npcObjects[id as NpcId];
+          if (object) built.npcController.showBubble(object.position, line);
+        },
+      });
+
+      registerAgentCompanion({
+        join: (name, persona) => companion.join(name, persona),
+        leave: () => {
+          npcExchange?.cancel();
+          broker.reset();
+          agentTurn = 0;
+          if (dialogue?.isAgentTurn()) dialogue.close();
+          return companion.leave();
+        },
+        isActive: () => companion.isActive(),
+        step: (direction, metres) => { npcExchange?.cancel(); return companion.step(direction, metres); },
+        turn: (degrees) => companion.turn(degrees),
+        lookAround: () => ({ ...(companion.lookAround() as Record<string, unknown>), npcExchange: npcExchange?.snapshot() ?? null }),
+        talkToNpc: (id, line, reply) => npcExchange!.start(id, line, reply),
+        moveTo: (target) => { npcExchange?.cancel(); return companion.moveTo(target); },
+        say: (line) => companion.say(line),
+        peekDialogueRequest: () => broker.peek(),
+        supplyDialogue: (line, options) => {
+          const result = broker.supply(line, options);
+          return result.ok ? { ok: true } : { ok: false, reason: result.reason };
+        },
+        startConversation: async (line, options) => {
+          npcExchange?.cancel();
+          const approach = await approachHumanConversation({
+            isBusy: humanBusy,
+            getHuman: () => controls?.getPlayerPosition() ?? null,
+            getRobot: () => companion.snapshot().position,
+            walk: (point) => companion.walkToPoint(point),
+          });
+          if (!approach.ok) return approach;
+          const human = controls?.getPlayerPosition();
+          if (human) companion.faceTowards(human);
+          agentTurn = 1;
+          const result = broker.startConversation(line, options);
+          return result.ok ? { ok: true } : { ok: false, reason: result.reason };
+        },
+        playAnimation: (name: string) => companion.playAnimation(name),
+        animationNames: () => companion.animationNames(),
+        awaitPlayerMessage: (timeoutMs) => broker.awaitPlayerMessage(timeoutMs),
+      });
+    }
     cameraDirector = createCameraDirector(engine.camera);
     // Phase 2: WASD walk + first-person camera (C-01) + Pattern D
     // mouse-look (ADR-0007). The player starts at the office door
@@ -404,6 +646,24 @@ function startOffice(playIntro = false): void {
         // shot) and the CEO behind his glass are hoverable/clickable.
         maxDistance: 25,
       });
+      // The companion is not in npcMeshes (it has no NpcId), so it gets
+      // its own pick before the normal one.
+      if (agentCompanion?.isActive() === true) {
+        const companionHits = raycaster!.intersectObject(engine.scene, true)
+          .filter((h) => h.distance <= 25);
+        const hitCompanion = companionHits.some((h) => {
+          let node: THREE.Object3D | null = h.object;
+          while (node !== null) {
+            if (node.name === "agent-companion-body") return true;
+            node = node.parent;
+          }
+          return false;
+        });
+        if (hitCompanion) {
+          startAgentConversation();
+          return;
+        }
+      }
       if (hit.kind === "npc") {
         // C-46: an NPC who is not in the office (gone-home) cannot be
         // talked to - same rule as the disabled roster card.
@@ -447,6 +707,27 @@ function startOffice(playIntro = false): void {
   );
   questLog = mountQuestLog(uiRoot);
   helpModal = mountHelpModal(uiRoot);
+  // Dialogue buttons and the Help modal both ask for this via a DOM event,
+  // so the dialogue layer never imports the modal directly.
+  window.addEventListener("stack-underflow:open-modal", (event) => {
+    if ((event as CustomEvent<{ modal?: string }>).detail?.modal !== "webmcp") return;
+    if (!webmcpModal) webmcpModal = mountWebmcpHelpModal(uiRoot);
+    webmcpModal.open();
+  });
+  // A join queued from the title screen (agent_join before any game existed)
+  // is fulfilled HERE: the robot walks in the moment the office loads, so the
+  // agent's "I'll join once you start" is a promise the game keeps without
+  // the agent needing to poll. The bubble announces it; the human can click
+  // the robot whenever they like.
+  notifyOfficeLoaded();
+  const queued = drainPendingAgentJoin();
+  if (queued) {
+    const joined = agentCompanion?.join(queued.name, queued.persona);
+    if (joined?.ok) {
+      agentCompanion?.say(`*rolls in* ${queued.name}, reporting for duty. Which desk is mine?`);
+      if (hud) showToast(hud, `${queued.name} the AI coworker just joined the office.`, "info");
+    }
+  }
   // The Z key and the roster's End Day button both confirm here first;
   // the WebMCP end_day hook below keeps calling endDay() directly.
   endDayModal = mountEndDayModal(uiRoot, () => endDay());
@@ -476,6 +757,14 @@ function startOffice(playIntro = false): void {
     if (hud) renderHud(hud, game.get());
     if (questLog) questLog.refresh(game.get());
     refreshRoster();
+    // Lucas, 2026-09-03: "Bartek comes when it is finished". Renata's
+    // tutorial is now quest one, and the player should not then have to go
+    // hunting for a team lead they have never met - he walks over to them.
+    // Fires once per game; `bartekSummoned` guards against the store
+    // publishing many times while he is still walking.
+    if (!bartekSummoned && game.get().flags["renata-tut-finished"] === true) {
+      summonBartek();
+    }
     // Cash register SFX when cash goes up.
     const cur = game.get();
     if (hud) {
@@ -613,7 +902,7 @@ async function playIntroCinematic(): Promise<void> {
   // After 600ms, also show the intro toast. This is intentionally after
   // the cinematic so the toast doesn't fight the camera for attention.
   setTimeout(() => {
-    if (hud) showToast(hud, "Welcome to DevPowers. Click Bartek's card to start.", "info");
+    if (hud) showToast(hud, "Welcome to Stack Underflow. Talk to Renata at reception - click her card on the right.", "info");
   }, 600);
 }
 
@@ -668,6 +957,34 @@ function updateHoverLabel(): void {
     // Same reach as the click so hover and click always agree.
     maxDistance: 25,
   });
+  // The companion is not in npcMeshes (it has no NpcId), so it needs its own
+  // hover pass - otherwise the one clickable character in the office is the
+  // only one without a label (Lucas, 2026-09-03).
+  if (agentCompanion?.isActive() === true) {
+    const companionHit = raycaster
+      .intersectObject(engine.scene, true)
+      .filter((h) => h.distance <= 25)
+      .some((h) => {
+        let node: THREE.Object3D | null = h.object;
+        while (node !== null) {
+          if (node.name === "agent-companion-body") return true;
+          node = node.parent;
+        }
+        return false;
+      });
+    if (companionHit) {
+      const snapshot = agentCompanion.snapshot();
+      const head = new THREE.Vector3(snapshot.position.x, 2.1, snapshot.position.z);
+      head.project(engine.camera);
+      if (head.z <= 1 && head.z >= -1) {
+        hoverLabel.textContent = `${snapshot.name} - AI Coworker`;
+        positionHoverLabel(hoverLabel, head, rect);
+        hoverLabel.hidden = false;
+        return;
+      }
+    }
+  }
+
   let id: NpcId | null = null;
   if (hit.kind === "npc") {
     const object = sceneObjects.npcObjects[hit.npcId as NpcId];
@@ -692,10 +1009,8 @@ function updateHoverLabel(): void {
     hoverLabel.hidden = true;
     return;
   }
-  const x = (head.x * 0.5 + 0.5) * rect.width;
-  const y = (-head.y * 0.5 + 0.5) * rect.height;
   hoverLabel.textContent = `${npc.name} - ${npc.role}`;
-  hoverLabel.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
+  positionHoverLabel(hoverLabel, head, rect);
   hoverLabel.hidden = false;
 }
 
@@ -769,16 +1084,16 @@ function pickFinalLine(state: GameState): string {
   return lines[idx]!;
 }
 
-function openDialogueWith(npc: NPC): void {
-  // Phase 3.3: when the player starts a conversation, clear any
-  // active inter-NPC speech bubble so the player is not visually
-  // overloaded with overlapping text. The bubble system lives in the
-  // NPC controller (C-61); clearing our own copy would be a no-op.
-  sceneObjects?.npcController.clearBubbles();
-  // C-54: the roster stays clickable while a dialogue is open; a new
-  // pick switches the conversation instead of silently keeping the
-  // old one (the controller's open() is a no-op while already open).
-  if (dialogue?.isOpen()) dialogue.close();
+/**
+ * Create the dialogue overlay on first use.
+ *
+ * Extracted from openDialogueWith because the agent companion needs the
+ * same controller (ADR 0008 D-37) and the lazy init used to live inside
+ * the NPC path only - so an agent conversation started before the player
+ * had ever talked to a colleague found `dialogue` still null and silently
+ * did nothing.
+ */
+function ensureDialogue(): DialogueController {
   if (!dialogue) {
     dialogue = createDialogue(uiRoot, () => {
       audio().tts.stop();
@@ -814,6 +1129,21 @@ function openDialogueWith(npc: NPC): void {
       })();
     });
   }
+  return dialogue;
+}
+
+function openDialogueWith(npc: NPC): void {
+  npcExchange?.cancel();
+  // Phase 3.3: when the player starts a conversation, clear any
+  // active inter-NPC speech bubble so the player is not visually
+  // overloaded with overlapping text. The bubble system lives in the
+  // NPC controller (C-61); clearing our own copy would be a no-op.
+  sceneObjects?.npcController.clearBubbles();
+  // C-54: the roster stays clickable while a dialogue is open; a new
+  // pick switches the conversation instead of silently keeping the
+  // old one (the controller's open() is a no-op while already open).
+  if (dialogue?.isOpen()) dialogue.close();
+  const panel = ensureDialogue();
   // C-54: stage the conversation like a conversation. The player is
   // placed at a collision-clear spot 1.6 m from the NPC's LIVE
   // position (they wander - npc.position is just their desk), both
@@ -838,7 +1168,10 @@ function openDialogueWith(npc: NPC): void {
       WORLD_BOUNDS,
       [...OBSTACLES, ...WORLD_COLLISION_WALLS],
     );
-    controls.setPlayerPose(spot.x, spot.z, plan.playerYaw);
+    // Slight downward aim: at 2 m the NPC's face sits a touch below the
+    // horizon, and keeping the player's old pitch kept catching the tops of
+    // heads (Lucas, 2026-09-03). ~-10 degrees reads as eye contact.
+    controls.setPlayerPose(spot.x, spot.z, plan.playerYaw, -0.18);
     if (!npcScheduleYaws.has(npc.id)) {
       npcScheduleYaws.set(npc.id, mesh.rotation.y);
     }
@@ -877,7 +1210,7 @@ function openDialogueWith(npc: NPC): void {
   // C-54: no cameraDirector pan - the player IS at the conversation
   // spot now. The roster card keeps its highlight.
   roster?.setFocus(npc.id);
-  dialogue.open(npc, tree, treeKey);
+  panel.open(npc, tree, treeKey);
 }
 
 function openDebugMinigame(): void {
@@ -985,6 +1318,123 @@ function advanceOfficePeriods(periodCount: number): void {
   }
 }
 
+/**
+ * Render one agent-authored turn in the normal dialogue panel (D-37).
+ * The human's pick is recorded and handed back to the agent on its next
+ * get_pending_dialogue_request, then a fresh request is opened so the
+ * conversation can continue for as long as either side wants.
+ */
+/**
+ * Send Bartek over to the player after Renata finishes the tutorial.
+ *
+ * Uses the ordinary schedule-override path, so he walks with the same
+ * pathfinding, avoidance and walk cycle as any other NPC trip - no teleport,
+ * and he is interruptible by the next period like everyone else.
+ */
+function summonBartek(): void {
+  const controller = sceneObjects?.npcController;
+  const playerPosition = controls?.getPlayerPosition();
+  if (!controller || !playerPosition) return;
+  // He cannot walk over if he has not arrived at the office yet; leave the
+  // flag unset so this retries on the next store publish.
+  if (!controller.hasArrived("bartek")) return;
+
+  const bartek = sceneObjects?.npcObjects.bartek;
+  const from = bartek
+    ? { x: bartek.position.x, z: bartek.position.z }
+    : { x: NPCS.find((n) => n.id === "bartek")!.position.x, z: NPCS.find((n) => n.id === "bartek")!.position.z };
+
+  // He comes all the way to the player (Lucas: "Bartek comes when it is
+  // finished"). An earlier version stopped him at the office side of the
+  // reception door, because the ~18 m trip out of the narrow west desk aisle
+  // reliably jammed on the C-48 blocked/escape ladder. That turned out to be
+  // caused by re-aiming him on a timer - every setOverride restarts the path,
+  // so frequent re-aims left him walking on the spot. With the re-aim made
+  // drift-based he completes the walk, so the compromise is no longer needed.
+  const spot = approachSpotFor(
+    { x: playerPosition.x, z: playerPosition.z },
+    from,
+    WORLD_BOUNDS,
+    [...OBSTACLES, ...WORLD_COLLISION_WALLS],
+  );
+
+  bartekSummoned = true;
+  bartekApproaching = true;
+  bartekRetargetTimer = 0;
+  bartekAimedAt = { x: playerPosition.x, z: playerPosition.z };
+  controller.setOverride("bartek", { position: spot.position, face: spot.face, state: "walking" });
+  if (hud) {
+    showToast(hud, "Bartek is heading over to meet you.", "info");
+  }
+}
+
+function renderAgentTurn(line: string, options: readonly AgentTurnOption[]): void {
+  const companion = agentCompanion;
+  const broker = agentBroker;
+  if (!companion || !broker) return;
+  const panel = ensureDialogue();
+
+  panel.openAgentTurn(
+    { name: companion.snapshot().name, role: "AI Coworker", emoji: AGENT_PORTRAIT },
+    line,
+    options,
+    (choice, index, ends) => {
+      broker.recordChoice(choice, index, ends);
+      if (ends) {
+        // The agent marked this option as the one that finishes the
+        // exchange, so we close rather than asking it for another turn.
+        panel.close();
+        agentTurn = 0;
+        return;
+      }
+      agentTurn += 1;
+      requestAgentTurn();
+    },
+  );
+}
+
+/** Ask the agent for the next line and show the waiting state. */
+function requestAgentTurn(): void {
+  const companion = agentCompanion;
+  const broker = agentBroker;
+  if (!companion || !broker) return;
+  const panel = ensureDialogue();
+
+  broker.request({
+    companionName: companion.snapshot().name,
+    persona: companion.getPersona(),
+    location: companion.snapshot().position,
+    clock: formatGameClock(game.get().timeOfDay, currentPeriodElapsed),
+    turn: agentTurn,
+    lastPlayerChoice: broker.lastChoice(),
+  });
+
+  panel.openAgentTurn(
+    { name: companion.snapshot().name, role: "AI Coworker", emoji: AGENT_PORTRAIT },
+    "...",
+    [{ text: `(${companion.snapshot().name} is thinking...)` }],
+    () => {},
+  );
+}
+
+/** The human walked up to the robot and clicked it. */
+function startAgentConversation(): void {
+  npcExchange?.cancel();
+  if (agentCompanion?.isActive() !== true) return;
+  // C-39's rule applies to the robot too: you talk to a face, not a back.
+  const playerPosition = controls?.getPlayerPosition();
+  if (playerPosition) {
+    agentCompanion.faceTowards({ x: playerPosition.x, z: playerPosition.z });
+    void agentCompanion.walkToPoint({ x: playerPosition.x, z: playerPosition.z });
+  }
+  sceneObjects?.npcController.clearBubbles();
+  if (dialogue?.isOpen()) dialogue.close();
+  agentTurn = 1;
+  agentFallbackCount = 0;
+  agentBroker?.reset();
+  requestAgentTurn();
+}
+
 function frame(): void {
   const now = performance.now();
   const rawFrameMs = now - lastTime;
@@ -1006,6 +1456,92 @@ function frame(): void {
     engine.update(dt);
     if (sceneObjects) {
       for (const u of sceneObjects.updatables) u(dt);
+      // Lucas, 2026-09-03: "he just passed me and got probably to the point
+      // where I was and did not start the conversation". Two bugs in one
+      // sentence. The summon aimed at wherever the player stood at the moment
+      // the tutorial ended, so a player who moved was walking to a stale
+      // point - and nothing ever CHECKED whether he had reached them, so
+      // arriving did nothing at all. He now re-aims while he walks and greets
+      // on proximity rather than on reaching a coordinate.
+      if (bartekApproaching && sceneObjects && controls) {
+        const player = controls.getPlayerPosition();
+        const bartek = sceneObjects.npcObjects.bartek;
+        if (bartek) {
+          const gap = Math.hypot(bartek.position.x - player.x, bartek.position.z - player.z);
+          if (gap <= BARTEK_GREET_RADIUS) {
+            bartekApproaching = false;
+            // Stop him where he is, facing the player, and let him speak
+            // first - walking up and saying nothing is what looked broken.
+            sceneObjects.npcController.setOverride("bartek", {
+              position: { x: bartek.position.x, y: bartek.position.y, z: bartek.position.z },
+              face: Math.atan2(player.x - bartek.position.x, player.z - bartek.position.z),
+              state: "at-desk",
+            });
+            sceneObjects.npcController.showBubble(
+              new THREE.Vector3(bartek.position.x, bartek.position.y, bartek.position.z),
+              "There you are. Got a minute?",
+            );
+            const npc = NPCS.find((candidate) => candidate.id === "bartek");
+            if (npc && !dialogue?.isOpen()) openDialogueWith(npc);
+          } else {
+            bartekRetargetTimer += dt;
+            const drift =
+              bartekAimedAt === null
+                ? Infinity
+                : Math.hypot(player.x - bartekAimedAt.x, player.z - bartekAimedAt.z);
+            // Only re-plan when the player has genuinely moved on, and never
+            // more often than the floor: setOverride restarts the path, so
+            // frequent re-aims leave him walking on the spot.
+            if (
+              drift > BARTEK_RETARGET_PLAYER_DRIFT_M &&
+              bartekRetargetTimer >= BARTEK_RETARGET_MIN_INTERVAL_S
+            ) {
+              bartekRetargetTimer = 0;
+              bartekAimedAt = { x: player.x, z: player.z };
+              const spot = approachSpotFor(
+                { x: player.x, z: player.z },
+                { x: bartek.position.x, z: bartek.position.z },
+                WORLD_BOUNDS,
+                [...OBSTACLES, ...WORLD_COLLISION_WALLS],
+              );
+              sceneObjects.npcController.setOverride("bartek", {
+                position: spot.position,
+                face: spot.face,
+                state: "walking",
+              });
+            }
+          }
+        }
+      }
+
+      // ADR 0008: step the agent companion, then honour the bounded wait.
+      // A silent agent must never leave the human staring at "..." - the
+      // fallback is in character and the panel stays closable (AC-AUTH-05).
+      if (agentCompanion?.isActive() === true) {
+        agentCompanion.update(dt);
+        npcExchange?.update(dt);
+        // markLate() keeps the turn PENDING on purpose. Resetting here was a
+        // bug: a supply_dialogue arriving after the fallback then hit "no
+        // conversation is waiting" and the agent's line vanished, so a slow
+        // agent could never recover the conversation. Now a late line simply
+        // replaces the fallback in place.
+        if (
+          agentBroker?.hasTimedOut() === true &&
+          dialogue?.isAgentTurn() === true &&
+          agentBroker.markLate()
+        ) {
+          // The second consecutive fallback means the agent's TURN ended -
+          // it is not coming back on its own. The first says "buffering";
+          // this one teaches the human the actual remedy: any chat message
+          // wakes the agent, and their queued pick is answered first.
+          agentFallbackCount += 1;
+          if (agentFallbackCount >= 2) {
+            renderAgentTurn(WAKE_LINE, WAKE_OPTIONS);
+          } else {
+            renderAgentTurn(FALLBACK_LINE, FALLBACK_OPTIONS);
+          }
+        }
+      }
       // Phase 3.5: smooth NPC face-toward-player animation. When a
       // player starts a conversation with an NPC, the NPC's body
       // rotates to face the player. When the conversation closes, it
@@ -1116,15 +1652,45 @@ declare global {
         };
       }> | null;
       inspectFurniture: () => Array<{ name: string; position: { x: number; y: number; z: number }; size?: readonly [number, number, number] }> | null;
+      /** C-70: live state of Janusz's robot fleet, for e2e assertions. */
+      inspectRobots: () => Array<{
+        id: string;
+        state: string;
+        position: { x: number; z: number };
+        working: boolean;
+        followingJanusz: boolean;
+      }> | null;
       debugSkipPeriod: () => void;
       /** Dev/QA hook: teleport the player to (x, z) with a yaw (radians). */
       teleport: (x: number, z: number, yaw: number) => void;
       /** C-65: toggle the F3 frame-time meter; returns its new state. */
       toggleFps: () => boolean;
+      /** ADR 0008: inspect the agent companion, so an e2e can assert it
+       *  is really in the scene rather than eyeballing a screenshot. */
+      inspectCompanion: () => {
+        active: boolean;
+        inScene: boolean;
+        world: { x: number; y: number; z: number } | null;
+        childCount: number;
+      } | null;
     };
   }
 }
 window.__aitrainer = {
+  inspectCompanion: () => {
+    if (!agentCompanion || !engine) return null;
+    let found: THREE.Object3D | null = null;
+    engine.scene.traverse((o) => {
+      if (o.name === "agent-companion-body") found = o;
+    });
+    const node = found as THREE.Object3D | null;
+    return {
+      active: agentCompanion.isActive(),
+      inScene: node !== null,
+      world: node ? node.getWorldPosition(new THREE.Vector3()) : null,
+      childCount: node ? node.children.length : 0,
+    };
+  },
   getPlayer: () => {
     if (!controls) return { x: 0, y: 0, z: 0 };
     const p = controls.getPlayerPosition();
@@ -1215,6 +1781,7 @@ window.__aitrainer = {
     });
     return out;
   },
+  inspectRobots: () => sceneObjects?.robotFleet.inspect() ?? null,
   toggleFps: (): boolean => {
     fpsMeter?.toggle();
     return fpsMeter?.isVisible() ?? false;
@@ -1255,4 +1822,31 @@ console.info(
   "color:#00ff7f;font-weight:bold",
   "color:#888",
 );
+// ---------------------------------------------------------------
+// WebMCP registration (ADR 0008, D-34/D-35)
+//
+// Registered at BOOT rather than at startGame, for two reasons. An
+// agent should be able to discover the game's tools from the title
+// screen, and the title screen itself reports whether a model-context
+// surface was found - which is how a judge confirms the integration is
+// live without opening devtools.
+//
+// The player-action hooks are not wired until startGame. That is safe:
+// callTool already answers with an explicit "not wired in this
+// environment" error, so an early call gets an honest refusal rather
+// than a crash. Read-only tools (get_state, list_npcs) work immediately.
+// ---------------------------------------------------------------
+webmcpStatus = registerWebmcpTools();
+if (webmcpStatus.supported) {
+  console.info(
+    `[webmcp] registered ${webmcpStatus.registered} tools via ${webmcpStatus.namespace}` +
+      (webmcpStatus.failed > 0 ? ` (${webmcpStatus.failed} rejected)` : ""),
+  );
+} else {
+  console.info(
+    "[webmcp] no model-context surface in this browser - agent play is unavailable and " +
+      "the game is otherwise unaffected. Enable chrome://flags/#enable-webmcp-testing to test.",
+  );
+}
+
 showTitle();

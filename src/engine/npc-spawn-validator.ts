@@ -83,12 +83,20 @@ export const ROOM_FURNITURE_AABBS: readonly AABB[] = [
   // Bin against the north wall, EAST of the counter (sticks out
   // past the east wall by design - the user said this is fine).
   { minX: 19.175, maxX: 19.625, minZ: -6.6, maxZ: -6.2 },
-  // Round kitchen table in the middle of the room.
-  { minX: 13.3, maxX: 14.7, minZ: 1.8, maxZ: 3.2 },
-  // The three kitchen chairs.
-  { minX: 12.78, maxX: 13.22, minZ: 2.28, maxZ: 2.72 },
+  // The two round kitchen tables and their six chairs (C-36 layout in
+  // world-layout.ts: tables at (12, 2.8) and (16, 2.5)). This list used
+  // to carry a single stale table at (14, 2.5) from before the second
+  // table landed, which let NPCs (and now Janusz's robots, C-70) walk
+  // through the real furniture.
+  { minX: 11.3, maxX: 12.7, minZ: 2.1, maxZ: 3.5 },
+  { minX: 15.3, maxX: 16.7, minZ: 1.8, maxZ: 3.2 },
+  // Chairs: (11, 2.8), (13, 2.8), (12, 4.1), (15, 2.5), (17, 2.5), (16, 3.6).
+  { minX: 10.78, maxX: 11.22, minZ: 2.58, maxZ: 3.02 },
+  { minX: 12.78, maxX: 13.22, minZ: 2.58, maxZ: 3.02 },
+  { minX: 11.78, maxX: 12.22, minZ: 3.88, maxZ: 4.32 },
   { minX: 14.78, maxX: 15.22, minZ: 2.28, maxZ: 2.72 },
-  { minX: 13.78, maxX: 14.22, minZ: 3.38, maxZ: 3.82 },
+  { minX: 16.78, maxX: 17.22, minZ: 2.28, maxZ: 2.72 },
+  { minX: 15.78, maxX: 16.22, minZ: 3.38, maxZ: 3.82 },
   // ---- TOILET (C-57, x=[19, 24], z=[2, 7]) ----
   // Two stalls against the south wall, next to each other. Stalls
   // are 1.2m wide, 1.6m deep. After the user's 2026-09-01 re-layout

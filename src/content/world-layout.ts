@@ -1,4 +1,5 @@
 import type { AABB } from "../engine/collision";
+import { DOCK_PADS } from "./robot-dock-pads";
 
 export type Vector3Tuple = readonly [number, number, number];
 
@@ -335,6 +336,14 @@ export const WORLD_ROOMS: WorldRoom[] = [
       { type: "kitchen-chair", position: [11.0, 0, 2.8], rotationY: Math.PI / 1.8 },
       { type: "kitchen-chair", position: [13.0, 0, 2.8], rotationY: -Math.PI / 2.1 },
       { type: "kitchen-chair", position: [12, 0, 4.1], rotationY: Math.PI },
+      // C-70: Janusz's robot fleet charges here, in the dining area
+      // next to the two round tables. Coordinates come from the
+      // shared DOCK_PADS list so the visible pads and each robot's
+      // route.dock can never drift apart.
+      ...DOCK_PADS.map((pad) => ({
+        type: "robot-dock",
+        position: [pad.x, 0, pad.z] as Vector3Tuple,
+      })),
     ],
     signs: [
       // C-64 D2-D3: from the kitchen facing +Z, Lucas's left side
@@ -436,6 +445,13 @@ export const WORLD_ROOMS: WorldRoom[] = [
       [0, 16.8],
     ],
     furniture: [
+      // AC-BRAND-02: the credits wall, on the west band of the wall between
+      // reception and the main office - the player reads it once on the way
+      // in and is never shown it again. West rather than east because the
+      // roster is a permanent right-side HUD covering ~28% of the viewport,
+      // so an east-band mount is half-hidden from the only view this exists
+      // for. face 0 (+Z) points it at a player walking in from the entrance.
+      { type: "brand-wall", position: [-2.7, 0, 9.79], rotationY: 0 },
       { type: "reception-desk", position: [3.4, 0, 13.5], rotationY: -Math.PI / 2 },
       // C-64: local +X is the foliage side, so PI points it west
       // into reception while the backing remains against the east wall.
@@ -449,7 +465,22 @@ export const WORLD_ROOMS: WorldRoom[] = [
       { type: "glass-doors", position: [0, 0, 18.92] },
       { type: "xerox-printer", position: [5.15, 0, 16.75], rotationY: -Math.PI / 2 },
     ],
-    signs: [],
+    signs: [
+      // AC-BRAND-02: the two brands that BUILT the game, on the wall
+      // between reception and the main office - so the player sees them
+      // once on the way in and is never shown them again.
+      //
+      // Wording is "BUILT BY", never a company nameplate: the fictional
+      // office here is a deliberate comedy of dysfunction, and neither
+      // Edukey nor DevPowers is being depicted by it (AC-BRAND-03).
+      //
+      // The inner face of the reception's north wall is z=9.78, and the
+      // doorway to the main office is at x=0, so the pair flanks it.
+      // face: 0 points +Z, toward a player walking in from the entrance.
+      // The credits are NOT a sign: see the "brand-wall" furniture entry
+      // below. A room-name plaque is right for "MEETING ROOM" and wrong for
+      // branding (Lucas, 2026-09-03).
+    ],
   },
   {
     // C-64 D10: the meeting-room id follows the meeting concept,

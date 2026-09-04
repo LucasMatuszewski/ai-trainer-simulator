@@ -160,6 +160,11 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
               text: "I have been meaning to ask, what is your actual job title?",
               nextNodeId: "collab-question",
             },
+            {
+              text: "Should my AI agent follow you?",
+              id: "klaudia-agent",
+              nextNodeId: "klaudia-agent",
+            },
           ],
         },
         "collab-yes": {
@@ -174,6 +179,18 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
         "collab-no": {
           id: "collab-no",
           text: "Wow, OK. I see how it is. I will just keep posting. The algorithm loves me. The algorithm is the only one.",
+          next: "_end",
+        },
+        // Klaudia plus an agent: engagement-hacking, obviously. New node,
+        // deliberately NOT a rewrite of her voiced collab nodes - audio is
+        // resolved per node id, so new ids cost zero regeneration.
+        "klaudia-agent": {
+          id: "klaudia-agent",
+          text: "YES. Have it like every post, comment 'so true' on every thread, and share my content at 7am sharp. Honestly? Your agent gets me more than you do. No offence. Some offence.",
+          buttons: [
+            { text: "Copy a prompt to bring your agent", copyPrompt: true },
+            { text: "How it works", modal: "webmcp" },
+          ],
           next: "_end",
         },
         "collab-question": {
@@ -397,7 +414,25 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
                 { type: "add-stat", target: "credibility", delta: -8 },
               ],
             },
+            {
+              // Lucas, 2026-09-03: spread the agent topic across the cast.
+              // Tomek is the junior developer, so an agent that clears
+              // tickets is not a fun fact to him, it is a performance review
+              // with legs.
+              text: "Did you meet the new robot coworker?",
+              id: "tomek-agent",
+              nextNodeId: "tomek-agent",
+            },
           ],
+        },
+        "tomek-agent": {
+          id: "tomek-agent",
+          text: "A robot joined the standup channel, read the backlog, and commented 'duplicate of #12' on three of my tickets. If that is your agent, it is already senior to me. If it is NOT your agent, it is STILL senior to me.",
+          buttons: [
+            { text: "Copy a prompt to bring your agent", copyPrompt: true },
+            { text: "How it works", modal: "webmcp" },
+          ],
+          next: "_end",
         },
         "tomek-explain": {
           id: "tomek-explain",
@@ -473,7 +508,7 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
       nodes: {
         greeting: {
           id: "greeting",
-          text: "I am Janusz. I clean this place. Eleven years, three CEOs, one flood. I know where the bodies are buried — figuratively, and once literally, ask about the parking lot. You are the new trainer? Word of advice: the people in this office will tell you they are busy. Nobody here is busy. I empty their bins. I have seen the receipts.",
+          text: "I am Janusz, the janitor. I have not touched a mop in years — I built machines for that. Eleven years, three CEOs, one flood. I know where the bodies are buried — figuratively, and once literally, ask about the parking lot. Nobody here is busy. I empty their bins. I have seen the receipts.",
           options: [
             {
               text: "Tell me about the parking lot.",
@@ -490,7 +525,48 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
               nextNodeId: "janusz-meeting",
               effects: [{ type: "add-relationship", target: "janusz", delta: -10 }],
             },
+            {
+              text: "Apparently a robot works here now.",
+              id: "janusz-agent",
+              nextNodeId: "janusz-agent",
+            },
+            {
+              text: "Wait, YOU built those robots?",
+              id: "janusz-fleet-q",
+              nextNodeId: "janusz-fleet",
+              effects: [{ type: "add-relationship", target: "janusz", delta: 5 }],
+            },
           ],
+        },
+        // Lucas's own lore: Janusz secretly runs a fleet of bots and is the
+        // de-facto engineer of this office. An AGENT coworker is not news to
+        // him, it is a colleague, a rival, and a jurisdictional matter.
+        "janusz-agent": {
+          id: "janusz-agent",
+          text: "A robot? Son, I run six. They water the plants, they reorder toner, and one has opinions about the dishwasher. If your agent needs floor access, it comes to ME first. Those are the rules, and I wrote them on the back of a mop coupon.",
+          buttons: [
+            { text: "Copy a prompt to bring your agent", copyPrompt: true },
+            { text: "How it works", modal: "webmcp" },
+          ],
+          next: "_end",
+        },
+        // C-70: the lore payoff. Janusz constructed the fleet himself;
+        // the janitor title is bureaucratic inertia he does not mind.
+        "janusz-fleet": {
+          id: "janusz-fleet",
+          text: "Built them myself. Zdzislaw hoovers, Halina waters the plants and does the trimming, Seba runs the mugs to the dishwasher — Seba has OPINIONS about that dishwasher, do not get him started. Most technical work in this building, and it is done by machines I welded in my own garage.",
+          options: [
+            {
+              text: "So why are you still 'the janitor'?",
+              id: "janusz-title-q",
+              nextNodeId: "janusz-title",
+            },
+          ],
+        },
+        "janusz-title": {
+          id: "janusz-title",
+          text: "HR filed me under 'janitor' in 2015 and nobody has ever updated the form. I could fight it. I could also spend that energy on a seventh robot. You do the math. Besides — 'janitor' opens doors 'senior autonomous systems engineer' never would. Details.",
+          next: "_end",
         },
         "janusz-parking": {
           id: "janusz-parking",

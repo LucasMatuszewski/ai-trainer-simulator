@@ -50,15 +50,55 @@ export interface DialogueOption {
   id?: string;
 }
 
+/** An external link offered alongside a dialogue line. */
+export interface DialogueLink {
+  text: string;
+  href: string;
+}
+
+/**
+ * A button rendered under a dialogue line.
+ *
+ * Deliberately DATA, not functions: dialogue content is serializable,
+ * testable and diffable, and every action we need is a named kind. If a
+ * fourth kind ever appears, it gets a field here rather than a closure in
+ * the content tree.
+ */
+export interface DialogueButton {
+  text: string;
+  /** Open the named in-game modal. Currently only "webmcp". */
+  modal?: "webmcp";
+  /** Copy the ready-made agent prompt to the clipboard. */
+  copyPrompt?: boolean;
+}
+
 export interface DialogueNode {
   id: string;
   text: string;
+  /**
+   * Optional clickable link shown under the line. Added so Renata can point
+   * the player at the WebMCP setup docs (Lucas, 2026-09-03) - a URL read
+   * aloud in a speech line is not something anyone is going to retype.
+   * Opens in a new tab; the dialogue stays where it is.
+   */
+  link?: DialogueLink;
+  /** Any number of links; rendered under the line after `link`. */
+  links?: DialogueLink[];
+  /** Action buttons; rendered after the links. */
+  buttons?: DialogueButton[];
   options?: DialogueOption[];
   next?: string; // auto-advance to a node id (no options shown)
   effects?: Effect[]; // applied when the node is entered
 }
 
 export interface DialogueTree {
+  /**
+   * Repeatable trees never suppress already-picked options (the per-NPC
+   * option memory). Renata is the support desk: asking her to "run the
+   * controls again" must always work, and her menus must never dead-end
+   * into the out-of-lore "You have already heard this story" panel.
+   */
+  repeatable?: boolean;
   /** Map of node id to node. Root is "greeting". */
   nodes: Record<string, DialogueNode>;
   /**

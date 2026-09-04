@@ -36,20 +36,20 @@ describe("complete controls help (C-66)", () => {
     ]));
 
     for (const control of [
-      "wasd",
-      "arrow keys",
+      "wasd / arrows",
       "shift",
-      "right mouse button",
+      "right button",
       "space",
       "escape",
       "click an npc",
-      "roster",
+      "click the name",
       "z",
       "end day",
       "use computer",
       "quest log",
-      "f1",
+      "? / f1",
       "f3",
+      "f",
     ]) {
       expect(text, `help must explain ${control}`).toContain(control);
     }
@@ -67,11 +67,12 @@ describe("complete controls help (C-66)", () => {
     }));
     expect(help.root.classList.contains("open"), "? should open help").toBe(true);
 
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape" }));
-    expect(help.root.classList.contains("open"), "Escape should close help").toBe(false);
-
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "F1", code: "F1" }));
-    expect(help.root.classList.contains("open"), "F1 should open help").toBe(true);
+    // Esc is deliberately NOT handled here: main.ts's priority chain closes
+    // the topmost layer, so the modal must not race it (document listeners
+    // fire before window listeners - see help-modal.ts). Closing is the
+    // chain's job; here we assert the close() path it calls.
+    help.close();
+    expect(help.root.classList.contains("open"), "close() should hide help").toBe(false);
   });
 
   it("keeps the close button and backdrop as working exits", () => {

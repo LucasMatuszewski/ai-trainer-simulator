@@ -201,6 +201,48 @@ describe("Renata NPC roster data (C-64)", () => {
     expect(found!.appearance?.hair).toBeDefined();
     expect(found!.appearance?.shirt).toBeDefined();
     // Sanity: role is "Receptionist / Office Manager" per the plan.
-    expect(found!.role.toLowerCase()).toContain("receptionist");
+    // C-64 asserted "receptionist"; the role was shortened to "Support /
+    // Office Manager" on 2026-09-03 because the longer string wrapped to two
+    // lines and overflowed the roster card. What this test actually cares
+    // about is that she reads as the front-desk person, so assert the half
+    // that still carries that.
+    expect(found!.role.toLowerCase()).toContain("office manager");
+  });
+});
+
+describe("roster ordering", () => {
+  it("puts Renata first, because she is the first quest", () => {
+    // Lucas, 2026-09-03: she is the tutorial, so a new player should not
+    // have to scroll a list of strangers to find the one person the game
+    // just told them to talk to.
+    expect(NPCS[0]?.id).toBe("renata");
+  });
+
+  it("keeps her role short enough for one line on a roster card", () => {
+    const renata = NPCS.find((npc) => npc.id === "renata");
+    expect(renata!.role.length).toBeLessThanOrEqual(26);
+  });
+});
+
+describe("spoken nodes never auto-advance (the duplicated-voice bug)", () => {
+  const trees = Object.values(renata);
+
+  it("never chains a spoken node straight into another spoken node", () => {
+    // The "I have been here a week" answer used `next: "walk"`, so it never
+    // rendered and its voice line was overlapped by the walk node's line.
+    // Any node with speakable text must stop and offer options, or hand off
+    // only to an empty sentinel (_end).
+    for (const tree of trees) {
+      for (const node of Object.values(tree.nodes)) {
+        if (node.text.trim().length === 0) continue;
+        if (node.next !== undefined && node.next !== "_end") {
+          const target = tree.nodes[node.next];
+          expect(
+            target?.text.trim().length ?? 0,
+            `${node.id} auto-advances into spoken node ${node.next} - the lines would overlap`,
+          ).toBe(0);
+        }
+      }
+    }
   });
 });

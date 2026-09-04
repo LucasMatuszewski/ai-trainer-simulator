@@ -7,11 +7,35 @@ import { GAME_VERSION } from "../version";
 
 const GAME_NAME = "Stack Underflow"; // working title; will be replaced if GLM 5.3 has a better one
 
+/** Shape of the WebMCP registration result the title screen reports. */
+export interface WebmcpStatusView {
+  supported: boolean;
+  namespace: string | null;
+  registered: number;
+}
+
+/**
+ * The two brands that BUILT the game (Lucas, 2026-09-03). Deliberately
+ * worded as creators: the fictional office in this game is a comedy of
+ * dysfunction, and neither company is being depicted by it (AC-BRAND-03).
+ */
+const CREATORS: ReadonlyArray<{ name: string; href: string; logo: string }> = [
+  { name: "Edukey", href: "https://edukey.ai", logo: "/assets/edukey/logo-edukey.svg" },
+  {
+    name: "DevPowers",
+    href: "https://devpowers.com",
+    // Horizontal lockup here: the title footer is a wide, short strip, so
+    // the vertical version used on the reception wall would tower over it.
+    logo: "/assets/devpowers/logo-horizontal.svg",
+  },
+];
+
 export function mountTitleScreen(
   root: HTMLElement,
   hasSave: boolean,
   onNewGame: () => void,
   onContinue: () => void,
+  webmcp: WebmcpStatusView = { supported: false, namespace: null, registered: 0 },
 ): void {
   root.innerHTML = `
     <div class="title-screen">
@@ -22,6 +46,22 @@ export function mountTitleScreen(
         <button data-action="continue" ${hasSave ? "" : "disabled"}>Continue</button>
       </div>
       <div class="version">${GAME_VERSION} - a Lucas Matuszewski project</div>
+      <div class="agent-status ${webmcp.supported ? "is-live" : "is-off"}">
+        ${
+          webmcp.supported
+            ? `Agent play ready - ${webmcp.registered} WebMCP tools live`
+            : "Agent play unavailable in this browser - the game plays normally"
+        }
+      </div>
+      <div class="creators">
+        <span class="creators-label">Built by</span>
+        ${CREATORS.map(
+          (c) =>
+            `<a class="creator-link" href="${c.href}" target="_blank" rel="noopener noreferrer" title="${c.name}">` +
+            `<img src="${c.logo}" alt="${c.name}" />` +
+            `</a>`,
+        ).join('<span class="creators-sep">+</span>')}
+      </div>
     </div>
   `;
   root.querySelector<HTMLButtonElement>('[data-action="new"]')!.addEventListener("click", onNewGame);

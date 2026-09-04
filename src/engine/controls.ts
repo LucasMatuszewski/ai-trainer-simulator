@@ -172,7 +172,7 @@ export interface Controls {
    * whole conversation). The CALLER is responsible for collision
    * clearance; this setter bypasses applyWithCollision on purpose.
    */
-  setPlayerPose: (x: number, z: number, yaw: number) => void;
+  setPlayerPose: (x: number, z: number, yaw: number, pitch?: number) => void;
   destroy: () => void;
 }
 
@@ -560,8 +560,16 @@ export function createControls(opts: ControlsOptions): Controls {
     getYaw: () => state.yaw,
     getPitch: () => state.pitch,
     getPlayerPosition: () => player.clone(),
-    setPlayerPose: (x, z, yaw) => {
-      state = { ...state, player: { x, y: state.player.y, z }, yaw };
+    setPlayerPose: (x, z, yaw, pitch) => {
+      state = {
+        ...state,
+        player: { x, y: state.player.y, z },
+        yaw,
+        // Optional: a staged conversation wants the camera aimed at the
+        // other person's FACE, not at whatever the player happened to be
+        // looking at. Clamped by the same bounds as mouse-look.
+        ...(pitch === undefined ? {} : { pitch: Math.max(PITCH_MIN, Math.min(PITCH_MAX, pitch)) }),
+      };
       player.x = x;
       player.z = z;
       // Mirror update()'s camera write so the new pose is live at

@@ -205,7 +205,7 @@ Dialogue, cinematics, blocking modals, and explicit pause freeze the simulation 
 - AC-M-03: The camera follows the player and rotates with mouse movement, clamped between -45° and +60° pitch.
 
 ### AC-Help
-- AC-H-01: The `?` help modal names every shipped player control: WASD/arrows, Shift, RMB hold, Space toggle, Esc release/close, in-world and roster clicks, Z/End Day, computer/minigame button, quest-log expansion, `?`/F1 help, and F3 performance meter.
+- AC-H-01: The `?` help modal names every shipped player control: WASD/arrows, Shift, RMB hold, Space toggle, Esc release/close, in-world and roster clicks, Z/End Day, computer/minigame button, quest-log expansion, `?`/F1 help, F3 performance meter, and F fullscreen.
 - AC-H-02: The modal and Renata's controls answer agree; no displayed shortcut is inert.
 - AC-H-03: The complete controls remain readable at the game's supported desktop viewport; the modal body scrolls without clipping its close button.
 - AC-H-04: An automated DOM test fails if a required control disappears from the modal.
@@ -497,6 +497,24 @@ An IT company does not open a gate at 9:00 and let everyone in at once. People t
 
 **Acceptance criteria:** (1) At day start the player sees several colleagues already working and several walking in through the door behind them. (2) No more than a small handful of NPCs are ever near the door at once. (3) Janusz arrives visibly later than everyone else. (4) Day 2 and later mornings arrive through the door exactly like day 1 - nobody materializes in the middle of the office. (5) The measured morning door-jam metrics stay under the ceilings in `tests/unit/npc-morning-arrivals.test.ts`.
 
+### 11.8 Janusz's robot fleet (C-70)
+
+Janusz is not a janitor who cleans - he is the office's de-facto engineer who runs a fleet of robots he built himself, and the "janitor" title is a piece of bureaucracy nobody bothered to update (he does not mind; "details"). Three of his robots are visibly on duty in the office. The lore is told by Renata's FAQ (ironic one-liners, keeping the mop joke: it is Janusz's ROBOTS that mop) and by new options in Janusz's own dialogue tree. Neither Renata nor Janusz has recorded audio in the audio manifest, so their existing lines may be edited freely; the trees with recorded audio (bartek, klaudia, marek, pawel, zosia) are not touched.
+
+**The fleet** (all procedural low-poly meshes, Lambert materials, matching the 90s office style):
+
+1. **The vacuum** - a round, flat, white roomba-style disc. It cleans the main office in wall-to-wall lanes (a lawnmower pattern down the clear central strip plus the perimeter lanes), occasionally changes rooms through the main-to-kitchen doorway, and pauses at lane ends with a small working wiggle and a blinking status LED.
+2. **The gardener** - a small wheeled base carrying a two-joint robotic arm with shears and a coiled hose to a water tank. It tours every plant the robots can reach: the two main-office floor plants, the counter plant in the kitchen, and the reception planters. At each stop it parks facing the plant and the arm bobs (watering/shearing).
+3. **The runner** (third design, aligning with Janusz's own dialogue lore: "they reorder toner, and one has opinions about the dishwasher") - a small box robot with LED eyes and a tray of mugs on its back. It runs a mug-collection loop between the desks and the kitchen dishwasher, pausing at each desk. Its tray and the dishwasher round-trip are the visual punchline for the dishwasher-opinion lore.
+
+**Docking.** A charging station stands in the kitchen's dining area, along the south wall next to the two round tables (three pads at z≈6.4, clear of the meeting-room doorway traffic). Each robot owns one pad. When the day's work is done (the Evening period) each robot drives home, docks, and idles with a slow-pulsing charge LED until the next morning.
+
+**Movement.** Robots follow hand-authored waypoint loops (pure data in `src/content/robot-patrols.ts`), the same style as the NPC schedule: pure, unit-testable data consumed by a pure state-machine "brain" (`src/engine/robot-brain.ts`) and a thin mesh wrapper. The brain has five states: `docked` -> `to-work` -> `working` (pause at duty stops) -> `to-dock` -> `docked`, plus a rare `following-janusz` detour. Routes never cross furniture AABBs (a unit test pins every waypoint and every segment against the same obstacle lists the NPCs use, doorways only through their gaps). Robots do not use the NPC collision/avoidance systems - they are floor-level props on authored paths.
+
+**Follow Janusz (rare).** On finishing a patrol loop, a robot rolls a low-probability check (roughly once per several loops, with a long cooldown): if Janusz is visible (he arrives late, C-51), the robot drives to him, trails his position at a respectful ~0.8 m for a few seconds, then breaks off and resumes. This is the visual "they belong to Janusz" tell; it is rare by design.
+
+**Acceptance criteria:** (1) All three robots are visible on duty during Morning-Afternoon, each with its own animation tell (LED blink / arm bob / tray bob). (2) In Evening all three are docked on the kitchen charging station. (3) Route segments never intersect furniture AABBs or walls (unit-tested). (4) The follow-Janusz detour fires only rarely and only while Janusz is visible, and always times out. (5) Renata's FAQ and Janusz's tree carry the robot lore; no tree with recorded audio changes. (6) The docking station is in the kitchen dining area and does not block the meeting-room doorway.
+
 ### 11.5 The "real playable game" promise
 
 The user's mandate: "Remember, your goal is to make this game perfect, real playable game, best game in this category on the market!" and "Continue until you make this game perfect!"
@@ -545,6 +563,14 @@ This Definition of Done is mirrored in `AGENTS.md` PR-4 and PR-8 and in `~/AGENT
 ---
 
 ## 15. Further Notes
+
+### WebMCP playtest evidence (2026-09-03)
+
+C-73: copied agent prompts include the loaded game origin/path, using localhost for development and https://play.devpowers.com in production; both copy entry points share this behavior.
+
+Deadline correction C-72 / L-2026-09-03-08: the agent setup prompt and instructions teach native site-tool discovery, a detected model-context fallback, office lore and consistent embodied roleplay. Robot movement to people must stop at a collision-safe conversational distance, including the human; human camera control is retained. Labels and speech remain anchored to the live character and actual game viewport. A bounded robot–NPC exchange may accept agent-authored robot/NPC lines, displayed as sequential bubbles while the NPC faces the robot, without opening or answering the human's dialogue. This is fictional co-authorship explicitly requested by Lucas. Larger delivery-protocol redesign is outside the submission patch.
+
+The live human/robot coworker review is recorded in [the playtest audit](reviews/2026-09-03-webmcp-playtest.md), feedback L-2026-09-03-07, changelog C-71, and Beads `sacs-xtma.8`. It evaluates the current requirements in `PRD-hackathon-webmcp.md` and ADR 0008. Findings and proposed improvements are review evidence, not approved changes to gameplay or architecture; C-72 subsequently authorizes this task to implement the bounded robot-to-NPC exchange; the earlier review records the ownership at playtest time.
 
 ### Open questions deferred
 - **Music / SFX**: To be discussed after MVP ships. Chiptune is the obvious aesthetic match; either procedurally generated or pulled from a CC0 library.

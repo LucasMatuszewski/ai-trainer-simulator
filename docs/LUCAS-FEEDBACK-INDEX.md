@@ -1,9 +1,89 @@
 # Lucas's feedback index
 
+## 2026-09-03 — production URL and continue
+
+**ID: L-2026-09-03-10 — Copy the correct game address** (20:38 Europe/Lisbon)
+- Lucas confirms production is https://play.devpowers.com and asks for environment-aware prompt URLs instead of localhost; then explicitly asks to continue.
+- Use the loaded page's origin and path for both prompt display and clipboard entry points. Localhost stays local; production automatically points to the deployed game. No deployment ENV is necessary for this same-site behavior.
+- Cross-reference: PRD C-73 requirement, CHANGELOG C-73, Beads sacs-xtma.9.
+
+
+## 2026-09-03 — parallel submission work
+
+**ID: L-2026-09-03-09 — Continue implementation while Lucas records and submits** (20:27 Europe/Lisbon)
+- Lucas asks confirmation of local edit, tool, and shared-browser capabilities; confirms agents should work while he fills the form and records the demo, with about 45 minutes remaining.
+- Continue the already authorized C-72 priorities; discuss additional suggestions before expanding scope. Larger delivery redesign remains deferred.
+- Cross-reference: PRD deadline patch note, C-72, Beads sacs-xtma.9 and sacs-xtma.10.
+
+
+## 2026-09-03 — submission deadline patch
+
+**ID: L-2026-09-03-08 — Prioritize a demonstrable coworker before submission**
+- Lucas has approximately 55 minutes for publishing, the submission form and a short demo; authorizes parallel implementation of the biggest issues while he handles publication/form work.
+- Improve the help modal's copyable prompt and get_instructions: browser-native WebMCP discovery first; raw modelContext only when actually exposed; add game lore, LARP/RPG character creation informed by the user's shared context, consistent personality, gestures and active participation.
+- Verify recently pulled framing fixes also cover robot conversations. Robot is still too close/low in view; preserve human camera control.
+- Reproduce labels offset left/down after joining before fixing; possible relation to MCP testing extension or viewport changes.
+- Robot must stop beside an NPC, not inside their position.
+- Robot–NPC conversation must be visible. Lucas proposes agent-authored robot starter and NPC reply, potentially multiple turns, shown as speech bubbles; NPC must face the robot. User dialogue/camera remain separate.
+- Priorities: prompt/instructions, framing/personal space and projection, then a bounded visible NPC bubble exchange if verification fits the deadline. Existing dialogue delivery redesign is deferred rather than rushed.
+- Cross-reference: PRD deadline patch note, changelog C-72, hackathon PRD and ADR 0008; shared epic sacs-xtma. Implementation issue IDs are attached in Beads.
+
+## 2026-09-03 — live Rusty coworker playtest review
+
+**ID: L-2026-09-03-07 — What worked, dialogue delays, and agent usability** (2026-09-03T19:51+01:00)
+- Lucas enjoyed the live coworker interaction and confirmed that the game works; wants candid feedback on strengths, friction, tools to add/remove, tool descriptions/results, and the instructions tool.
+- Wants to know whether the agent used the supplied `document.modelContext` discovery/execution example or a browser-provided adapter, and how to improve the initial play prompt.
+- Lucas is already fixing robot-to-NPC conversations; this review must not duplicate that implementation.
+- Human-to-robot dialogue was enjoyable but sometimes delayed. Investigate listening coverage versus model/tool latency; consider Luna or Terra at a lighter reasoning setting, without assuming a model change fixes protocol errors.
+- Authorizes reading project code for this review. Recommendations are proposals, not approved gameplay changes.
+- Evidence: [playtest review](reviews/2026-09-03-webmcp-playtest.md); Beads `sacs-xtma.8`; PRD audit link; changelog C-71. Existing requirements: `docs/PRD-hackathon-webmcp.md`, ADR 0008 D-36–D-44.
+
 This document is a running index of every feedback item Lucas has
 given. Every item MUST be reflected in `docs/PRD.md` and the
 plan. The agent MUST update this file when Lucas sends feedback so
 nothing is lost again.
+
+## 2026-09-03 — agent tool surface and two-way conversations
+
+**ID: L-2026-09-03-04 — The tool surface must be self-describing, player-only, and two-way**
+- **Schemas are not self-describing.** The WebMCP extension renders `agent_move_to` as `{"target": "example_string"}` and `agent_look_around` as a bare `{}` with "no example at all". Every parameter needs a concrete example value; a no-argument tool must say so explicitly.
+- **Coordinates: no.** Lucas asked whether `agent_move_to` should take coordinates. Decision: it should not, and the reason must be IN the tool description so an agent stops looking for one - an agent has not seen the floor plan, and coordinates would let it place the companion inside furniture, bypassing the collision guarantee every other character obeys.
+- **Add direct movement controls** that mirror WASD - step forward/back, strafe, turn - alongside the high-level `agent_move_to`, so an agent can drive the companion the way a human drives the player.
+- **Remove the admin hacks.** Lucas: *"We should not have hacks like set relationship, afaik we already discussed it and decided to keep only normal game controls, should be somewhere in docs already."* He is right: L-2026-08-30-01 set the player-only policy and ADR 0008 D-40 restated it while leaving `set_flag` and `add_relationship` in place. They go.
+- **Two-way conversations.** The agent should be able to START a conversation with the player: main text plus 1-4 options, a spinner while waiting, and one option flagged as the one that ends the exchange (its text still written by the agent). The player must KEEP the ability to start one too - agent-only would be a regression.
+- **The notification question, in his words:** *"The question is if agent can receive any notification that user responded?"* If not, instruct the agent - via a `get_instructions`-style tool, "similar to a skill" - to open a conversation, then poll every 5-15s using a tool that returns the conversation history.
+- **His fallback ideas, all recorded:** a starter conversation opened at join time so one is always in flight; letting the agent post an ARRAY of pre-configured turns with branching on previous responses; or a tool that opens a stream/notification channel so the agent can listen for the player starting a conversation.
+- **His instruction:** *"Something to research and consider all options and test what works best!"*
+- **Research answer:** WebMCP is pull-only - the spec gives a page no way to push to an agent. But `execute()` is async and the host awaits it, so a **long-poll** (`wait_for_player_message`) resolves the instant the player answers and behaves like a notification. It strictly dominates the 5-15s polling loop: immediate, one call per wait instead of one every few seconds, and it degrades into exactly that polling loop when it times out. Ship both, and tell the agent to prefer the long-poll.
+
+**ID: L-2026-09-03-05 — ChatGPT's built-in browser shows no site tools**
+- Lucas sees the tools in Chrome (experimental flag + a WebMCP extension) but **not** in ChatGPT's built-in browser.
+- Not our bug - the same registration serves both. Known OpenAI-side gating, in order of likelihood: site tools require **GPT-5.6 Sol or Terra** and are **disabled on GPT-5.6 Luna**; they are **unavailable in Enterprise and Edu workspaces**; there is a Browser settings -> Permissions -> *Enable site tools* toggle; support landed for ChatGPT Work and Codex in the desktop app.
+- **The distinguishing signal:** when tools are detected an arrow appears in the address bar. Our title screen already prints "Agent play ready - N WebMCP tools live". Status line ready + no address-bar arrow = gating on their side, not ours.
+
+**ID: L-2026-09-03-06 — The SVG assets may be edited in the repo**
+- Lucas: *"you can edit these svg files if you need, e.g. change color, remove some attribute etc. it is in the repo, only this app uses them."*
+- This removes the need to strip the embedded `@media (prefers-color-scheme: dark)` rules at runtime; they can be taken out of the files, so the marks stop depending on each player's OS theme at the source.
+- **Cross-reference:** `public/assets/devpowers/*.svg`, `src/engine/furniture/brand-wall.ts`.
+
+## 2026-09-03 (night) — hackathon pivot, WebMCP agent play, real branding
+
+**ID: L-2026-09-03-02 — Enter the OpenAI WebMCP Challenge, and the MiniMax/GMI contest**
+- Deadline confirmed by research: **2026-09-03, 13:00 PDT = 21:00 Europe/Lisbon**. MiniMax/GMI is **2026-09-06**.
+- Lucas's own assessment of the game: visually nice, well-polished UX and controls, funny, but (1) no challenge - a tech demo rather than a game, and (2) the WebMCP implementation is very basic.
+- **Agent finding that reframed the night:** `src/webmcp/tools.ts` was an internal registry that nothing ever registered with the browser - no `modelContext` reference existed anywhere in `src/`, so an agent opening the page discovered zero tools. A qualification gap, not polish.
+- Decisions Lucas made: build order is real registration -> agent agency -> agent-authored dialogue -> branding; human multiplayer is **out for 03.09 and in for 06.09**; work goes to committed code on a branch but is **not pushed and not deployed**.
+- **Cross-reference:** `docs/briefs/2026-09-03-lucas-hackathon-brief.md` (the full brief, including every deferred idea), `docs/PRD-hackathon-webmcp.md`, `docs/ADR/0008-webmcp-browser-bridge-and-agent-companion.md`, `docs/plans/2026-09-03-hackathon-webmcp.md`, `docs/SUBMISSION.md`, `docs/DEPLOY.md`.
+
+**ID: L-2026-09-03-03 — Branding must be real artwork, not a room sign**
+- Lucas: "where did you took the logo of edukey and devpowers from???" - the agent had shipped placeholder TEXT plaques using the game's room-sign renderer, with invented colours and guessed URLs. No artwork had been copied from anywhere, but the need for real assets should have been raised explicitly rather than left in a commit body.
+- Real SVGs (logo, emblem, favicon, wordmark, horizontal + vertical lockups) were pushed to master under `public/assets/edukey/` and `public/assets/devpowers/`.
+- **A room-name plaque is right for "MEETING ROOM" and wrong for branding.** Requirements: "Made by" as **plain text painted directly on the wall**; below it **both SVG logos rendered**, one under another, DevPowers in its **vertical** version for now; simulate the **3D standoff logos typical of real reception walls**.
+- Implemented as `src/engine/furniture/brand-wall.ts` (painted caption + rasterised SVG marks at a standoff with drop shadows). Marked as first-pass - Lucas: "we can polish it later."
+- **Two asset hazards found and handled:** the Edukey files are pure white (invisible on a light surface), and the DevPowers files draw with `currentColor` plus their own `@media (prefers-color-scheme: dark)` rule, which the browser honours when rasterising - so an untreated DevPowers mark changes colour with **each player's OS theme**. Both are forced to an explicit colour before rendering, in the world and on the title screen.
+- Favicon switched from the placeholder emoji to the DevPowers mark. **Open question for Lucas:** the game is its own product ("Stack Underflow"), so a game-specific favicon may beat either company's.
+- **Also open:** the title-screen links use guessed URLs (`https://edukey.ai`, `https://devpowers.com`) and need confirming.
+- **Cross-reference:** `src/engine/furniture/brand-wall.ts`, `src/ui/title.ts`, `src/content/world-layout.ts` (reception furniture), `index.html`.
 
 ## 2026-09-03 — end-day safety and UI text size
 

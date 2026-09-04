@@ -143,6 +143,13 @@ export interface NpcController {
   clearBubbles: () => void;
   /** C-61 fix: the real engine camera for DOM bubble projection. */
   setBubblesCamera: (camera: THREE.Camera | null) => void;
+  /**
+   * ADR 0008: let a non-NPC speaker (the agent companion) use the same
+   * bubble layer. Sharing the pool keeps one style, one push-apart pass
+   * and one visibility gate, instead of a second layer that would float
+   * over the summary and minigame panels.
+   */
+  showBubble: (position: THREE.Vector3, line: string) => void;
 }
 
 export interface PathAdvanceResult {
@@ -429,7 +436,16 @@ export function createNpcController(
   const runtime = new Map<NpcId, NpcRuntime>();
   const idleStates = new Map<NpcId, IdleState>();
   const overrides = new Map<NpcId, ScheduleEntry>();
-  const validatedDestinations = new Map<NpcId, ScheduleEntry>();
+  /**
+   * Cache of depenetrated override destinations.
+   *
+   * Keyed by NPC *and by the requested position*. Keying on the NPC alone was
+   * a real bug: a second setOverride for the same NPC silently reused the
+   * FIRST destination, so an NPC could never be sent anywhere twice within a
+   * period. It surfaced when the Renata tutorial started summoning Bartek to
+   * the player - he walked toward a stale destination and stopped 17 m short.
+   */
+  const validatedDestinations = new Map<NpcId, { requested: { x: number; z: number }; result: ScheduleEntry }>();
   // C-46 conversation state. Keyed by pairKey so a pair cannot hold
   // two conversations with itself, and cooled down after finishing so
   // the same two NPCs do not monopolize the office chatter.
@@ -548,7 +564,15 @@ export function createNpcController(
 
   const validateOverride = (npcId: NpcId, entry: ScheduleEntry): ScheduleEntry | null => {
     const cached = validatedDestinations.get(npcId);
-    if (cached !== undefined) return cached;
+    // Only a hit when the SAME spot is being requested again; a different
+    // destination must be validated afresh.
+    if (
+      cached !== undefined &&
+      Math.abs(cached.requested.x - entry.position.x) < 1e-6 &&
+      Math.abs(cached.requested.z - entry.position.z) < 1e-6
+    ) {
+      return cached.result;
+    }
     const valid = findValidNpcSpawn(
       { x: entry.position.x, z: entry.position.z, radius: NPC_DEFAULT_RADIUS }, obstacles, 2,
     );
@@ -556,7 +580,10 @@ export function createNpcController(
     const result: ScheduleEntry = {
       position: { x: valid.x, y: entry.position.y, z: valid.z }, face: entry.face, state: entry.state,
     };
-    validatedDestinations.set(npcId, result);
+    validatedDestinations.set(npcId, {
+      requested: { x: entry.position.x, z: entry.position.z },
+      result,
+    });
     return result;
   };
 
@@ -1818,6 +1845,7 @@ export function createNpcController(
     },
     setBubblesVisible: (visible) => bubbleSystem?.setVisible(visible),
     clearBubbles: () => bubbleSystem?.clear(),
+    showBubble: (position, line) => bubbleSystem?.show(position, line),
     setBubblesCamera: (camera) => bubbleSystem?.setCamera(camera),
     getActiveConversations: () => [...conversations.values()].map((conversation) => ({
       a: conversation.aId,

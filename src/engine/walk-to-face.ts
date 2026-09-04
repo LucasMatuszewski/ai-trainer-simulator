@@ -54,7 +54,14 @@ export interface WalkToFaceResult {
 }
 
 /** Conversational distance: how far the player stands from the NPC. */
-export const CONVERSATION_DISTANCE = 1.6;
+/**
+ * Conversational distance, bumped 1.6 -> 2.0 after Lucas's playtest: NPCs
+ * stood close enough that the first-person camera kept catching the tops of
+ * their heads (Renata worst, behind her desk). Two metres reads as talking,
+ * not looming; the earlier first-person-compression lesson from the robot's
+ * 2.5 m applies here too.
+ */
+export const CONVERSATION_DISTANCE = 2.0;
 
 /** Tolerance: if the player is within this much of the target, skip the walk. */
 export const ALREADY_CLOSE_EPSILON = 0.2;
