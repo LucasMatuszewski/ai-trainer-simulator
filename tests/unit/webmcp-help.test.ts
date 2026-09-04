@@ -100,5 +100,11 @@ describe("game URL in the copied agent prompt", () => {
     expect(prompt).toContain(`Open ${url} in your built-in browser`);
     expect(prompt).not.toContain("debug=private");
     expect(prompt).not.toContain("#section");
+    // The host must be explicit: an agent with several browsers available
+    // opened the page through Playwright, where no tools register (Lucas,
+    // 2026-09-04). Name both hosts and forbid automation.
+    expect(prompt).toContain("inside the ChatGPT app");
+    expect(prompt).toContain("chrome://flags/#enable-webmcp-testing");
+    expect(prompt).toContain("Do NOT open the page with Playwright");
   });
 });

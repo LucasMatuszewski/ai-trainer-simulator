@@ -28,8 +28,8 @@ export const WEBMCP_PATHS: readonly WebmcpPath[] = [
   {
     label: "Chrome (experimental)",
     status:
-      "Experimental WebMCP support needs a compatible agent host. Check the current setup docs " +
-      "and detected tools; enabling a browser flag alone does not connect an agent.",
+      "Experimental: enable chrome://flags/#enable-webmcp-testing, and a compatible agent " +
+      "host (such as Gemini in Chrome) is still required - the flag alone does not connect an agent.",
     href: "https://developer.chrome.com/docs/ai/webmcp",
   },
 ];
@@ -101,7 +101,18 @@ export const AGENT_PROMPT = [
 /** Use the page being played, without copying query parameters or fragments. */
 export function buildAgentPrompt(pageUrl: string): string {
   const url = new URL(pageUrl);
-  return `Open ${url.origin}${url.pathname} in your built-in browser.\n\n${AGENT_PROMPT}`;
+  // The host line is explicit because the failure mode is real: an agent
+  // with several browsers available opened the page through Playwright,
+  // where no model-context host exists and no tools register (Lucas,
+  // 2026-09-04). Name the two hosts, forbid automation.
+  return (
+    `Open ${url.origin}${url.pathname} in your built-in browser inside the ChatGPT app.\n` +
+    "If we are in Chrome instead, WebMCP must be enabled first: open " +
+    "chrome://flags/#enable-webmcp-testing, set it to Enabled and relaunch. " +
+    "Do NOT open the page with Playwright, Puppeteer or any other automation - the site " +
+    "tools register only in a real browser's model context, and an automated page exposes none.\n\n" +
+    AGENT_PROMPT
+  );
 }
 
 /** What the copy button shows after a successful copy. */
@@ -118,8 +129,8 @@ export const WEBMCP_FAQ: readonly WebmcpFaqEntry[] = [
     q: "The title screen says agent play is unavailable",
     a:
       "That is this browser: it exposes no model-context host, so there is nothing to " +
-      "register the game's tools with. ChatGPT's browser and Chrome with the WebMCP " +
-      "experiment enabled are the two ways in.",
+      "register the game's tools with. ChatGPT's browser, or Chrome with " +
+      "chrome://flags/#enable-webmcp-testing enabled, are the two ways in.",
   },
   {
     q: "The status line is green but the agent says it sees no tools",
