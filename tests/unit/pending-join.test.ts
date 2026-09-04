@@ -54,3 +54,35 @@ describe("queued agent_join before the office loads", () => {
     expect(drainPendingAgentJoin()).toBeNull();
   });
 });
+
+describe("the unified listener pre-game", () => {
+  beforeEach(() => {
+    registerAgentCompanion(null);
+    drainPendingAgentJoin();
+  });
+
+  it("waits pre-game instead of erroring (Codex's flow only works if this holds)", async () => {
+    const result = await callTool({ name: "wait_for_player_message", parameters: { timeout_seconds: 1 } });
+    expect(result.ok).toBe(true);
+    const data = (result as { data: Record<string, unknown> }).data;
+    expect(data.waiting).toBe(true);
+  });
+
+  it("returns an officeLoaded wake the moment the office opens mid-wait", async () => {
+    const { notifyOfficeLoaded } = await import("../../src/webmcp/tools");
+    const pending = callTool({ name: "wait_for_player_message", parameters: { timeout_seconds: 120 } });
+    await new Promise((r) => setTimeout(r, 50));
+    notifyOfficeLoaded();
+    const result = (await pending) as { data: Record<string, unknown> };
+    expect(result.data.officeLoaded).toBe(true);
+    expect(String(result.data.hint)).toContain("make your entrance");
+  });
+
+  it("prefers the entrance wake over stale dialogue state pre-game", async () => {
+    const { notifyOfficeLoaded } = await import("../../src/webmcp/tools");
+    notifyOfficeLoaded();
+    const result = await callTool({ name: "wait_for_player_message", parameters: { timeout_seconds: 120 } });
+    const data = (result as { data: Record<string, unknown> }).data;
+    expect(data.officeLoaded).toBe(true);
+  });
+});

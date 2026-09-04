@@ -79,9 +79,9 @@ let pendingAgentJoin: { name: string; persona: string } | null = null;
  *
  * The queued join created a different dead end: the agent announced "I'll
  * walk in when you start" and STOPPED, because nothing told it how to keep
- * playing before the office exists. wait_for_office gives it the same
- * re-armable loop it has in conversations: block until the human starts the
- * game (or the timeout), then continue the entrance - one tool call after
+ * playing before the office exists. wait_for_player_message gives it the
+ * same re-armable loop it has in conversations: block until the human starts
+ * the game (or the timeout), then continue the entrance - one tool call after
  * another, no human message needed.
  */
 let officeLoaded = false;
@@ -649,9 +649,9 @@ const implementations: ToolImplementation[] = [
               "The game has not started yet, so your entry is QUEUED: the robot will walk " +
               "into the office on its own the moment the human starts it. Tell the human to " +
               "start (or continue) the game now - and KEEP WORKING: call " +
-              "wait_for_office({timeout_seconds: 120}) and re-arm it on every {waiting:true}. " +
-              "The moment it returns loaded, make your entrance. Do not stop and do not wait " +
-              "for a message.",
+              "wait_for_player_message({timeout_seconds: 120}) and re-arm it on every " +
+              "{waiting:true}. The moment it returns {officeLoaded:true}, make your entrance. " +
+              "Do not stop and do not wait for a message.",
           },
         };
       }
