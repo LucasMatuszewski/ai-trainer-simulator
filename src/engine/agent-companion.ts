@@ -219,6 +219,19 @@ export interface CompanionDeps {
   spawn: XZ;
   /** Outer walkable bounds, for the raw movement controls. */
   bounds: AABB;
+  /**
+   * Optional world orientation for agent_look_around: the clock, the active
+   * quest, cash. An agent orienting itself wants to know not just WHO is
+   * nearby but WHAT is happening - Lucas, 2026-09-03. main.ts wires this to
+   * the live game state.
+   */
+  getWorldInfo?: () => {
+    day: number;
+    period: string;
+    clock: string;
+    quest: string | null;
+    cash: number;
+  };
 }
 
 export interface CompanionSnapshot {
@@ -665,6 +678,7 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
         .slice(0, 6);
 
       return {
+        world: deps.getWorldInfo?.() ?? null,
         companion: {
           name: displayName,
           walking: path !== null,

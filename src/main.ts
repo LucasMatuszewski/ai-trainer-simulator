@@ -38,6 +38,7 @@ import { CORRIDOR_WAYPOINTS, buildWaypointEdges, DEFAULT_MAX_EDGE_LENGTH } from 
 import { WORLD_ROOMS } from "./content/world-layout";
 import { NPCS, OBSTACLES } from "./content/npcs";
 import { approachSpotFor } from "./content/npc-approach";
+import { getActiveQuest } from "./content/quests";
 import type { GameState, NPC, NpcId } from "./types";
 import { mountHud, renderHud, renderHudClock, showToast, type HudElements } from "./ui/hud";
 import { mountFpsMeter, type FpsMeter } from "./ui/fps-meter";
@@ -467,6 +468,16 @@ function startOffice(playIntro = false): void {
         // reception-west is in the graph and beside the desk, in frame.
         spawn: { x: 0, z: 14 },
         bounds: WORLD_BOUNDS,
+        getWorldInfo: () => {
+          const state = game.get();
+          return {
+            day: state.day,
+            period: state.timeOfDay,
+            clock: formatGameClock(state.timeOfDay, currentPeriodElapsed),
+            quest: getActiveQuest(state)?.title ?? null,
+            cash: state.cash,
+          };
+        },
       });
       agentCompanion = companion;
 
