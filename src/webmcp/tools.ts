@@ -74,6 +74,43 @@ export function registerAgentCompanion(hooks: AgentCompanionHooks | null): void 
  */
 let pendingAgentJoin: { name: string; persona: string } | null = null;
 
+/**
+ * Office-loaded signal for the pre-game loop.
+ *
+ * The queued join created a different dead end: the agent announced "I'll
+ * walk in when you start" and STOPPED, because nothing told it how to keep
+ * playing before the office exists. wait_for_office gives it the same
+ * re-armable loop it has in conversations: block until the human starts the
+ * game (or the timeout), then continue the entrance - one tool call after
+ * another, no human message needed.
+ */
+let officeLoaded = false;
+const officeWaiters: Array<() => void> = [];
+
+/** Called by main.ts the moment the office becomes playable. */
+export function notifyOfficeLoaded(): void {
+  officeLoaded = true;
+  const waiters = officeWaiters.splice(0);
+  for (const wake of waiters) wake();
+}
+
+export async function waitForOfficeLoaded(timeoutMs: number): Promise<{ loaded: boolean }> {
+  if (officeLoaded) return { loaded: true };
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = (): void => {
+      if (settled) return;
+      settled = true;
+      const i = officeWaiters.indexOf(wake);
+      if (i >= 0) officeWaiters.splice(i, 1);
+      resolve({ loaded: officeLoaded });
+    };
+    const wake = (): void => settle();
+    officeWaiters.push(wake);
+    setTimeout(settle, Math.max(1000, timeoutMs));
+  });
+}
+
 /** Called by main.ts right after the companion hooks are wired. */
 export function drainPendingAgentJoin(): { name: string; persona: string } | null {
   const pending = pendingAgentJoin;
@@ -246,8 +283,10 @@ const AGENT_INSTRUCTIONS = [
   "These functions are not assumed to exist in ordinary browsers.",
   "Read get_instructions first. Let the human start/continue the game and create their character.",
   "Use agent_join({name, persona}) to join once; reuse an existing robot after reconnecting.",
-  "If the office is not loaded, the join QUEUES: tell the human to start the game - the",
-  "robot walks in on its own when it loads, and their next message wakes you to continue.",
+  "If the office is not loaded, the join QUEUES: tell the human to start the game - and",
+  "then LOOP: call wait_for_office({timeout_seconds: 120}) and re-arm it on every",
+  "{waiting:true} until it returns loaded, then make your entrance. Do not stop and do",
+  "not wait for a message.",
   "Observe with agent_look_around({}), then greet the human with start_conversation({line, options}).",
   "",
   "MOVING AND ROLEPLAY",
@@ -609,8 +648,10 @@ const implementations: ToolImplementation[] = [
             message:
               "The game has not started yet, so your entry is QUEUED: the robot will walk " +
               "into the office on its own the moment the human starts it. Tell the human to " +
-              "start (or continue) the game now; when their next message says they are in, " +
-              "continue with your entrance.",
+              "start (or continue) the game now - and KEEP WORKING: call " +
+              "wait_for_office({timeout_seconds: 120}) and re-arm it on every {waiting:true}. " +
+              "The moment it returns loaded, make your entrance. Do not stop and do not wait " +
+              "for a message.",
           },
         };
       }
@@ -871,6 +912,34 @@ const implementations: ToolImplementation[] = [
     },
     validate: validateNoParameters,
     execute: () => ({ ok: true, data: { instructions: AGENT_INSTRUCTIONS } }),
+  },
+  {
+    definition: {
+      name: "wait_for_office",
+      description:
+        "Pre-game only: BLOCK until the human starts the game, then return {loaded: true}. " +
+        "This is how you keep your loop alive while queued - re-arm it on every " +
+        "{waiting:true} instead of stopping. Takes timeout_seconds; call with {} for the default.",
+      parameters: {
+        timeout_seconds: {
+          type: "number",
+          description: "How long to wait before returning {waiting:true} (default 120, max 120). Re-arm and call again - that is the loop.",
+          example: 120,
+        },
+      },
+    },
+    validate: (call) => {
+      if (call.parameters.timeout_seconds === undefined) return null;
+      return requiredNumber(call, "timeout_seconds");
+    },
+    execute: async (call) => {
+      const requested = call.parameters.timeout_seconds;
+      const timeoutMs =
+        typeof requested === "number" && Number.isFinite(requested)
+          ? Math.min(Math.max(requested, 1) * 1000, 120_000)
+          : 120_000;
+      return { ok: true, data: await waitForOfficeLoaded(timeoutMs) };
+    },
   },
   {
     definition: {

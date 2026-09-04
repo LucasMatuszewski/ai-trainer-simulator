@@ -24,7 +24,7 @@ import { runDailyTick, publishCashflow } from "./game/economy";
 import { runPeriodEvent, registerNpcController } from "./game/events";
 import { registerPlayerActions } from "./webmcp/tools";
 import { registerWebmcpTools, type RegisterResult } from "./webmcp/bridge";
-import { drainPendingAgentJoin, registerAgentCompanion } from "./webmcp/tools";
+import { drainPendingAgentJoin, notifyOfficeLoaded, registerAgentCompanion } from "./webmcp/tools";
 import { approachHumanConversation } from "./webmcp/companion-conversation";
 import { createNpcExchange, type NpcExchange } from "./webmcp/npc-exchange";
 import { createAgentCompanion, type AgentCompanion } from "./engine/agent-companion";
@@ -719,6 +719,7 @@ function startOffice(playIntro = false): void {
   // agent's "I'll join once you start" is a promise the game keeps without
   // the agent needing to poll. The bubble announces it; the human can click
   // the robot whenever they like.
+  notifyOfficeLoaded();
   const queued = drainPendingAgentJoin();
   if (queued) {
     const joined = agentCompanion?.join(queued.name, queued.persona);
