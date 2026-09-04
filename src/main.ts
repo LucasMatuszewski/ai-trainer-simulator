@@ -869,7 +869,7 @@ async function playIntroCinematic(): Promise<void> {
   // After 600ms, also show the intro toast. This is intentionally after
   // the cinematic so the toast doesn't fight the camera for attention.
   setTimeout(() => {
-    if (hud) showToast(hud, "Welcome to DevPowers. Talk to Renata at reception - click her card on the right.", "info");
+    if (hud) showToast(hud, "Welcome to Stack Underflow. Talk to Renata at reception - click her card on the right.", "info");
   }, 600);
 }
 

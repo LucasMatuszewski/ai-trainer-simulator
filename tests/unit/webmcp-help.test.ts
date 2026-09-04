@@ -40,7 +40,11 @@ describe("AGENT_PROMPT", () => {
   });
 
   it("stays short enough to paste into any agent chat", () => {
-    expect(AGENT_PROMPT.length).toBeLessThan(3200);
+    // A readability guard, not a platform limit: there is no technical cap on
+    // a pasted prompt. 6000 chars still forces discipline (agents skim long
+    // prompts) while leaving room for the stage, the role and the soul -
+    // Lucas explicitly traded the dry 3200-char version for a livelier one.
+    expect(AGENT_PROMPT.length).toBeLessThan(6000);
   });
 });
 
