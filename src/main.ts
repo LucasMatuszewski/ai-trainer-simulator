@@ -1652,6 +1652,14 @@ declare global {
         };
       }> | null;
       inspectFurniture: () => Array<{ name: string; position: { x: number; y: number; z: number }; size?: readonly [number, number, number] }> | null;
+      /** C-70: live state of Janusz's robot fleet, for e2e assertions. */
+      inspectRobots: () => Array<{
+        id: string;
+        state: string;
+        position: { x: number; z: number };
+        working: boolean;
+        followingJanusz: boolean;
+      }> | null;
       debugSkipPeriod: () => void;
       /** Dev/QA hook: teleport the player to (x, z) with a yaw (radians). */
       teleport: (x: number, z: number, yaw: number) => void;
@@ -1773,6 +1781,7 @@ window.__aitrainer = {
     });
     return out;
   },
+  inspectRobots: () => sceneObjects?.robotFleet.inspect() ?? null,
   toggleFps: (): boolean => {
     fpsMeter?.toggle();
     return fpsMeter?.isVisible() ?? false;

@@ -1,4 +1,5 @@
 import type { AABB } from "../engine/collision";
+import { DOCK_PADS } from "./robot-dock-pads";
 
 export type Vector3Tuple = readonly [number, number, number];
 
@@ -335,6 +336,14 @@ export const WORLD_ROOMS: WorldRoom[] = [
       { type: "kitchen-chair", position: [11.0, 0, 2.8], rotationY: Math.PI / 1.8 },
       { type: "kitchen-chair", position: [13.0, 0, 2.8], rotationY: -Math.PI / 2.1 },
       { type: "kitchen-chair", position: [12, 0, 4.1], rotationY: Math.PI },
+      // C-70: Janusz's robot fleet charges here, in the dining area
+      // next to the two round tables. Coordinates come from the
+      // shared DOCK_PADS list so the visible pads and each robot's
+      // route.dock can never drift apart.
+      ...DOCK_PADS.map((pad) => ({
+        type: "robot-dock",
+        position: [pad.x, 0, pad.z] as Vector3Tuple,
+      })),
     ],
     signs: [
       // C-64 D2-D3: from the kitchen facing +Z, Lucas's left side

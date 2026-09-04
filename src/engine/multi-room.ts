@@ -33,6 +33,7 @@ import { makeReceptionCoffeeTable } from "./furniture/reception-coffee-table";
 import { makeLobbyPlanter } from "./furniture/lobby-planter";
 import { makeGlassDoors } from "./furniture/glass-doors";
 import { makeXeroxPrinter } from "./furniture/xerox-printer";
+import { makeRobotDock } from "./furniture/robot-dock";
 
 /**
  * Furniture types rendered by dedicated 3D-model factories
@@ -76,6 +77,8 @@ const FURNITURE_FACTORIES: Record<string, () => THREE.Group> = {
   "lobby-planter": makeLobbyPlanter,
   "glass-doors": makeGlassDoors,
   "xerox-printer": makeXeroxPrinter,
+  // Janusz's robot fleet (C-70): charging pads in the kitchen dining area.
+  "robot-dock": makeRobotDock,
 };
 
 const WALL_HEIGHT = 3;

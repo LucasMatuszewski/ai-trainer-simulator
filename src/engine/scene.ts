@@ -27,6 +27,7 @@ import { MAIN_OFFICE_WALLS, WORLD_ROOMS } from "../content/world-layout";
 import { createNpcController, type NpcController } from "./npc-controller";
 import { createNpcMesh } from "./npc-mesh";
 import { buildMultiRoomMeshes, drawPoster } from "./multi-room";
+import { createJanuszRobotFleet, type JanuszRobotFleet } from "./janusz-robots";
 import { makeGarden, makeOutdoorScenery } from "./furniture/garden";
 import { makeReceptionGarden } from "./furniture/reception-garden";
 import { makeLobbyPlanter } from "./furniture/lobby-planter";
@@ -139,6 +140,8 @@ export interface SceneObjects {
    * (L-2026-08-30-01).
    */
   npcController: NpcController;
+  /** C-70: Janusz's robot fleet, exposed for debug/e2e inspection. */
+  robotFleet: JanuszRobotFleet;
 }
 
 export function buildOfficeScene(
@@ -330,6 +333,18 @@ export function buildOfficeScene(
   const npcController = createNpcController(NPCS, npcObjects, getCurrentPeriod, getDay, Math.random, isLunchActive);
   updatables.push(npcController.update);
 
+  // C-70: Janusz's robot fleet. getJanusz reads the live NPC object
+  // Janusz already has - visible=false both before he arrives (C-51)
+  // and after he goes home, so the fleet's rare follow-detour can
+  // never target an absent Janusz.
+  const janitorObject = npcObjects.janusz;
+  const robotFleet = createJanuszRobotFleet(scene, getCurrentPeriod, () => ({
+    x: janitorObject.position.x,
+    z: janitorObject.position.z,
+    visible: janitorObject.visible,
+  }));
+  updatables.push(robotFleet.update);
+
   const multiRoom = buildMultiRoomMeshes(scene, WORLD_ROOMS);
 
   // C-44 #9: the internal garden (shared courtyard between the
@@ -377,6 +392,7 @@ export function buildOfficeScene(
     updatables,
     multiRoom,
     npcController,
+    robotFleet,
   };
 }
 
