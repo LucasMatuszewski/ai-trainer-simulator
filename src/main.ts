@@ -723,7 +723,7 @@ function startOffice(playIntro = false): void {
   if (queued) {
     const joined = agentCompanion?.join(queued.name, queued.persona);
     if (joined?.ok) {
-      agentCompanion?.say(`*rolls in* ${queued.name}, reporting for duty.`);
+      agentCompanion?.say(`*rolls in* ${queued.name}, reporting for duty. Which desk is mine?`);
       if (hud) showToast(hud, `${queued.name} the AI coworker just joined the office.`, "info");
     }
   }
