@@ -508,7 +508,7 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
       nodes: {
         greeting: {
           id: "greeting",
-          text: "I am Janusz. I clean this place. Eleven years, three CEOs, one flood. I know where the bodies are buried — figuratively, and once literally, ask about the parking lot. You are the new trainer? Word of advice: the people in this office will tell you they are busy. Nobody here is busy. I empty their bins. I have seen the receipts.",
+          text: "I am Janusz, the janitor. I have not touched a mop in years — I built machines for that. Eleven years, three CEOs, one flood. I know where the bodies are buried — figuratively, and once literally, ask about the parking lot. Nobody here is busy. I empty their bins. I have seen the receipts.",
           options: [
             {
               text: "Tell me about the parking lot.",
@@ -530,6 +530,12 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
               id: "janusz-agent",
               nextNodeId: "janusz-agent",
             },
+            {
+              text: "Wait, YOU built those robots?",
+              id: "janusz-fleet-q",
+              nextNodeId: "janusz-fleet",
+              effects: [{ type: "add-relationship", target: "janusz", delta: 5 }],
+            },
           ],
         },
         // Lucas's own lore: Janusz secretly runs a fleet of bots and is the
@@ -542,6 +548,24 @@ export const DIALOGUES: Record<string, Record<string, DialogueTree>> = {
             { text: "Copy a prompt to bring your agent", copyPrompt: true },
             { text: "How it works", modal: "webmcp" },
           ],
+          next: "_end",
+        },
+        // C-70: the lore payoff. Janusz constructed the fleet himself;
+        // the janitor title is bureaucratic inertia he does not mind.
+        "janusz-fleet": {
+          id: "janusz-fleet",
+          text: "Built them myself. Zdzislaw hoovers, Halina waters the plants and does the trimming, Seba runs the mugs to the dishwasher — Seba has OPINIONS about that dishwasher, do not get him started. Most technical work in this building, and it is done by machines I welded in my own garage.",
+          options: [
+            {
+              text: "So why are you still 'the janitor'?",
+              id: "janusz-title-q",
+              nextNodeId: "janusz-title",
+            },
+          ],
+        },
+        "janusz-title": {
+          id: "janusz-title",
+          text: "HR filed me under 'janitor' in 2015 and nobody has ever updated the form. I could fight it. I could also spend that energy on a seventh robot. You do the math. Besides — 'janitor' opens doors 'senior autonomous systems engineer' never would. Details.",
           next: "_end",
         },
         "janusz-parking": {

@@ -210,13 +210,14 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
           { text: "Who is who around here?", id: `${FAQ}-who`, nextNodeId: "who" },
           { text: "Where is the toilet?", id: `${FAQ}-toilet`, nextNodeId: "toilet" },
           { text: "How do I set up my AI agent?", id: `${FAQ}-agent`, nextNodeId: "agent-help" },
+          { text: "Wait, are those robots?", id: `${FAQ}-robots`, nextNodeId: "robots" },
           { text: "Run me through the controls again.", id: `${FAQ}-controls`, nextNodeId: "controls" },
           { text: "I am good, thanks.", id: `${FAQ}-bye`, nextNodeId: "_end" },
         ],
       },
       where: {
         id: "where",
-        text: "In the main office. Zosia runs the morning meeting in the room by the kitchen. The CEO, Dawid, stays in his office. The others are at their desks, on coffee, or in the toilet. Janusz mops around all of them.",
+        text: "In the main office. Zosia runs the morning meeting in the room by the kitchen. The CEO, Dawid, stays in his office. The others are at their desks, on coffee, or in the toilet. Janusz's robots mop around all of them.",
         options: [
           { text: "Thanks, that is all I needed.", id: `${FAQ}-where-thanks`, nextNodeId: "_end" },
           { text: "Back to the menu.", id: `${FAQ}-where-back`, nextNodeId: "greeting" },
@@ -240,10 +241,22 @@ export const RENATA_DIALOGUES: Record<string, DialogueTree> = {
       },
       who: {
         id: "who",
-        text: "Bartek is sales. Zosia is management. Tomek is the intern. Marek is DevOps and wants to be left alone. Klaudia is on LinkedIn. Ania does marketing. Kasia recruits. Maciek is CTO. Przemek sells. Grazyna does money. Janusz mops. Burek is the dog.",
+        text: "Bartek is sales. Zosia is management. Tomek is the intern. Marek is DevOps and wants to be left alone. Klaudia is on LinkedIn. Ania does marketing. Kasia recruits. Maciek is CTO. Przemek sells. Grazyna does money. Janusz manages the robots. Burek is the dog.",
         options: [
           { text: "Thanks, that is all I needed.", id: `${FAQ}-who-thanks`, nextNodeId: "_end" },
           { text: "Back to the menu.", id: `${FAQ}-who-back`, nextNodeId: "greeting" },
+        ],
+      },
+      // C-70: Janusz built a fleet of cleaning robots and the janitor
+      // title stuck around out of bureaucratic inertia (his own
+      // words - see the "janusz-title" node). Renata tells the
+      // player the fleet exists and who is behind it.
+      robots: {
+        id: "robots",
+        text: "The little round one hoovering the office, the one watering the plants, the one running mugs to the dishwasher - Janusz built all three. Officially he is still 'the janitor'. Nobody has the heart to update his title, and he does not seem to mind.",
+        options: [
+          { text: "Thanks, that is all I needed.", id: `${FAQ}-robots-thanks`, nextNodeId: "_end" },
+          { text: "Back to the menu.", id: `${FAQ}-robots-back`, nextNodeId: "greeting" },
         ],
       },
       toilet: {
