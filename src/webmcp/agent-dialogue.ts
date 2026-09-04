@@ -41,6 +41,16 @@ export const FALLBACK_OPTIONS: ReadonlyArray<{ text: string; ends: boolean }> = 
   { text: "Never mind, catch you later.", ends: true },
 ];
 
+/** Shown when the fallback itself has gone unanswered - the agent's turn
+ *  ended and it will not wake on its own. This is the human's remedy. */
+export const WAKE_LINE =
+  "*the status light blinks amber, faster* ...my handler fell asleep. Send me any message" +
+  " in the chat - even just 'go' - and I will answer what you picked.";
+export const WAKE_OPTIONS: ReadonlyArray<{ text: string; ends: boolean }> = [
+  { text: "Okay - waking my agent.", ends: false },
+  { text: "Never mind, catch you later.", ends: true },
+];
+
 export interface DialogueRequestContext {
   /** Who the human is talking to. */
   companionName: string;

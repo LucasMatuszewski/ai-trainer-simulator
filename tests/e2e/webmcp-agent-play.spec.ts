@@ -379,8 +379,12 @@ test("the admin tools are gone and the instructions tool explains the protocol",
   expect(names).toContain("get_instructions");
 
   const instructions = (await call(page, "get_instructions")) as { instructions: string };
-  expect(instructions.instructions).toContain("PLAYER in this office game");
+  // Phrasing follows the current instructions text (Sol's rewrite): a player
+  // role, personalization, and the listening loop.
+  expect(instructions.instructions).toContain("robot coworker");
+  expect(instructions.instructions).toContain("what you know about the human");
   expect(instructions.instructions).toContain("wait_for_player_message");
+  expect(instructions.instructions).toContain("THE LOOP HAS NO EXIT");
 });
 
 test("every tool parameter carries a concrete example, and no-argument tools say so", async ({ page }) => {

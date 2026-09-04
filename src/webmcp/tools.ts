@@ -63,6 +63,24 @@ export function registerAgentCompanion(hooks: AgentCompanionHooks | null): void 
   agentCompanion = hooks;
 }
 
+/**
+ * A join requested BEFORE the office exists.
+ *
+ * The natural flow is: the agent opens the page (title screen), tries
+ * agent_join, and - before this existed - got an error and gave up, leaving
+ * the human with an "I'll join once you start" that nothing would ever
+ * fulfil. Now the join QUEUES: the game walks the robot in the moment the
+ * office loads, no agent required. Consumed by drainPendingAgentJoin().
+ */
+let pendingAgentJoin: { name: string; persona: string } | null = null;
+
+/** Called by main.ts right after the companion hooks are wired. */
+export function drainPendingAgentJoin(): { name: string; persona: string } | null {
+  const pending = pendingAgentJoin;
+  pendingAgentJoin = null;
+  return pending;
+}
+
 function requireCompanion(): AgentCompanionHooks | { error: string } {
   if (agentCompanion === null) {
     return { error: "The office is not loaded yet - start or continue a game first." };
@@ -228,6 +246,8 @@ const AGENT_INSTRUCTIONS = [
   "These functions are not assumed to exist in ordinary browsers.",
   "Read get_instructions first. Let the human start/continue the game and create their character.",
   "Use agent_join({name, persona}) to join once; reuse an existing robot after reconnecting.",
+  "If the office is not loaded, the join QUEUES: tell the human to start the game - the",
+  "robot walks in on its own when it loads, and their next message wakes you to continue.",
   "Observe with agent_look_around({}), then greet the human with start_conversation({line, options}).",
   "",
   "MOVING AND ROLEPLAY",
@@ -266,6 +286,24 @@ const AGENT_INSTRUCTIONS = [
   "Host/model delay and disconnected listeners can both cause silence. Delivery is not",
   "guaranteed across errors, resets or disconnects; a pending turn is not a full event log.",
   "Stay in character, keep lines concise and use current context rather than guessing.",
+  "",
+  "IF YOUR TURN ENDS MID-CONVERSATION, DO NOT LEAVE THE HUMAN GUESSING",
+  "The host may end your turn while a conversation is open - beyond your control, and it",
+  "happened in real play. The human's click is QUEUED and survives: the moment you wake",
+  "(their next chat message, even a single word), get_pending_dialogue_request or",
+  "wait_for_player_message returns what they picked, and you answer it with",
+  "supply_dialogue BEFORE anything else. So listening IS your job: re-arm the wait every",
+  "time it returns, and never stop without the human asking. If you must end a turn, your",
+  "last words must tell them: 'my turn ended - send any message and I will answer what",
+  "you picked.' Never leave them staring at a silent robot with no next step.",
+  "",
+  "THE LOOP HAS NO EXIT. ALWAYS choose a tool, over and over: supply_dialogue, gesture,",
+  "wait_for_player_message, observe, agent_talk_to_npc, walk, gesture, wait - for as long",
+  "as the session lives, in conversations AND while acting autonomously. {waiting:true} is",
+  "not a stop reason, it is the sound of the room: call again. A plain-text final answer",
+  "while the human waits is a failure. Only stop when the human asks - or after many idle",
+  "turns (never fewer than 100) with no sign of them, one last in-character line, then",
+  "rest.",
 ].join("\n");
 
 const implementations: ToolImplementation[] = [
@@ -557,7 +595,25 @@ const implementations: ToolImplementation[] = [
     validate: (call) => requiredString(call, "name") ?? requiredString(call, "persona"),
     execute: (call) => {
       const companion = requireCompanion();
-      if ("error" in companion) return { ok: false, error: companion.error };
+      if ("error" in companion) {
+        // Queue instead of erroring: the agent can join from the title
+        // screen, and the game fulfils the promise when the office loads.
+        pendingAgentJoin = {
+          name: String(call.parameters.name),
+          persona: String(call.parameters.persona),
+        };
+        return {
+          ok: true,
+          data: {
+            queued: true,
+            message:
+              "The game has not started yet, so your entry is QUEUED: the robot will walk " +
+              "into the office on its own the moment the human starts it. Tell the human to " +
+              "start (or continue) the game now; when their next message says they are in, " +
+              "continue with your entrance.",
+          },
+        };
+      }
       const result = companion.join(
         String(call.parameters.name),
         String(call.parameters.persona),
@@ -581,9 +637,13 @@ const implementations: ToolImplementation[] = [
     },
     validate: validateNoParameters,
     execute: () => {
-      const companion = requireCompanion();
-      if ("error" in companion) return { ok: false, error: companion.error };
-      return { ok: true, data: { left: companion.leave() } };
+      if (agentCompanion === null) {
+        // Pre-game: cancel a queued entry if there is one.
+        const had = pendingAgentJoin !== null;
+        pendingAgentJoin = null;
+        return { ok: true, data: { left: had, queuedEntryCancelled: had } };
+      }
+      return { ok: true, data: { left: agentCompanion.leave() } };
     },
   },
   {

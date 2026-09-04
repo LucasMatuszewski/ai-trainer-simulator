@@ -24,7 +24,7 @@ import { runDailyTick, publishCashflow } from "./game/economy";
 import { runPeriodEvent, registerNpcController } from "./game/events";
 import { registerPlayerActions } from "./webmcp/tools";
 import { registerWebmcpTools, type RegisterResult } from "./webmcp/bridge";
-import { registerAgentCompanion } from "./webmcp/tools";
+import { drainPendingAgentJoin, registerAgentCompanion } from "./webmcp/tools";
 import { approachHumanConversation } from "./webmcp/companion-conversation";
 import { createNpcExchange, type NpcExchange } from "./webmcp/npc-exchange";
 import { createAgentCompanion, type AgentCompanion } from "./engine/agent-companion";
@@ -32,6 +32,8 @@ import {
   createDialogueBroker,
   FALLBACK_LINE,
   FALLBACK_OPTIONS,
+  WAKE_LINE,
+  WAKE_OPTIONS,
   type DialogueBroker,
 } from "./webmcp/agent-dialogue";
 import { CORRIDOR_WAYPOINTS, buildWaypointEdges, DEFAULT_MAX_EDGE_LENGTH } from "./content/corridor-waypoints";
@@ -84,6 +86,8 @@ const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
  * fires exactly once per game rather than every time the store publishes.
  */
 let bartekSummoned = false;
+/** Consecutive fallbacks in one conversation: 2+ means the agent is gone. */
+let agentFallbackCount = 0;
 /**
  * True while Bartek is walking over after the tutorial. He re-targets the
  * player as they move and greets them on arrival; cleared once he has.
@@ -483,7 +487,11 @@ function startOffice(playIntro = false): void {
 
       const broker = createDialogueBroker(
         () => Date.now(),
-        (turn) => renderAgentTurn(turn.line, turn.options),
+        (turn) => {
+          // A REAL supply from the agent: the fallback escalation is over.
+          agentFallbackCount = 0;
+          renderAgentTurn(turn.line, turn.options);
+        },
       );
       agentBroker = broker;
 
@@ -706,6 +714,19 @@ function startOffice(playIntro = false): void {
     if (!webmcpModal) webmcpModal = mountWebmcpHelpModal(uiRoot);
     webmcpModal.open();
   });
+  // A join queued from the title screen (agent_join before any game existed)
+  // is fulfilled HERE: the robot walks in the moment the office loads, so the
+  // agent's "I'll join once you start" is a promise the game keeps without
+  // the agent needing to poll. The bubble announces it; the human can click
+  // the robot whenever they like.
+  const queued = drainPendingAgentJoin();
+  if (queued) {
+    const joined = agentCompanion?.join(queued.name, queued.persona);
+    if (joined?.ok) {
+      agentCompanion?.say(`*rolls in through the front door* ${queued.name}, reporting for duty. Which desk is mine?`);
+      if (hud) showToast(hud, `${queued.name} the AI coworker just joined the office.`, "info");
+    }
+  }
   // The Z key and the roster's End Day button both confirm here first;
   // the WebMCP end_day hook below keeps calling endDay() directly.
   endDayModal = mountEndDayModal(uiRoot, () => endDay());
@@ -1408,6 +1429,7 @@ function startAgentConversation(): void {
   sceneObjects?.npcController.clearBubbles();
   if (dialogue?.isOpen()) dialogue.close();
   agentTurn = 1;
+  agentFallbackCount = 0;
   agentBroker?.reset();
   requestAgentTurn();
 }
@@ -1507,7 +1529,16 @@ function frame(): void {
           dialogue?.isAgentTurn() === true &&
           agentBroker.markLate()
         ) {
-          renderAgentTurn(FALLBACK_LINE, FALLBACK_OPTIONS);
+          // The second consecutive fallback means the agent's TURN ended -
+          // it is not coming back on its own. The first says "buffering";
+          // this one teaches the human the actual remedy: any chat message
+          // wakes the agent, and their queued pick is answered first.
+          agentFallbackCount += 1;
+          if (agentFallbackCount >= 2) {
+            renderAgentTurn(WAKE_LINE, WAKE_OPTIONS);
+          } else {
+            renderAgentTurn(FALLBACK_LINE, FALLBACK_OPTIONS);
+          }
         }
       }
       // Phase 3.5: smooth NPC face-toward-player animation. When a
