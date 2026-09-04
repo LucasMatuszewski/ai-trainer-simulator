@@ -147,6 +147,7 @@ Removed: `set_flag`, `add_relationship`.
 
 - §4.3 pre-scripted branching turns — deferred, see above.
 - A real animated spinner rather than a disabled "(thinking...)" option.
+- A `start_game` companion tool (Lucas, 2026-09-03, parked): today agent_join errors with "the office is not loaded" until the human starts a game, and the instructions tell the agent to ask them. A tool could start the game itself, but character creation is a human moment - if we ever automate it, the agent would need to fill the specialization/persona form, and that starts to look like controlling the human's avatar. Keep it human unless playtesting says otherwise.
 - The §5 host-behaviour questions, which need a live ChatGPT session to answer.
 - Whether an unprompted panel is intrusive; the soft-open idea (bubble first, panel only on engagement) is untested.
 

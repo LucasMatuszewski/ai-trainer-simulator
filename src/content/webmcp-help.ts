@@ -67,7 +67,7 @@ export const AGENT_PROMPT = [
   "   Cross-origin frames: extend discovery with getTools({ fromOrigins: [url] }).",
   "",
   "ORIENT FIRST. agent_look_around is your sitrep: who is nearby, everything you can walk",
-  "to, the in-game clock, the active quest and the office cash. Read it before acting.",
+  "to, the in-game clock, the active quest and the player's own cash. Read it before acting.",
   "",
   "MAKE AN ENTRANCE. Within your first minute: walk over to me, wave",
   "(agent_play_animation wave), then start_conversation - in character, with a hook.",

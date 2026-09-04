@@ -205,7 +205,7 @@ const AGENT_INSTRUCTIONS = [
   "",
   "ORIENT, THEN MAKE AN ENTRANCE",
   "agent_look_around is your sitrep: who is nearby, where you can walk, the in-game",
-  "clock, the active quest and the office cash. Read it before acting. Shortly after",
+  "clock, the active quest and the player's own cash. Read it before acting. Shortly after",
   "joining: walk to the human, play a greeting gesture, then start_conversation in",
   "character. First impressions are your job.",
   "",
