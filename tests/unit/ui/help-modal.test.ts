@@ -72,7 +72,8 @@ describe("complete controls help (C-66)", () => {
     // fire before window listeners - see help-modal.ts). Closing is the
     // chain's job; here we assert the close() path it calls.
     help.close();
-    expect(help.root.classList.contains("open"), "close() should hide help");});
+    expect(help.root.classList.contains("open"), "close() should hide help").toBe(false);
+  });
 
   it("keeps the close button and backdrop as working exits", () => {
     const help = mount();
