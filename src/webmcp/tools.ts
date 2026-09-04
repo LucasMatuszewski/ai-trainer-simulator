@@ -283,10 +283,10 @@ const AGENT_INSTRUCTIONS = [
   "These functions are not assumed to exist in ordinary browsers.",
   "Read get_instructions first. Let the human start/continue the game and create their character.",
   "Use agent_join({name, persona}) to join once; reuse an existing robot after reconnecting.",
-  "If the office is not loaded, the join QUEUES: tell the human to start the game - and",
-  "then LOOP: call wait_for_office({timeout_seconds: 120}) and re-arm it on every",
-  "{waiting:true} until it returns loaded, then make your entrance. Do not stop and do",
-  "not wait for a message.",
+  "If the office is not loaded, the join QUEUES: tell the human to start the game - then",
+  "keep your LISTENER armed: wait_for_player_message({timeout_seconds: 10}) works pre-game",
+  "too and returns {officeLoaded: true} the moment your robot walks in. One listener, one",
+  "loop, in and out of conversations - never stop, never wait for a chat message.",
   "Observe with agent_look_around({}), then greet the human with start_conversation({line, options}).",
   "",
   "MOVING AND ROLEPLAY",
@@ -915,34 +915,6 @@ const implementations: ToolImplementation[] = [
   },
   {
     definition: {
-      name: "wait_for_office",
-      description:
-        "Pre-game only: BLOCK until the human starts the game, then return {loaded: true}. " +
-        "This is how you keep your loop alive while queued - re-arm it on every " +
-        "{waiting:true} instead of stopping. Takes timeout_seconds; call with {} for the default.",
-      parameters: {
-        timeout_seconds: {
-          type: "number",
-          description: "How long to wait before returning {waiting:true} (default 120, max 120). Re-arm and call again - that is the loop.",
-          example: 120,
-        },
-      },
-    },
-    validate: (call) => {
-      if (call.parameters.timeout_seconds === undefined) return null;
-      return requiredNumber(call, "timeout_seconds");
-    },
-    execute: async (call) => {
-      const requested = call.parameters.timeout_seconds;
-      const timeoutMs =
-        typeof requested === "number" && Number.isFinite(requested)
-          ? Math.min(Math.max(requested, 1) * 1000, 120_000)
-          : 120_000;
-      return { ok: true, data: await waitForOfficeLoaded(timeoutMs) };
-    },
-  },
-  {
-    definition: {
       name: "start_conversation",
       description:
         "START a conversation with the human player: your character speaks and the dialogue " +
@@ -998,12 +970,16 @@ const implementations: ToolImplementation[] = [
     definition: {
       name: "wait_for_player_message",
       description:
-        "Listen for a human reply or conversation request. May return immediately for available " +
-        "context; otherwise waits for a reply or timeout. If it returns {waiting: true}, " +
-        "inspect any hint and re-arm when idle. Re-arming it in a loop is how " +
-        "you stay reachable. Use an explicit 10-second wait initially. Host/model delays and " +
-        "disconnects can interrupt delivery; recover by checking get_pending_dialogue_request. " +
-        "A pending request is not a durable event log.",
+        "YOUR LIVE LISTENER - keep it armed at all times, in and out of conversations. It " +
+        "BLOCKS until something happens: a human reply (returns their choice), or - before " +
+        "the game has started - the office opening (returns {officeLoaded: true}: your queued " +
+        "robot walked in; look around and make your entrance). {waiting: true} means nothing " +
+        "happened in time - that is not an error. Each call only covers its own window, so " +
+        "CALL IT AGAIN; a human who acts while you are disarmed is QUEUED, not lost - the " +
+        "next call returns them first, and the robot just looks like it is thinking for " +
+        "longer. Keep the loop endless; stop only when the human asks. Host/model delays " +
+        "and disconnects can interrupt delivery; recover by checking " +
+        "get_pending_dialogue_request. A pending request is not a durable event log.",
       parameters: {
         timeout_seconds: {
           type: "number",
@@ -1019,14 +995,34 @@ const implementations: ToolImplementation[] = [
       return requiredNumber(call, "timeout_seconds");
     },
     execute: async (call) => {
-      const companion = requireCompanion();
-      if ("error" in companion) return { ok: false, error: companion.error };
       const requested = call.parameters.timeout_seconds;
       const timeoutMs =
         typeof requested === "number" && Number.isFinite(requested)
           ? Math.min(Math.max(requested, 1) * 1000, PLAYER_WAIT_MAX_MS)
           : undefined;
-      return { ok: true, data: jsonSnapshot(await companion.awaitPlayerMessage(timeoutMs)) };
+      // ONE listener for both phases. Pre-game it waits for the office and
+      // returns an entrance wake; in-game it waits for the human's reply.
+      // Either way the loop is the same: re-arm, always.
+      if (agentCompanion === null) {
+        const office = await waitForOfficeLoaded(timeoutMs ?? PLAYER_WAIT_MAX_MS);
+        if (!office.loaded) {
+          return {
+            ok: true,
+            data: jsonSnapshot({ waiting: true, hint: "Still waiting for the game to start. Re-arm and call again." }),
+          };
+        }
+        return {
+          ok: true,
+          data: jsonSnapshot({
+            officeLoaded: true,
+            hint:
+              "The office is open and your queued robot has walked in. If a dialogue is " +
+              "pending, answer it via get_pending_dialogue_request + supply_dialogue; " +
+              "otherwise agent_look_around and make your entrance.",
+          }),
+        };
+      }
+      return { ok: true, data: jsonSnapshot(await agentCompanion.awaitPlayerMessage(timeoutMs)) };
     },
   },
   {
