@@ -49,7 +49,7 @@ This rule exists because the user got fed up on 2026-08-29 with the agent making
 After completing a phase (or a meaningful sub-step within a phase), the agent MUST:
 1. Run a Playwright screenshot of the key state of the phase.
 2. Save the screenshot to `screenshots/`.
-3. Describe the screenshot with `agy -p "describe this screenshot"`.
+3. Describe the screenshot with a vision-capable model routed via the `cli-agent-delegation` skill (currently Codex / gpt-5.6 Sol with the image attached; never `agy`, which hallucinates confident, wrong image detail).
 4. Show both to the user before starting the next phase.
 5. The user is the visual QA. The agent does not declare a phase "done" without the user seeing the screenshot.
 
@@ -76,7 +76,7 @@ Per `~/AGENTS.md` global rule HR-6:
   2. `pnpm typecheck` exits 0.
   3. `pnpm test` exits 0 (new + existing tests).
   4. Playwright screenshot of the phase's key state is in `screenshots/`.
-  5. `agy -p "describe this screenshot"` describes the screenshot and the description does not contain a regression ("no clear office interior visible", "looks like a roof from outside", "no NPCs visible", etc.).
+  5. The vision model (see PR-5) describes the screenshot and the description does not contain a regression ("no clear office interior visible", "looks like a roof from outside", "no NPCs visible", etc.).
   6. An independent QA review has been run by `codex exec --sandbox workspace-write` or `agy -p` and the verdict is pass.
   7. Lucas has been shown the screenshot + QA verdict and has not asked for changes.
   8. THEN push: `git push origin <current-branch>`. The agent reports the push URL to Lucas in the final message.
@@ -90,7 +90,7 @@ Per `~/.claude/CLAUDE.md` model orchestration:
 - Implementation / bulk code / refactors / backend: `codex exec` (gpt-5.6 Sol).
 - Well-specified mechanical batches / overflow: `grok` (grok-4.5).
 - Taste work (UI, GUI, copy, dialogue humor, marketing): `opencode run` (glm-5.2).
-- Vision (screenshot description, image analysis): `agy -p`.
+- Vision (screenshot description, image analysis): a vision-capable model routed via the `cli-agent-delegation` skill (currently Codex / gpt-5.6 Sol with the image attached; never `agy`, which hallucinates confident, wrong image detail).
 - Research / independent second opinion: `agy -p`.
 
 The agent does NOT spawn a Claude subagent to relay a brief to a CLI. The agent calls the CLI directly via Bash.
@@ -125,12 +125,12 @@ Lucas flagged: "not sure how to test 3D game in three.js - you should research t
    - **What is "pure" in this project:** the AABB collision (`src/engine/collision.ts`), the reducer (`src/game/state.ts`), the dialogue tree walker, the NPC schedule lookup, the bubble trigger check, the walk-to-face planner, the cinematic timeline, the game-event eligibility check, the economy tick, the save/load round-trip, the room/doorway geometry queries, the WebMCP tool definitions (in the future).
    - **What is NOT pure and is exempt from TDD:** the three.js scene setup, the renderer config, the camera math (it's math but the assertions are visual), the UI components, the audio playback, the dialogue UI state.
    - **Delegate the test-writing to Codex.** Per `~/.claude/CLAUDE.md`, mechanical work goes to `codex exec --sandbox workspace-write`. The agent writes a brief: "Here is the function signature and its behavior. Write a vitest test suite covering: X, Y, Z edge cases. Do not commit." Codex writes the test, the agent runs it (it should fail), the agent writes the function, the agent runs the test again (it should pass), the agent commits both.
-3. **Visual regression for the 3D layer.** The 3D rendering is verified by Playwright screenshots + `agy -p "describe this screenshot"` descriptions. The workflow is:
+3. **Visual regression for the 3D layer.** The 3D rendering is verified by Playwright screenshots described by the vision model from PR-5. The workflow is:
    - Take a screenshot of the phase's key state. Save to `screenshots/<phase>-<state>.png`.
-   - Run `agy -p "describe this screenshot in one paragraph, including: what room is shown, are NPCs visible, is the player visible, is there any 'roof' or 'outside' visible, is the lighting correct"`.
+   - Ask the vision model from PR-5 to "describe this screenshot in one paragraph, including: what room is shown, are NPCs visible, is the player visible, is there any 'roof' or 'outside' visible, is the lighting correct".
    - Save the description alongside the screenshot as `screenshots/<phase>-<state>.txt` (or in the commit body).
    - The description is part of the Definition of Done for the phase.
-   - For automated visual regression (future iteration), the description can be JSON-diffed or the image can be pixel-diffed with a baseline. The current approach is human-review (agy + Lucas). The baseline-diff approach is a Phase 6+ task.
+   - For automated visual regression (future iteration), the description can be JSON-diffed or the image can be pixel-diffed with a baseline. The current approach is human review (vision model + Lucas). The baseline-diff approach is a Phase 6+ task.
 
 This is the new TDD process. It is added to the project's Definition of Done and to the orchestrator's per-phase checklist.
 
@@ -143,7 +143,7 @@ Lucas has been emphatic that the agent must not ignore his messages. These rules
 3. **When research contradicts a direct user decision, the user decision wins UNLESS the agent has a strong argument.** If the agent overrides, the override must be explicit ("I am overriding X because Y from research report Z") and defensible.
 4. **"Make your own decisions when needed."** If Lucas is silent on a question, the agent picks a reasonable default, documents it in the PRD/ADR, and proceeds. The default is reversible.
 5. **"We can do both" / "Mix both" — no either/or interpretations.** When Lucas says "mix both" (e.g. C-15 stochastic), the agent mixes all the layers Lucas mentioned, not just one.
-6. **The agent never declares a phase "done" unilaterally.** The phase is "done" only when: typecheck ✓, tests ✓, screenshot ✓, agy description ✓, codex/agy QA verdict ✓, Lucas has acked the screenshot.
+6. **The agent never declares a phase "done" unilaterally.** The phase is "done" only when: typecheck ✓, tests ✓, screenshot ✓, vision-model description ✓, codex/agy QA verdict ✓, Lucas has acked the screenshot.
 
 These rules apply to every phase, every commit, every interaction with Lucas.
 
@@ -188,7 +188,7 @@ The TDD rule in PR-8 covers pure functions. It does not cover data files, event-
 3. **The framework the test must use depends on the layer:**
    - Pure functions and data files: vitest (node env).
    - Event-loop handlers: vitest with `@vitest-environment jsdom`.
-   - 3D rendering: do not unit-test (visual regression is verified via Playwright screenshots + agy descriptions).
+   - 3D rendering: do not unit-test (visual regression is verified via Playwright screenshots + vision-model descriptions).
    - End-to-end browser behavior: Playwright.
 
 4. **Test naming.** The test file mirrors the source file: `src/foo/bar.ts` is tested by `tests/unit/foo/bar.test.ts` (or `tests/foo/bar.spec.ts` for E2E). The test cases describe the expected behavior in plain English, e.g. "stops after one keyup following repeated W keydowns" not "test 1".
