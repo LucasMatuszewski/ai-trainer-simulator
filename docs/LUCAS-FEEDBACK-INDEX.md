@@ -1,5 +1,15 @@
 # Lucas's feedback index
 
+## 2026-09-28 — Jev NPC decision steering (post-hackathon, local-only)
+
+**ID: L-2026-09-28-01 — Integrate Jev to steer NPC decisions; keep hackathon work local** (branch `feat/jev-npc-decision-steering`)
+- **Git housekeeping:** commit the pending `.gitignore` change (`.vercel`, `.env*`); **DO NOT PUSH ANYTHING** — the hackathon deadline has passed and all changes stay local. If pushing were ever needed, forking is the acceptable route, but Lucas prefers keeping work local for now ("It's safe."). Create a new branch from master for the Jev work.
+- **Feature direction:** integrate **Jev** (TypeSafe System One model, per the `jev-decision-routing` + `typesafe-ai` skills) to help NPCs make **better decisions** and bring the world to life. **NPCs make the decisions; Jev only steers their behavior** — it is a judgment layer, not a content generator. Goal: worlds that feel really alive, with NPCs taking actions, making decisions, and deciding what to say.
+- **Content requirement:** **many more dialogue options**, both when NPCs talk to each other and when they talk with the player.
+- **Process requested:** (1) research Jev — how to use it, how to implement it, how to get more information — and analyze the game code; (2) save research results in files that will later be used to create an ADR; (3) analyze the application, what we are doing and what the goal is; (4) then write a PRD for the feature using the `write-prd` skill.
+- **State after this session:** research files written to `docs/research/2026-09-28-jev-typesafe-platform.md` and `docs/research/2026-09-28-jev-npc-steering-analysis.md`; PRD at `docs/PRD-jev-npc-steering.md`; CHANGELOG C-74; Beads child under `sacs-xtma`. No code written yet; nothing pushed.
+- Cross-reference: CHANGELOG C-74, `docs/PRD-jev-npc-steering.md`, Beads `sacs-xtma` (child id recorded there).
+
 ## 2026-09-03 — production URL and continue
 
 **ID: L-2026-09-03-10 — Copy the correct game address** (20:38 Europe/Lisbon)
