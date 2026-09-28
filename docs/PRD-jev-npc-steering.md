@@ -1,8 +1,10 @@
 # PRD — Jev: AI-Steered NPC Decisions, Social Simulation & World Content for Stack Underflow
 
-**Status:** Active — v2, 2026-09-28. Lucas's decisions on the v1 assumptions are
-applied and recorded as CHANGELOG **C-75** (feedback L-2026-09-28-02). v1 history
-(C-74, L-2026-09-28-01) remains in the changelog. Feature-level companion to the main
+**Status:** Active — **v2.1**, 2026-09-28. Lucas's decisions on the v1 assumptions are
+applied and recorded as CHANGELOG **C-75** (feedback L-2026-09-28-02); the independent
+review findings (Codex/gpt-6-astra, Claude/Opus — see
+[`docs/reviews/2026-09-28-jev-review-triage.md`](./reviews/2026-09-28-jev-review-triage.md))
+are incorporated. v1 history (C-74, L-2026-09-28-01) remains in the changelog. Feature-level companion to the main
 game PRD in [`docs/PRD.md`](./PRD.md) and to
 [`docs/PRD-hackathon-webmcp.md`](./PRD-hackathon-webmcp.md). Research basis:
 [`docs/research/2026-09-28-jev-typesafe-platform.md`](./research/2026-09-28-jev-typesafe-platform.md)
@@ -111,35 +113,57 @@ agent player gets the same livelier world.
    the Jev judgment selects one, conditioned on relationship, memory, period, mood,
    and today's events.
 4. Effects apply exactly as authored; the conversation continues or ends as today.
-5. If the picked option carries social weight, the judgment also returns a
-   **relationship delta (−5…+5)** toward the player, applied by code through the
-   existing reducer.
+5. If the picked option carries social weight, the judgment also returns a **social
+   reaction** — a choice among authored reaction buckets (offended / annoyed /
+   neutral / pleased / delighted) — which code maps to a bounded relationship
+   delta (at most ±5) and a mood shift through the social model, applied by the
+   existing reducer. The judgment never returns raw numbers.
 
 ### Flow B — Ambient world tick (batched decisions)
 
-1. Every few in-game seconds (and on every period transition), the game builds one
-   compact **world projection**: who is present, who is due a decision, active
-   conversations, today's fired events, current needs/mood of each NPC.
+1. Every few **real seconds of unpaused simulation** (the game maps one real minute
+   to one in-game hour; the ambient cadence is 6 real seconds, scaled by the speed
+   multiplier, frozen while a blocking overlay is open, with no catch-up rounds)
+   and on every period transition, the game **pre-decides** upcoming decisions: it
+   builds one compact **world projection** (who is present, who will be due a
+   decision, active conversations, today's fired events, each NPC's needs and
+   mood) and sends the due judgments early, so answers are already stored when a
+   trigger fires — a trigger **never waits for a request**.
 2. **One Jev request** returns a full decision object covering all due judgments at
    once — e.g. for each chatting pair: which exchange; for each idle NPC: whether to
    start a purposeful action; for any due greeting/goodbye: which line. (A per-NPC
    request shape also exists for comparison; the better shape per decision type is
-   decided by measurement — Lucas's "test and decide".)
-3. Each answer is validated individually; any invalid/missing answer falls back for
-   **that NPC only**, without discarding valid answers for the others.
+   decided by measurement on labeled accuracy — Lucas's "test and decide".)
+3. Each answer is validated individually against its own subject state (a stored
+   answer is applied only if the situation it was decided for still holds;
+   otherwise it is discarded and the fallback applies immediately — see Flow C).
+   Any invalid/missing answer falls back for **that NPC only**, without discarding
+   valid answers for the others.
 4. Code executes every decision: feasibility, cooldowns, animations, sounds, effects
-   — exactly as any other game logic.
+   — exactly as any other game logic. Each decision applies **exactly once**; a
+   decision made for a situation that changed mid-flight (player switched NPC, day
+   ended, save loaded) is never replayed.
 
 ### Flow C — Jev unavailable (no key, offline, error, timeout, low confidence)
 
-1. There is no separate offline decision system: **the fallback is today's code,
-   preserved verbatim** — the historical fixed `nextNodeId` reply, the
-   uniform-random pool pick, the weighted-random destination, the pre-Jev default
-   action. Every Jev call site wraps that legacy pick as the fallback.
+1. There is no separate offline decision system: **the fallback is the
+   deterministic authored default for each surface**. For surfaces that existed
+   before this feature that is today's code preserved verbatim (the historical
+   fixed `nextNodeId` reply, the uniform-random pool pick, the weighted-random
+   destination, with unchanged random-consumption order). For **new** surfaces
+   that have no legacy behavior, the default is authored in content: the first
+   reply candidate, the top-4 options by authored priority, the authored base
+   score for mission answers, the authored order of question pools, and "no
+   action" for purposeful actions. Every Jev call site wraps the appropriate
+   default as the fallback. A content kill-switch can load only pre-feature
+   content, so "the game with Jev off behaves like the shipped game" stays
+   verifiable after the 10× content lands.
 2. Fallback triggers: service unconfigured, unreachable, timed out within the
-   ambient budget, rate-limited after retries, malformed/unknown answer, or low
-   confidence on a consequential branch (low confidence on a cosmetic preference may
-   still apply).
+   surface's budget (ambient decisions never wait for retries), rate-limited,
+   malformed or unknown answer, an answer whose situation changed mid-flight
+   (stale — it is discarded, never replayed), or low confidence on a
+   consequential branch (low confidence on a cosmetic preference may still
+   apply).
 3. No UI change, no waiting, no frame stalls. In-game time never advances because a
    judgment is pending (dialogue already pauses the clock; ambient judgments run
    outside blocking overlays). Every fallback is marked in the debug panel.
@@ -254,8 +278,13 @@ applied relationship/mood deltas. Identifiers and numbers only (screenshots safe
 - **AC-03:** With story flags and memory held constant, the steered selection is
   stable within a session for identical state.
 - **AC-04:** The dialogue panel never shows more than 4 options; the curated subset
-  is deterministic for the same state.
-- **AC-05:** Flag-locked and already-picked options remain hard-gated.
+  is deterministic for the same state; options marked as required for quest or
+  conversation progress (and the always-available exit) reserve their slots before
+  optional options are judged, so curation can never hide required progress.
+- **AC-05:** Flag-locked and already-picked options remain hard-gated; dialogue
+  options chosen programmatically (WebMCP tool path) pass through the same
+  eligibility, visibility, and one-shot checks as UI clicks — a hidden or
+  exhausted option cannot be selected by either path.
 
 **Ambient and batched decisions**
 
@@ -271,9 +300,11 @@ applied relationship/mood deltas. Identifiers and numbers only (screenshots safe
 
 **Fallback and resilience**
 
-- **AC-10:** With no key, no network, provider error, or timeout beyond the ambient
-  budget, every judgment point uses the preserved pre-Jev behavior with no visible
-  difference from the current release.
+- **AC-10:** With no key, no network, provider error, timeout, or a stale answer,
+  every judgment point uses its deterministic authored default (pre-existing
+  surfaces: the preserved pre-Jev behavior; new surfaces: their authored default)
+  with no visible waiting and no blocked interaction — feature availability never
+  depends on the service.
 - **AC-11:** No judgment blocks or freezes the game; in-game time never advances
   due to a pending judgment.
 - **AC-12:** A malformed or unknown judgment result is treated as "no judgment" and
@@ -289,60 +320,96 @@ applied relationship/mood deltas. Identifiers and numbers only (screenshots safe
 
 **Social simulation**
 
-- **AC-15:** Every character pair has a relationship value; starting values are
-  seeded by archetype and differ across pairs (not flat 50).
-- **AC-16:** A single judged action moves a relationship by at most ±5; values are
-  clamped and persist through save/load.
-- **AC-17:** NPC mood (valence/energy) decays to the NPC's baseline within one
-  in-game day.
+- **AC-15:** Every NPC↔NPC pair has a relationship value (105 pairs, archetype-
+  seeded, not flat 50); player↔NPC values remain the existing relationship map —
+  one source of truth per pair; both are read by steering.
+- **AC-16:** A single judged action moves a relationship by at most ±5 through one
+  aggregated transaction (authored effect + judged reaction combined); witness
+  deltas are capped at ±2; values are clamped and persist through save/load.
+- **AC-17:** NPC mood (valence/energy) returns to the NPC's authored baseline in
+  finite time within the in-game day.
 - **AC-18:** When a pair's relationship is below the argument threshold and an
   adverse trigger occurs while both are present, an argument scene plays: authored
   verbal exchange plus physical animation, visible/audible to nearby NPCs, with a
-  cooldown preventing loops.
+  per-pair cooldown and a daily drama budget (≤ 2 arguments per in-game day)
+  preventing loops.
 - **AC-19:** NPC↔NPC relationship values measurably influence at least one visible
   behavior (chatter/greeting selection or destination choice) before any argument
   logic fires.
+- **AC-19b:** Simulating 30 in-game days of random relationship deltas keeps the
+  distribution off the 0/100 clamps (nightly regression toward archetype seeds).
 
 **Physical interactions**
 
 - **AC-20:** At least three usable equipment points exist (e.g. coffee machine,
-  printer, whiteboard) with a use prompt, animation, **and sound feedback**.
+  printer, whiteboard) with a use prompt, animation, **and sound feedback whose
+  asset ids resolve in the audio manifest** (a silently skipped sound is a
+  failure).
 - **AC-21:** At least one equipment fault state exists (e.g. printer jam) that an
   NPC or the player can trigger interaction on to repair; while faulted, the
-  dependent behavior is visibly blocked.
+  dependent behavior is visibly blocked; fault state survives save/load.
 - **AC-22:** NPCs can be steered to use equipment as a purposeful action (walk →
-  use → return) initiated by a judgment, not only by script.
+  use → return) initiated by a judgment, not only by script; NPCs act on their own
+  **needs** (an authored per-NPC needs model decaying during the day), not on
+  player stats.
 
-**Conference mission**
+**Conference mission (bounded first slice)**
 
 - **AC-23:** A conference mission exists in the quest layer with preparation and a
-  speech sequence in the conference room, with a seated **audience of background
-  NPCs**.
-- **AC-24:** During the speech, at least 2 planted questioners ask questions from
-  authored hard-question pools, selected to fit topic/credibility/audience mood.
-- **AC-25:** Player answers are given via options; each answer produces a visible
-  verbal and physical audience reaction; mission outcome affects credibility, cash,
-  and flags through the existing systems.
+  speech sequence in the conference room: **one topic, five talking points, a
+  panel-only engagement meter**, and a bounded audience; the full seated crowd is
+  a separate follow-up deliverable.
+- **AC-24:** During the speech, **2 planted questioners ask 2 questions each** from
+  authored hard-question pools, selected to fit topic/credibility/audience mood;
+  the player answers via options.
+- **AC-25:** Each answer scores as its authored base score adjusted by at most one
+  bounded judgment level (the judgment never decides the payout alone); mission
+  outcome affects credibility, cash, and flags through the existing systems; the
+  completion/reward marker persists so the reward cannot be claimed twice.
 - **AC-26:** Two runs of the same mission with different answers produce different
-  question sequences and reactions.
+  question sequences and reactions; aborting or reloading mid-mission leaves no
+  duplicate rewards and no stuck room state; mission presentation animates while
+  the economy clock stays paused.
 
 **Content volume (10× expansion)**
 
-- **AC-27:** Total authored dialogue volume (nodes + options + candidate replies)
-  for the NPC roster is at least 10× the C-74 baseline (~218 nodes / ~210 options),
-  verified by a counted unit test, spread across **all 15 NPCs**.
+- **AC-27:** Total authored dialogue volume counted as **distinct normalized
+  authored strings** (near-duplicate candidates with token overlap above the
+  gaming threshold fail the count) is at least 10× the baseline **frozen by the
+  same counting tool at commit `42000fd`**; the roster reaches ≥ 10× overall and
+  **every NPC reaches ≥ 7× its own baseline**, spread across all 15 NPCs
+  (Burek gets species-appropriate coverage), verified by a counted unit test.
 - **AC-28:** Every NPC owns: multiple dialogue trees with candidate reply pools,
   topic-specific chatter lines, morning/evening line pools, at least one personal
   story arc (mission or multi-day storyline), jokes, and at least one misery/complaint
-  thread.
+  thread; every authored pool is **reachable** from a registered dialogue root
+  under representative flags (no unreachable dead content), with at least one
+  full branch-to-completion trace per content batch.
 - **AC-29:** All new content passes the data-shape unit tests (types, ids, effect
   references, flag references) and contains no unauthored text.
 
-**Observability**
+**Feature proof and boundaries**
 
 - **AC-30:** The debug panel shows surface, subject, chosen candidate id,
-  confidence, latency, fallback flag, and applied relationship/mood deltas;
-  identifier-only content; off by default.
+  confidence, latency, fallback flag, and applied relationship/mood deltas, plus
+  reason-coded counters (requested / applied / legacy-fallback / rejected / stale /
+  skipped); identifier-only content; off by default; a startup console line states
+  the active mode.
+- **AC-31 (live-path proof):** With a judgment source returning non-default
+  answers, every steered surface demonstrably applies those answers (the applied
+  counter rises above zero on each enabled surface) — the feature is proven live,
+  not only in fallback.
+- **AC-32 (perceptibility gate):** In one observed 10-minute in-game day with
+  steering enabled, at least 30 steered decisions are applied, the fallback share
+  stays below 20%, at least one NPC↔NPC relationship effect is visible, and a
+  side-by-side `?jev=off` vs live comparison is shown to Lucas.
+- **AC-33 (exactly-once):** A decision whose situation changed mid-flight (NPC
+  switched, day ended, save loaded) is discarded, never replayed; no game effect
+  ever applies twice from one judgment; two conflicting batch answers are resolved
+  by deterministic arbitration.
+- **AC-34 (data boundary):** Projections sent for judgment never contain the
+  player-typed character name or any agent-authored text — fictional actor ids
+  only — verified by negative tests.
 
 ---
 
@@ -388,22 +455,35 @@ calibration harness, and save-schema mechanics are decided in ADR-0009, not here
 
 ### Functional
 
-- **Display limit:** at most 4 dialogue options visible at once.
-- **Relationship deltas:** at most ±5 per single judged action; clamped to the
-  0–100 scale; persisted.
-- **Mood:** bounded valence/energy per NPC; decays to baseline within the in-game
-  day.
-- **Ambient budget:** the world-tick decision round resolves or falls back within
-  the tick budget (target ≤ 700 ms) so the chatter cadence is never visibly delayed.
+- **Display limit:** at most 4 dialogue options visible at once; required-for-
+  progress options and the exit always reserve their slots.
+- **Social reaction:** the judgment returns an authored reaction bucket; code maps
+  it to at most ±5 per single action (one aggregated transaction with any authored
+  effect), clamped to the 0–100 scale, persisted; witness deltas ≤ ±2; nightly
+  regression toward archetype seeds; daily drama budget ≤ 2 arguments.
+- **Mood and needs:** bounded valence/energy per NPC returning to an authored
+  baseline within the day; a separate authored per-NPC needs model (not player
+  stats) drives self-initiated actions.
+- **Cadence and latency:** ambient decision rounds run every 6 real seconds of
+  unpaused simulation (scaled by speed, frozen under overlays, no catch-up) and
+  pre-decide upcoming decisions so triggers never wait for a request; ambient p95
+  target ≤ 300 ms with a 700 ms hard cutoff and no ambient retries; the dialogue
+  deadline (1200 ms) starts at input acceptance with immediate feedback.
 - **Batching:** both per-surface and world-tick request shapes must be implementable
-  behind the same decision interface; the shipped default is chosen from measurement,
-  not preference (C-75).
+  behind the same decision interface; the shipped default is chosen from labeled
+  accuracy and latency measurement, not preference (C-75).
+- **Data boundary:** outbound projections contain fictional actor ids and authored
+  content only — never the player-typed character name, agent-authored text, or
+  credentials (verified by negative tests); "local-only" refers to code; minimized
+  fictional requests to the approved provider are intentional.
 - **Content:** authored in English; all content validates against typed schemas;
-  candidate coverage guaranteed (at least one fallback candidate per judgment).
+  candidate coverage guaranteed (at least one authored default per judgment).
 - **External service limits (Jev via OpenRouter, jev-1.13):** ~1,200 requests/minute,
-  64k-token request context, input-only pricing at $0.042/Mtok. Compaction of world
-  state is mandatory ("context rot": irrelevant state degrades accuracy); batching
-  exploits free output tokens, but input size per tick is the cost to watch in PoC.
+  64k-token request context, input-only pricing at $0.042/Mtok. State is compacted
+  and namespaced per subject ("context rot": irrelevant state degrades accuracy);
+  batching exploits free output tokens, but input size per tick is the cost to
+  watch in PoC. Browser CORS for the decisions endpoint is verified before the
+  bring-your-own-key mode ships.
 
 ### External document / data references
 
@@ -525,8 +605,11 @@ is a judge of *given* options, never an author.
 - Select exactly one option from the candidate set supplied per question, or answer
   yes/no/degree questions (audience engagement, "would this NPC react?", "would
   these two argue now?").
-- Return **bounded relationship deltas** (−5…+5) as part of a judged action, and
-  short-term mood shifts, which code clamps and applies.
+- Return a **social reaction** — a choice among authored reaction buckets
+  (offended / annoyed / neutral / pleased / delighted) — as part of a judged
+  action; code maps each bucket to a bounded delta and mood shift. The judgment
+  never returns raw numbers (Jev's answer space is Choice/Score/Noul; deltas live
+  in code).
 - Receive per-NPC compact state: relationship values (as named bands plus the pair
   value), memory summary, Big-Five-style personality profile, current mood, period,
   today's events, candidate definitions with descriptions.
@@ -542,9 +625,10 @@ is a judge of *given* options, never an author.
   advisory; existing systems apply all effects.
 - Override the WebMCP agent's authorship of its companion character, or any
   player-controlled behavior.
-- Escalate beyond the configured bound: deltas outside −5…+5 are clamped by code;
-  an argument is triggered by *code-owned thresholds*, never declared unilaterally
-  by a judgment.
+- Escalate beyond the configured bound: the reaction bucket's mapped delta is
+  clamped and aggregated by code; an argument is triggered by *code-owned
+  thresholds* — a judgment may only veto an eligible argument or choose its
+  flavor, never declare one unilaterally.
 
 **Decision categories and communication.** Surfaces: tree opening, option curation,
 reply selection, chatter exchange, greetings, destinations, purposeful actions

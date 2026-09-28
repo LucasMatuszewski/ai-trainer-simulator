@@ -13,25 +13,42 @@ verifies and commits granularly, bumping `vYYYY.MM.DD-NN` per commit (PR-13).
 
 1. Briefs go to `.agent-briefs/<task>.md` (PR-6): self-contained, exact files,
    definition of done, "Do not commit / Do not push" at the bottom.
-2. **File ownership is disjoint** (matrix below) — no two concurrent workers touch
-   the same file. Shared interfaces (decision client, content types) land in Wave 1
-   *before* dependents start.
-3. TDD per PR-8/PR-11: failing test first for every pure function and data file;
-   mutation check before the orchestrator commits.
-4. Every worker returns: changed-file list, test output, and any deviations from
-   the brief. The orchestrator runs `pnpm typecheck && pnpm test`, inspects the
-   diff, and only then commits.
-5. Judges (review subagents) get the brief + diff and return a pass/fail verdict
-   with findings; PR-4 requires an independent QA verdict before a phase counts as
-   done. Visual QA stays with Lucas via the PR-2 screenshot loop.
+2. **File ownership is disjoint** (manifest below) — no two concurrent workers
+   touch the same file. **Shared integration files (`src/types.ts`,
+   `src/game/state.ts`, `src/main.ts`, `src/ui/hud.ts`,
+   `src/engine/npc-controller.ts`, `src/version.ts`) are ORCHESTRATOR-OWNED
+   after WS0**: workers never edit them; they return proposed patches in their
+   result and the orchestrator applies them serially. `src/engine/npc-controller.ts`
+   hosts the real greeting/goodbye/chatter/override call sites (it is
+   ~1,900 lines), which is exactly why WS0 installs the injection seam first.
+3. **WS0 seam commit precedes all fan-out** (see §3): `DecisionHooks` injection
+   into `createNpcController` (greeting, goodbye, pair, starter, exchange,
+   destination, override-install) defaulting to today's functions; extension
+   points in `main.ts`; pre-created `src/content/npc-content/` registry; shared
+   contract types. After WS0, workers only *inject* from their own new files.
+4. TDD per PR-8/PR-11: failing test first for every pure function and data file;
+   mutation check before the orchestrator commits. Tests live flat in
+   `tests/unit/<area>.test.ts` or `tests/unit/<area>/<name>.test.ts` — both match
+   the existing convention; workers state their chosen paths in the result.
+5. Every worker returns: changed-file list, proposed shared-file patches, test
+   output, and any deviations from the brief. The orchestrator runs
+   `pnpm typecheck && pnpm test`, inspects the diff, applies patches, and only
+   then commits. **Gate order: implement (+ version bump) → verify → independent
+   judge → commit → visual phase review.**
+6. Judges (review subagents) get the brief + diff and return a pass/fail verdict
+   with findings; per-workstream code judges may be GLM, but **the per-wave phase
+   QA verdict runs on `codex exec` (different model family)** per PR-4.6, and the
+   WS5 tone judge samples ≥ 10% of each author batch for orchestrator/Lucas
+   review. Visual QA stays with Lucas via the PR-2 screenshot loop.
 
 ## 2. Wave plan
 
 ```mermaid
 flowchart TD
-    W1["Wave 1 (parallel)\nWS1 decision core + fallback\nWS2 social model + save v2\nWS9a robot collision fix (Lucas bug)"] --> W2["Wave 2 (parallel)\nWS3 dialogue steering\nWS4 world-tick batching\nWS6 interaction points"]
-    W2 --> W3["Wave 3 (parallel)\nWS5 content 10x (4 authors)\nWS7 conference mission\nWS8 observability/calibration"]
-    W3 --> W4["Wave 4\nIntegration pass, judge sweep,\nplaytest E2E (WS9), screenshot QA to Lucas, PoC demo"]
+    W0["WS0 seam commit (exclusive worker)\nDecisionHooks in npc-controller, main.ts extension points,\nnpc-content registry, shared contract types"] --> W1["Wave 1 (parallel)\nWS1 decision core + fallback + adapter tests\nWS2 social model + save v2 migration chain\nWS9a robot collision fix (Lucas bug, sacs-xtma.16)"]
+    W1 --> W2["Wave 2 (parallel)\nWS3 dialogue steering + content schema + pool types\nWS4 world-tick batching (generalizes WS1 wrapper)\nWS6 interaction points + NpcNeeds (after WS3/WS4)"]
+    W2 --> W3["Wave 3 (parallel)\nWS5 content 10x (4 authors, disjoint npc-content files)\nWS7 conference mission slice (fixture pools first)\nWS8 observability/calibration fixtures"]
+    W3 --> W4["Wave 4\nIntegration pass, judge sweep (codex phase verdict),\nperceptibility gate, playtest E2E (WS9),\nscreenshot QA to Lucas, PoC demo"]
 ```
 
 - **Wave 1** — plumbing only, no visible behavior change; `?jev=off` proves TAC-01.
@@ -44,14 +61,32 @@ flowchart TD
 
 ## 3. Workstreams
 
+### WS0 — Seam commit (runs ALONE, before any fan-out) — 1 implementer
+**Scope (review B3):** install the injection seam so concurrent workers never edit
+shared files: add a `DecisionHooks` parameter object to `createNpcController`
+(greeting, goodbye, pair, starter, exchange, destination, override-install),
+defaulting to today's functions; add extension points in `main.ts`; pre-create the
+`src/content/npc-content/` directory with a registry that currently imports
+nothing; define the shared contract types (`DecisionRequest`/`DecisionAnswer`/
+`DecisionHooks`) in a new module `src/jev/contracts.ts` (types only, no runtime).
+**Owns (exclusive):** `src/engine/npc-controller.ts`, `src/main.ts`,
+`src/content/npc-content/registry.ts`, `src/jev/contracts.ts`, `src/version.ts`.
+**Done:** typecheck + all existing tests green; behavior identical (hooks default
+to legacy); the volume counter baseline script freezes the `42000fd` numbers.
+
 ### WS1 — Decision core & invisible fallback (Wave 1) — 1 implementer
 **Scope (ADR §3.1–3.8, D-45/46/47/56):** `DecisionClient` interface + OpenRouter
 adapter (pinned `typesafe/jev-1.13`, timeout, 429/529 backoff) + fake client +
 unconfigured client + key provider (proxy URL / BYO localStorage / none) +
 `FallbackRegistry` wrapping the legacy pickers + first steered wrapper (morning
 greetings, lowest risk) + `?jev=off|shadow` URL modes.
-**Owns:** `src/jev/*` (new), `src/engine/morning-greeting wrapper touchpoint`,
-`tests/unit/jev/*`.
+**Owns:** `src/jev/client.ts`, `src/jev/openrouter-adapter.ts`, `src/jev/fake-client.ts`,
+`src/jev/key-provider.ts`, `src/jev/decision-log.ts` (moved from WS8 — one owner),
+`src/jev/greeting-wrapper.ts`, `vite.config.ts` (proxy middleware),
+`src/ui/jev-settings.ts`, `tests/unit/jev/*` incl. **adapter contract tests**
+(provider fixtures, primitive normalization, retry/deadline, partial/malformed —
+no network). Shared-file patches (npc-controller/main.ts wiring) submitted, not
+applied.
 **Done:** fallback-equivalence test green (TAC-01); shadow log rows visible; fake
 client covers happy/timeout/malformed/unknown-id/partial/low-confidence.
 
@@ -60,8 +95,12 @@ client covers happy/timeout/malformed/unknown-id/partial/low-confidence.
 seeds for the pair matrix), relationship matrix (105 pairs), mood valence/energy
 with hourly decay, ±5 clamped delta reducer actions, Heider triad detection,
 reciprocity summary helper, save schema v2 + v1 migration, worldDiary ring buffer.
-**Owns:** `src/game/social.ts` (new), `src/game/state.ts`, `src/types.ts`,
-`src/content/npc-profiles.ts` (new), `tests/unit/game/*`.
+**Owns:** `src/game/social.ts` (new), `src/game/migrate.ts` (new migration chain),
+`src/content/dialogue-memory.ts` (Sets → array DTOs at the API boundary),
+`src/game/initial.ts`, `src/content/npc-profiles.ts` (new),
+`tests/unit/game/*`. Shared-file patches (`state.ts`, `types.ts`) submitted, not
+applied. Storage-key policy: first v2 write keeps the untouched v1 blob under a
+backup key; v2 saves never silently wiped.
 **Done:** round-trip + migration tests; clamp/decay/triad table tests; matrix
 serialized size < 10 KB (TAC-05).
 
@@ -70,9 +109,11 @@ serialized size < 10 KB (TAC-05).
 relationship bands), migration of the existing 48 trees into the schema, wrappers
 for reply selection / option curation (≤4) / tree opening, per-pick relDelta
 application, `NpcMemory` consumption from persisted state (WS2).
-**Owns:** `src/content/dialogue-schema.ts` (new), `src/content/dialogues*.ts`
-(schema migration only), `src/ui/dialogue.ts` (curation), `src/main.ts`
-(openDialogueWith replacement), `tests/unit/content/*`.
+**Owns:** `src/content/dialogue-schema.ts` (new — includes the argument/question/
+audience pool types needed by WS5/WS7), `src/content/dialogues*.ts` (schema
+migration only), `src/ui/dialogue.ts` (curation + requiredForProgress slots +
+unified programmatic-pick eligibility), `tests/unit/content/*`. Shared-file patch
+for `main.ts` (openDialogueWith replacement) submitted, not applied.
 **Done:** AC-01..05 pass with fake client; legacy replies byte-identical when
 `?jev=off`.
 
@@ -81,9 +122,12 @@ application, `NpcMemory` consumption from persisted state (WS2).
 validator (per-subject), world-tick scheduler (6 s in-game cadence + period
 transitions, single-flight, 700 ms budget, projection-hash cache), wrappers for
 chatter exchange / greetings / destinations.
-**Owns:** `src/engine/world-tick.ts` (new), `src/game/projection.ts` (new),
-`src/engine/chatter.ts` + `src/content/npc-schedule.ts` (call-site replacement
-only), `tests/unit/engine/*`.
+**Owns:** `src/engine/world-tick.ts` (new), `src/game/projection.ts` (new —
+per-subject namespaced allowlist), `src/engine/chatter.ts` +
+`src/content/npc-schedule.ts` (pure-picker replacements only; the call sites are
+WS0 hooks — WS4 **generalizes WS1's greeting wrapper**, never re-wraps),
+`tests/unit/engine/*` (world-tick/projection files). Shared-file patches
+(`npc-controller.ts` hook wiring) submitted, not applied.
 **Done:** TAC-02/03/04; partial-batch test; with fake latency injected, fallback
 path identical to legacy picks.
 
@@ -99,8 +143,11 @@ path identical to legacy picks.
   lines, morning/evening pool extensions for all NPCs.
 All drafts authored in the game's ironic tone; GLM drafts are reviewed by the
 author judge for character consistency (PR-5 taste work), then shape-tested.
-**Owns:** `src/content/dialogues/<npc>.ts` files (new per group), `pool files per
-group`, `tests/unit/content/volume.test.ts` (shared, orchestrator-run).
+**Owns:** `src/content/npc-content/<npc>.ts` files (new per group; registry
+pre-created by WS0 — authors never edit it), group pool files, plus one
+**reachability + completion-trace test** per batch; the volume test runs from the
+frozen `42000fd` baseline (orchestrator-run). Every candidate carries its
+Jev-facing `description` (authoring cost is in scope).
 **Done:** volume test ≥10× baseline (AC-27) with zero shape violations; tone judge
 verdict pass.
 
@@ -108,8 +155,14 @@ verdict pass.
 **Scope (D-53, AC-20..22):** interaction-point registry (coffee machine, printer,
 whiteboard minimum), prompts, fault state (printer jam) + repair interaction, sfx
 ids wired into the existing audio manifest, NPC purposeful-use schedule overrides.
-**Owns:** `src/engine/interaction-points.ts` (new), `src/ui/prompt.ts` touch,
-`src/audio/manifest.ts` additions, `tests/unit/engine/interactions/*`.
+**Owns:** `src/engine/interaction-points.ts` (new, with the bounded action
+lifecycle), `src/game/npc-needs.ts` (new: `NpcNeeds {caffeine, social}` — runtime
+only, decays hourly, resets daily), **registered sfx assets** (source stated in
+the brief) + a test asserting every interaction sfx id resolves in the manifest
+(the loader's silent no-op hides missing audio), `tests/unit/engine/interactions/*`.
+Prompt UI changes are `src/ui/hud.ts` patches (there is no `src/ui/prompt.ts`),
+submitted not applied. Runs after WS3/WS4 in the wave; its `npc-controller`
+changes go only through the WS0 seam.
 **Done:** jsdom prompt tests; e2e: player fixes printer → Renata errand resumes.
 
 ### WS7 — Conference mission (Wave 3) — 1 implementer (+ Author D pools)
@@ -117,8 +170,13 @@ ids wired into the existing audio manifest, NPC purposeful-use schedule override
 (talking points → plant question → options → audience score → reactions), audience
 crowd (seated background NPCs reusing mesh factory; gesture/walk reactions),
 mission results card, outcome effects via existing systems.
-**Owns:** `src/game/mission.ts` (new), `src/ui/mission.ts` (new),
+**Owns:** `src/game/mission.ts` (new — bounded slice: 1 topic, 5 talking points,
+2 plants × 2 questions, panel engagement meter, `baseScore` ± 1 level),
+`src/ui/mission.ts` (new),
 `src/engine/audience.ts` (new), `tests/unit/game/mission/*`, Playwright e2e.
+Fixture question/argument pools ship with WS7; Author D's reviewed pools
+integrate afterwards through the frozen schema (dependency, not late content).
+Reload/abort semantics + persisted completion/reward marker are in scope.
 **Done:** e2e start→results green; two different answer paths produce different
 sequences (AC-26).
 
@@ -126,8 +184,11 @@ sequences (AC-26).
 **Scope (D-55, AC-30):** decision ring buffer, debug panel (rows + deltas +
 fallback flag), shadow-mode comparison logging, labeled evaluation datasets per
 surface and the `evaluate.mjs` calibration run; TAC-09.
-**Owns:** `src/ui/debug-panel.ts` (new), `src/jev/decision-log.ts`, `tests/eval/*`
-(datasets), no game-loop file ownership.
+**Owns:** `src/ui/debug-panel.ts` (new — counters: requested/applied/legacy/
+rejected/stale/skipped; `?jev=strict` toasts; startup mode line),
+`tests/eval/*` (labeled datasets + policy-table fixtures from Wave 1), no
+`src/jev/*` ownership (decision-log is WS1's) and no game-loop files. The
+orchestrator records evaluation results in Beads (delegates never run `bd`).
 **Done:** panel off by default; shadow dataset results recorded in Beads `sacs-xtma.13`.
 
 ### WS9a — Companion-robot collision & NPC avoidance fix (Wave 1) — 1 implementer
@@ -177,11 +238,12 @@ playtest run leaves the artifact set in `playtests/<timestamp>/`.
 | Role | When | Model (ZCode subagent) | Checks |
 |---|---|---|---|
 | Code judge (per workstream) | after each implementer finishes | GLM (independent context) | diff vs brief, scope creep, test quality incl. mutation-check evidence, PR-11 naming |
-| Tone/content judge (WS5) | per author batch | GLM | character consistency, game's ironic tone, no placeholder slop, lore accuracy vs `npcs.ts` |
+| **Phase verdict (per wave)** | wave boundary, before Lucas sees the phase | **`codex exec` (different model family — PR-4.6)** | whole-diff phase QA verdict; also inspects WS8's counters/evaluation results, not just fake-client tests |
+| Tone/content judge (WS5) | per author batch | GLM + ≥10% sample reviewed by orchestrator/Lucas | character consistency, game's ironic tone, no placeholder slop, lore accuracy vs `npcs.ts`, near-duplicate check |
 | QA helper | per wave | GLM + Playwright CLI | fresh dev server (kill zombies first, PR-13), version footer matches console, screenshots to `screenshots/` |
 | Playtester (WS9) | per wave from Wave 2 | GLM agent + vision | *plays* the game via real controls + WebMCP tools for N in-game minutes; judges logic and real-world simulation feel; writes severity-ranked bug reports with screenshots into `playtests/` |
 | Vision description | per PR-2 gate | vision-capable model per AGENTS.md PR-5 | describes screenshot; regression phrases block the phase |
-| Orchestrator (this session) | always | session model | verify → granular commits → version bump → Beads notes; Lucas is the final visual QA |
+| Orchestrator (this session) | always | session model | apply shared-file patches serially, verify → judge → granular commit with version bump → Beads notes; Lucas is the final visual QA |
 
 Escalation rule: any judge FAIL ⇒ work returns to the implementer with findings;
 two consecutive fails ⇒ orchestrator re-briefs or reverts (PR-4 revert rule).
