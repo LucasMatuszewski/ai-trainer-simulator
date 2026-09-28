@@ -77,6 +77,12 @@ export interface GreetingWrapperOptions {
   minConfidence?: number;
   /** Injectable clock (tests). */
   now?: () => number;
+  /**
+   * D-55 `?jev=shadow`: requests run and land in the decision log, but
+   * install() never touches the hook — the game plays legacy while the
+   * log accumulates calibration data.
+   */
+  shadow?: boolean;
 }
 
 export interface GreetingWrapperHandle {
@@ -106,6 +112,7 @@ export function createGreetingWrapper(options: GreetingWrapperOptions): Greeting
   const getGameState = options.getGameState;
   const timeoutMs = options.timeoutMs ?? GREETING_BUDGET_MS;
   const minConfidence = options.minConfidence ?? GREETING_MIN_CONFIDENCE;
+  const shadow = options.shadow ?? false;
   const now = options.now ?? (() => Date.now());
 
   const stored = new Map<string, StoredGreeting>();
@@ -259,7 +266,7 @@ export function createGreetingWrapper(options: GreetingWrapperOptions): Greeting
   }
 
   function install(): void {
-    if (installed || !client.isConfigured()) return;
+    if (installed || shadow || !client.isConfigured()) return;
     previousHook = hooks.pickMorningGreeting;
     hooks.pickMorningGreeting = hook;
     installed = true;

@@ -26,7 +26,7 @@ export interface JevSettingsHandle {
 
 export function mountJevSettings(
   container: HTMLElement,
-  options: { provider?: KeyProvider } = {},
+  options: { provider?: KeyProvider; onConfigured?: () => void; onCleared?: () => void } = {},
 ): JevSettingsHandle {
   const provider = options.provider ?? createKeyProvider();
 
@@ -84,6 +84,9 @@ export function mountJevSettings(
     status.textContent = text;
   }
 
+  const notifyConfigured = options.onConfigured;
+  const notifyCleared = options.onCleared;
+
   testButton.addEventListener("click", () => {
     const key = keyInput.value.trim();
     if (key === "") {
@@ -101,6 +104,7 @@ export function mountJevSettings(
             provider.setPersonalKey(key);
             keyInput.value = "";
             setStatus(`Connected — model ${result.model}`);
+            notifyConfigured?.();
             break;
           case "invalid":
             setStatus("Invalid key.");
@@ -122,6 +126,7 @@ export function mountJevSettings(
     keyInput.value = "";
     setStatus("Key removed.");
     refresh();
+    notifyCleared?.();
   });
 
   refresh();

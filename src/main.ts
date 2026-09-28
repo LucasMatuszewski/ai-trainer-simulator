@@ -41,6 +41,7 @@ import { WORLD_ROOMS } from "./content/world-layout";
 import { NPCS, OBSTACLES } from "./content/npcs";
 import { getNpcObstacles } from "./engine/npc-spawn-validator";
 import { createGreetingWrapper, type GreetingWrapperHandle } from "./jev/greeting-wrapper";
+import { mountJevSettings } from "./ui/jev-settings";
 import { jevDecisionHooks } from "./engine/npc-controller";
 import { approachSpotFor } from "./content/npc-approach";
 import { getActiveQuest } from "./content/quests";
@@ -185,12 +186,32 @@ function toggleFullscreen(): void {
 }
 let endDayModal: EndDayModalHandle | null = null;
 let unsubscribeGame: (() => void) | null = null;
-// WS1: the steered morning-greeting wrapper. Constructed once; it is a
-// no-op while no Jev access is configured (invisible fallback, AC-10)
-// and pre-decides greetings so the synchronous WS0 hook returns the
-// stored line instantly (D-48 pre-decision).
+// WS1: the steered morning-greeting wrapper. It is a no-op while no
+// Jev access is configured (invisible fallback, AC-10) and pre-decides
+// greetings so the synchronous WS0 hook returns the stored line
+// instantly (D-48 pre-decision). ?jev=off disables construction;
+// ?jev=shadow requests+logs but never steers (D-55).
+const JEV_MODE = new URLSearchParams(window.location.search).get("jev");
 let greetingWrapper: GreetingWrapperHandle | null = null;
 let lastGreetingPrefetchDay = 0;
+
+function buildGreetingWrapper(): GreetingWrapperHandle | null {
+  if (JEV_MODE === "off") return null;
+  return createGreetingWrapper({
+    hooks: jevDecisionHooks,
+    shadow: JEV_MODE === "shadow",
+    getGameState: () => {
+      const g = game.get();
+      return { day: g.day, npcRelationships: g.npcRelationships };
+    },
+  });
+}
+
+function prefetchGreetingsNow(): void {
+  if (!greetingWrapper) return;
+  lastGreetingPrefetchDay = game.get().day;
+  void greetingWrapper.prefetch(NPCS.map((npc) => npc.id)).catch(() => undefined);
+}
 let focusedNpcId: NpcId | null = null;
 // C-54: who the currently-open player dialogue is with (null when
 // none). The dialogue controller is created once, so its close
@@ -427,15 +448,17 @@ function startOffice(playIntro = false): void {
     // bubbles project with it every frame - the sprite renderer ignored
     // cameras, so nothing needed this wiring before.
     built.npcController.setBubblesCamera(engine.camera);
-    // WS1: install the greeting steering (no-op while unconfigured).
-    greetingWrapper = createGreetingWrapper({
-      hooks: jevDecisionHooks,
-      getGameState: () => {
-        const g = game.get();
-        return { day: g.day, npcRelationships: g.npcRelationships };
-      },
-    });
-    greetingWrapper.install();
+    // WS1: greeting steering, gated by the ?jev= URL mode (D-55):
+    // "off" never constructs the wrapper; "shadow" requests+logs but
+    // never installs the hook; default is live when access is
+    // configured, invisible legacy otherwise (AC-10). A FRESH wrapper
+    // is built on every office mount and immediately prefetches the
+    // current day — the day-2 guard below only dedupes the store
+    // subscription within one mount (re-verdict major 1).
+    greetingWrapper?.uninstall();
+    greetingWrapper = buildGreetingWrapper();
+    greetingWrapper?.install();
+    prefetchGreetingsNow();
     // L-2026-08-30-01: register the NPC controller with the events
     // dispatcher so every period transition can roll a random
     // destination (kitchen, toilet, meeting, training) and install
@@ -758,6 +781,26 @@ function startOffice(playIntro = false): void {
   );
   questLog = mountQuestLog(uiRoot);
   helpModal = mountHelpModal(uiRoot);
+  // WS1: the "AI decisions (Jev)" settings section lives at the bottom
+  // of the help modal (the game's settings surface). Late activation:
+  // setting a key re-installs the steered wrapper and prefetches
+  // without a reload (AC-14); clearing it returns to invisible legacy.
+  const helpControls = uiRoot.querySelector<HTMLElement>(".help-controls");
+  if (helpControls) {
+    mountJevSettings(helpControls, {
+      onConfigured: () => {
+        greetingWrapper?.uninstall();
+        greetingWrapper = buildGreetingWrapper();
+        greetingWrapper?.install();
+        prefetchGreetingsNow();
+      },
+      onCleared: () => {
+        greetingWrapper?.uninstall();
+        greetingWrapper = buildGreetingWrapper();
+        greetingWrapper?.install();
+      },
+    });
+  }
   // Dialogue buttons and the Help modal both ask for this via a DOM event,
   // so the dialogue layer never imports the modal directly.
   window.addEventListener("stack-underflow:open-modal", (event) => {
@@ -827,13 +870,11 @@ function startOffice(playIntro = false): void {
     prevCash = cur.cash;
     prevPatience = cur.stats.patience;
     prevCredibility = cur.stats.credibility;
-    // WS1: pre-decide the morning greetings once per in-game day (D-48).
-    // Fire-and-forget: the wrapper stores answers or silently falls back.
+    // WS1: pre-decide the morning greetings once per in-game day (D-48)
+    // when the day flips mid-mount (end-day flow). Office mounts
+    // prefetch directly via prefetchGreetingsNow().
     if (greetingWrapper && cur.day !== lastGreetingPrefetchDay) {
-      lastGreetingPrefetchDay = cur.day;
-      void greetingWrapper
-        .prefetch(NPCS.map((npc) => npc.id))
-        .catch(() => undefined);
+      prefetchGreetingsNow();
     }
   });
   if (hud) renderHud(hud, game.get());

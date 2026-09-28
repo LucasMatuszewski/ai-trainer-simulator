@@ -135,3 +135,52 @@ test("the robot crosses the office without clipping any furniture", async ({ pag
     expect(d, `NPC at ${JSON.stringify(pair.npc)} overlaps robot at ${JSON.stringify(pair.robot)}`).toBeGreaterThan(0.3);
   }
 });
+
+test("an NPC walking to the kitchen routes around the robot parked in its doorway", async ({ page }) => {
+  test.setTimeout(180_000);
+  await installHost(page);
+  await startGame(page);
+
+  const joined = await call(page, "agent_join", { name: "Rusty", persona: "doorway block" });
+  expect(joined).toMatchObject({ joined: true });
+
+  // Park the robot in the kitchen (its route must itself be legal).
+  await call(page, "agent_move_to", { target: "kitchen" });
+  for (let i = 0; i < 120; i += 1) {
+    await page.waitForTimeout(500);
+    const look = (await call(page, "agent_look_around")) as { companion?: { walking?: boolean } };
+    if (look.companion?.walking === false) break;
+  }
+
+  // Lunch sends the lunch-outside NPCs to the kitchen — their paths must
+  // now cross the space the robot occupies. The game starts in Morning,
+  // so one skip lands on Lunch.
+  await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
+  await page.waitForTimeout(400);
+
+  // Watch the lunch rush: near approaches MUST happen (the kitchen is
+  // the lunch destination), and none may overlap the robot.
+  let closest = Number.POSITIVE_INFINITY;
+  for (let i = 0; i < 240; i += 1) {
+    await page.waitForTimeout(500);
+    const data = await page.evaluate(() => ({
+      npcs: window.__aitrainer!.inspectNpcs(),
+      robot: window.__aitrainer!.inspectCompanion(),
+    }));
+    if (data.robot?.world) {
+      for (const npc of data.npcs ?? []) {
+        const d = Math.hypot(npc.position.x - data.robot.world.x, npc.position.z - data.robot.world.z);
+        if (d < closest) closest = d;
+        expect(
+          d,
+          `NPC ${npc.npcId} at ${JSON.stringify(npc.position)} overlaps robot`,
+        ).toBeGreaterThan(0.3);
+      }
+    }
+    // Stop early once we have a close, clean encounter.
+    if (closest < 1.4) break;
+  }
+
+  // Non-vacuous: at least one NPC actually approached the occupied space.
+  expect(closest, "no NPC ever came near the robot — the encounter never happened").toBeLessThan(1.8);
+});
