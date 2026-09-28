@@ -126,6 +126,109 @@ export type DecisionAnswer =
  * `createDefaultDecisionHooks` in `src/engine/npc-controller.ts` and
  * consume the shared rng exactly where the pre-seam call sites did.
  */
+/**
+ * Wire question type — one per judged question. Mirrors the four
+ * DecisionAnswer primitives (choice / score / noul / subset).
+ */
+export type JevQuestionType = "choice" | "score" | "noul" | "subset";
+
+/**
+ * One question sent to the decision client (WS1 wire format). The
+ * provider answers each question with the matching DecisionAnswer
+ * primitive. Candidates carry the authored selection set (D-45) and
+ * let the adapter reject answers that name an unknown candidate id.
+ */
+export interface JevQuestion {
+  id: string;
+  type: JevQuestionType;
+  /** Judge-facing instructions. Fictional allowlisted content only (D-59). */
+  prompt: string;
+  /** Subject this question belongs to (stamped onto the answer key). */
+  subjectId?: string;
+  /** Authored candidates for choice / subset questions. */
+  candidates?: readonly DecisionCandidate[];
+  /** Subset cardinality bounds (default 0..candidates.length). */
+  minSelections?: number;
+  maxSelections?: number;
+}
+
+/** Token usage reported by the provider (defensive, all optional). */
+export interface DecisionUsage {
+  input?: number;
+  output?: number;
+}
+
+/**
+ * Why a request did not produce answers. 401 -> "auth", 422 ->
+ * "invalid-request", 429 -> "rate-limited", 529 / 5xx ->
+ * "provider-unavailable", AbortController deadline -> "timeout",
+ * unparsable JSON -> "malformed", everything else -> "network".
+ * "unconfigured" is returned by the unconfigured client without any
+ * network activity.
+ */
+export type DecisionFailureReason =
+  | "unconfigured"
+  | "auth"
+  | "invalid-request"
+  | "rate-limited"
+  | "provider-unavailable"
+  | "timeout"
+  | "malformed"
+  | "network";
+
+export interface DecisionRequestOptions {
+  /** Hard deadline for the whole request (AbortController). */
+  timeoutMs?: number;
+  /** Retry count for transient failures. 0 by default; the ADR caps
+   *  retries at 2 and allows them ONLY on the dialogue path. */
+  retries?: number;
+  /** Base exponential backoff delay in ms (default 250; tests use 1). */
+  backoffMs?: number;
+  /** Decision identity stamped onto returned answers (D-58). */
+  decisionId?: string;
+  /** Session / conversation generation stamped onto answers. */
+  generation?: string;
+  /** Surface stamped onto answers (defaults to the request's surface). */
+  surface?: DecisionSurface;
+}
+
+/**
+ * The ONLY thing a client request returns — request() never throws
+ * past this envelope (ADR-0009 section 5). Answers whose structural
+ * validation failed (unknown candidate id, missing noul field,
+ * non-finite numbers, ...) are dropped and counted in rejectedCount;
+ * callers treat a missing answer as "use the fallback default".
+ */
+export type DecisionRequestResult =
+  | {
+      ok: true;
+      answers: readonly DecisionAnswer[];
+      /** Structurally invalid answers dropped during normalization. */
+      rejectedCount: number;
+      usage: DecisionUsage;
+      model: string;
+    }
+  | {
+      ok: false;
+      reason: DecisionFailureReason;
+      /** Human-readable context. NEVER contains the API key (D-59). */
+      detail?: string;
+    };
+
+/**
+ * Injectable decision client (ADR-0009 section 3.1). Implementations:
+ * OpenRouter adapter (WS1), fake client (tests), unconfigured client.
+ * request() resolves to a DecisionRequestResult and never rejects.
+ */
+export interface DecisionClient {
+  isConfigured(): boolean;
+  request(
+    state: Readonly<Record<string, unknown>>,
+    questions: readonly JevQuestion[],
+    opts?: DecisionRequestOptions,
+  ): Promise<DecisionRequestResult>;
+}
+
 export interface DecisionHooks {
   /** Morning greeting bubble line (D-60: legacy pool pick fallback). */
   pickMorningGreeting?: (npcId: NpcId) => string;
