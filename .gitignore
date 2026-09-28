@@ -66,3 +66,5 @@ tests/**/*.js.map
 # caveat it used to carry - the rules above already cover every
 # screenshot directory.
 /*.png
+.vercel
+.env*
