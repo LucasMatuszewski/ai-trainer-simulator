@@ -29,9 +29,9 @@ verifies and commits granularly, bumping `vYYYY.MM.DD-NN` per commit (PR-13).
 
 ```mermaid
 flowchart TD
-    W1["Wave 1 (parallel)\nWS1 decision core + fallback\nWS2 social model + save v2"] --> W2["Wave 2 (parallel)\nWS3 dialogue steering\nWS4 world-tick batching\nWS6 interaction points"]
+    W1["Wave 1 (parallel)\nWS1 decision core + fallback\nWS2 social model + save v2\nWS9a robot collision fix (Lucas bug)"] --> W2["Wave 2 (parallel)\nWS3 dialogue steering\nWS4 world-tick batching\nWS6 interaction points"]
     W2 --> W3["Wave 3 (parallel)\nWS5 content 10x (4 authors)\nWS7 conference mission\nWS8 observability/calibration"]
-    W3 --> W4["Wave 4\nIntegration pass, judge sweep,\nscreenshot QA to Lucas, PoC demo"]
+    W3 --> W4["Wave 4\nIntegration pass, judge sweep,\nplaytest E2E (WS9), screenshot QA to Lucas, PoC demo"]
 ```
 
 - **Wave 1** — plumbing only, no visible behavior change; `?jev=off` proves TAC-01.
@@ -130,6 +130,48 @@ surface and the `evaluate.mjs` calibration run; TAC-09.
 (datasets), no game-loop file ownership.
 **Done:** panel off by default; shadow dataset results recorded in Beads `sacs-xtma.13`.
 
+### WS9a — Companion-robot collision & NPC avoidance fix (Wave 1) — 1 implementer
+**Scope (Lucas bug, 2026-09-28, Beads `sacs-xtma.16`):** the WebMCP companion robot
+walks through desks/props as if they were air, and NPCs neither avoid it nor react
+to it. Give the robot the same collision treatment as every other walking actor:
+include its body in the obstacle set for its own pathing (it must route around
+furniture like NPCs do) and make it visible to NPC avoidance and path planning
+(NPCs must not walk through it; a blocked NPC replays its existing escape/replan
+behavior). No new engine subsystem — reuse the existing AABB collision and
+path/avoidance passes.
+**Owns:** `src/webmcp/*` robot movement files, `src/engine/collision.ts`,
+`src/engine/npc-controller.ts` (avoidance pass only), `tests/unit/engine/*` for
+these files.
+**Done:** unit tests assert the robot's planned path never intersects a furniture
+AABB; an NPC whose path crosses the robot replans; Playwright e2e where the robot
+crosses the office without clipping a desk and a nearby NPC routes around it.
+
+### WS9 — Playable E2E harness: the game is tested by PLAYING it (Wave 1 tooling, used every wave after)
+**Scope (Lucas mandate, 2026-09-28: "you must find a way to test this game e2e by
+playing it — the ONLY way to make this game high quality and playable"):** a
+repeatable agent playtest loop, not just input-simulation smoke tests:
+- **Driver:** Playwright (dev server 5173 per PR-13: kill zombie servers, read the
+  version footer/console line and assert they match).
+- **Two play styles:** (a) *human-like* — synthetic keyboard/mouse events (WASD,
+  E, dialogue keys) through the real controls; (b) *agent-like* — drive the
+  existing WebMCP tool registry from the page (the 24 registered tools are the
+  game's own agent API; the playtester acts as the agent: get_state, walk, talk,
+  pick options, advance time).
+- **Artifacts:** every playtest writes screenshots + a structured
+  playtest-log (decisions taken, anomalies, console errors) into `playtests/`
+  (**gitignored** — Lucas, 2026-09-28: screens live in the repo but never
+  committed).
+- **Playtester role (GLM subagent + vision):** runs the game for N in-game
+  minutes from the title screen, follows quests, talks to NPCs, uses the world,
+  then writes a bug report (severity + reproduction + screenshot refs) judging
+  *logic and real-world simulation feel*, not just "no crash". This is how bugs
+  like WS9a's robot clipping get found before Lucas finds them.
+**Owns:** `tests/e2e/play.spec.ts` + `tests/e2e/playtest-helpers.ts`, `playtests/`
+(gitignored), `.gitignore` entry.
+**Done:** `pnpm test:e2e` includes one full autonomous playthrough asserting: day
+advances, a dialogue completes, a quest progresses, zero console errors; a
+playtest run leaves the artifact set in `playtests/<timestamp>/`.
+
 ## 4. Judge / QA topology (per PR-4.6, PR-7)
 
 | Role | When | Model (ZCode subagent) | Checks |
@@ -137,6 +179,7 @@ surface and the `evaluate.mjs` calibration run; TAC-09.
 | Code judge (per workstream) | after each implementer finishes | GLM (independent context) | diff vs brief, scope creep, test quality incl. mutation-check evidence, PR-11 naming |
 | Tone/content judge (WS5) | per author batch | GLM | character consistency, game's ironic tone, no placeholder slop, lore accuracy vs `npcs.ts` |
 | QA helper | per wave | GLM + Playwright CLI | fresh dev server (kill zombies first, PR-13), version footer matches console, screenshots to `screenshots/` |
+| Playtester (WS9) | per wave from Wave 2 | GLM agent + vision | *plays* the game via real controls + WebMCP tools for N in-game minutes; judges logic and real-world simulation feel; writes severity-ranked bug reports with screenshots into `playtests/` |
 | Vision description | per PR-2 gate | vision-capable model per AGENTS.md PR-5 | describes screenshot; regression phrases block the phase |
 | Orchestrator (this session) | always | session model | verify → granular commits → version bump → Beads notes; Lucas is the final visual QA |
 
@@ -145,16 +188,18 @@ two consecutive fails ⇒ orchestrator re-briefs or reverts (PR-4 revert rule).
 
 ## 5. Execution checklist (orchestrator, on Lucas's "go")
 
-1. Create `.agent-briefs/` files for Wave 1 (WS1, WS2) — self-contained, with the
+1. Create `.agent-briefs/` files for Wave 1 (WS1, WS2, WS9a) — self-contained, with the
    ADR/PRD excerpts each worker needs.
 2. Launch Wave 1 implementers as parallel GLM subagents (background), collect
    results, verify (`pnpm typecheck && pnpm test`), commit granularly with version
-   bumps, run code judges.
+   bumps, run code judges. WS9 (playable E2E harness) lands in Wave 1 so every
+   later wave is playtested.
 3. Repeat for Wave 2/3 with the same verify→commit→judge loop; QA helper takes the
-   per-phase screenshots; PR-2 gate with Lucas at each wave boundary.
-4. Wave 4: full judge sweep + calibration readout + screenshot set + PoC demo notes;
-   update Beads `sacs-xtma.13/.14/.15`; report push URL = none (local-only until
-   Lucas approves).
+   per-phase screenshots, the playtester runs a full playtest per wave (WS9
+   artifacts + bug report); PR-2 gate with Lucas at each wave boundary.
+4. Wave 4: full judge sweep + calibration readout + screenshot set + autonomous
+   playtest report + PoC demo notes; update Beads `sacs-xtma.13/.14/.15/.16`;
+   report push URL = none (local-only until Lucas approves).
 
 ## 6. Risk register (PoC)
 
