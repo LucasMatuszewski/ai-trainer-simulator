@@ -32,6 +32,21 @@ export interface XZ {
   z: number;
 }
 
+/** Add a temporary robot footprint without changing the NPC obstacle list when absent. */
+export function withRobotObstacle(
+  staticObstacles: readonly AABB[],
+  robot: XZ | null,
+  halfWidth: number,
+): readonly AABB[] {
+  if (robot === null) return staticObstacles;
+  return [...staticObstacles, {
+    minX: robot.x - halfWidth,
+    maxX: robot.x + halfWidth,
+    minZ: robot.z - halfWidth,
+    maxZ: robot.z + halfWidth,
+  }];
+}
+
 /**
  * Apply motion on a single axis, clamped by world bounds and reverting
  * if it would push the player into an obstacle.

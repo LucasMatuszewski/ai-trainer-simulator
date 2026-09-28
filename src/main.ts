@@ -39,6 +39,7 @@ import {
 import { CORRIDOR_WAYPOINTS, buildWaypointEdges, DEFAULT_MAX_EDGE_LENGTH } from "./content/corridor-waypoints";
 import { WORLD_ROOMS } from "./content/world-layout";
 import { NPCS, OBSTACLES } from "./content/npcs";
+import { getNpcObstacles } from "./engine/npc-spawn-validator";
 import { approachSpotFor } from "./content/npc-approach";
 import { getActiveQuest } from "./content/quests";
 import type { GameState, NPC, NpcId } from "./types";
@@ -466,7 +467,11 @@ function startOffice(playIntro = false): void {
     // the shared bubble layer; registered with the WebMCP tool surface so
     // the agent_* tools have something behind them.
     {
-      const obstacles = [...OBSTACLES, ...WORLD_COLLISION_WALLS];
+      // WS9a: the companion routes with the FULL NPC obstacle set (static
+      // furniture + walls), matching getNpcObstacles() — the old inline
+      // list omitted the furniture AABBs, so the robot walked through
+      // desks (Lucas's bug, Beads sacs-xtma.16).
+      const obstacles = getNpcObstacles();
       const edges = buildWaypointEdges(CORRIDOR_WAYPOINTS, obstacles, DEFAULT_MAX_EDGE_LENGTH);
       const companion = createAgentCompanion({
         scene: engine.scene,

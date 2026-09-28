@@ -28,7 +28,7 @@ import {
 import { pickMorningGreeting } from "../content/morning-greetings";
 import { pickEveningGoodbye } from "../content/evening-goodbyes";
 import { OFFICE_CHATTER, type ChatterExchange } from "../content/office-chatter";
-import type { AABB } from "./collision";
+import { withRobotObstacle, type AABB } from "./collision";
 import type { NPC, NpcId } from "../types";
 import type { DecisionHooks } from "../jev/contracts";
 import { createBubbleSystem, pickLine } from "./bubbles";
@@ -269,6 +269,8 @@ const ANCHOR_RETURN_SPEED = 0.6;
 // Half-size of the temporary AABB a STANDING NPC presents to the path
 // planner while someone re-routes around them.
 const BLOCKER_BOX_HALF = 0.45;
+const COMPANION_BLOCKER_HALF = 0.45;
+const COMPANION_RADIUS = 0.3;
 // A neighbour moving faster than this clears the way by itself, so it
 // never triggers a stop - only standing or head-on traffic does.
 const CROSSING_SPEED = 0.15;
@@ -630,6 +632,10 @@ export function createNpcController(
   let root: THREE.Object3D | null = firstNpc === undefined ? null : npcObjects[firstNpc.id];
   while (root?.parent) root = root.parent;
   const sceneRoot = root instanceof THREE.Scene ? root : null;
+  const companionPosition = (): { x: number; z: number } | null => {
+    const body = sceneRoot?.getObjectByName("agent-companion-body");
+    return body?.visible ? { x: body.position.x, z: body.position.z } : null;
+  };
   const printer = options.printerObject ?? sceneRoot?.getObjectByName("xerox-printer") ?? null;
   const scannerFlash = printer === null ? null : new THREE.Mesh(
     new THREE.PlaneGeometry(0.7, 0.09),
@@ -740,9 +746,14 @@ export function createNpcController(
       if (!otherObject.visible) continue;
       others.push({ x: otherObject.position.x, z: otherObject.position.z });
     }
+    const robot = companionPosition();
+    if (robot !== null) others.push(robot);
     const escape = escapeWaypoint(
       self, next.x - self.x, next.z - self.z, others,
-      (x, z) => isSpawnBlocked({ x, z, radius: NPC_DEFAULT_RADIUS }, obstacles),
+      (x, z) => isSpawnBlocked(
+        { x, z, radius: NPC_DEFAULT_RADIUS },
+        withRobotObstacle(obstacles, robot, COMPANION_BLOCKER_HALF),
+      ),
       {
         attempt,
         rng,
@@ -802,6 +813,11 @@ export function createNpcController(
       };
       if (blockerBoxCoversDestination(box, to)) continue;
       boxes.push(box);
+    }
+    const robot = companionPosition();
+    if (robot !== null && Math.hypot(robot.x - from.x, robot.z - from.z) <= 6) {
+      const box = withRobotObstacle([], robot, COMPANION_BLOCKER_HALF)[0]!;
+      if (!blockerBoxCoversDestination(box, to)) boxes.push(box);
     }
     return boxes;
   };
@@ -1449,6 +1465,8 @@ export function createNpcController(
         });
       }
     }
+    const robot = companionPosition();
+    const robotBox = robot === null ? [] : withRobotObstacle([], robot, COMPANION_RADIUS);
     const othersOf = (npcId: NpcId): Neighbour[] => {
       const others: Neighbour[] = [];
       for (const [id, point] of snapshot) {
@@ -1512,11 +1530,14 @@ export function createNpcController(
         nextWaypoint.z - here.z,
         othersOf(npc.id).filter((other) => obstructing(here, other)),
       ) as NpcId | null;
+      const robotAhead = robot !== null && nextWaypoint !== undefined &&
+        blockerAhead(here, nextWaypoint.x - here.x, nextWaypoint.z - here.z,
+          [{ id: "agent-companion", x: robot.x, z: robot.z }]) !== null;
       // While an escape leg is pending, the stop check is suspended for
       // this NPC: the escape exists precisely to break a jam, and the
       // rule that triggered it must not freeze it. Hard separation
       // still keeps everyone MIN_SEPARATION apart.
-      const blockedByCapsule = state.escapeIndex < 0 && state.blockedBy !== null;
+      const blockedByCapsule = state.escapeIndex < 0 && (state.blockedBy !== null || robotAhead);
       // Stop, do not creep. Creeping into the person ahead was measured
       // WORSE across a full day (jam episodes 63 -> 155): pressing
       // forward fights the separation constraint every frame and simply
@@ -1528,6 +1549,11 @@ export function createNpcController(
       }
       const before = object.position.clone();
       const advanced = advanceAlongPath(before, state.path, state.segmentIndex, state.distanceInSegment, npc.walkSpeed, movementDt);
+      if (isSpawnBlocked({ x: advanced.position.x, z: advanced.position.z, radius: NPC_DEFAULT_RADIUS }, robotBox)) {
+        state.velocity = { x: 0, z: 0 };
+        walkFrames.push({ npc, before, movementDt });
+        continue;
+      }
       state.segmentIndex = advanced.segmentIndex;
       state.distanceInSegment = advanced.distanceInSegment;
       object.position.copy(advanced.position);

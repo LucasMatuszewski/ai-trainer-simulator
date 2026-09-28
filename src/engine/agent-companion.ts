@@ -8,7 +8,7 @@
  * assuming a fixed cast - every one of them covered by tests encoding that
  * assumption. Injecting a runtime-created, externally-driven character into
  * it would touch all of them. Instead this composes the pure functions those
- * systems are built from: planNpcPath, advanceAlongPath, updateWalkCycle,
+ * systems are built from: planRobotPath, advanceAlongPath, updateWalkCycle,
  * createNpcMesh, and the shared bubble layer.
  *
  * What we give up: the companion has no schedule, joins no chatter pairing,
@@ -19,10 +19,10 @@
 
 import * as THREE from "three";
 import { advanceAlongPath } from "./npc-controller";
-import { planNpcPath } from "./npc-path";
+import { planRobotPath, traceRobotStep } from "../webmcp/robot-collision";
 import { createNpcMesh } from "./npc-mesh";
 import { updateWalkCycle, DEFAULT_WALK_SPEED_MPS, type WalkCycleState } from "./npc-walk-cycle";
-import { applyWithCollision, type AABB, type XZ } from "./collision";
+import { type AABB, type XZ } from "./collision";
 import type { Waypoint } from "../content/corridor-waypoints";
 
 /** Bubble text cap. The layer is one line of DOM text; longer strings
@@ -429,7 +429,9 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
           destination.z < deps.bounds.minZ + clearance || destination.z > deps.bounds.maxZ - clearance) continue;
       if (obstacles.some((o) => destination.x >= o.minX && destination.x <= o.maxX &&
           destination.z >= o.minZ && destination.z <= o.maxZ)) continue;
-      const planned = planNpcPath(position, destination, deps.waypoints, deps.edges, obstacles);
+      const planned = planRobotPath(
+        position, destination, deps.waypoints, deps.edges, deps.obstacles, clearance,
+      );
       if (planned !== null) return planned;
     }
     }
@@ -531,7 +533,10 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       const destination = new THREE.Vector3(resolved.target.position.x, 0, resolved.target.position.z);
       const planned = resolved.target.kind === "npc"
         ? planApproach(resolved.target.position, NPC_CONVERSATION_DISTANCE)
-        : planNpcPath(position, destination, deps.waypoints, deps.edges, deps.obstacles);
+        : planRobotPath(
+            position, destination, deps.waypoints, deps.edges, deps.obstacles,
+            COMPANION_RADIUS + 0.001,
+          );
       if (planned === null) {
         return {
           ok: false,
@@ -575,16 +580,25 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       const before = { x: position.x, z: position.z };
       // Resolve the destination against collision FIRST, so the reported
       // distance is honest, then WALK there rather than jumping.
-      const after = applyWithCollision(
+      // WS9a: trace the step as collision-tested axis legs so a clear
+      // endpoint cannot tunnel through a narrow obstacle (applyWithCollision
+      // only ever checked the step's end).
+      const stepPoints = traceRobotStep(
         before,
-        COMPANION_RADIUS,
         Math.sin(heading) * distance,
         Math.cos(heading) * distance,
+        COMPANION_RADIUS,
         deps.bounds,
         deps.obstacles,
       );
-
-      const moved = Math.hypot(after.x - before.x, after.z - before.z);
+      const after = stepPoints[stepPoints.length - 1]!;
+      const moved = stepPoints
+        .slice(1)
+        .reduce(
+          (sum, end, index) =>
+            sum + Math.hypot(end.x - stepPoints[index]!.x, end.z - stepPoints[index]!.z),
+          0,
+        );
 
       // A step is a short WALK, not a displacement. Setting the destination
       // as a two-point path hands it to the same per-frame advance and walk
@@ -593,7 +607,11 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       // first - teleported it (Lucas: "works like a teleport or walks crazy
       // fast"), because the whole distance landed in a single frame.
       if (moved > 0.01) {
-        path = [position.clone(), new THREE.Vector3(after.x, position.y, after.z)];
+        // A step is a short WALK, not a displacement: hand the traced legs
+        // to the same per-frame advance and walk cycle everything else
+        // uses, so the robot covers the ground at 1.2 m/s and follows the
+        // collision-safe polyline instead of cutting through furniture.
+        path = stepPoints.map((p) => new THREE.Vector3(p.x, position.y, p.z));
         segmentIndex = 0;
         distanceInSegment = 0;
         movingTo = null;
