@@ -71,6 +71,35 @@ import { planWalkToFace } from "./engine/walk-to-face";
 import { WORLD_BOUNDS, WORLD_COLLISION_WALLS } from "./content/world-layout";
 import { GAME_VERSION } from "./version";
 
+// ---------------------------------------------------------------
+// Jev NPC-steering extension point (ADR-0009 section 3.8 / section 10, WS0 seam)
+//
+// THE hook holder later Jev waves populate to steer NPC decisions:
+// pickMorningGreeting, pickEveningGoodbye, pickChatterPair,
+// pickChatterStarter, pickChatterExchange, pickRandomDestination.
+// Import it from here (or from ./engine/npc-controller, its home) and
+// assign members:
+//
+//   import { jevDecisionHooks } from "../main";
+//   jevDecisionHooks.pickMorningGreeting = (npcId) => ...;
+//
+// Unset members fall back to the legacy pickers (pre-bound per
+// controller in createDefaultDecisionHooks), so an unconfigured game
+// plays exactly like the pre-seam build. The controller reads the
+// holder live on every decision, so hooks may be installed or removed
+// at any time. NOTE: createNpcController itself is constructed inside
+// buildOfficeScene (src/engine/scene.ts); the controller resolves
+// options.hooks -> this holder -> legacy itself, so no constructor
+// wiring is needed here. The sixth surface, pickRandomDestination, is
+// wired in src/game/events.ts against the same holder with a
+// presence-first check (a steered `null` = "stay at desk" is a
+// decision, not an absent hook). Hook implementations must not throw
+// (frame-loop invariant); throw containment + fallback wrapping and
+// load/reset holder lifecycle are owned by the WS1+ wrapper layer
+// (ADR-0009 D-47/D-58).
+// ---------------------------------------------------------------
+export { jevDecisionHooks } from "./engine/npc-controller";
+
 type Screen = "title" | "create" | "office" | "summary" | "minigame" | "gameover";
 
 const uiRoot = document.getElementById("ui-root")!;

@@ -6,7 +6,6 @@ import {
 } from "../content/corridor-waypoints";
 import { BUREK_LINES } from "../content/dog-dialogues";
 import { LUNCH_CHATTER } from "../content/lunch-dialogues";
-import { OFFICE_CHATTER } from "../content/office-chatter";
 import {
   KITCHEN_STOP_DWELL,
   LUNCH_STAGGER_OFFSET,
@@ -14,6 +13,7 @@ import {
   NPC_SCHEDULES,
   OFFICE_DOOR,
   pickKitchenSequence,
+  pickRandomDestination,
   planMorningArrivals,
   DEPARTURE_FIRST_AT_S,
   DEPARTURE_SPREAD_S,
@@ -27,8 +27,10 @@ import {
 } from "../content/npc-schedule";
 import { pickMorningGreeting } from "../content/morning-greetings";
 import { pickEveningGoodbye } from "../content/evening-goodbyes";
+import { OFFICE_CHATTER, type ChatterExchange } from "../content/office-chatter";
 import type { AABB } from "./collision";
 import type { NPC, NpcId } from "../types";
+import type { DecisionHooks } from "../jev/contracts";
 import { createBubbleSystem, pickLine } from "./bubbles";
 import {
   CHATTER_RADIUS,
@@ -42,6 +44,7 @@ import {
   pickPair,
   pickStarter,
   roomAt,
+  type ChatterPair,
   type RoomId,
 } from "./chatter";
 import {
@@ -396,6 +399,52 @@ interface ActiveConversation {
   starterAt: number;
 }
 
+// ── WS0 seam: DecisionHooks extension point (ADR-0009 §3.8/§10) ──────
+// THE extension point later Jev waves populate to steer NPC decisions
+// (morning greeting, evening goodbye, chatter pair/starter/exchange,
+// random destination). main.ts re-exports this holder; the controller
+// below reads it LIVE on every decision, so a wave can install or
+// remove a hook at any time without touching this file again. Members
+// left unset fall back to the legacy pickers — an unconfigured game
+// plays byte-for-byte like the pre-seam build (TAC-01).
+//
+// Invariants (judge review, WS0): (1) hook implementations must not
+// throw — these resolvers run inside the frame loop; throw containment
+// and fallback wrapping are owned by the WS1+ wrapper layer (ADR-0009
+// D-47/D-58). (2) The holder lives for the page session; save
+// load/reset must clear or reseed installed hooks alongside the game
+// state reset (D-58 generation rules) — the WS1 wave owns that wiring.
+export const jevDecisionHooks: DecisionHooks = {};
+
+export interface DecisionHookDeps {
+  /** The rng the hooks' legacy defaults consume (the controller's shared stream). */
+  rng: () => number;
+  /** Day source for the legacy destination roll (mirrors events.ts). */
+  getDay: () => number;
+}
+
+/**
+ * The pre-bound LEGACY defaults for every DecisionHooks member. Each
+ * member is the exact function call the pre-seam call site made, bound
+ * to the given rng/day sources — so when these defaults run, randomness
+ * is consumed at the same points and in the same order as before the
+ * seam existed. Tests build these with a seeded rng and compare them
+ * against the raw legacy pickers (fallback equivalence, TAC-01); the
+ * events.ts destination path can use `pickRandomDestination` from the
+ * result as its drop-in fallback when it grows its wrapper.
+ */
+export function createDefaultDecisionHooks(deps: DecisionHookDeps): Required<DecisionHooks> {
+  return {
+    pickMorningGreeting: (npcId) => pickMorningGreeting(npcId, deps.rng),
+    pickEveningGoodbye: (npcId) => pickEveningGoodbye(npcId, deps.rng),
+    pickChatterPair: (pairs) => pickPair(pairs, deps.rng),
+    pickChatterStarter: (a, b) => pickStarter(a, b, deps.rng),
+    pickChatterExchange: (pool, starterId) => pickExchange(pool, deps.rng, starterId),
+    pickRandomDestination: (npcId, period) =>
+      pickRandomDestination(npcId, deps.rng, deps.getDay(), period),
+  };
+}
+
 export interface NpcControllerOptions {
   /** C-51: run the staggered morning arrival (early birds at their
    *  desks, everyone else walking in through the door over the
@@ -413,6 +462,16 @@ export interface NpcControllerOptions {
   playSfx?: (id: "sfx_photocopier") => void;
   /** C-64: explicit printer host for isolated controller tests. */
   printerObject?: THREE.Object3D;
+  /**
+   * WS0 seam (ADR-0009 §3.8): per-controller DecisionHooks. Members set
+   * here outrank the module-level `jevDecisionHooks` holder; members
+   * left unset on BOTH fall back to the legacy pickers pre-bound to
+   * this controller's rng (see `createDefaultDecisionHooks`), so the
+   * default path consumes the shared rng exactly like the pre-seam
+   * code. The holder is read live on every decision, so hooks can be
+   * installed or removed while the controller runs.
+   */
+  hooks?: DecisionHooks;
 }
 
 export function createNpcController(
@@ -431,6 +490,45 @@ export function createNpcController(
     // browsers use the shared manager; headless runs stay silent.
     if (typeof window !== "undefined") audio().sfx.play(id);
   });
+  // ── WS0 seam: DecisionHooks resolution (ADR-0009 §3.8/§10) ──────────
+  // Every NPC decision surface below resolves through the same three
+  // layers: options.hooks (per-controller) -> the module-level
+  // jevDecisionHooks holder (populated by later Jev waves) -> the
+  // legacy picker pre-bound to THIS controller's rng. The legacy branch
+  // is the same call the pre-seam code made at the same point in the
+  // flow, so the seeded-rng stream is consumed in exactly the same
+  // order and default behavior is unchanged. Both hook layers are read
+  // live per call, so hooks can come and go while the controller runs.
+  // NOTE (WS0): pickRandomDestination has no resolver HERE — its only
+  // live call site is the events dispatcher (src/game/events.ts,
+  // rollRandomNpcDestinations), which now reads the same holder with a
+  // presence-first check and the pre-bound legacy default (a steered
+  // `null` means "stay at desk" and must not fall through).
+  const optionHooks = options.hooks ?? {};
+  const defaultHooks = createDefaultDecisionHooks({ rng, getDay });
+  const pickGreetingFor = (npcId: NpcId): string => {
+    const hook = optionHooks.pickMorningGreeting ?? jevDecisionHooks.pickMorningGreeting;
+    return hook !== undefined ? hook(npcId) : defaultHooks.pickMorningGreeting(npcId);
+  };
+  const pickGoodbyeFor = (npcId: NpcId): string => {
+    const hook = optionHooks.pickEveningGoodbye ?? jevDecisionHooks.pickEveningGoodbye;
+    return hook !== undefined ? hook(npcId) : defaultHooks.pickEveningGoodbye(npcId);
+  };
+  const pickChatterPairFor = (pairs: readonly ChatterPair[]): ChatterPair | null => {
+    const hook = optionHooks.pickChatterPair ?? jevDecisionHooks.pickChatterPair;
+    return hook !== undefined ? hook(pairs) : defaultHooks.pickChatterPair(pairs);
+  };
+  const pickChatterStarterFor = (a: string, b: string): string => {
+    const hook = optionHooks.pickChatterStarter ?? jevDecisionHooks.pickChatterStarter;
+    return hook !== undefined ? hook(a, b) : defaultHooks.pickChatterStarter(a, b);
+  };
+  const pickChatterExchangeFor = (
+    pool: readonly ChatterExchange[],
+    starterId: NpcId,
+  ): ChatterExchange => {
+    const hook = optionHooks.pickChatterExchange ?? jevDecisionHooks.pickChatterExchange;
+    return hook !== undefined ? hook(pool, starterId) : defaultHooks.pickChatterExchange(pool, starterId);
+  };
   const obstacles = getNpcObstacles();
   const edges = buildWaypointEdges(CORRIDOR_WAYPOINTS, obstacles, DEFAULT_MAX_EDGE_LENGTH);
   const runtime = new Map<NpcId, NpcRuntime>();
@@ -1082,7 +1180,7 @@ export function createNpcController(
     // silently instead of standing around as a phantom "at-desk".
     if (object.userData.npcState === "walking") {
       object.visible = true;
-      bubbleSystem?.show(object.position, pickEveningGoodbye(npcId, rng));
+      bubbleSystem?.show(object.position, pickGoodbyeFor(npcId));
       markSpoke(npcId, controllerElapsed);
     } else {
       object.visible = false;
@@ -1166,7 +1264,7 @@ export function createNpcController(
       if (inOffice || waitedLong) {
         pendingGreetings.delete(npcId);
         greetWaitSince.delete(npcId);
-        bubbleSystem?.show(object.position, pickMorningGreeting(npcId, rng));
+        bubbleSystem?.show(object.position, pickGreetingFor(npcId));
         markSpoke(npcId, controllerElapsed);
       }
     }
@@ -1180,7 +1278,7 @@ export function createNpcController(
       const npcId = alreadyInGreetOrder[morningGreetIndex] as NpcId;
       const object = npcObjects[npcId];
       if (object && object.visible && object.userData.npcState !== "gone-home") {
-        bubbleSystem?.show(object.position, pickMorningGreeting(npcId, rng));
+        bubbleSystem?.show(object.position, pickGreetingFor(npcId));
         markSpoke(npcId, controllerElapsed);
         morningGreeted.add(npcId);
       }
@@ -1764,7 +1862,7 @@ export function createNpcController(
           now: controllerElapsed,
           activeRooms,
         });
-        const pair = pickPair(pairs, rng);
+        const pair = pickChatterPairFor(pairs);
         const first = pair === null ? undefined : npcObjects[pair.a as NpcId];
         const second = pair === null ? undefined : npcObjects[pair.b as NpcId];
         // candidatePairs already enforces CHATTER_RADIUS on every pair;
@@ -1775,13 +1873,16 @@ export function createNpcController(
           // C-46: the STARTER is a chattiness-weighted coin flip
           // inside the pair - this is what stops "only one person
           // talks all the time".
-          const starterId = pickStarter(pair.a, pair.b, rng) as NpcId;
+          const starterId = pickChatterStarterFor(pair.a, pair.b) as NpcId;
           const responderId = (starterId === pair.a ? pair.b : pair.a) as NpcId;
           // C-46 (Lucas): lunch lines are TIME-gated, not
           // location-gated - during the lunch window every human pair
           // sounds like lunch, wherever they stand. The starter's
-          // topic affinities filter the pool (C-46 amendment).
-          const exchange = pickExchange(isLunchActive() ? LUNCH_CHATTER : OFFICE_CHATTER, rng, starterId);
+          // topic affinities filter the pool (C-46 amendment). The
+          // pool selection stays at the call site (the hook receives
+          // the active pool as its candidate list, WS0 seam).
+          const chatterPool = isLunchActive() ? LUNCH_CHATTER : OFFICE_CHATTER;
+          const exchange = pickChatterExchangeFor(chatterPool, starterId);
           // Burek cannot do small talk: as a starter he just barks
           // (one turn); as a responder he barks back.
           const starterLine = starterId === "burek"

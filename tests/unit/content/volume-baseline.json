@@ -1,0 +1,48 @@
+{
+  "generatedBy": "node scripts/content-volume.mjs (imports the real content modules via Vite SSR)",
+  "frozenAgainstCommit": "42000fd",
+  "sourceCommit": "d380988",
+  "normalization": "trim + collapse whitespace + lowercase; per-category distinct sets",
+  "scopeNotes": [
+    "dialogueNodes/dialogueOptions come from DIALOGUES (dialogues.ts, which already merges dialogues-more.ts and dialogues-renata.ts).",
+    "chatter pools are OFFICE_CHATTER + LUNCH_CHATTER (starters and responses counted separately).",
+    "greetingLines cover GREETINGS_BY_NPC + GREETINGS_BY_CATEGORY (the one-line FALLBACK pool is not exported and not counted).",
+    "goodbyeLines cover GOODBYE_BY_NPC (the private GENERIC/DOG pools are not exported and not counted).",
+    "Node/link/button copy is UI affordance text, not authored dialogue, and is not counted."
+  ],
+  "categories": {
+    "dialogueNodes": {
+      "raw": 220,
+      "distinct": 220
+    },
+    "dialogueOptions": {
+      "raw": 209,
+      "distinct": 182
+    },
+    "chatterStarters": {
+      "raw": 91,
+      "distinct": 91
+    },
+    "chatterResponses": {
+      "raw": 408,
+      "distinct": 408
+    },
+    "greetingLines": {
+      "raw": 108,
+      "distinct": 108
+    },
+    "goodbyeLines": {
+      "raw": 42,
+      "distinct": 42
+    },
+    "burekLines": {
+      "raw": 18,
+      "distinct": 18
+    }
+  },
+  "totals": {
+    "raw": 1096,
+    "distinctNormalized": 1069,
+    "distinctNormalizedGlobal": 1069
+  }
+}
