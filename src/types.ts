@@ -188,7 +188,7 @@ export interface PlayerPose {
 }
 
 export interface GameState {
-  saveVersion: 1;
+  saveVersion: 1 | 2;
   cash: number;
   day: number;
   timeOfDay: TimeOfDay;
@@ -212,6 +212,23 @@ export interface GameState {
    * (reset) has no pose, so New Game always spawns at the office door.
    */
   playerPose?: PlayerPose;
+  /**
+   * Save schema v2 (ADR-0009 D-50/D-51): social model, persisted dialogue
+   * memory (Sets as sorted arrays at the API boundary), world diary,
+   * equipment fault states, mission completion markers. Populated by
+   * `migrate()` on load and by `freshV2State()` on new games; absent
+   * (undefined) only in a raw v1 save before migration.
+   */
+  social?: {
+    relationships: Record<string, number>;
+    mood: Record<string, { valence: number; energy: number }>;
+    profilesVersion: number;
+    touched?: string[];
+  };
+  npcMemory?: Record<string, unknown>;
+  worldDiary?: string[];
+  equipment?: Record<string, "ok" | "faulted">;
+  missionCompletions?: string[];
 }
 
 export type Action =

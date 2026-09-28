@@ -9,6 +9,7 @@
 import type { Action, GameState } from "../types";
 import { initialGameState } from "./initial";
 import { PERIOD_ORDER } from "./pacing";
+import { freshV2State, migrate, writeV1Backup } from "./migrate";
 
 type Listener = (state: Readonly<GameState>) => void;
 
@@ -59,6 +60,11 @@ class GameStore {
 
   save(): void {
     try {
+      // D-51: before the first v2 write overwrites the slot, keep the
+      // untouched v1 blob under the backup key (branch switches then
+      // degrade instead of losing the player's v1 save).
+      const existing = localStorage.getItem(this.storageKey);
+      if (existing) writeV1Backup(existing);
       localStorage.setItem(this.storageKey, JSON.stringify(this.state));
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -69,19 +75,24 @@ class GameStore {
   load(): GameState {
     try {
       const raw = localStorage.getItem(this.storageKey);
-      if (!raw) return initialGameState();
-      const parsed = JSON.parse(raw) as GameState;
-      if (parsed.saveVersion !== 1) return initialGameState();
-      return parsed;
+      if (!raw) return freshV2State();
+      const parsed = JSON.parse(raw) as { saveVersion?: number };
+      // D-51 migration chain: v1 -> v2 (player data preserved, missing
+      // social pairs seeded); malformed or future versions become a
+      // fresh v2 game rather than throwing or silently wiping.
+      if (parsed.saveVersion === 1 || parsed.saveVersion === 2) {
+        return migrate(parsed);
+      }
+      return freshV2State();
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Failed to load save, using initial state:", err);
-      return initialGameState();
+      return freshV2State();
     }
   }
 
   reset(): void {
-    this.state = initialGameState();
+    this.state = freshV2State();
     try {
       localStorage.removeItem(this.storageKey);
     } catch {
