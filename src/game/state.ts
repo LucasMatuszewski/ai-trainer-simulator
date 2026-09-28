@@ -7,9 +7,20 @@
  */
 
 import type { Action, GameState } from "../types";
-import { initialGameState } from "./initial";
 import { PERIOD_ORDER } from "./pacing";
-import { freshV2State, migrate, writeV1Backup } from "./migrate";
+import {
+  freshV2State,
+  migrate,
+  writeV1Backup,
+  WORLD_DIARY_LIMIT,
+} from "./migrate";
+import {
+  applyReaction,
+  pairKey,
+  regressNightly,
+  type SocialState,
+} from "./social";
+import { ARCHETYPE_SEEDS } from "../content/npc-profiles";
 
 type Listener = (state: Readonly<GameState>) => void;
 
@@ -182,7 +193,55 @@ export function reduce(state: GameState, action: Action): GameState {
     case "load":
       return action.state;
     case "reset":
-      return initialGameState();
+      // D-51: New Game starts on the CURRENT schema. The UI's reset
+      // path (character creation) dispatches this action, so it must
+      // produce a v2 state — initialGameState() stays v1 as the
+      // migration source of truth, never as a live state.
+      return freshV2State();
+    case "apply-social-reaction": {
+      // D-50: one aggregated, clamped transaction (bucket delta +
+      // optional authored delta + capped witness deltas). The social
+      // block is lazy-seeded for states predating the v2 wiring.
+      const social: SocialState =
+        state.social ?? freshV2State().social ?? {
+          relationships: {},
+          mood: {},
+          profilesVersion: 0,
+        };
+      const relationships = applyReaction(
+        social.relationships,
+        action.pair,
+        action.bucket,
+        {
+          witnesses: action.witnesses,
+          authoredRelDelta: action.authoredRelDelta,
+        },
+      );
+      const touched = [
+        ...new Set([...(social.touched ?? []), pairKey(action.pair[0], action.pair[1])]),
+      ];
+      return { ...state, social: { ...social, relationships, touched } };
+    }
+    case "regress-social-nightly": {
+      if (!state.social) return state;
+      return {
+        ...state,
+        social: {
+          ...state.social,
+          relationships: regressNightly(state.social.relationships, ARCHETYPE_SEEDS, 0.1),
+        },
+      };
+    }
+    case "append-diary": {
+      const diary = [...(state.worldDiary ?? []), action.entry].slice(-WORLD_DIARY_LIMIT);
+      return { ...state, worldDiary: diary };
+    }
+    case "set-equipment-fault": {
+      const equipment = { ...(state.equipment ?? {}) };
+      if (action.faulted) equipment[action.id] = "faulted";
+      else delete equipment[action.id];
+      return { ...state, equipment };
+    }
   }
 }
 

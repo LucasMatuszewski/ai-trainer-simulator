@@ -65,7 +65,8 @@ describe("WebMCP tools", () => {
 
     expect(result).toMatchObject({
       ok: true,
-      data: { saveVersion: 1, day: 1, timeOfDay: "morning" },
+      // D-51: New Game (reset) starts on the current schema, v2.
+      data: { saveVersion: 2, day: 1, timeOfDay: "morning" },
     });
     if (result.ok) expect(result.data).not.toBe(game.get());
   });

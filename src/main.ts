@@ -40,6 +40,8 @@ import { CORRIDOR_WAYPOINTS, buildWaypointEdges, DEFAULT_MAX_EDGE_LENGTH } from 
 import { WORLD_ROOMS } from "./content/world-layout";
 import { NPCS, OBSTACLES } from "./content/npcs";
 import { getNpcObstacles } from "./engine/npc-spawn-validator";
+import { createGreetingWrapper, type GreetingWrapperHandle } from "./jev/greeting-wrapper";
+import { jevDecisionHooks } from "./engine/npc-controller";
 import { approachSpotFor } from "./content/npc-approach";
 import { getActiveQuest } from "./content/quests";
 import type { GameState, NPC, NpcId } from "./types";
@@ -183,6 +185,12 @@ function toggleFullscreen(): void {
 }
 let endDayModal: EndDayModalHandle | null = null;
 let unsubscribeGame: (() => void) | null = null;
+// WS1: the steered morning-greeting wrapper. Constructed once; it is a
+// no-op while no Jev access is configured (invisible fallback, AC-10)
+// and pre-decides greetings so the synchronous WS0 hook returns the
+// stored line instantly (D-48 pre-decision).
+let greetingWrapper: GreetingWrapperHandle | null = null;
+let lastGreetingPrefetchDay = 0;
 let focusedNpcId: NpcId | null = null;
 // C-54: who the currently-open player dialogue is with (null when
 // none). The dialogue controller is created once, so its close
@@ -419,6 +427,15 @@ function startOffice(playIntro = false): void {
     // bubbles project with it every frame - the sprite renderer ignored
     // cameras, so nothing needed this wiring before.
     built.npcController.setBubblesCamera(engine.camera);
+    // WS1: install the greeting steering (no-op while unconfigured).
+    greetingWrapper = createGreetingWrapper({
+      hooks: jevDecisionHooks,
+      getGameState: () => {
+        const g = game.get();
+        return { day: g.day, npcRelationships: g.npcRelationships };
+      },
+    });
+    greetingWrapper.install();
     // L-2026-08-30-01: register the NPC controller with the events
     // dispatcher so every period transition can roll a random
     // destination (kitchen, toilet, meeting, training) and install
@@ -810,6 +827,14 @@ function startOffice(playIntro = false): void {
     prevCash = cur.cash;
     prevPatience = cur.stats.patience;
     prevCredibility = cur.stats.credibility;
+    // WS1: pre-decide the morning greetings once per in-game day (D-48).
+    // Fire-and-forget: the wrapper stores answers or silently falls back.
+    if (greetingWrapper && cur.day !== lastGreetingPrefetchDay) {
+      lastGreetingPrefetchDay = cur.day;
+      void greetingWrapper
+        .prefetch(NPCS.map((npc) => npc.id))
+        .catch(() => undefined);
+    }
   });
   if (hud) renderHud(hud, game.get());
 
@@ -1707,6 +1732,10 @@ declare global {
         world: { x: number; y: number; z: number } | null;
         childCount: number;
       } | null;
+      /** WS9a: the static obstacle AABBs (furniture + walls) the walking
+       *  actors route with, so an e2e can assert no sampled position
+       *  sits inside one. */
+      inspectObstacles: () => Array<{ minX: number; maxX: number; minZ: number; maxZ: number }>;
     };
   }
 }
@@ -1815,6 +1844,7 @@ window.__aitrainer = {
     });
     return out;
   },
+  inspectObstacles: () => getNpcObstacles().map((b) => ({ ...b })),
   inspectRobots: () => sceneObjects?.robotFleet.inspect() ?? null,
   toggleFps: (): boolean => {
     fpsMeter?.toggle();
