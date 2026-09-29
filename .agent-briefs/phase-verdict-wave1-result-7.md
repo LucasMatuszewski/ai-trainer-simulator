@@ -1,0 +1,10 @@
+# Wave 1 phase QA verdict (current HEAD `349e540`)
+
+Checks: `pnpm typecheck` passed; `pnpm test` passed (964/964); `pnpm test:e2e --project=chromium tests/e2e/ws9a-robot-collision.spec.ts` passed (2/2, 5.9m). The dev server served `v2026.09.28-07`, matching `src/version.ts`. At HEAD, `planDodgeAround` checks both radius-inflated legs against every furniture box; the E2E reroute prover is traversal-only, rejects sampled jumps over 2.5 m, uses `test.setTimeout(600_000)`, and sweeps eight period windows. The previous stationary blocker at robot `(0,0)`, NPC `(0,1.2)`, room `(0,3)` now reaches the room in a focused 0.1 s/frame probe.
+
+## Findings
+
+- **BLOCKER: a stationary NPC occupying a room target can leave the companion walking indefinitely.** `src/engine/agent-companion.ts:924-942,956-978`: every second stall attempts a full replan with the person as an obstacle, but the room destination is inside that obstacle, so `planRobotPath` returns `null`. There is no reachable-nearby fallback or failed-move exit. Focused HEAD probe: robot spawn `(0,0)`, NPC `(1,0)`, room centre `(1,0)`, no furniture. After 500 updates of 0.1 s each, the robot was at `(0.545,-0.101)` with `walking: true` and `movingTo: "room"`. The ordinary `moveTo` call had accepted the trip; an NPC stationed at the room centre can keep it unresolved.
+- **MAJOR: exhausted join nudge still creates an overlapping robot.** `src/engine/agent-companion.ts:553-580`: the eight-candidate search has no failure branch. A focused HEAD probe placed one NPC at the fixed spawn and eight at the nudge candidates. `join` returned `{ ok: true }` while the robot stayed exactly at the spawn, 0 m from that NPC. This breaks the hard robot/NPC overlap invariant under a crowded doorway. A similar bounded nudge in `src/engine/npc-controller.ts:701-721` also returns the original blocked position if all candidates fail; schedule settling and morning arrival still proceed at lines 729-745 and 1285-1294.
+
+PHASE-VERDICT: FAIL — occupied destinations can stall companion trips indefinitely, and exhausted placement searches can still create robot/NPC overlap.

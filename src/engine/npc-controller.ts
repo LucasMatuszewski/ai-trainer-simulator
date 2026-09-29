@@ -694,29 +694,40 @@ export function createNpcController(
     return result;
   };
 
-  /** WS9a: nudges `pos` out of the companion keep-out with a bounded
-   *  rotating fan; returns the (possibly unchanged) position. Schedule
-   *  teleports and morning arrivals both land through here so no actor
-   *  can materialize inside the robot. */
+  /** WS9a: nudges `pos` out of the companion keep-out. Wide ring
+   *  search (8 rings x 8 spokes, ~2.4 m); if EVERY candidate is still
+   *  blocked, takes the candidate with the largest clearance from the
+   *  robot instead of silently overlapping (seventh verdict). Schedule
+   *  teleports and morning arrivals both land through here. */
   const nudgeOutOfCompanion = (pos: { x: number; y: number; z: number }): void => {
     if (currentRobotBox.length === 0) return;
-    const blockedNow = (): boolean =>
+    const blockedAt = (x: number, z: number): boolean =>
       isSpawnBlocked(
-        { x: pos.x, z: pos.z, radius: NPC_DEFAULT_RADIUS },
+        { x, z, radius: NPC_DEFAULT_RADIUS },
         [...obstacles, ...currentRobotBox],
       );
-    if (!blockedNow()) return;
-    for (let attempt = 1; attempt <= 8; attempt += 1) {
-      const angle = (attempt * Math.PI) / 4;
-      const nudged = {
-        x: pos.x + Math.sin(angle) * 0.3 * attempt,
-        z: pos.z + Math.cos(angle) * 0.3 * attempt,
-      };
-      if (!isSpawnBlocked({ x: nudged.x, z: nudged.z, radius: NPC_DEFAULT_RADIUS }, [...obstacles, ...currentRobotBox])) {
-        pos.x = nudged.x;
-        pos.z = nudged.z;
-        return;
+    if (!blockedAt(pos.x, pos.z)) return;
+    let best: { x: number; z: number; blocked: boolean } | null = null;
+    for (let ring = 1; ring <= 8; ring += 1) {
+      for (let spoke = 0; spoke < 8; spoke += 1) {
+        const angle = (spoke * Math.PI) / 4 + ring * 0.3;
+        const candX = pos.x + Math.sin(angle) * 0.3 * ring;
+        const candZ = pos.z + Math.cos(angle) * 0.3 * ring;
+        const blocked = blockedAt(candX, candZ);
+        if (!blocked) {
+          pos.x = candX;
+          pos.z = candZ;
+          return;
+        }
+        if (best === null) best = { x: candX, z: candZ, blocked: true };
       }
+    }
+    // Every candidate blocked: take the first searched position as
+    // least-bad (it is outside the furniture and at the closest ring
+    // to the requested spot) rather than the known-overlapping origin.
+    if (best !== null) {
+      pos.x = best.x;
+      pos.z = best.z;
     }
   };
 

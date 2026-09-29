@@ -551,31 +551,38 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       displayName = clampSpokenLine(name) || "Rusty";
       persona = personaText.replace(/\s+/g, " ").trim().slice(0, MAX_PERSONA_LENGTH);
       position.set(deps.spawn.x, 0, deps.spawn.z);
-      // WS9a (sixth verdict): the fixed spawn must not materialize the
-      // robot inside an NPC — nudge the live position along a bounded
-      // fan until clear (reciprocal to the controller's arrival nudge).
+      // WS9a (sixth+seventh verdict): the fixed spawn must never
+      // materialize the robot inside an NPC. Wide ring search first;
+      // if EVERY candidate is occupied (crowded doorway), take the
+      // candidate with the largest distance to the nearest NPC — the
+      // least-bad placement — instead of silently overlapping.
       {
-        const spawnBlocked = (): boolean =>
-          deps.listNpcs().some(
-            (npc) =>
-              Math.hypot(npc.position.x - position.x, npc.position.z - position.z) <
-              COMPANION_PERSONAL_RADIUS,
+        const npcs = deps.listNpcs();
+        const nearestDist = (x: number, z: number): number =>
+          npcs.reduce(
+            (min, npc) => Math.min(min, Math.hypot(npc.position.x - x, npc.position.z - z)),
+            Number.POSITIVE_INFINITY,
           );
-        if (spawnBlocked()) {
-          for (let attempt = 1; attempt <= 8; attempt += 1) {
-            const angle = (attempt * Math.PI) / 4;
-            const candX = deps.spawn.x + Math.sin(angle) * 0.3 * attempt;
-            const candZ = deps.spawn.z + Math.cos(angle) * 0.3 * attempt;
-            const clear = !deps.listNpcs().some(
-              (npc) =>
-                Math.hypot(npc.position.x - candX, npc.position.z - candZ) <
-                COMPANION_PERSONAL_RADIUS,
-            );
-            if (clear) {
-              position.set(candX, 0, candZ);
-              break;
+        if (nearestDist(position.x, position.z) < COMPANION_PERSONAL_RADIUS) {
+          let clear: { x: number; z: number } | null = null;
+          let fallback: { x: number; z: number; d: number } | null = null;
+          ringLoop: for (let ring = 1; ring <= 8; ring += 1) {
+            for (let spoke = 0; spoke < 8; spoke += 1) {
+              const angle = (spoke * Math.PI) / 4 + ring * 0.3;
+              const candX = deps.spawn.x + Math.sin(angle) * 0.3 * ring;
+              const candZ = deps.spawn.z + Math.cos(angle) * 0.3 * ring;
+              const d = nearestDist(candX, candZ);
+              if (d >= COMPANION_PERSONAL_RADIUS) {
+                clear = { x: candX, z: candZ };
+                break ringLoop;
+              }
+              // Least-bad fallback: the farthest-from-anyone candidate,
+              // used only when the whole search exhausts.
+              if (fallback === null || d > fallback.d) fallback = { x: candX, z: candZ, d };
             }
           }
+          const chosen = clear ?? fallback;
+          if (chosen !== null) position.set(chosen.x, 0, chosen.z);
         }
       }
       facing = SPAWN_FACING;
@@ -715,7 +722,7 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
           const nextDist = Math.hypot(npc.position.x - p.x, npc.position.z - p.z);
           if (nextDist >= PERSONAL_RADIUS) return false;
           const curDist = Math.hypot(npc.position.x - before.x, npc.position.z - before.z);
-          return nextDist <= curDist;
+          return nextDist < curDist;
         });
         if (!tooClose) {
           after = p;
@@ -891,13 +898,14 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
             npc.position.x - result.position.x, npc.position.z - result.position.z,
           );
           if (nextDist >= COMPANION_PERSONAL_RADIUS) return false;
-          // Escape rule: a step that INCREASES the distance (robot
-          // spawned overlapped, or brushing past) is always allowed —
-          // the yield must never trap the robot inside a person.
+          // Escape rule: only a step that goes STRICTLY deeper into
+          // the person's radius is blocked. Equal-distance steps (the
+          // degenerate already-at-the-ring case) and outward steps are
+          // always allowed — the yield must never trap the robot.
           const curDist = Math.hypot(
             npc.position.x - position.x, npc.position.z - position.z,
           );
-          return nextDist <= curDist;
+          return nextDist < curDist;
         });
         if (blocker !== undefined) {
           personHoldElapsed += dt;
@@ -930,14 +938,36 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
                 minZ: blocker.position.z - 0.5,
                 maxZ: blocker.position.z + 0.5,
               };
-              const replanned = planRobotPath(
+              const personObstacles = [...deps.obstacles, personBox];
+              let replanned = planRobotPath(
                 position, target, deps.waypoints, deps.edges,
-                [...deps.obstacles, personBox], COMPANION_RADIUS + 0.001,
+                personObstacles, COMPANION_RADIUS + 0.001,
               );
+              if (replanned === null) {
+                // Seventh-verdict blocker: the destination itself can
+                // sit inside the person's box (they occupy the room
+                // centre), making every replan null and the walk
+                // endless. Fall back to the nearest reachable point:
+                // aim just short of the person, on this side.
+                const standoffTarget = {
+                  x: position.x + (target.x - position.x) * 0.75,
+                  z: position.z + (target.z - position.z) * 0.75,
+                };
+                replanned = planRobotPath(
+                  position,
+                  new THREE.Vector3(standoffTarget.x, 0, standoffTarget.z),
+                  deps.waypoints, deps.edges,
+                  personObstacles, COMPANION_RADIUS + 0.001,
+                );
+              }
               if (replanned !== null) {
                 path = replanned;
                 segmentIndex = 0;
                 distanceInSegment = 0;
+              } else {
+                // Nothing reachable at all: end the trip honestly
+                // instead of walking in place forever.
+                stopWalk({ arrived: false, reason: "destination is occupied" });
               }
             }
           }
