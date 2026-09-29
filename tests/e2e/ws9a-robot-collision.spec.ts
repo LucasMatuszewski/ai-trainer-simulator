@@ -147,7 +147,7 @@ function pointToSegmentDist(p: XZ, a: XZ, b: XZ): number {
 }
 
 test("an NPC walking to the kitchen demonstrably reroutes around the robot parked there", async ({ page }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(600_000); // sweep up to 8 period windows + parking drive
   await installHost(page);
   await startGame(page);
 
@@ -216,11 +216,11 @@ test("an NPC walking to the kitchen demonstrably reroutes around the robot parke
     expect(d, `NPC ${npcId} at ${JSON.stringify(pos)} overlaps the robot at ${JSON.stringify(robotPos)}`).toBeGreaterThan(0.3);
   };
   let provers = 0;
-  outer: for (let window = 0; window < 6; window += 1) {
+  outer: for (let window = 0; window < 8; window += 1) {
     await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
     await page.waitForTimeout(400);
     const trajectories = new Map<string, { first: XZ; last: XZ; minRobotDist: number }>();
-    for (let i = 0; i < 70; i += 1) {
+    for (let i = 0; i < 60; i += 1) {
       await page.waitForTimeout(500);
       const data = await page.evaluate(() => ({
         npcs: window.__aitrainer!.inspectNpcs(),
@@ -240,29 +240,29 @@ test("an NPC walking to the kitchen demonstrably reroutes around the robot parke
         }
       }
     }
-    // Rerouting proof (third verdict): an NPC whose STRAIGHT-line path
-    // from first to last observed position would have run through the
-    // robot (< 0.55 m) must have actually stayed >= 0.45 m away. A
-    // walker ending beside the occupied stop qualifies (the segment's
-    // endpoint is the stop). Far-away idlers never enter this branch,
-    // so the test cannot pass vacuously.
+    // Rerouting proof (fourth verdict tightened): only a TRAVERSAL
+    // counts — an NPC observed starting office-side and later
+    // kitchen-side (or the reverse), whose STRAIGHT-line path between
+    // its endpoints would have run through the robot (< 0.55 m), must
+    // have actually stayed >= 0.45 m away. Walking up and standing
+    // beside the robot proves nothing about detours and is not a
+    // prover; far-away idlers never qualify either.
     for (const [npcId, track] of trajectories) {
-      const startDist = Math.hypot(track.first.x - P.x, track.first.z - P.z);
-      if (startDist < 1.0) continue; // materialized beside the robot: no approach to prove
+      const officeSide = (p: XZ): boolean => p.x < 8.5 && p.z > -6.5;
+      const kitchenSide = (p: XZ): boolean => p.x > 9.5;
+      const isTraversal =
+        (officeSide(track.first) && kitchenSide(track.last)) ||
+        (kitchenSide(track.first) && officeSide(track.last));
+      if (!isTraversal) continue;
       const lineThrough = pointToSegmentDist(P, track.first, track.last) < 0.55;
-      const stoodBeside = track.minRobotDist < 0.8; // walked up to the occupied stop
-      if (!lineThrough && !stoodBeside) continue;
+      if (!lineThrough) continue;
       provers += 1;
-      if (lineThrough) {
-        // The avoidance assertion proper: the straight approach ran
-        // through the robot, the actual path did not.
-        expect(
-          track.minRobotDist,
-          `NPC ${npcId}'s straight approach ran through the robot but its actual path got only ${track.minRobotDist.toFixed(2)} m away`,
-        ).toBeGreaterThanOrEqual(0.45);
-      }
+      expect(
+        track.minRobotDist,
+        `NPC ${npcId} traversed office<->kitchen past the robot but its actual path got only ${track.minRobotDist.toFixed(2)} m away`,
+      ).toBeGreaterThanOrEqual(0.45);
       break outer;
     }
   }
-  expect(provers, "no NPC ever approached the occupied coffee stop across six period windows — rerouting was never exercised").toBeGreaterThanOrEqual(1);
+  expect(provers, "no office<->kitchen traversal crossed the robot across six period windows — rerouting was never exercised").toBeGreaterThanOrEqual(1);
 });

@@ -63,6 +63,7 @@ function planDodgeAround(
   segmentIndex: number,
   person: XZ,
   obstacles: ReadonlyArray<AABB>,
+  standoff = DODGE_STANDOFF,
 ): XZ[] | null {
   const target = path !== null && segmentIndex + 1 < path.length
     ? path[path.length - 1]!
@@ -83,21 +84,26 @@ function planDodgeAround(
     pz = -pz;
   }
   const candidates: XZ[] = [
-    { x: person.x + px * DODGE_STANDOFF, z: person.z + pz * DODGE_STANDOFF },
-    { x: person.x - px * DODGE_STANDOFF, z: person.z - pz * DODGE_STANDOFF },
+    { x: person.x + px * standoff, z: person.z + pz * standoff },
+    { x: person.x - px * standoff, z: person.z - pz * standoff },
   ];
-  for (const dodge of candidates) {
-    const clear = !pointInAnyBox(dodge, obstacles);
-    const legClear = !obstacles.some((b) => {
-      // Segment-vs-box: sample the leg coarsely (kitchen-scale rooms).
-      for (let t = 0.1; t < 1; t += 0.1) {
-        const sx = from.x + (dodge.x - from.x) * t;
-        const sz = from.z + (dodge.z - from.z) * t;
-        if (sx >= b.minX && sx <= b.maxX && sz >= b.minZ && sz <= b.maxZ) return true;
+  // Segment-vs-box, sampled coarsely (kitchen-scale rooms).
+  const legBlocked = (a: XZ, b: XZ): boolean =>
+    obstacles.some((box) => {
+      for (let t = 0.05; t <= 1; t += 0.05) {
+        const sx = a.x + (b.x - a.x) * t;
+        const sz = a.z + (b.z - a.z) * t;
+        if (sx >= box.minX && sx <= box.maxX && sz >= box.minZ && sz <= box.maxZ) return true;
       }
       return false;
     });
-    if (clear && legClear) return [dodge, { x: target.x, z: target.z }];
+  for (const dodge of candidates) {
+    // BOTH legs must be furniture-clear: robot→dodge AND dodge→target
+    // (fourth verdict: returning the original destination unchecked let
+    // the post-dodge leg clip straight through a desk).
+    if (!legBlocked(from, dodge) && !legBlocked(dodge, target) && !pointInAnyBox(dodge, obstacles)) {
+      return [dodge, { x: target.x, z: target.z }];
+    }
   }
   return null;
 }
@@ -448,6 +454,9 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
   // WS9a: consecutive seconds the advance has held for a person on the
   // route; past COMPANION_DODGE_AFTER_S the robot dodges around them.
   let personHoldElapsed = 0;
+  // WS9a: dodges that failed to clear the blocker; two in a row
+  // escalate to a full route replan with the person as an obstacle.
+  let personDodgeStalls = 0;
   let retargetElapsed = 0;
 
   function stopWalk(result: { arrived: boolean; reason?: string }): void {
@@ -861,14 +870,45 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
         if (blocker !== undefined) {
           personHoldElapsed += dt;
           const dodgeReady = personHoldElapsed >= COMPANION_DODGE_AFTER_S;
-          const dodge = dodgeReady
-            ? planDodgeAround(position, path, segmentIndex, blocker.position, deps.obstacles)
-            : null;
-          if (dodgeReady && dodge !== null) {
-            path = [position.clone(), ...dodge.map((p) => new THREE.Vector3(p.x, position.y, p.z))];
-            segmentIndex = 0;
-            distanceInSegment = 0;
-            personHoldElapsed = 0;
+          if (dodgeReady) {
+            // Escalating standoff: each stalled dodge stands the next
+            // one further off the person, and after two stalls the
+            // blocker is treated as an obstacle for a FULL route
+            // replan — a person standing on the route can stall a leg
+            // but never the move (fourth-verdict probe: the robot held
+            // at (0,0.72) forever with a person at (0,1.2)).
+            const standoff = DODGE_STANDOFF * (1 + personDodgeStalls * 0.75);
+            const dodge = planDodgeAround(
+              position, path, segmentIndex, blocker.position, deps.obstacles, standoff,
+            );
+            if (dodge !== null) {
+              path = [position.clone(), ...dodge.map((p) => new THREE.Vector3(p.x, position.y, p.z))];
+              segmentIndex = 0;
+              distanceInSegment = 0;
+              personHoldElapsed = 0;
+            } else {
+              personDodgeStalls += 1;
+            }
+            if (personDodgeStalls >= 2) {
+              personDodgeStalls = 0;
+              personHoldElapsed = 0;
+              const target = path![path!.length - 1]!;
+              const personBox: AABB = {
+                minX: blocker.position.x - 0.5,
+                maxX: blocker.position.x + 0.5,
+                minZ: blocker.position.z - 0.5,
+                maxZ: blocker.position.z + 0.5,
+              };
+              const replanned = planRobotPath(
+                position, target, deps.waypoints, deps.edges,
+                [...deps.obstacles, personBox], COMPANION_RADIUS + 0.001,
+              );
+              if (replanned !== null) {
+                path = replanned;
+                segmentIndex = 0;
+                distanceInSegment = 0;
+              }
+            }
           }
           movedThisFrame = 0;
         } else {
