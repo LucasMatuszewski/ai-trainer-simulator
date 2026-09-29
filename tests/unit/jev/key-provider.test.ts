@@ -154,7 +154,7 @@ describe("key provider — denied / missing storage degrades to memory-only", ()
 describe("key provider — the BYO test call", () => {
   it("does one minimal judgment against the OpenRouter origin and reports connected+model", async () => {
     const calls = stubFetch(async () =>
-      makeResponse(200, { model: "typesafe/jev-1.13", answers: [] }),
+      makeResponse(200, { model: "typesafe/jev-1.13", answers: {} }),
     );
     const provider = createKeyProvider();
     const result = await provider.testKey("sk-or-v1-good");
@@ -193,7 +193,7 @@ describe("key provider — the BYO test call", () => {
   });
 
   it("the test call never mutates the stored key state", async () => {
-    stubFetch(async () => makeResponse(200, { answers: [] }));
+    stubFetch(async () => makeResponse(200, { answers: {} }));
     const provider = createKeyProvider();
     await provider.testKey("sk-or-v1-something");
     expect(localStorage.getItem(JEV_KEY_STORAGE)).toBeNull();

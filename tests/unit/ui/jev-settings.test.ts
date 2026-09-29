@@ -60,7 +60,7 @@ describe("Jev settings section (Flow D, AC-13)", () => {
   });
 
   it("shows the connected status and stores the key after a successful test", async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ answers: [] }), { status: 200 }));
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ answers: {} }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     const provider = createKeyProvider({ storage: okStorage(), fetchFn: fetchMock as unknown as typeof fetch });
     handle = mountJevSettings(host, { provider });
@@ -93,7 +93,7 @@ describe("Jev settings section (Flow D, AC-13)", () => {
   });
 
   it("clear removes the stored key and flips the mode back", async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ answers: [] }), { status: 200 }));
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ answers: {} }), { status: 200 }));
     const storage = okStorage();
     const provider = createKeyProvider({ storage, fetchFn: fetchMock as unknown as typeof fetch });
     provider.setPersonalKey("sk-or-v1-EXISTING");
@@ -105,7 +105,7 @@ describe("Jev settings section (Flow D, AC-13)", () => {
   });
 
   it("degrades to session-only wording when localStorage is denied", async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ answers: [] }), { status: 200 }));
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ answers: {} }), { status: 200 }));
     const provider = createKeyProvider({ storage: deniedStorage(), fetchFn: fetchMock as unknown as typeof fetch });
     provider.setPersonalKey("sk-or-v1-SESSION");
     handle = mountJevSettings(host, { provider });

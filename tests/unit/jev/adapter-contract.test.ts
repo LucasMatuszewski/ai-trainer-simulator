@@ -40,6 +40,21 @@ function stubFetch(handler: (url: string | URL, init: RequestInit) => Promise<Re
 
 const STATE = { "npcs.bartek": { id: "bartek", relationshipBand: "neutral" } };
 
+/**
+ * The REAL Decisions API wire format (verified live 2026-09-29, see the
+ * generation id in the Beads note): `questions` is a RECORD keyed by
+ * question id with provider primitives, and `answers` is a RECORD keyed
+ * by question id with the provider field names (`choice`, `score`,
+ * `noul`). These helpers build provider-shaped payloads so the contract
+ * tests pin the actual protocol, not our internal shapes.
+ */
+function providerChoiceResponse(questionId: string, choice: string, confidence = 0.9): Record<string, unknown> {
+  return {
+    model: JEV_PINNED_MODEL,
+    answers: { [questionId]: { type: "choice", choice, confidence } },
+  };
+}
+
 function choiceQuestion(overrides: Partial<JevQuestion> = {}): JevQuestion {
   return {
     id: "greeting:bartek",
@@ -81,7 +96,7 @@ describe("openrouter adapter — request wire format", () => {
       makeResponse(200, {
         model: JEV_PINNED_MODEL,
         usage: { input: 12, output: 8 },
-        answers: [],
+        answers: {},
       }),
     );
     const result = await request([choiceQuestion()]);
@@ -91,19 +106,33 @@ describe("openrouter adapter — request wire format", () => {
     const headers = calls[0]!.init.headers as Record<string, string>;
     expect(headers.authorization).toBe(`Bearer ${TEST_KEY}`);
     expect(headers["content-type"]).toBe("application/json");
-    const body = JSON.parse(String(calls[0]!.init.body)) as Record<string, unknown>;
-    expect(body).toEqual({
-      model: JEV_PINNED_MODEL,
-      state: STATE,
-      questions: [choiceQuestion()],
-    });
+    const body = JSON.parse(String(calls[0]!.init.body)) as {
+      questions: Record<string, { type: string; instructions: string; criteria: Record<string, string> }>;
+    };
+    // The provider record shape (NOT our internal array) — a live 400
+    // caught the array form ("expected record, received array").
+    expect(body.model).toBe(JEV_PINNED_MODEL);
+    expect(body.state).toEqual(STATE);
+    const wireQuestion = body.questions["greeting:bartek"];
+    expect(wireQuestion.type).toBe("choice");
+    expect(wireQuestion.instructions).toBe("Pick a greeting.");
+    expect(Object.keys(wireQuestion.criteria)).toEqual([
+      "bartek:greeting:0",
+      "bartek:greeting:1",
+      "bartek:greeting:2",
+    ]);
+  });
+
+  it("rejects a subset question with invalid-request — the provider has no subset primitive (D-60: per-option Scores)", async () => {
+    const result = await request([choiceQuestion({ id: "q", type: "subset" })]);
+    expect(result).toMatchObject({ ok: false, reason: "invalid-request" });
   });
 
   it("pins the model to typesafe/jev-1.13 unless JEV_MODEL overrides it", async () => {
     let sentModel = "";
     const calls = stubFetch(async (_url, init) => {
       sentModel = (JSON.parse(String(init.body)) as { model: string }).model;
-      return makeResponse(200, { answers: [] });
+      return makeResponse(200, { answers: {} });
     });
     await request([choiceQuestion()]);
     expect(sentModel).toBe(JEV_PINNED_MODEL);
@@ -117,11 +146,7 @@ describe("openrouter adapter — request wire format", () => {
 
   it("stamps decision identity (decisionId, surface, subject) onto normalized answers", async () => {
     stubFetch(async () =>
-      makeResponse(200, {
-        answers: [
-          { questionId: "greeting:bartek", type: "choice", id: "bartek:greeting:1", confidence: 0.8 },
-        ],
-      }),
+      makeResponse(200, providerChoiceResponse("greeting:bartek", "bartek:greeting:1", 0.8)),
     );
     const result = await request([choiceQuestion()]);
     expect(result.ok).toBe(true);
@@ -140,21 +165,31 @@ describe("openrouter adapter — request wire format", () => {
 });
 
 describe("openrouter adapter — primitive normalization", () => {
-  it("normalizes a score answer", async () => {
+  it("normalizes a provider score answer (field `score`, may be fractional between levels)", async () => {
     stubFetch(async () =>
       makeResponse(200, {
-        answers: [{ questionId: "q", subjectId: "bartek", type: "score", level: 7, confidence: 0.6 }],
+        answers: { q: { type: "score", score: 1.5, confidence: 0.6 } },
       }),
     );
-    const result = await request([choiceQuestion({ id: "q", candidates: undefined })]);
+    const result = await request([
+      choiceQuestion({
+        id: "q",
+        type: "score",
+        candidates: [
+          { id: "low", description: "cold" },
+          { id: "mid", description: "warm" },
+          { id: "high", description: "hot" },
+        ],
+      }),
+    ]);
     if (!result.ok) throw new Error("expected ok");
-    expect(result.answers[0]).toMatchObject({ type: "score", level: 7, confidence: 0.6 });
+    expect(result.answers[0]).toMatchObject({ type: "score", level: 1.5, confidence: 0.6 });
   });
 
   it("normalizes a noul answer (no confidence field by contract)", async () => {
     stubFetch(async () =>
       makeResponse(200, {
-        answers: [{ questionId: "q", subjectId: "bartek", type: "noul", noul: 0.42 }],
+        answers: { q: { type: "noul", noul: 0.42 } },
       }),
     );
     const result = await request([choiceQuestion({ id: "q", candidates: undefined, type: "noul" })]);
@@ -163,37 +198,12 @@ describe("openrouter adapter — primitive normalization", () => {
     expect(result.answers[0]).not.toHaveProperty("confidence");
   });
 
-  it("normalizes a subset answer", async () => {
-    stubFetch(async () =>
-      makeResponse(200, {
-        answers: [
-          {
-            questionId: "q",
-            subjectId: "bartek",
-            type: "subset",
-            ids: ["bartek:greeting:2", "bartek:greeting:0"],
-            confidences: [0.9, 0.5],
-          },
-        ],
-      }),
-    );
-    const result = await request([
-      choiceQuestion({ id: "q", type: "subset", minSelections: 1, maxSelections: 2 }),
-    ]);
-    if (!result.ok) throw new Error("expected ok");
-    expect(result.answers[0]).toMatchObject({
-      type: "subset",
-      ids: ["bartek:greeting:2", "bartek:greeting:0"],
-      confidences: [0.9, 0.5],
-    });
-  });
-
   it("reports usage and echoes the model on success", async () => {
     stubFetch(async () =>
       makeResponse(200, {
         model: "typesafe/jev-1.13",
         usage: { input: 100, output: 20 },
-        answers: [],
+        answers: {},
       }),
     );
     const result = await request([choiceQuestion()]);
@@ -207,11 +217,7 @@ describe("openrouter adapter — primitive normalization", () => {
 describe("openrouter adapter — structural rejection (D-49 per-type rules)", () => {
   it("drops a choice answer naming an unknown candidate id", async () => {
     stubFetch(async () =>
-      makeResponse(200, {
-        answers: [
-          { questionId: "greeting:bartek", type: "choice", id: "not-a-candidate", confidence: 0.9 },
-        ],
-      }),
+      makeResponse(200, providerChoiceResponse("greeting:bartek", "not-a-candidate")),
     );
     const result = await request([choiceQuestion()]);
     expect(result.ok).toBe(true);
@@ -222,9 +228,7 @@ describe("openrouter adapter — structural rejection (D-49 per-type rules)", ()
 
   it("drops a noul answer missing its noul field", async () => {
     stubFetch(async () =>
-      makeResponse(200, {
-        answers: [{ questionId: "q", subjectId: "bartek", type: "noul" }],
-      }),
+      makeResponse(200, { answers: { q: { type: "noul" } } }),
     );
     const result = await request([choiceQuestion({ id: "q", type: "noul", candidates: undefined })]);
     if (!result.ok) throw new Error("expected ok");
@@ -232,64 +236,31 @@ describe("openrouter adapter — structural rejection (D-49 per-type rules)", ()
     expect(result.rejectedCount).toBe(1);
   });
 
-  it("drops answers with out-of-range or non-finite confidence", async () => {
+  it("drops an answer with out-of-range confidence (record: one answer per question)", async () => {
     stubFetch(async () =>
       makeResponse(200, {
-        answers: [
-          { questionId: "greeting:bartek", type: "choice", id: "bartek:greeting:0", confidence: 1.7 },
-          { questionId: "greeting:bartek", type: "choice", id: "bartek:greeting:1", confidence: Number.NaN },
-        ],
+        answers: { "greeting:bartek": { type: "choice", choice: "bartek:greeting:0", confidence: 1.7 } },
       }),
     );
     const result = await request([choiceQuestion()]);
     if (!result.ok) throw new Error("expected ok");
     expect(result.answers).toHaveLength(0);
-    expect(result.rejectedCount).toBe(2);
+    expect(result.rejectedCount).toBe(1);
   });
 
-  it("drops answers whose questionId matches no request question (partial batch stays partial)", async () => {
+  it("ignores provider answers whose key matches no request question (partial batch stays partial)", async () => {
     stubFetch(async () =>
       makeResponse(200, {
-        answers: [
-          { questionId: "greeting:bartek", type: "choice", id: "bartek:greeting:0", confidence: 0.9 },
-          { questionId: "greeting:marek", type: "choice", id: "marek:greeting:0", confidence: 0.9 },
-        ],
+        answers: {
+          "greeting:bartek": { type: "choice", choice: "bartek:greeting:0", confidence: 0.9 },
+          "greeting:marek": { type: "choice", choice: "marek:greeting:0", confidence: 0.9 },
+        },
       }),
     );
     const result = await request([choiceQuestion()]);
     if (!result.ok) throw new Error("expected ok");
     expect(result.answers).toHaveLength(1);
     expect(result.answers[0]).toMatchObject({ questionId: "greeting:bartek" });
-    expect(result.rejectedCount).toBe(1);
-  });
-
-  it("drops a subset answer with duplicate ids or out-of-cardinality selections", async () => {
-    stubFetch(async () =>
-      makeResponse(200, {
-        answers: [
-          {
-            questionId: "q",
-            subjectId: "bartek",
-            type: "subset",
-            ids: ["bartek:greeting:0", "bartek:greeting:0"],
-            confidences: [0.5, 0.5],
-          },
-          {
-            questionId: "q",
-            subjectId: "marek",
-            type: "subset",
-            ids: ["bartek:greeting:0", "bartek:greeting:1", "bartek:greeting:2"],
-            confidences: [0.5, 0.5, 0.5],
-          },
-        ],
-      }),
-    );
-    const result = await request([
-      choiceQuestion({ id: "q", type: "subset", maxSelections: 2 }),
-    ]);
-    if (!result.ok) throw new Error("expected ok");
-    expect(result.answers).toHaveLength(0);
-    expect(result.rejectedCount).toBe(2);
   });
 });
 
@@ -342,7 +313,7 @@ describe("openrouter adapter — retries (dialogue path only)", () => {
     const calls = stubFetch(async () => {
       attempt += 1;
       if (attempt === 1) return makeResponse(429, {});
-      return makeResponse(200, { answers: [] });
+      return makeResponse(200, { answers: {} });
     });
     const result = await request([choiceQuestion()], { retries: 2, backoffMs: 1 });
     expect(calls).toHaveLength(2);
@@ -405,7 +376,7 @@ describe("openrouter adapter — key hygiene (D-59, key scenario 10)", () => {
   });
 
   it("never puts the key in the request body or URL — Authorization header only", async () => {
-    const calls = stubFetch(async () => makeResponse(200, { answers: [] }));
+    const calls = stubFetch(async () => makeResponse(200, { answers: {} }));
     await request([choiceQuestion()]);
     expect(String(calls[0]!.url)).not.toContain(TEST_KEY);
     expect(String(calls[0]!.init.body)).not.toContain(TEST_KEY);
@@ -427,7 +398,7 @@ describe("openrouter adapter — configuration", () => {
   });
 
   it("a proxy request sends no Authorization header (the proxy injects its own auth)", async () => {
-    const calls = stubFetch(async () => makeResponse(200, { answers: [] }));
+    const calls = stubFetch(async () => makeResponse(200, { answers: {} }));
     const proxy = createOpenRouterAdapter({ endpoint: "https://play.devpowers.com/api/jev" });
     await proxy.request(STATE, [choiceQuestion()], {});
     const headers = (calls[0]?.init.headers ?? {}) as Record<string, string>;
@@ -454,7 +425,7 @@ describe("resolving client (key provider -> client)", () => {
   });
 
   it("resolves a personal key to the direct OpenRouter adapter at request time", async () => {
-    const calls = stubFetch(async () => makeResponse(200, { answers: [] }));
+    const calls = stubFetch(async () => makeResponse(200, { answers: {} }));
     const client = createResolvingClient(stubProvider({ kind: "personal", key: TEST_KEY }));
     expect(client.isConfigured()).toBe(true);
     const result = await client.request(STATE, [choiceQuestion()]);
@@ -463,7 +434,7 @@ describe("resolving client (key provider -> client)", () => {
   });
 
   it("resolves a proxy URL to an adapter pointed at the proxy", async () => {
-    const calls = stubFetch(async () => makeResponse(200, { answers: [] }));
+    const calls = stubFetch(async () => makeResponse(200, { answers: {} }));
     const client = createResolvingClient(
       stubProvider({ kind: "proxy", url: "https://play.devpowers.com/api/jev" }),
     );

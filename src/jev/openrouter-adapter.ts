@@ -107,6 +107,49 @@ function isRetryable(reason: DecisionFailureReason): boolean {
   );
 }
 
+/**
+ * Converts our internal question array into the Decisions API record
+ * shape: `{ [questionId]: { type, instructions, criteria } }`. Throws
+ * on unsupported internal types (e.g. "subset" is OUR curation concept —
+ * the ADR's D-60 sends per-option Scores instead).
+ */
+function toProviderQuestions(
+  questions: readonly JevQuestion[],
+): Record<string, Record<string, unknown>> {
+  const wire: Record<string, Record<string, unknown>> = {};
+  for (const q of questions) {
+    switch (q.type) {
+      case "choice": {
+        if (!q.candidates || q.candidates.length === 0) {
+          throw new Error(`choice question "${q.id}" has no candidates`);
+        }
+        const criteria: Record<string, string> = {};
+        for (const c of q.candidates) criteria[c.id] = c.description;
+        wire[q.id] = { type: "choice", instructions: q.prompt, criteria };
+        break;
+      }
+      case "score": {
+        if (!q.candidates || q.candidates.length === 0) {
+          throw new Error(`score question "${q.id}" has no levels`);
+        }
+        wire[q.id] = {
+          type: "score",
+          instructions: q.prompt,
+          criteria: q.candidates.map((c) => c.description),
+        };
+        break;
+      }
+      case "noul": {
+        wire[q.id] = { type: "noul", instructions: q.prompt };
+        break;
+      }
+      default:
+        throw new Error(`question "${q.id}" type is not provider-addressable`);
+    }
+  }
+  return wire;
+}
+
 interface MinimalResponse {
   ok: boolean;
   status: number;
@@ -205,13 +248,27 @@ export function createOpenRouterAdapter(
     const headers: Record<string, string> = { "content-type": "application/json" };
     if (apiKey !== undefined && apiKey !== "") headers.authorization = `Bearer ${apiKey}`;
     const decisionId = opts.decisionId ?? `jev-${Date.now()}-${(decisionSeq += 1)}`;
+    // The Decisions API expects `questions` as a RECORD keyed by question
+    // id with provider-shaped primitives — not our internal array. A
+    // live call caught this (400 "expected record, received array");
+    // wire-format conversion lives here so callers keep the typed array.
+    let wireQuestions: Record<string, unknown>;
+    try {
+      wireQuestions = toProviderQuestions(questions);
+    } catch (err) {
+      return {
+        ok: false,
+        reason: "invalid-request",
+        detail: err instanceof Error ? err.message : "unsupported question shape",
+      };
+    }
     try {
       const doFetch: typeof fetch =
         fetchFn ?? ((url: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(url, init));
       const res = await doFetch(endpoint, {
         method: "POST",
         headers,
-        body: JSON.stringify({ model, state, questions }),
+        body: JSON.stringify({ model, state, questions: wireQuestions }),
         signal: controller.signal,
       });
       if (res.status < 200 || res.status >= 300) {
@@ -259,12 +316,23 @@ export function createOpenRouterAdapter(
       return { ok: false, reason: "malformed", detail: "provider response was not an object" };
     }
     const body = parsed as { answers?: unknown; usage?: unknown; model?: unknown };
-    if (!Array.isArray(body.answers)) {
-      return { ok: false, reason: "malformed", detail: "provider response missing answers array" };
+    // The provider returns `answers` as a RECORD keyed by question id
+    // with provider field names (e.g. `choice`, not our `id`). Bridge it
+    // into the array our normalizer expects.
+    if (body.answers === null || typeof body.answers !== "object" || Array.isArray(body.answers)) {
+      return { ok: false, reason: "malformed", detail: "provider response missing answers record" };
     }
+    const answerRecord = body.answers as Record<string, Record<string, unknown>>;
     const answers: DecisionAnswer[] = [];
     let rejectedCount = 0;
-    for (const raw of body.answers) {
+    for (const question of questions) {
+      const rawEntry = answerRecord[question.id];
+      if (rawEntry === undefined) continue; // missing answer = caller falls back (D-47)
+      const raw = {
+        questionId: question.id,
+        subjectId: question.subjectId,
+        ...rawEntry,
+      };
       const normalized = normalizeAnswer(raw, questions, opts, decisionId);
       if (normalized === null) rejectedCount += 1;
       else answers.push(normalized);
@@ -286,6 +354,10 @@ export function createOpenRouterAdapter(
       subjectId?: unknown;
       type?: unknown;
       id?: unknown;
+      /** Decisions API field name for the selected choice option. */
+      choice?: unknown;
+      /** Decisions API field name for the score value (may be fractional). */
+      score?: unknown;
       level?: unknown;
       noul?: unknown;
       ids?: unknown;
@@ -293,6 +365,8 @@ export function createOpenRouterAdapter(
       confidence?: unknown;
       probabilities?: unknown;
     };
+    const selectedId =
+      typeof answer.id === "string" && answer.id !== "" ? answer.id : answer.choice;
     if (typeof answer.questionId !== "string") return null;
     const question = questions.find((q) => q.id === answer.questionId);
     if (question === undefined) return null;
@@ -312,29 +386,32 @@ export function createOpenRouterAdapter(
 
     switch (answer.type) {
       case "choice": {
-        if (typeof answer.id !== "string" || answer.id === "") return null;
+        if (typeof selectedId !== "string" || selectedId === "") return null;
         if (!isUnitInterval(answer.confidence)) return null;
         if (
           question.candidates !== undefined &&
-          !question.candidates.some((candidate) => candidate.id === answer.id)
+          !question.candidates.some((candidate) => candidate.id === selectedId)
         ) {
           return null; // unknown candidate id (D-49)
         }
         return {
           ...key,
           type: "choice",
-          id: answer.id,
+          id: selectedId,
           confidence: answer.confidence,
           probabilities: parseProbabilities(answer.probabilities),
         };
       }
       case "score": {
-        if (!isFiniteNumber(answer.level)) return null;
+        // The Decisions API names the field `score` and it may fall
+        // BETWEEN levels (fractional) — consumers round per D-60.
+        const levelValue = answer.level ?? answer.score;
+        if (!isFiniteNumber(levelValue)) return null;
         if (!isUnitInterval(answer.confidence)) return null;
         return {
           ...key,
           type: "score",
-          level: answer.level,
+          level: levelValue,
           confidence: answer.confidence,
           probabilities: parseProbabilities(answer.probabilities),
         };

@@ -890,3 +890,13 @@ A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
 - **Posture:** PoC of mechanics and playability first — not a production build. Access: both modes (server proxy + BYO key). Nothing pushed.
 - **Beats:** relationships now WRITE through the reducer in MVP (v1's read-only assumption A5 is superseded); save-schema extension required (relationship matrix, mood, memory, world diary) — deferred to ADR-0009 for the exact mechanism.
 - **Tracking:** Beads `sacs-xtma.13` (steering core) + new children for content expansion and conference mission; ADR-0009 next, then the parallel implementation plan.
+
+### C-76 — PR-14: E2E tests === NOTHING is mocked; first live Jev call (2026-09-29)
+
+- **Source (Lucas):** after Wave 1's "green" runs, Lucas checked OpenRouter/TypeSafe and saw zero usage: "how did you test it??? Without real connections?????" He was right — every test was network-free (fake client, stubbed fetch), so the adapter's wire format was never exercised for real.
+- **Rule (AGENTS.md PR-14):** E2E tests run the REAL game against REAL services with REAL credentials; nothing mocked, stubbed, shimmed, or faked. Unit tests may use fakes, but every new external service integration requires one live smoke test with real credentials (approved store, values never printed) before its phase passes; unavailable credentials = explicit skip, never a mock. CPU discipline: headless E2E drives software-rendered WebGL at full frame rate (100 °C observed) — the suite is bounded at retries:1, no ad-hoc sweeps.
+- **Proven live (first real calls, 2026-09-29):** CLI smoke via the sanctioned adapter (generation `gen-dec-1790720397-yplWh5AvEDtFQMlJNxwg`, resolved `typesafe/jev-1.13-20260917`, cost $0 BYOK) and the in-game path: dev server with `OPENROUTER_API_KEY` + `VITE_JEV_PROXY_URL=http://localhost:5173/api/jev`, greeting-wrapper prefetch POSTs through the vite middleware and got HTTP 200 with calibrated per-NPC greeting choices (Renata greeting:1 @ 0.57, Bartek greeting:0).
+- **The live call caught a real bug the stubs hid:** the adapter sent `questions` as an ARRAY (400 "expected record, received array") and read `answers` as an array — the Decisions API uses RECORDS on both sides, and the choice field is named `choice`. The adapter now converts in both directions, accepts the provider's `score` field (may be fractional), and rejects `subset` as non-provider-addressable (D-60: per-option Scores). Adapter contract tests now pin the real wire format.
+- **Architecture:** agent-friendly change; no player-facing surface changes (steering stays dormant without a configured key — invisible fallback per C-75 A4).
+- **Tracking:** branch `feat/jev-npc-decision-steering`, v2026.09.29-01. Nothing pushed.
+
