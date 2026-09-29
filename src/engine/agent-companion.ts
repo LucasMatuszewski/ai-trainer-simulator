@@ -564,6 +564,19 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
             Number.POSITIVE_INFINITY,
           );
         if (nearestDist(position.x, position.z) < COMPANION_PERSONAL_RADIUS) {
+          // Furniture-aware: a candidate inside an inflated obstacle or
+          // out of bounds is as bad as an NPC overlap (eighth verdict).
+          const inFurniture = (x: number, z: number): boolean =>
+            deps.obstacles.some(
+              (b) =>
+                x >= b.minX - COMPANION_RADIUS && x <= b.maxX + COMPANION_RADIUS &&
+                z >= b.minZ - COMPANION_RADIUS && z <= b.maxZ + COMPANION_RADIUS,
+            );
+          const inBounds = (x: number, z: number): boolean =>
+            x >= deps.bounds.minX + 0.3 && x <= deps.bounds.maxX - 0.3 &&
+            z >= deps.bounds.minZ + 0.3 && z <= deps.bounds.maxZ - 0.3;
+          const viable = (x: number, z: number): boolean =>
+            nearestDist(x, z) >= COMPANION_PERSONAL_RADIUS && !inFurniture(x, z) && inBounds(x, z);
           let clear: { x: number; z: number } | null = null;
           let fallback: { x: number; z: number; d: number } | null = null;
           ringLoop: for (let ring = 1; ring <= 8; ring += 1) {
@@ -571,14 +584,15 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
               const angle = (spoke * Math.PI) / 4 + ring * 0.3;
               const candX = deps.spawn.x + Math.sin(angle) * 0.3 * ring;
               const candZ = deps.spawn.z + Math.cos(angle) * 0.3 * ring;
-              const d = nearestDist(candX, candZ);
-              if (d >= COMPANION_PERSONAL_RADIUS) {
+              if (viable(candX, candZ)) {
                 clear = { x: candX, z: candZ };
                 break ringLoop;
               }
-              // Least-bad fallback: the farthest-from-anyone candidate,
-              // used only when the whole search exhausts.
-              if (fallback === null || d > fallback.d) fallback = { x: candX, z: candZ, d };
+              const d = nearestDist(candX, candZ);
+              if (!inFurniture(candX, candZ) && inBounds(candX, candZ) &&
+                  (fallback === null || d > fallback.d)) {
+                fallback = { x: candX, z: candZ, d };
+              }
             }
           }
           const chosen = clear ?? fallback;
@@ -898,14 +912,31 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
             npc.position.x - result.position.x, npc.position.z - result.position.z,
           );
           if (nextDist >= COMPANION_PERSONAL_RADIUS) return false;
-          // Escape rule: only a step that goes STRICTLY deeper into
-          // the person's radius is blocked. Equal-distance steps (the
-          // degenerate already-at-the-ring case) and outward steps are
-          // always allowed — the yield must never trap the robot.
           const curDist = Math.hypot(
             npc.position.x - position.x, npc.position.z - position.z,
           );
-          return nextDist < curDist;
+          // Escape rule: only a step that goes STRICTLY deeper into
+          // the person's radius is blocked; equal-distance steps (the
+          // degenerate already-at-the-ring case) and outward steps are
+          // always allowed — the yield must never trap the robot.
+          if (nextDist < curDist) return true;
+          // EXCEPT: equal-distance endpoints can still CROSS the
+          // person's centre mid-frame (eighth verdict). If the frame's
+          // segment passes within 0.2 m of the centre while ending
+          // inside the radius, hold.
+          if (nextDist <= curDist + 0.01) {
+            const abx = result.position.x - position.x;
+            const abz = result.position.z - position.z;
+            const lenSq = abx * abx + abz * abz;
+            const t = lenSq === 0 ? 0 : Math.max(0, Math.min(1,
+              ((npc.position.x - position.x) * abx + (npc.position.z - position.z) * abz) / lenSq));
+            const segDist = Math.hypot(
+              npc.position.x - (position.x + t * abx),
+              npc.position.z - (position.z + t * abz),
+            );
+            if (segDist < 0.2) return true;
+          }
+          return false;
         });
         if (blocker !== undefined) {
           personHoldElapsed += dt;

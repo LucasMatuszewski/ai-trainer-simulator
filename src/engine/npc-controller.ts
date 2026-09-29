@@ -707,24 +707,33 @@ export function createNpcController(
         [...obstacles, ...currentRobotBox],
       );
     if (!blockedAt(pos.x, pos.z)) return;
-    let best: { x: number; z: number; blocked: boolean } | null = null;
+    // Farthest-from-the-robot fallback: when all candidates are blocked,
+    // place the NPC at the candidate with the MAXIMUM distance to the
+    // robot centre (the least-overlapping spot), never at a known
+    // deep-overlap position (eighth verdict).
+    const robotCentre = currentRobotBox.length > 0
+      ? {
+          x: (currentRobotBox[0]!.minX + currentRobotBox[0]!.maxX) / 2,
+          z: (currentRobotBox[0]!.minZ + currentRobotBox[0]!.maxZ) / 2,
+        }
+      : null;
+    let best: { x: number; z: number; d: number } | null = null;
     for (let ring = 1; ring <= 8; ring += 1) {
       for (let spoke = 0; spoke < 8; spoke += 1) {
         const angle = (spoke * Math.PI) / 4 + ring * 0.3;
         const candX = pos.x + Math.sin(angle) * 0.3 * ring;
         const candZ = pos.z + Math.cos(angle) * 0.3 * ring;
-        const blocked = blockedAt(candX, candZ);
-        if (!blocked) {
+        if (!blockedAt(candX, candZ)) {
           pos.x = candX;
           pos.z = candZ;
           return;
         }
-        if (best === null) best = { x: candX, z: candZ, blocked: true };
+        if (robotCentre !== null) {
+          const d = Math.hypot(candX - robotCentre.x, candZ - robotCentre.z);
+          if (best === null || d > best.d) best = { x: candX, z: candZ, d };
+        }
       }
     }
-    // Every candidate blocked: take the first searched position as
-    // least-bad (it is outside the furniture and at the closest ring
-    // to the requested spot) rather than the known-overlapping origin.
     if (best !== null) {
       pos.x = best.x;
       pos.z = best.z;
