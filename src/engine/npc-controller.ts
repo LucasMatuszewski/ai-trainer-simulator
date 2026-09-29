@@ -270,7 +270,6 @@ const ANCHOR_RETURN_SPEED = 0.6;
 // planner while someone re-routes around them.
 const BLOCKER_BOX_HALF = 0.45;
 const COMPANION_BLOCKER_HALF = 0.45;
-const COMPANION_RADIUS = 0.3;
 // A neighbour moving faster than this clears the way by itself, so it
 // never triggers a stop - only standing or head-on traffic does.
 const CROSSING_SPEED = 0.15;
@@ -532,6 +531,10 @@ export function createNpcController(
     return hook !== undefined ? hook(pool, starterId) : defaultHooks.pickChatterExchange(pool, starterId);
   };
   const obstacles = getNpcObstacles();
+  // WS9a: the live companion keep-out box, refreshed each frame by the
+  // walking pass; read by applyDisplacement and escape spawning so no
+  // displacement path can push an NPC into the robot.
+  let currentRobotBox: ReadonlyArray<AABB> = [];
   const edges = buildWaypointEdges(CORRIDOR_WAYPOINTS, obstacles, DEFAULT_MAX_EDGE_LENGTH);
   const runtime = new Map<NpcId, NpcRuntime>();
   const idleStates = new Map<NpcId, IdleState>();
@@ -698,6 +701,30 @@ export function createNpcController(
     state.target = entry;
     state.velocity = { x: 0, z: 0 };
     object.position.set(entry.position.x, entry.position.y, entry.position.z);
+    // WS9a: a schedule teleport must never land an actor inside the
+    // companion's keep-out (Lucas's overlap bug, robot parked on a
+    // stop). Nudge along a rotating fan until clear — bounded, and the
+    // schedule entry itself is never mutated.
+    if (currentRobotBox.length > 0) {
+      const blocked = (): boolean =>
+        isSpawnBlocked(
+          { x: object.position.x, z: object.position.z, radius: NPC_DEFAULT_RADIUS },
+          [...obstacles, ...currentRobotBox],
+        );
+      if (blocked()) {
+        for (let attempt = 1; attempt <= 8; attempt += 1) {
+          const angle = (attempt * Math.PI) / 4;
+          const nudged = {
+            x: entry.position.x + Math.sin(angle) * 0.3 * attempt,
+            z: entry.position.z + Math.cos(angle) * 0.3 * attempt,
+          };
+          if (!isSpawnBlocked({ x: nudged.x, z: nudged.z, radius: NPC_DEFAULT_RADIUS }, [...obstacles, ...currentRobotBox])) {
+            object.position.set(nudged.x, entry.position.y, nudged.z);
+            break;
+          }
+        }
+      }
+    }
     object.rotation.y = entry.face;
     object.rotation.z = 0;
     // C-48: park the gait in a neutral pose - the walk cycle leaves
@@ -717,10 +744,15 @@ export function createNpcController(
   /** C-48: apply one separation displacement per axis, keeping the NPC
    *  out of furniture AABBs (a shove can never push through a wall). */
   const applyDisplacement = (object: THREE.Object3D, dx: number, dz: number): void => {
-    if (dx !== 0 && !isSpawnBlocked({ x: object.position.x + dx, z: object.position.z, radius: NPC_DEFAULT_RADIUS }, obstacles)) {
+    // WS9a: the robot box joins the obstacle set so a separation shove
+    // can never displace an NPC into the companion.
+    const blocked = currentRobotBox.length > 0
+      ? [...obstacles, ...currentRobotBox]
+      : obstacles;
+    if (dx !== 0 && !isSpawnBlocked({ x: object.position.x + dx, z: object.position.z, radius: NPC_DEFAULT_RADIUS }, blocked)) {
       object.position.x += dx;
     }
-    if (dz !== 0 && !isSpawnBlocked({ x: object.position.x, z: object.position.z + dz, radius: NPC_DEFAULT_RADIUS }, obstacles)) {
+    if (dz !== 0 && !isSpawnBlocked({ x: object.position.x, z: object.position.z + dz, radius: NPC_DEFAULT_RADIUS }, blocked)) {
       object.position.z += dz;
     }
   };
@@ -1466,7 +1498,11 @@ export function createNpcController(
       }
     }
     const robot = companionPosition();
-    const robotBox = robot === null ? [] : withRobotObstacle([], robot, COMPANION_RADIUS);
+    const robotBox = robot === null ? [] : withRobotObstacle([], robot, COMPANION_BLOCKER_HALF);
+    // WS9a: share this frame's robot keep-out with every position-changing
+    // path (separation shoves, escape spawns) so no NPC can be displaced
+    // into the companion.
+    currentRobotBox = robotBox;
     const othersOf = (npcId: NpcId): Neighbour[] => {
       const others: Neighbour[] = [];
       for (const [id, point] of snapshot) {

@@ -136,51 +136,133 @@ test("the robot crosses the office without clipping any furniture", async ({ pag
   }
 });
 
-test("an NPC walking to the kitchen routes around the robot parked in its doorway", async ({ page }) => {
-  test.setTimeout(180_000);
+function pointToSegmentDist(p: XZ, a: XZ, b: XZ): number {
+  const abx = b.x - a.x;
+  const abz = b.z - a.z;
+  const lenSq = abx * abx + abz * abz;
+  if (lenSq === 0) return Math.hypot(p.x - a.x, p.z - a.z);
+  let t = ((p.x - a.x) * abx + (p.z - a.z) * abz) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (a.x + t * abx), p.z - (a.z + t * abz));
+}
+
+test("an NPC walking to the kitchen demonstrably reroutes around the robot parked there", async ({ page }) => {
+  test.setTimeout(240_000);
   await installHost(page);
   await startGame(page);
 
   const joined = await call(page, "agent_join", { name: "Rusty", persona: "doorway block" });
   expect(joined).toMatchObject({ joined: true });
 
-  // Park the robot in the kitchen (its route must itself be legal).
-  await call(page, "agent_move_to", { target: "kitchen" });
-  for (let i = 0; i < 120; i += 1) {
-    await page.waitForTimeout(500);
-    const look = (await call(page, "agent_look_around")) as { companion?: { walking?: boolean } };
-    if (look.companion?.walking === false) break;
+  // Park the robot AT the coffee stop (13.0, -5.3) — an exact lunch
+  // destination, so coffee-bound walkers' straight approaches END on
+  // the robot. Phase 1: the room route, RE-ISSUED until the robot is
+  // genuinely near the stop (walking===false also holds before a walk
+  // starts and after a rejected move — distance is the only honest
+  // signal). Phase 2: the short closed-loop drive.
+  const COFFEE: XZ = { x: 13.0, z: -5.3 };
+  const distanceToStop = async (): Promise<number> => {
+    const w = await page.evaluate(() => window.__aitrainer!.inspectCompanion());
+    return Math.hypot(w!.world!.x - COFFEE.x, w!.world!.z - COFFEE.z);
+  };
+  for (let routeTry = 0; routeTry < 3 && (await distanceToStop()) > 6.0; routeTry += 1) {
+    await call(page, "agent_move_to", { target: "kitchen" });
+    for (let i = 0; i < 120; i += 1) {
+      await page.waitForTimeout(500);
+      if ((await distanceToStop()) < 3.5) break;
+      const look = (await call(page, "agent_look_around")) as { companion?: { walking?: boolean } };
+      if (look.companion?.walking === false && (await distanceToStop()) > 6.0) break; // rejected — re-issue
+    }
   }
+  expect(await distanceToStop(), "room route never brought the robot near the kitchen").toBeLessThan(6.0);
 
-  // Lunch sends the lunch-outside NPCs to the kitchen — their paths must
-  // now cross the space the robot occupies. The game starts in Morning,
-  // so one skip lands on Lunch.
-  await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
-  await page.waitForTimeout(400);
+  // Closed-loop parking: re-aim at the stop before every 1 m step so a
+  // blocked stride or a heading drift can never accumulate into a
+  // wrong-way drive (agent_step replaces any walk in progress, so each
+  // step waits for its full walk before the next re-aim).
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    const here = await page.evaluate(() => window.__aitrainer!.inspectCompanion());
+    const px = here!.world!.x;
+    const pz = here!.world!.z;
+    const err = Math.hypot(px - COFFEE.x, pz - COFFEE.z);
+    if (err < 0.55) break;
+    const look = (await call(page, "agent_look_around")) as {
+      companion?: { facingDegrees?: number };
+    };
+    // step heading convention: forward moves by (sin(h), cos(h)).
+    const desired = (Math.atan2(COFFEE.x - px, COFFEE.z - pz) * 180) / Math.PI;
+    const deltaTurn = (((desired - (look.companion?.facingDegrees ?? 0)) % 360) + 540) % 360 - 180;
+    if (Math.abs(deltaTurn) > 2) {
+      await call(page, "agent_turn", { degrees: Math.round(deltaTurn) });
+      await page.waitForTimeout(250);
+    }
+    await call(page, "agent_step", { direction: "forward", metres: 1 });
+    await page.waitForTimeout(1300);
+  }
+  const parked = await page.evaluate(() => window.__aitrainer!.inspectCompanion());
+  const P: XZ = { x: parked!.world!.x, z: parked!.world!.z };
+  const parkError = Math.hypot(P.x - COFFEE.x, P.z - COFFEE.z);
+  expect(
+    parkError,
+    `robot failed to park on the coffee stop (off by ${parkError.toFixed(2)} m)`,
+  ).toBeLessThan(1.0);
 
-  // Watch the lunch rush: near approaches MUST happen (the kitchen is
-  // the lunch destination), and none may overlap the robot.
-  let closest = Number.POSITIVE_INFINITY;
-  for (let i = 0; i < 240; i += 1) {
-    await page.waitForTimeout(500);
-    const data = await page.evaluate(() => ({
-      npcs: window.__aitrainer!.inspectNpcs(),
-      robot: window.__aitrainer!.inspectCompanion(),
-    }));
-    if (data.robot?.world) {
+  // Lunch sends kitchen-sequence walkers past the parked robot, but WHO
+  // rolls a kitchen trip is random per period (burek: ~50%). Sweep up to
+  // six period windows (two lunches' worth of chances), tracking fresh
+  // trajectories each window, until a provable encounter happens.
+  const hardOverlap = (npcId: string, pos: XZ, robotPos: XZ): void => {
+    const d = Math.hypot(pos.x - robotPos.x, pos.z - robotPos.z);
+    expect(d, `NPC ${npcId} at ${JSON.stringify(pos)} overlaps the robot at ${JSON.stringify(robotPos)}`).toBeGreaterThan(0.3);
+  };
+  let provers = 0;
+  outer: for (let window = 0; window < 6; window += 1) {
+    await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
+    await page.waitForTimeout(400);
+    const trajectories = new Map<string, { first: XZ; last: XZ; minRobotDist: number }>();
+    for (let i = 0; i < 70; i += 1) {
+      await page.waitForTimeout(500);
+      const data = await page.evaluate(() => ({
+        npcs: window.__aitrainer!.inspectNpcs(),
+        robot: window.__aitrainer!.inspectCompanion(),
+      }));
+      const robotPos = data.robot?.world ? { x: data.robot.world.x, z: data.robot.world.z } : P;
       for (const npc of data.npcs ?? []) {
-        const d = Math.hypot(npc.position.x - data.robot.world.x, npc.position.z - data.robot.world.z);
-        if (d < closest) closest = d;
-        expect(
-          d,
-          `NPC ${npc.npcId} at ${JSON.stringify(npc.position)} overlaps robot`,
-        ).toBeGreaterThan(0.3);
+        const pos: XZ = { x: npc.position.x, z: npc.position.z };
+        hardOverlap(npc.npcId, pos, robotPos);
+        const track = trajectories.get(npc.npcId);
+        const dist = Math.hypot(pos.x - robotPos.x, pos.z - robotPos.z);
+        if (!track) {
+          trajectories.set(npc.npcId, { first: pos, last: pos, minRobotDist: dist });
+        } else {
+          track.last = pos;
+          track.minRobotDist = Math.min(track.minRobotDist, dist);
+        }
       }
     }
-    // Stop early once we have a close, clean encounter.
-    if (closest < 1.4) break;
+    // Rerouting proof (third verdict): an NPC whose STRAIGHT-line path
+    // from first to last observed position would have run through the
+    // robot (< 0.55 m) must have actually stayed >= 0.45 m away. A
+    // walker ending beside the occupied stop qualifies (the segment's
+    // endpoint is the stop). Far-away idlers never enter this branch,
+    // so the test cannot pass vacuously.
+    for (const [npcId, track] of trajectories) {
+      const startDist = Math.hypot(track.first.x - P.x, track.first.z - P.z);
+      if (startDist < 1.0) continue; // materialized beside the robot: no approach to prove
+      const lineThrough = pointToSegmentDist(P, track.first, track.last) < 0.55;
+      const stoodBeside = track.minRobotDist < 0.8; // walked up to the occupied stop
+      if (!lineThrough && !stoodBeside) continue;
+      provers += 1;
+      if (lineThrough) {
+        // The avoidance assertion proper: the straight approach ran
+        // through the robot, the actual path did not.
+        expect(
+          track.minRobotDist,
+          `NPC ${npcId}'s straight approach ran through the robot but its actual path got only ${track.minRobotDist.toFixed(2)} m away`,
+        ).toBeGreaterThanOrEqual(0.45);
+      }
+      break outer;
+    }
   }
-
-  // Non-vacuous: at least one NPC actually approached the occupied space.
-  expect(closest, "no NPC ever came near the robot — the encounter never happened").toBeLessThan(1.8);
+  expect(provers, "no NPC ever approached the occupied coffee stop across six period windows — rerouting was never exercised").toBeGreaterThanOrEqual(1);
 });

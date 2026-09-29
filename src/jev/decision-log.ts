@@ -19,7 +19,14 @@
 import type { DecisionSurface } from "./contracts";
 
 /** How a decision attempt ended. Drives the outcome counters. */
-export type DecisionOutcome = "applied" | "legacy" | "rejected" | "stale" | "skipped";
+export type DecisionOutcome =
+  | "applied"
+  | "legacy"
+  | "rejected"
+  | "stale"
+  | "skipped"
+  /** D-55 shadow mode: judged and logged, deliberately NOT steering. */
+  | "shadow";
 
 export interface DecisionLogEntry {
   /** Wall-clock ms (caller's clock; injectable for tests). */
@@ -50,6 +57,8 @@ export interface DecisionCounters {
   rejected: number;
   stale: number;
   skipped: number;
+  /** D-55: judged + logged in shadow mode, deliberately not steering. */
+  shadow: number;
 }
 
 const MAX_ENTRIES = 50;
@@ -62,6 +71,7 @@ const countersState: DecisionCounters = {
   rejected: 0,
   stale: 0,
   skipped: 0,
+  shadow: 0,
 };
 
 export function logDecision(entry: DecisionLogEntry): void {
@@ -88,4 +98,5 @@ export function reset(): void {
   countersState.rejected = 0;
   countersState.stale = 0;
   countersState.skipped = 0;
+  countersState.shadow = 0;
 }

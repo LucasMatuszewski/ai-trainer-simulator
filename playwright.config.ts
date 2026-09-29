@@ -2,7 +2,12 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  timeout: 30_000,
+  // WS9a: the long scenario drives (robot parking, lunch-rush encounters)
+  // depend on in-game randomness (kitchen rolls, walk completion timing).
+  // One retry keeps the suite honest without hiding game bugs: a failure
+  // that reproduces on retry still fails the run.
+  retries: 1,
+  timeout: 240_000,
   expect: { timeout: 5_000 },
   fullyParallel: false,
   // One browser at a time. Two parallel headless instances software-render

@@ -35,6 +35,72 @@ export const ARRIVAL_RADIUS = 1.1;
 
 /** Body radius, matching the NPC bodies so collision reads the same. */
 export const COMPANION_RADIUS = 0.3;
+/** WS9a: the robot never ends a movement frame inside this radius of a
+ *  person's center (third-verdict overlap fix). */
+export const COMPANION_PERSONAL_RADIUS = 0.45;
+/** WS9a: how long the robot holds before dodging a person on its route. */
+export const COMPANION_DODGE_AFTER_S = 0.4;
+/** WS9a: how far the dodge waypoint stands off the person. */
+const DODGE_STANDOFF = 0.8;
+
+function pointInAnyBox(p: XZ, boxes: ReadonlyArray<AABB>): boolean {
+  return boxes.some(
+    (b) => p.x >= b.minX && p.x <= b.maxX && p.z >= b.minZ && p.z <= b.maxZ,
+  );
+}
+
+/**
+ * WS9a: build a two-leg dodge around `person` from `from` toward the
+ * path's next target: one perpendicular standoff waypoint, then the
+ * original target. The side is chosen away from the person relative to
+ * the robot and must be furniture-free (both sides tried, then the
+ * straight line — which the caller's hold already rejects — is NOT
+ * returned: null means "keep holding", never "walk through").
+ */
+function planDodgeAround(
+  from: XZ,
+  path: THREE.Vector3[] | null,
+  segmentIndex: number,
+  person: XZ,
+  obstacles: ReadonlyArray<AABB>,
+): XZ[] | null {
+  const target = path !== null && segmentIndex + 1 < path.length
+    ? path[path.length - 1]!
+    : null;
+  if (target === null) return null;
+  const dirx = target.x - from.x;
+  const dirz = target.z - from.z;
+  const len = Math.hypot(dirx, dirz);
+  if (len < 1e-4) return null;
+  const nx = dirx / len;
+  const nz = dirz / len;
+  // Perpendicular pointing away from the person relative to the route.
+  let px = -nz;
+  let pz = nx;
+  const cross = (person.x - from.x) * pz + (person.z - from.z) * (-px);
+  if (cross > 0) {
+    px = -px;
+    pz = -pz;
+  }
+  const candidates: XZ[] = [
+    { x: person.x + px * DODGE_STANDOFF, z: person.z + pz * DODGE_STANDOFF },
+    { x: person.x - px * DODGE_STANDOFF, z: person.z - pz * DODGE_STANDOFF },
+  ];
+  for (const dodge of candidates) {
+    const clear = !pointInAnyBox(dodge, obstacles);
+    const legClear = !obstacles.some((b) => {
+      // Segment-vs-box: sample the leg coarsely (kitchen-scale rooms).
+      for (let t = 0.1; t < 1; t += 0.1) {
+        const sx = from.x + (dodge.x - from.x) * t;
+        const sz = from.z + (dodge.z - from.z) * t;
+        if (sx >= b.minX && sx <= b.maxX && sz >= b.minZ && sz <= b.maxZ) return true;
+      }
+      return false;
+    });
+    if (clear && legClear) return [dodge, { x: target.x, z: target.z }];
+  }
+  return null;
+}
 
 /**
  * Facing the companion spawns with, in radians.
@@ -379,6 +445,9 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
   let arrivalResolver: ((result: { arrived: boolean; reason?: string }) => void) | null = null;
 
   let trackedNpc: { id: string; position: XZ; replans: number } | null = null;
+  // WS9a: consecutive seconds the advance has held for a person on the
+  // route; past COMPANION_DODGE_AFTER_S the robot dodges around them.
+  let personHoldElapsed = 0;
   let retargetElapsed = 0;
 
   function stopWalk(result: { arrived: boolean; reason?: string }): void {
@@ -591,9 +660,30 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
         deps.bounds,
         deps.obstacles,
       );
-      const after = stepPoints[stepPoints.length - 1]!;
+      let after = stepPoints[stepPoints.length - 1]!;
+      // WS9a (third verdict): manual steps yield to people exactly like
+      // path advance does — traceRobotStep only knows static obstacles,
+      // so without this check a step could end inside an NPC's personal
+      // space. Trim the traced legs to the last point that keeps the
+      // personal radius; a fully blocked step goes nowhere.
+      const PERSONAL_RADIUS = COMPANION_PERSONAL_RADIUS;
+      let trimmed = 0;
+      for (let i = stepPoints.length - 1; i >= 1; i -= 1) {
+        const p = stepPoints[i]!;
+        const tooClose = deps.listNpcs().some((npc) => {
+          const nextDist = Math.hypot(npc.position.x - p.x, npc.position.z - p.z);
+          if (nextDist >= PERSONAL_RADIUS) return false;
+          const curDist = Math.hypot(npc.position.x - before.x, npc.position.z - before.z);
+          return nextDist <= curDist;
+        });
+        if (!tooClose) {
+          after = p;
+          trimmed = i;
+          break;
+        }
+      }
       const moved = stepPoints
-        .slice(1)
+        .slice(1, trimmed + 1)
         .reduce(
           (sum, end, index) =>
             sum + Math.hypot(end.x - stepPoints[index]!.x, end.z - stepPoints[index]!.z),
@@ -608,10 +698,13 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       // fast"), because the whole distance landed in a single frame.
       if (moved > 0.01) {
         // A step is a short WALK, not a displacement: hand the traced legs
-        // to the same per-frame advance and walk cycle everything else
-        // uses, so the robot covers the ground at 1.2 m/s and follows the
-        // collision-safe polyline instead of cutting through furniture.
-        path = stepPoints.map((p) => new THREE.Vector3(p.x, position.y, p.z));
+        // (trimmed to the person-yield point) to the same per-frame advance
+        // and walk cycle everything else uses, so the robot covers the
+        // ground at 1.2 m/s and follows the collision-safe polyline
+        // instead of cutting through furniture.
+        path = stepPoints
+          .slice(0, trimmed + 1)
+          .map((p) => new THREE.Vector3(p.x, position.y, p.z));
         segmentIndex = 0;
         distanceInSegment = 0;
         movingTo = null;
@@ -743,12 +836,50 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
           DEFAULT_WALK_SPEED_MPS,
           dt,
         );
-        movedThisFrame = position.distanceTo(result.position);
-        position.copy(result.position);
-        segmentIndex = result.segmentIndex;
-        distanceInSegment = result.distanceInSegment;
-        group.rotation.y = result.face;
-        facing = result.face;
+        // WS9a (third verdict): the robot YIELDS to people. The NPC
+        // controller keeps walkers out of the robot's footprint, but a
+        // MOVING robot could still step into someone's space. When the
+        // next frame's position would land inside a person's personal
+        // radius the robot holds — and after a short hold it DODGES:
+        // the remaining path is rebuilt through a perpendicular waypoint
+        // around the person (furniture-checked, both sides tried), so a
+        // person standing on the route can never deadlock it.
+        const npcsLive = deps.listNpcs();
+        const blocker = npcsLive.find((npc) => {
+          const nextDist = Math.hypot(
+            npc.position.x - result.position.x, npc.position.z - result.position.z,
+          );
+          if (nextDist >= COMPANION_PERSONAL_RADIUS) return false;
+          // Escape rule: a step that INCREASES the distance (robot
+          // spawned overlapped, or brushing past) is always allowed —
+          // the yield must never trap the robot inside a person.
+          const curDist = Math.hypot(
+            npc.position.x - position.x, npc.position.z - position.z,
+          );
+          return nextDist <= curDist;
+        });
+        if (blocker !== undefined) {
+          personHoldElapsed += dt;
+          const dodgeReady = personHoldElapsed >= COMPANION_DODGE_AFTER_S;
+          const dodge = dodgeReady
+            ? planDodgeAround(position, path, segmentIndex, blocker.position, deps.obstacles)
+            : null;
+          if (dodgeReady && dodge !== null) {
+            path = [position.clone(), ...dodge.map((p) => new THREE.Vector3(p.x, position.y, p.z))];
+            segmentIndex = 0;
+            distanceInSegment = 0;
+            personHoldElapsed = 0;
+          }
+          movedThisFrame = 0;
+        } else {
+          personHoldElapsed = 0;
+          movedThisFrame = position.distanceTo(result.position);
+          position.copy(result.position);
+          segmentIndex = result.segmentIndex;
+          distanceInSegment = result.distanceInSegment;
+          group.rotation.y = result.face;
+          facing = result.face;
+        }
 
         if (result.finished) {
           const npc = trackedNpc === null ? undefined : deps.listNpcs().find((npc) => npc.id === trackedNpc!.id);

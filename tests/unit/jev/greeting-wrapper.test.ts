@@ -289,3 +289,50 @@ describe("greeting wrapper — install/uninstall lifecycle", () => {
     expect(hooks.pickMorningGreeting).toBe(preExisting);
   });
 });
+
+describe("greeting wrapper — shadow mode (D-55)", () => {
+  it("logs shadow outcomes instead of applied, and never installs the hook", async () => {
+    resetLog();
+    const hooks: DecisionHooks = {};
+    const client = new FakeDecisionClient({
+      "greeting:bartek": { type: "choice", id: "bartek:greeting:1", confidence: 0.9 },
+    });
+    const wrapper = createGreetingWrapper({
+      hooks,
+      client,
+      legacyPick: () => "legacy:bartek",
+      shadow: true,
+    });
+    await wrapper.prefetch(["bartek"]);
+    wrapper.install();
+    // The judged decision is logged, but under "shadow" — never counted
+    // as applied steering (third-verdict major 2).
+    const snapshot = counters();
+    expect(snapshot.shadow).toBe(1);
+    expect(snapshot.applied).toBe(0);
+    const rows = recent();
+    expect(rows[rows.length - 1]?.outcome).toBe("shadow");
+    // And the game keeps playing legacy: the hook was never installed.
+    expect(hooks.pickMorningGreeting).toBeUndefined();
+    expect(wrapper.isInstalled()).toBe(false);
+  });
+
+  it("live mode still counts applied (the counter fix does not overcorrect)", async () => {
+    resetLog();
+    const hooks: DecisionHooks = {};
+    const client = new FakeDecisionClient({
+      "greeting:bartek": { type: "choice", id: "bartek:greeting:1", confidence: 0.9 },
+    });
+    const wrapper = createGreetingWrapper({
+      hooks,
+      client,
+      legacyPick: () => "legacy:bartek",
+    });
+    await wrapper.prefetch(["bartek"]);
+    wrapper.install();
+    const snapshot = counters();
+    expect(snapshot.applied).toBe(1);
+    expect(snapshot.shadow).toBe(0);
+    expect(hooks.pickMorningGreeting).toBeDefined();
+  });
+});

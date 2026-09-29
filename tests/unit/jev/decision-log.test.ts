@@ -43,6 +43,7 @@ describe("decision log", () => {
       rejected: 0,
       stale: 0,
       skipped: 0,
+    shadow: 0,
     });
   });
 
@@ -92,6 +93,7 @@ describe("decision log", () => {
       rejected: 1,
       stale: 1,
       skipped: 1,
+      shadow: 0,
     });
   });
 

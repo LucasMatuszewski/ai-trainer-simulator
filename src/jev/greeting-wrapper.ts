@@ -257,7 +257,10 @@ export function createGreetingWrapper(options: GreetingWrapperOptions): Greeting
       });
       logDecision({
         ...entry,
-        outcome: "applied",
+        // D-55: in shadow mode the decision is judged and logged but
+        // deliberately NOT steering (install() skipped the hook), so it
+        // must never inflate the applied counter.
+        outcome: shadow ? "shadow" : "applied",
         fallback: false,
         chosenId: answer.id,
         confidence: answer.confidence,

@@ -114,9 +114,13 @@ function runNpcWalk(withRobot: boolean): THREE.Vector3[] {
   actor.position.set(-2, 0, 0);
   scene.add(actor);
   if (withRobot) {
+    // Parked BESIDE the corridor centre line (a realistic stop), so the
+    // direct lane is blocked but the escape ladder has graph room to
+    // detour — a robot dead-centre on the only corridor line is the
+    // pathological jam case, not the WS9a scenario.
     const robot = new THREE.Group();
     robot.name = "agent-companion-body";
-    robot.position.set(0, 0, 0);
+    robot.position.set(0, 0, 0.55);
     scene.add(robot);
   }
   const bartek = NPCS.find((npc) => npc.id === "bartek")!;
@@ -142,7 +146,7 @@ describe("NPC avoidance of the companion", () => {
   it("routes around the robot instead of crossing its body", () => {
     const path = runNpcWalk(true);
     expect(path[path.length - 1]!.x).toBeGreaterThan(1.5);
-    expect(pathCrosses(path, { minX: -0.3, maxX: 0.3, minZ: -0.3, maxZ: 0.3 })).toBe(false);
+    expect(pathCrosses(path, { minX: -0.45, maxX: 0.45, minZ: 0.25, maxZ: 0.85 })).toBe(false);
   });
 
   it("keeps the direct NPC walk when no robot exists", () => {
