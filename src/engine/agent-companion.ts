@@ -889,6 +889,9 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       }
 
       let movedThisFrame = 0;
+      // WS9a: true when the person-yield held this frame — the advance
+      // result was rejected and its `finished` flag must be ignored.
+      let heldThisFrame = false;
       if (path !== null) {
         const result = advanceAlongPath(
           position,
@@ -921,20 +924,26 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
           // always allowed — the yield must never trap the robot.
           if (nextDist < curDist) return true;
           // EXCEPT: equal-distance endpoints can still CROSS the
-          // person's centre mid-frame (eighth verdict). If the frame's
-          // segment passes within 0.2 m of the centre while ending
-          // inside the radius, hold.
-          if (nextDist <= curDist + 0.01) {
+          // person's centre mid-frame (eighth verdict) — but only when
+          // the segment's closest approach is INTERIOR (0 < t < 1). An
+          // escape whose closest point is its own start (t = 0) is
+          // moving AWAY and must never be held: at high refresh rates
+          // the per-frame tolerance otherwise trapped outward steps
+          // (ninth verdict, 200 Hz probe).
+          {
             const abx = result.position.x - position.x;
             const abz = result.position.z - position.z;
             const lenSq = abx * abx + abz * abz;
             const t = lenSq === 0 ? 0 : Math.max(0, Math.min(1,
               ((npc.position.x - position.x) * abx + (npc.position.z - position.z) * abz) / lenSq));
-            const segDist = Math.hypot(
-              npc.position.x - (position.x + t * abx),
-              npc.position.z - (position.z + t * abz),
-            );
-            if (segDist < 0.2) return true;
+            const interior = t > 0 && t < 1;
+            if (interior) {
+              const segDist = Math.hypot(
+                npc.position.x - (position.x + t * abx),
+                npc.position.z - (position.z + t * abz),
+              );
+              if (segDist < 0.2 && nextDist <= curDist + 0.01) return true;
+            }
           }
           return false;
         });
@@ -1003,6 +1012,12 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
             }
           }
           movedThisFrame = 0;
+          // Ninth verdict (blocker): the frame was HELD — the rejected
+          // advance's `finished` flag must not resolve the walk as
+          // arrived. The robot keeps holding/dodging until it can
+          // actually reach the spot (or the occupied-destination
+          // fallback ends the trip honestly).
+          heldThisFrame = true;
         } else {
           personHoldElapsed = 0;
           personDodgeStalls = 0;
@@ -1014,7 +1029,7 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
           facing = result.face;
         }
 
-        if (result.finished) {
+        if (!heldThisFrame && result.finished) {
           const npc = trackedNpc === null ? undefined : deps.listNpcs().find((npc) => npc.id === trackedNpc!.id);
           if (trackedNpc !== null && npc === undefined) {
             stopWalk({ arrived: false, reason: "target person is no longer present" });
