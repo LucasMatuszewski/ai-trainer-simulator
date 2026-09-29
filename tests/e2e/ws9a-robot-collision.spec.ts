@@ -219,7 +219,7 @@ test("an NPC walking to the kitchen demonstrably reroutes around the robot parke
   outer: for (let window = 0; window < 8; window += 1) {
     await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
     await page.waitForTimeout(400);
-    const trajectories = new Map<string, { first: XZ; last: XZ; minRobotDist: number }>();
+    const trajectories = new Map<string, { first: XZ; last: XZ; minRobotDist: number; jumped: boolean }>();
     for (let i = 0; i < 60; i += 1) {
       await page.waitForTimeout(500);
       const data = await page.evaluate(() => ({
@@ -233,8 +233,13 @@ test("an NPC walking to the kitchen demonstrably reroutes around the robot parke
         const track = trajectories.get(npc.npcId);
         const dist = Math.hypot(pos.x - robotPos.x, pos.z - robotPos.z);
         if (!track) {
-          trajectories.set(npc.npcId, { first: pos, last: pos, minRobotDist: dist });
+          trajectories.set(npc.npcId, { first: pos, last: pos, minRobotDist: dist, jumped: false });
         } else {
+          // A per-sample jump larger than any walking speed can produce
+          // (2.5 m in 500 ms at ~1.4 m/s) is a placement/teleport, not
+          // travel — a trajectory containing one never counts as a
+          // rerouting prover (sixth-verdict minor).
+          if (Math.hypot(pos.x - track.last.x, pos.z - track.last.z) > 2.5) track.jumped = true;
           track.last = pos;
           track.minRobotDist = Math.min(track.minRobotDist, dist);
         }
@@ -253,7 +258,7 @@ test("an NPC walking to the kitchen demonstrably reroutes around the robot parke
       const isTraversal =
         (officeSide(track.first) && kitchenSide(track.last)) ||
         (kitchenSide(track.first) && officeSide(track.last));
-      if (!isTraversal) continue;
+      if (!isTraversal || track.jumped) continue;
       const lineThrough = pointToSegmentDist(P, track.first, track.last) < 0.55;
       if (!lineThrough) continue;
       provers += 1;

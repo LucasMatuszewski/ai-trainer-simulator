@@ -43,12 +43,6 @@ export const COMPANION_DODGE_AFTER_S = 0.4;
 /** WS9a: how far the dodge waypoint stands off the person. */
 const DODGE_STANDOFF = 0.8;
 
-function pointInAnyBox(p: XZ, boxes: ReadonlyArray<AABB>): boolean {
-  return boxes.some(
-    (b) => p.x >= b.minX && p.x <= b.maxX && p.z >= b.minZ && p.z <= b.maxZ,
-  );
-}
-
 /**
  * WS9a: build a two-leg dodge around `person` from `from` toward the
  * path's next target: one perpendicular standoff waypoint, then the
@@ -87,10 +81,21 @@ function planDodgeAround(
     { x: person.x + px * standoff, z: person.z + pz * standoff },
     { x: person.x - px * standoff, z: person.z - pz * standoff },
   ];
-  // Segment-vs-box, sampled coarsely (kitchen-scale rooms).
+  // Segment-vs-box with BODY clearance (sixth verdict): the raw boxes
+  // are inflated by the robot radius (a center line skimming an AABB
+  // still clips the body) and sampled finely enough that a thin wall
+  // cannot fall between samples.
+  const inflated = obstacles.map((box) => ({
+    minX: box.minX - COMPANION_RADIUS,
+    maxX: box.maxX + COMPANION_RADIUS,
+    minZ: box.minZ - COMPANION_RADIUS,
+    maxZ: box.maxZ + COMPANION_RADIUS,
+  }));
   const legBlocked = (a: XZ, b: XZ): boolean =>
-    obstacles.some((box) => {
-      for (let t = 0.05; t <= 1; t += 0.05) {
+    inflated.some((box) => {
+      const steps = Math.max(8, Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.1));
+      for (let i = 0; i <= steps; i += 1) {
+        const t = i / steps;
         const sx = a.x + (b.x - a.x) * t;
         const sz = a.z + (b.z - a.z) * t;
         if (sx >= box.minX && sx <= box.maxX && sz >= box.minZ && sz <= box.maxZ) return true;
@@ -101,7 +106,7 @@ function planDodgeAround(
     // BOTH legs must be furniture-clear: robot→dodge AND dodge→target
     // (fourth verdict: returning the original destination unchecked let
     // the post-dodge leg clip straight through a desk).
-    if (!legBlocked(from, dodge) && !legBlocked(dodge, target) && !pointInAnyBox(dodge, obstacles)) {
+    if (!legBlocked(from, dodge) && !legBlocked(dodge, target)) {
       return [dodge, { x: target.x, z: target.z }];
     }
   }
@@ -546,6 +551,33 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       displayName = clampSpokenLine(name) || "Rusty";
       persona = personaText.replace(/\s+/g, " ").trim().slice(0, MAX_PERSONA_LENGTH);
       position.set(deps.spawn.x, 0, deps.spawn.z);
+      // WS9a (sixth verdict): the fixed spawn must not materialize the
+      // robot inside an NPC — nudge the live position along a bounded
+      // fan until clear (reciprocal to the controller's arrival nudge).
+      {
+        const spawnBlocked = (): boolean =>
+          deps.listNpcs().some(
+            (npc) =>
+              Math.hypot(npc.position.x - position.x, npc.position.z - position.z) <
+              COMPANION_PERSONAL_RADIUS,
+          );
+        if (spawnBlocked()) {
+          for (let attempt = 1; attempt <= 8; attempt += 1) {
+            const angle = (attempt * Math.PI) / 4;
+            const candX = deps.spawn.x + Math.sin(angle) * 0.3 * attempt;
+            const candZ = deps.spawn.z + Math.cos(angle) * 0.3 * attempt;
+            const clear = !deps.listNpcs().some(
+              (npc) =>
+                Math.hypot(npc.position.x - candX, npc.position.z - candZ) <
+                COMPANION_PERSONAL_RADIUS,
+            );
+            if (clear) {
+              position.set(candX, 0, candZ);
+              break;
+            }
+          }
+        }
+      }
       facing = SPAWN_FACING;
       path = null;
       movingTo = null;
@@ -871,27 +903,26 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
           personHoldElapsed += dt;
           const dodgeReady = personHoldElapsed >= COMPANION_DODGE_AFTER_S;
           if (dodgeReady) {
-            // Escalating standoff: each stalled dodge stands the next
-            // one further off the person, and after two stalls the
-            // blocker is treated as an obstacle for a FULL route
-            // replan — a person standing on the route can stall a leg
-            // but never the move (fourth-verdict probe: the robot held
-            // at (0,0.72) forever with a person at (0,1.2)).
+            // Escalating standoff (sixth-verdict blocker): EVERY dodge
+            // counts as a stall until the robot moves freely again — a
+            // geometrically-valid dodge that the same person re-blocks
+            // must still escalate, or the replan is unreachable and a
+            // stationary blocker traps the robot forever. Each stall
+            // stands the next dodge further off; two stalls trigger a
+            // FULL route replan with the person as an obstacle.
             const standoff = DODGE_STANDOFF * (1 + personDodgeStalls * 0.75);
             const dodge = planDodgeAround(
               position, path, segmentIndex, blocker.position, deps.obstacles, standoff,
             );
+            personDodgeStalls += 1;
+            personHoldElapsed = 0;
             if (dodge !== null) {
               path = [position.clone(), ...dodge.map((p) => new THREE.Vector3(p.x, position.y, p.z))];
               segmentIndex = 0;
               distanceInSegment = 0;
-              personHoldElapsed = 0;
-            } else {
-              personDodgeStalls += 1;
             }
             if (personDodgeStalls >= 2) {
               personDodgeStalls = 0;
-              personHoldElapsed = 0;
               const target = path![path!.length - 1]!;
               const personBox: AABB = {
                 minX: blocker.position.x - 0.5,
@@ -913,6 +944,7 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
           movedThisFrame = 0;
         } else {
           personHoldElapsed = 0;
+          personDodgeStalls = 0;
           movedThisFrame = position.distanceTo(result.position);
           position.copy(result.position);
           segmentIndex = result.segmentIndex;

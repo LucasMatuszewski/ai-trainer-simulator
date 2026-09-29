@@ -694,6 +694,32 @@ export function createNpcController(
     return result;
   };
 
+  /** WS9a: nudges `pos` out of the companion keep-out with a bounded
+   *  rotating fan; returns the (possibly unchanged) position. Schedule
+   *  teleports and morning arrivals both land through here so no actor
+   *  can materialize inside the robot. */
+  const nudgeOutOfCompanion = (pos: { x: number; y: number; z: number }): void => {
+    if (currentRobotBox.length === 0) return;
+    const blockedNow = (): boolean =>
+      isSpawnBlocked(
+        { x: pos.x, z: pos.z, radius: NPC_DEFAULT_RADIUS },
+        [...obstacles, ...currentRobotBox],
+      );
+    if (!blockedNow()) return;
+    for (let attempt = 1; attempt <= 8; attempt += 1) {
+      const angle = (attempt * Math.PI) / 4;
+      const nudged = {
+        x: pos.x + Math.sin(angle) * 0.3 * attempt,
+        z: pos.z + Math.cos(angle) * 0.3 * attempt,
+      };
+      if (!isSpawnBlocked({ x: nudged.x, z: nudged.z, radius: NPC_DEFAULT_RADIUS }, [...obstacles, ...currentRobotBox])) {
+        pos.x = nudged.x;
+        pos.z = nudged.z;
+        return;
+      }
+    }
+  };
+
   const settle = (npcId: NpcId, entry: ScheduleEntry): void => {
     const object = npcObjects[npcId];
     const state = runtime.get(npcId)!;
@@ -703,28 +729,8 @@ export function createNpcController(
     object.position.set(entry.position.x, entry.position.y, entry.position.z);
     // WS9a: a schedule teleport must never land an actor inside the
     // companion's keep-out (Lucas's overlap bug, robot parked on a
-    // stop). Nudge along a rotating fan until clear — bounded, and the
-    // schedule entry itself is never mutated.
-    if (currentRobotBox.length > 0) {
-      const blocked = (): boolean =>
-        isSpawnBlocked(
-          { x: object.position.x, z: object.position.z, radius: NPC_DEFAULT_RADIUS },
-          [...obstacles, ...currentRobotBox],
-        );
-      if (blocked()) {
-        for (let attempt = 1; attempt <= 8; attempt += 1) {
-          const angle = (attempt * Math.PI) / 4;
-          const nudged = {
-            x: entry.position.x + Math.sin(angle) * 0.3 * attempt,
-            z: entry.position.z + Math.cos(angle) * 0.3 * attempt,
-          };
-          if (!isSpawnBlocked({ x: nudged.x, z: nudged.z, radius: NPC_DEFAULT_RADIUS }, [...obstacles, ...currentRobotBox])) {
-            object.position.set(nudged.x, entry.position.y, nudged.z);
-            break;
-          }
-        }
-      }
-    }
+    // stop). Bounded fan nudge; the schedule entry is never mutated.
+    nudgeOutOfCompanion(object.position);
     object.rotation.y = entry.face;
     object.rotation.z = 0;
     // C-48: park the gait in a neutral pose - the walk cycle leaves
@@ -1277,7 +1283,10 @@ export function createNpcController(
     pendingArrivals.delete(npcId);
     const object = npcObjects[npcId];
     object.position.set(arrival.door.x, arrival.door.y, arrival.door.z);
-    runtime.get(npcId)!.baseY = arrival.door.y;
+    // WS9a: a doorway lane can be occupied by the parked companion —
+    // an arrival must not materialize inside it (sixth-verdict major).
+    nudgeOutOfCompanion(object.position);
+    runtime.get(npcId)!.baseY = object.position.y;
     planForEntry(npcId, scheduleFor(npcId, period));
     // After planning, not before: an unroutable destination strands the
     // NPC (which leaves `visible` alone), and someone who walked in
