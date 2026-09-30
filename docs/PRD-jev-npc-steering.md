@@ -1,6 +1,6 @@
 # PRD — Jev: AI-Steered NPC Decisions, Social Simulation & World Content for Stack Underflow
 
-**Status:** Active — **v2.1**, 2026-09-28. Lucas's decisions on the v1 assumptions are
+**Status:** Active — **v2.2**, 2026-09-30 (Wave 2 scope: C-77 — dialogue architecture v2, massive-scale chatter selection, positional audio). Lucas's decisions on the v1 assumptions are
 applied and recorded as CHANGELOG **C-75** (feedback L-2026-09-28-02); the independent
 review findings (Codex/gpt-6-astra, Claude/Opus — see
 [`docs/reviews/2026-09-28-jev-review-triage.md`](./reviews/2026-09-28-jev-review-triage.md))
@@ -118,6 +118,28 @@ agent player gets the same livelier world.
    neutral / pleased / delighted) — which code maps to a bounded relationship
    delta (at most ±5) and a mood shift through the social model, applied by the
    existing reducer. The judgment never returns raw numbers.
+
+### Flow A2 — Conversation architecture v2 (C-77)
+
+1. A conversation is a **sequence of exchanges built per turn**, not a walk of
+   one static tree. Every NPC owns authored pools: **topics**, each with
+   **option candidates** (what the player can say) and **reply candidates**
+   (what the NPC answers), tagged with context (topic, relationship band,
+   stats bands, period, day events, quest flags).
+2. Each turn: code hard-filters candidates by context → the Jev judgment
+   curates up to **4 player options** and picks the **NPC reply** (plus its
+   reaction bucket for the social layer). Lines are always authored; Jev only
+   selects among them.
+3. **Exhaustion pivots, never loops:** when a thread's pool is spent, the
+   option builder switches to the richest available thread (Jev picks which)
+   and the "already heard" set is respected per thread. A neutral exit is
+   always available.
+4. **Tasks:** NPCs offer authored task hooks mid-conversation (funny,
+   lore-grounded: Burek duty, coffee emergencies, Janusz's robot maintenance,
+   Tomek's push-to-main aftermath). A task offer sets the existing quest/flag
+   systems — tasks are content, not a new engine.
+5. Depth grows by adding pool entries (schema-validated data), never by
+   touching engine code.
 
 ### Flow B — Ambient world tick (batched decisions)
 
