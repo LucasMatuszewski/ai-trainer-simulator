@@ -62,6 +62,9 @@ import {
 } from "./game/npc-needs";
 import { roomAt } from "./engine/chatter";
 import { createGreetingWrapper, type GreetingWrapperHandle } from "./jev/greeting-wrapper";
+// WS3 (C-77): steered dialogue turns + the authored v2 pool content.
+import { createDialogueWrapper, type DialogueSteererHandle } from "./jev/dialogue-wrapper";
+import { dialoguePoolFor, registerNpcDialoguePools } from "./content/npc-content/dialogue-pools";
 import { mountJevSettings } from "./ui/jev-settings";
 import { jevDecisionHooks } from "./engine/npc-controller";
 import { approachSpotFor } from "./content/npc-approach";
@@ -215,6 +218,19 @@ let unsubscribeGame: (() => void) | null = null;
 const JEV_MODE = new URLSearchParams(window.location.search).get("jev");
 let greetingWrapper: GreetingWrapperHandle | null = null;
 let lastGreetingPrefetchDay = 0;
+// WS3: the authored v2 pools are CONTENT - they power the deterministic
+// conversation fallback with Jev off, too - so registration is
+// unconditional and idempotent.
+registerNpcDialoguePools();
+// The steered dialogue-turn wrapper. Same ?jev mode handling as the
+// greeting wrapper: off = never constructed, shadow = judge + log
+// without steering. Null on screens without the office.
+let dialogueSteerer: DialogueSteererHandle | null = null;
+
+function buildDialogueSteerer(): DialogueSteererHandle | null {
+  if (JEV_MODE === "off") return null;
+  return createDialogueWrapper({ shadow: JEV_MODE === "shadow" });
+}
 // WS10 (C-77): shared positional-audio player. Created lazily on the
 // first office mount; reads player position/yaw/room LIVE via the
 // getters, so it is safe to build before `controls` exists.
@@ -568,6 +584,9 @@ function startOffice(playIntro = false): void {
     greetingWrapper?.uninstall();
     greetingWrapper = buildGreetingWrapper();
     greetingWrapper?.install();
+    // WS3: a fresh office session starts a fresh steerer memo.
+    dialogueSteerer?.resetSession();
+    dialogueSteerer = buildDialogueSteerer();
     prefetchGreetingsNow();
     // L-2026-08-30-01: register the NPC controller with the events
     // dispatcher so every period transition can roll a random
@@ -1388,6 +1407,15 @@ function openDialogueWith(npc: NPC): void {
     npcFaceAnimations.set(npc.id, plan.npcYaw);
     sceneObjects?.npcController.setTalkingToPlayer(npc.id);
     dialogueNpcId = npc.id;
+  }
+  // WS3 (C-77): NPCs with authored v2 pools run the conversation-turn
+  // flow; everyone else keeps their legacy tree. Both paths work, and the
+  // WebMCP snapshot/pickOption surface covers v2 conversations too.
+  if (dialoguePoolFor(npc.id) !== undefined) {
+    audio().sfx.play("sfx_dialogue_open");
+    roster?.setFocus(npc.id);
+    panel.openV2(npc, dialogueSteerer);
+    return;
   }
   const state = game.get();
   let treeKey = "default";

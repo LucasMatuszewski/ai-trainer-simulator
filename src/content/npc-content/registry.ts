@@ -10,6 +10,7 @@
  */
 
 import type { NpcId } from "../../types";
+import type { NpcDialoguePool } from "../dialogue-schema";
 
 /** One authored reply the NPC may give (Jev picks among candidates). */
 export interface NpcReplyCandidate {
@@ -41,6 +42,12 @@ export interface NpcContentEntry {
   replyCandidates?: readonly NpcReplyCandidate[];
   argumentPools?: readonly NpcArgumentPool[];
   questionPools?: readonly NpcQuestionPool[];
+  /**
+   * WS3 dialogue v2 pool (C-77): topics x option/reply candidates + task
+   * offers, per `src/content/dialogue-schema.ts`. Present only for NPCs
+   * that have authored pools; everyone else keeps their legacy trees.
+   */
+  dialoguePool?: NpcDialoguePool;
 }
 
 /**

@@ -6,6 +6,24 @@ import { buildAgentPrompt, COPY_HINT } from "../content/webmcp-help";
 import type { DialogueButton, DialogueLink, DialogueNode, DialogueTree, NPC } from "../types";
 import { game } from "../game/state";
 import { getMemory, setMemory, pickedOptionsFor, markOptionPicked } from "../content/dialogue-memory";
+import {
+  buildTurn,
+  newConversationSession,
+  recordExchange,
+  type ConversationSession,
+  type DialogueTurn,
+  type TurnOption,
+} from "../game/dialogue-turn";
+import {
+  V2_MEMORY_TREE_ID,
+  type DialogueTurnMemory,
+  type NpcDialoguePool,
+  type ReplyCandidate,
+  type TaskOffer,
+} from "../content/dialogue-schema";
+import { BUCKET_DELTAS } from "../game/social";
+import type { DialogueSteererHandle } from "../jev/dialogue-wrapper";
+import { dialoguePoolFor, v2MemoryFor } from "../content/npc-content/dialogue-pools";
 
 export interface DialogueController {
   open: (npc: NPC, tree: DialogueTree, treeId?: string) => void;
@@ -50,6 +68,14 @@ export interface DialogueController {
   ) => void;
   /** True while an agent-authored conversation is on screen. */
   isAgentTurn: () => boolean;
+  /**
+   * WS3 (C-77): open a pool-driven v2 conversation for an NPC with
+   * authored pools. Same panel; options and replies come from the pure
+   * turn builder (deterministic authored fallback) with optional Jev
+   * steering on top. `steerer` may be null (Jev off) - the game plays
+   * the authored fallback order.
+   */
+  openV2: (npc: NPC, steerer: DialogueSteererHandle | null) => void;
 }
 
 /** One agent-authored reply. `ends` closes the conversation when picked. */
@@ -202,8 +228,25 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
   /** Set while an agent-authored turn owns the panel. */
   let agentTurnActive = false;
 
+  // --- WS3: dialogue v2 state (C-77, PRD Flow A2) ---
+
+  /** One open pool-driven v2 conversation. Mutually exclusive with `state`. */
+  interface V2Conversation {
+    npc: NPC;
+    pool: NpcDialoguePool;
+    memory: DialogueTurnMemory;
+    session: ConversationSession;
+    turn: DialogueTurn;
+    /** The line currently on screen (the NPC's last answer). */
+    reply: ReplyCandidate | null;
+    /** A task offer awaiting acceptance (rendered highlighted). */
+    pendingOffer: TaskOffer | null;
+    steerer: DialogueSteererHandle | null;
+  }
+  let v2: V2Conversation | null = null;
+
   function open(npc: NPC, tree: DialogueTree, treeId: string = "default"): void {
-    if (state) return; // already open
+    if (state || v2) return; // already open
     state = { npc, tree, treeId, currentNodeId: "greeting" };
     const memory = getMemory(npc.id);
     setMemory(npc.id, {
@@ -216,8 +259,9 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
   }
 
   function close(): void {
-    if (!state && !agentTurnActive) return;
+    if (!state && !agentTurnActive && !v2) return;
     agentTurnActive = false;
+    v2 = null;
     state = null;
     currentNode = null;
     currentAvailableOptions = [];
@@ -230,7 +274,7 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
   }
 
   function isOpen(): boolean {
-    return state !== null || agentTurnActive;
+    return state !== null || agentTurnActive || v2 !== null;
   }
 
   function render(): void {
@@ -393,6 +437,13 @@ wireActionButtons(container!);
   }
 
   function pickOption(optionIdValue: string): boolean {
+    // WS3: WebMCP picks pass through the same path as UI clicks (AC-05).
+    if (v2 !== null) {
+      const index = orderedV2Options().findIndex((entry) => entry.option.id === optionIdValue);
+      if (index === -1) return false;
+      pickV2(index);
+      return true;
+    }
     if (!state || !currentNode) return false;
     const opt = currentNode.options?.find((o) => optionId(o) === optionIdValue);
     if (!opt) return false;
@@ -415,6 +466,22 @@ wireActionButtons(container!);
   }
 
   function snapshot(): DialogueSnapshot | null {
+    // WS3: expose v2 conversations to the WebMCP snapshot too.
+    if (v2 !== null) {
+      return {
+        npcId: v2.npc.id,
+        npcName: v2.npc.name,
+        treeId: V2_MEMORY_TREE_ID,
+        nodeId: v2.turn.topicId,
+        text: v2.reply?.text ?? "",
+        availableOptions: orderedV2Options().map((entry) => ({
+          id: entry.option.id,
+          text: entry.option.text,
+          nextNodeId: entry.isExit ? "_end" : entry.option.topicId,
+        })),
+        isTerminal: false,
+      };
+    }
     if (!state || !currentNode) return null;
     return {
       npcId: state.npc.id,
@@ -455,7 +522,7 @@ wireActionButtons(container!);
   ): void {
     // An agent turn replaces the previous turn in place; a normal NPC
     // dialogue is closed first so the two can never share the panel.
-    if (state !== null) close();
+    if (state !== null || v2 !== null) close();
     agentTurnActive = true;
 
     if (!container) {
@@ -497,8 +564,192 @@ wireActionButtons(container!);
     });
   }
 
+  // -------------------------------------------------------------------------
+  // WS3: the v2 conversation-turn flow (C-77)
+  // -------------------------------------------------------------------------
+
+  /** Used option ids across the persistent memory and this session. */
+  function v2UsedOptionIds(): string[] {
+    if (v2 === null) return [];
+    const ids = new Set<string>([...v2.memory.usedOptionIds]);
+    for (const usage of Object.values(v2.session.usage)) {
+      for (const id of usage.usedOptionIds) ids.add(id);
+    }
+    return [...ids];
+  }
+
+  /**
+   * The turn's options, reordered by the stored steered curation when one
+   * exists. The exit option was never sent to the steerer, so it always
+   * stays last (AC-04: the exit reserves its slot).
+   */
+  function orderedV2Options(): TurnOption[] {
+    if (v2 === null) return [];
+    const entries = [...v2.turn.options];
+    const steerer = v2.steerer;
+    if (steerer === null) return entries;
+    const stored = steerer.memoOptionOrder(v2.npc.id, v2.turn.topicId, v2UsedOptionIds());
+    if (stored === null) return entries;
+    const rank = new Map<string, number>(stored.map((id, index) => [id, index]));
+    return entries.sort(
+      (a, b) =>
+        (rank.get(a.option.id) ?? Number.MAX_SAFE_INTEGER)
+        - (rank.get(b.option.id) ?? Number.MAX_SAFE_INTEGER),
+    );
+  }
+
+  function ensureV2Container(): HTMLElement {
+    if (container === null) {
+      container = document.createElement("div");
+      container.className = "dialogue";
+      root.appendChild(container);
+    }
+    return container;
+  }
+
+  /**
+   * Judge the current turn in the background. The authored fallback is
+   * already on screen, so a slow/failed judgment can never block or blank
+   * the panel (AC-10/11) - a landing curation merely reorders options.
+   */
+  function steerCurrentTurn(): void {
+    if (v2 === null || v2.steerer === null) return;
+    const steerer = v2.steerer;
+    void steerer
+      .steerTurn({
+        npcId: v2.npc.id,
+        topicId: v2.turn.topicId,
+        options: v2.turn.options.filter((entry) => !entry.isExit).map((entry) => entry.option),
+        replies: v2.turn.replyCandidates,
+        usedOptionIds: v2UsedOptionIds(),
+        usedReplyIds: [...v2.memory.usedReplyIds],
+        facts: { "relationship.value": game.get().npcRelationships[v2.npc.id] ?? 50 },
+      })
+      .then(() => {
+        if (v2 !== null) renderV2();
+      })
+      .catch(() => undefined);
+  }
+
+  function openV2(npc: NPC, steerer: DialogueSteererHandle | null): void {
+    if (state !== null || v2 !== null || agentTurnActive) return;
+    const pool = dialoguePoolFor(npc.id);
+    if (pool === undefined) return;
+    const memory = v2MemoryFor(npc.id);
+    setMemory(npc.id, { visitCount: getMemory(npc.id).visitCount + 1 });
+    const session = newConversationSession();
+    const turn = buildTurn(game.get(), npc.id, memory, session, pool);
+    if (turn === null) return;
+    v2 = {
+      npc,
+      pool,
+      memory,
+      session,
+      turn,
+      reply: turn.replyCandidates[0] ?? null,
+      pendingOffer: null,
+      steerer,
+    };
+    setMemory(npc.id, { lastTopic: turn.topicId });
+    steerCurrentTurn();
+    renderV2();
+  }
+
+  function renderV2(): void {
+    if (v2 === null) return;
+    const { npc, reply, pendingOffer } = v2;
+    const el = ensureV2Container();
+    const entries = orderedV2Options();
+    el.innerHTML = `
+      <div class="portrait">${escapeHtml(npc.emoji)}</div>
+      <div class="content">
+        <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
+        <div class="text">${escapeHtml(reply?.text ?? "")}</div>
+        <div class="options">
+          ${pendingOffer !== null
+            ? `<button class="task" data-v2-task>${escapeHtml(`Accept: ${pendingOffer.title}`)}</button>`
+            : ""}
+          ${entries
+            .map((entry, index) => `<button data-v2-opt="${index}">${escapeHtml(entry.option.text)}</button>`)
+            .join("")}
+        </div>
+      </div>
+      <button class="skip" data-skip>Skip</button>
+    `;
+    el.querySelector<HTMLButtonElement>("[data-v2-task]")?.addEventListener("click", () => pickV2Task());
+    el.querySelectorAll<HTMLButtonElement>("[data-v2-opt]").forEach((button) => {
+      button.addEventListener("click", () => pickV2(Number(button.dataset.v2Opt ?? "-1")));
+    });
+    el.querySelector<HTMLButtonElement>("[data-skip]")!.addEventListener("click", finishV2);
+  }
+
+  /** Accepting a task sets an EXISTING flag via the standard effect path. */
+  function pickV2Task(): void {
+    if (v2 === null || v2.pendingOffer === null) return;
+    game.dispatch({ type: "set-flag", flag: v2.pendingOffer.flagToSet, value: true });
+    v2.pendingOffer = null;
+    renderV2();
+  }
+
+  function pickV2(index: number): void {
+    if (v2 === null) return;
+    const entry = orderedV2Options()[index];
+    if (entry === undefined) return;
+    if (entry.isExit) {
+      finishV2();
+      return;
+    }
+    const option = entry.option;
+    // The reply was pre-decided while the turn was on screen (D-48):
+    // stored steered answer first, deterministic authored fallback second.
+    const stored = v2.steerer?.memoReply(v2.npc.id, v2.turn.topicId, v2UsedOptionIds()) ?? null;
+    const reply =
+      v2.turn.replyCandidates.find((candidate) => candidate.id === stored?.replyId)
+      ?? v2.turn.replyCandidates[0]
+      ?? null;
+    const topicId = v2.turn.topicId;
+    if (reply !== null) {
+      // D-50: the reaction is the author-tagged bucket, mapped through the
+      // social model's single bucket table to a bounded delta. No numbers
+      // ever come from a judgment.
+      game.dispatch({
+        type: "add-relationship",
+        npcId: v2.npc.id,
+        delta: BUCKET_DELTAS[reply.relationshipHint ?? "neutral"].relDelta,
+      });
+      v2.pendingOffer =
+        reply.offersTaskId !== undefined
+          ? v2.pool.taskOffers.find((task) => task.id === reply.offersTaskId) ?? null
+          : null;
+    }
+    // L-2026-08-30-02: an option the player answered never comes back.
+    markOptionPicked(v2.npc.id, V2_MEMORY_TREE_ID, option.id);
+    v2.memory = {
+      usedOptionIds: new Set([...v2.memory.usedOptionIds, option.id]),
+      usedReplyIds: new Set([...v2.memory.usedReplyIds, reply?.id ?? ""]),
+    };
+    v2.session = recordExchange(v2.session, topicId, option.id, reply?.id ?? "none");
+    setMemory(v2.npc.id, { lastTopic: topicId });
+    const nextTurn = buildTurn(game.get(), v2.npc.id, v2.memory, v2.session, v2.pool);
+    if (nextTurn === null) {
+      finishV2();
+      return;
+    }
+    v2.turn = nextTurn;
+    v2.reply = nextTurn.replyCandidates[0] ?? null;
+    steerCurrentTurn();
+    renderV2();
+  }
+
+  function finishV2(): void {
+    game.dispatch({ type: "increment-total", key: "dialoguesFinished" });
+    v2?.steerer?.resetSession();
+    close();
+  }
+
   return {
     open,
+    openV2,
     openAgentTurn,
     isAgentTurn: () => agentTurnActive,
     close,
