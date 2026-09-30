@@ -107,6 +107,8 @@ describe("openrouter adapter — request wire format", () => {
     expect(headers.authorization).toBe(`Bearer ${TEST_KEY}`);
     expect(headers["content-type"]).toBe("application/json");
     const body = JSON.parse(String(calls[0]!.init.body)) as {
+      model: string;
+      state: unknown;
       questions: Record<string, { type: string; instructions: string; criteria: Record<string, string> }>;
     };
     // The provider record shape (NOT our internal array) — a live 400
@@ -114,9 +116,10 @@ describe("openrouter adapter — request wire format", () => {
     expect(body.model).toBe(JEV_PINNED_MODEL);
     expect(body.state).toEqual(STATE);
     const wireQuestion = body.questions["greeting:bartek"];
-    expect(wireQuestion.type).toBe("choice");
-    expect(wireQuestion.instructions).toBe("Pick a greeting.");
-    expect(Object.keys(wireQuestion.criteria)).toEqual([
+    expect(wireQuestion).toBeDefined();
+    expect(wireQuestion!.type).toBe("choice");
+    expect(wireQuestion!.instructions).toBe("Pick a greeting.");
+    expect(Object.keys(wireQuestion!.criteria)).toEqual([
       "bartek:greeting:0",
       "bartek:greeting:1",
       "bartek:greeting:2",
