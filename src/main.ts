@@ -40,6 +40,8 @@ import { CORRIDOR_WAYPOINTS, buildWaypointEdges, DEFAULT_MAX_EDGE_LENGTH } from 
 import { WORLD_ROOMS } from "./content/world-layout";
 import { NPCS, OBSTACLES } from "./content/npcs";
 import { getNpcObstacles } from "./engine/npc-spawn-validator";
+import { createPositionalSfx, type PositionalSfx } from "./audio/positional-three";
+import { roomAt } from "./engine/chatter";
 import { createGreetingWrapper, type GreetingWrapperHandle } from "./jev/greeting-wrapper";
 import { mountJevSettings } from "./ui/jev-settings";
 import { jevDecisionHooks } from "./engine/npc-controller";
@@ -194,6 +196,10 @@ let unsubscribeGame: (() => void) | null = null;
 const JEV_MODE = new URLSearchParams(window.location.search).get("jev");
 let greetingWrapper: GreetingWrapperHandle | null = null;
 let lastGreetingPrefetchDay = 0;
+// WS10 (C-77): shared positional-audio player. Created lazily on the
+// first office mount; reads player position/yaw/room LIVE via the
+// getters, so it is safe to build before `controls` exists.
+let positionalSfx: PositionalSfx | null = null;
 
 function buildGreetingWrapper(): GreetingWrapperHandle | null {
   if (JEV_MODE === "off") return null;
@@ -437,11 +443,32 @@ function startOffice(playIntro = false): void {
   setScreen("office");
   if (!engine) {
     engine = createEngine(canvas);
+    if (!positionalSfx) {
+      // WS10 (C-77): built lazily on the first office mount; the
+      // getters read the player LIVE, so building before `controls`
+      // exists is safe.
+      const playerPos = (): { x: number; z: number } => {
+        const p = controls?.getPlayerPosition();
+        return { x: p?.x ?? 0, z: p?.z ?? 0 };
+      };
+      positionalSfx = createPositionalSfx({
+        sfx: audio().sfx,
+        listener: {
+          getPosition: playerPos,
+          getFacingRad: () => controls?.getYaw() ?? 0,
+          getRoom: () => {
+            const p = controls?.getPlayerPosition();
+            return p ? roomAt(p.x, p.z) : null;
+          },
+        },
+      });
+    }
     const built = buildOfficeScene(
       engine.scene,
       () => game.get().timeOfDay,
       () => game.get().day,
       isLunchActive,
+      positionalSfx,
     );
     sceneObjects = built;
     // C-61 fix: hand the REAL engine camera to the bubble system. DOM
