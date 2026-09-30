@@ -338,7 +338,10 @@ export function buildOfficeScene(
   });
 
   const npcController = createNpcController(NPCS, npcObjects, getCurrentPeriod, getDay, Math.random, isLunchActive, positionalSfx ? {
-    playSfx: (id: "sfx_photocopier") => positionalSfx.play(id, "photocopier"),
+    playSfx: (id: "sfx_photocopier" | "sfx_error_buzzer") => {
+      if (id === "sfx_photocopier") positionalSfx.play(id, "photocopier");
+      else positionalSfx.play(id); // unregistered source = full-volume bus play
+    },
   } : {});
   updatables.push(npcController.update);
 

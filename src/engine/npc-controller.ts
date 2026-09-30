@@ -31,6 +31,7 @@ import { OFFICE_CHATTER, type ChatterExchange } from "../content/office-chatter"
 import { withRobotObstacle, type AABB } from "./collision";
 import type { NPC, NpcId } from "../types";
 import type { DecisionHooks } from "../jev/contracts";
+import { isFaulted } from "./interaction-points";
 import { createBubbleSystem, pickLine } from "./bubbles";
 import {
   CHATTER_RADIUS,
@@ -460,7 +461,7 @@ export interface NpcControllerOptions {
    *  roll and make jam tests seed-fragile. */
   chatter?: boolean;
   /** C-64: injectable so controller tests do not need a browser AudioContext. */
-  playSfx?: (id: "sfx_photocopier") => void;
+  playSfx?: (id: "sfx_photocopier" | "sfx_error_buzzer") => void;
   /** C-64: explicit printer host for isolated controller tests. */
   printerObject?: THREE.Object3D;
   /**
@@ -486,7 +487,7 @@ export function createNpcController(
 ): NpcController {
   const arrivalsEnabled = options.arrivals ?? true;
   const chatterEnabled = options.chatter ?? true;
-  const playSfx = options.playSfx ?? ((id: "sfx_photocopier") => {
+  const playSfx = options.playSfx ?? ((id: "sfx_photocopier" | "sfx_error_buzzer") => {
     // Unit simulations run without a DOM or AudioContext. Production
     // browsers use the shared manager; headless runs stay silent.
     if (typeof window !== "undefined") audio().sfx.play(id);
@@ -629,6 +630,9 @@ export function createNpcController(
     ? COPY_RUN_INTERVAL_S.min + copyRandom() * (COPY_RUN_INTERVAL_S.max - COPY_RUN_INTERVAL_S.min)
     : Infinity;
   let lastBurekBubbleAt = -Infinity;
+  // WS6: cooldown for Renata's jammed-printer balk so the bubble does
+  // not spam every chatter tick while the printer is jammed.
+  let lastCopyBalkAt = -999;
   let barkAt = nextBarkDelay(rng);
 
   const firstNpc = npcs[0];
@@ -990,6 +994,19 @@ export function createNpcController(
   const startCopyRun = (): void => {
     const state = runtime.get(RENATA_COPY_NPC_ID);
     if (state === undefined || playerTalkingTo === RENATA_COPY_NPC_ID) return;
+    // WS6 (AC-21): a jammed printer visibly blocks the errand — Renata
+    // balks (bubble + buzzer) and retries on a later window instead of
+    // copying on a broken machine.
+    if (isFaulted("printer")) {
+      const renataObject = npcObjects[RENATA_COPY_NPC_ID];
+      if (renataObject && controllerElapsed - lastCopyBalkAt >= 20) {
+        bubbleSystem?.show(renataObject.position, "Not again. Someone fix the copier!");
+        playSfx("sfx_error_buzzer");
+        lastCopyBalkAt = controllerElapsed;
+      }
+      scheduleNextCopyRun();
+      return;
+    }
     const desk = scheduleFor(RENATA_COPY_NPC_ID, getCurrentPeriod());
     state.returnEntry = desk;
     state.copyElapsed = 0;

@@ -41,6 +41,25 @@ import { WORLD_ROOMS } from "./content/world-layout";
 import { NPCS, OBSTACLES } from "./content/npcs";
 import { getNpcObstacles } from "./engine/npc-spawn-validator";
 import { createPositionalSfx, type PositionalSfx } from "./audio/positional-three";
+import {
+  INTERACTION_POINT_DEFS,
+  beginRepair,
+  finishRepair,
+  interruptAll,
+  isFaulted,
+  onActionCompleted,
+  registerBuiltinInteractionPoints,
+  resetInteractionPoints,
+  setFaultReadout,
+  updateInteractionPoints,
+  updateRepair,
+  usePoint,
+} from "./engine/interaction-points";
+import {
+  createNeedsTable,
+  decayNeeds,
+  type NpcNeedsTable,
+} from "./game/npc-needs";
 import { roomAt } from "./engine/chatter";
 import { createGreetingWrapper, type GreetingWrapperHandle } from "./jev/greeting-wrapper";
 import { mountJevSettings } from "./ui/jev-settings";
@@ -48,7 +67,7 @@ import { jevDecisionHooks } from "./engine/npc-controller";
 import { approachSpotFor } from "./content/npc-approach";
 import { getActiveQuest } from "./content/quests";
 import type { GameState, NPC, NpcId } from "./types";
-import { mountHud, renderHud, renderHudClock, showToast, type HudElements } from "./ui/hud";
+import { mountHud, renderHud, renderHudClock, showPrompt, showToast, type HudElements } from "./ui/hud";
 import { mountFpsMeter, type FpsMeter } from "./ui/fps-meter";
 import { positionHoverLabel } from "./ui/hover-label-position";
 import { mountTitleScreen, mountCharacterCreate, showDailySummary, showGameOver } from "./ui/title";
@@ -200,6 +219,33 @@ let lastGreetingPrefetchDay = 0;
 // first office mount; reads player position/yaw/room LIVE via the
 // getters, so it is safe to build before `controls` exists.
 let positionalSfx: PositionalSfx | null = null;
+// WS6 (D-53/AC-20..22): runtime NPC needs + interaction wiring. Needs
+// are runtime-only (never saved); effects flow through the standard
+// game actions.
+let npcNeeds: NpcNeedsTable = createNeedsTable(
+  NPCS.map((npc) => npc.id),
+);
+let heldE = false;
+let lastRepairProgress = 0;
+
+/** WS6: the closest interaction point within use range, or null. */
+const INTERACTION_LABELS: Record<string, string> = {
+  "coffee-machine": "coffee machine",
+  printer: "printer",
+  whiteboard: "whiteboard",
+};
+function nearestInteractionPoint(): { id: string; label: string } | null {
+  const p = controls?.getPlayerPosition();
+  if (!p || screen !== "office") return null;
+  let best: { id: string; label: string; d: number } | null = null;
+  for (const def of INTERACTION_POINT_DEFS) {
+    const d = Math.hypot(def.position.x - p.x, def.position.z - p.z);
+    if (d < 1.8 && (best === null || d < best.d)) {
+      best = { id: def.id, label: INTERACTION_LABELS[def.id] ?? def.id, d };
+    }
+  }
+  return best;
+}
 
 function buildGreetingWrapper(): GreetingWrapperHandle | null {
   if (JEV_MODE === "off") return null;
@@ -257,6 +303,13 @@ let fpsMeter: FpsMeter | null = null;
 const npcFaceAnimations = new Map<string, number>(); // npcId -> target yaw
 const npcScheduleYaws = new Map<string, number>();    // npcId -> schedule yaw
 
+window.addEventListener("keyup", (e) => {
+  if ((e.code === "KeyE" || e.key.toLowerCase() === "e") && heldE) {
+    heldE = false;
+    finishRepair();
+  }
+});
+
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     // One priority chain, topmost layer first (Lucas, 2026-09-03: Esc
@@ -291,6 +344,20 @@ window.addEventListener("keydown", (e) => {
     if (!isTextEntry) {
       e.preventDefault();
       toggleFullscreen();
+    }
+  }
+  // WS6 (AC-20/21): E uses the nearest interaction point; at a faulted
+  // printer it is a HOLD-to-repair (keydown begins, keyup finishes).
+  if ((e.code === "KeyE" || e.key.toLowerCase() === "e") && screen === "office" && !dialogue?.isOpen()) {
+    const nearest = nearestInteractionPoint();
+    if (nearest) {
+      e.preventDefault();
+      if (isFaulted(nearest.id)) {
+        beginRepair(nearest.id, "player");
+        heldE = true;
+      } else {
+        usePoint(nearest.id, "player");
+      }
     }
   }
   if ((e.code === "KeyZ" || e.key.toLowerCase() === "z") && !e.repeat) {
@@ -367,6 +434,7 @@ function showCharacterCreate(): void {
     uiRoot,
     (data) => {
       game.dispatch({ type: "reset" });
+      resetInteractionPoints();
       bartekSummoned = false;
       bartekApproaching = false;
       game.dispatch({ type: "load", state: { ...game.get(), character: { ...data }, stats: applyTrait(data.trait, game.get().stats) } });
@@ -463,6 +531,21 @@ function startOffice(playIntro = false): void {
         },
       });
     }
+    // WS6 (D-53/AC-20..22): interaction points + needs. Registry is
+    // pure data; effects flow through the standard game actions.
+    registerBuiltinInteractionPoints();
+    setFaultReadout((id) => game.get().equipment?.[id] === "faulted");
+    onActionCompleted((action) => {
+      if (action.effect === "caffeine") {
+        if (action.actorId === "player") {
+          game.dispatch({ type: "add-stat", stat: "caffeine", delta: 15 });
+        } else {
+          const needs = npcNeeds[action.actorId as NpcId];
+          if (needs) npcNeeds[action.actorId as NpcId] = { ...needs, caffeine: 100 };
+        }
+      }
+    });
+    interruptAll(); // release stale reservations from a previous mount
     const built = buildOfficeScene(
       engine.scene,
       () => game.get().timeOfDay,
@@ -1567,6 +1650,36 @@ function frame(): void {
   const rawFrameMs = now - lastTime;
   const dt = Math.min(0.1, rawFrameMs / 1000);
   lastTime = now;
+  // WS6 (AC-20..22): advance interaction lifecycles + the repair hold,
+  // decay runtime needs (in-game minutes = real seconds at 1x), and
+  // show the use/repair prompt for the nearest point.
+  if (screen === "office") {
+    updateInteractionPoints(dt);
+    const repairProgressNow = updateRepair(heldE ? dt : 0);
+    // WS6: updateRepair auto-completes (returns 1) and flips its
+    // transient bit; the PERSISTED bit is cleared here, exactly once,
+    // on the completion frame.
+    if (repairProgressNow === 1 && lastRepairProgress > 0 && lastRepairProgress < 1) {
+      game.dispatch({ type: "set-equipment-fault", id: "printer", faulted: false });
+    }
+    lastRepairProgress = repairProgressNow;
+    for (const id of Object.keys(npcNeeds)) {
+      npcNeeds[id as NpcId] = decayNeeds(npcNeeds[id as NpcId]!, dt / 60);
+    }
+    if (hud) {
+      const nearest = nearestInteractionPoint();
+      if (nearest) {
+        if (isFaulted(nearest.id)) {
+          const pct = Math.round(lastRepairProgress * 100);
+          showPrompt(hud, pct > 0 ? `Repairing ${nearest.label}… ${pct}%` : `Hold E to repair ${nearest.label}`);
+        } else {
+          showPrompt(hud, `Press E to use ${nearest.label}`);
+        }
+      } else {
+        showPrompt(hud, null);
+      }
+    }
+  }
   // C-65: the meter reads the RAW frame time, never the clamped `dt`.
   // `dt` is capped at 0.1 s so a stalled tab cannot teleport the
   // simulation - which means a `dt`-based readout would bottom out at a
