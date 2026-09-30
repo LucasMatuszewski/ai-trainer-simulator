@@ -129,6 +129,14 @@ export interface NpcController {
   /** C-46 debug/test hook: the conversations currently in flight. */
   getActiveConversations: () => readonly ActiveConversationView[];
   /**
+   * WS4 (C-77): the most recent eligible chatter pair list the update
+   * loop computed (the `candidatePairs` output). The world-tick scheduler
+   * reads this as its conversation-candidate provider, so Jev judges
+   * exactly the pairs the controller could pick. Stale by at most one
+   * frame — far inside the 6 s tick cadence.
+   */
+  getChatterCandidatePairs: () => readonly ChatterPair[];
+  /**
    * C-54: while the PLAYER is talking to an NPC, that NPC holds still
    * and keeps the face-the-player yaw for the whole dialogue - no
    * schedule walking, no separation shoves, no new chatter pairing,
@@ -555,6 +563,9 @@ export function createNpcController(
   // the same two NPCs do not monopolize the office chatter.
   const conversations = new Map<string, ActiveConversation>();
   const pairCooldowns = new Map<string, number>();
+  // WS4 (C-77): last eligible-pair list computed by the chatter block,
+  // exposed via getChatterCandidatePairs for the world-tick scheduler.
+  let lastChatterCandidatePairs: readonly ChatterPair[] = [];
   // C-56: every morning, every NPC that has shown up fires one
   // random greeting bubble. door-entering NPCs greet on
   // `releaseArrival`; the already-in crowd is spread across the first
@@ -1970,6 +1981,7 @@ export function createNpcController(
           now: controllerElapsed,
           activeRooms,
         });
+        lastChatterCandidatePairs = pairs;
         const pair = pickChatterPairFor(pairs);
         const first = pair === null ? undefined : npcObjects[pair.a as NpcId];
         const second = pair === null ? undefined : npcObjects[pair.b as NpcId];
@@ -2062,6 +2074,7 @@ export function createNpcController(
       responseIn: Math.max(0, RESPONSE_DELAY_S - (controllerElapsed - conversation.starterAt)),
       starterLine: conversation.starterLine,
     })),
+    getChatterCandidatePairs: () => lastChatterCandidatePairs,
     setOverride: (npcId, entry) => {
       const period = ensureCurrentPeriod();
       const state = runtime.get(npcId);

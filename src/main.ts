@@ -66,7 +66,14 @@ import { createGreetingWrapper, type GreetingWrapperHandle } from "./jev/greetin
 import { createDialogueWrapper, type DialogueSteererHandle } from "./jev/dialogue-wrapper";
 import { dialoguePoolFor, registerNpcDialoguePools } from "./content/npc-content/dialogue-pools";
 import { mountJevSettings } from "./ui/jev-settings";
-import { jevDecisionHooks } from "./engine/npc-controller";
+import {
+  createDefaultDecisionHooks,
+  jevDecisionHooks,
+} from "./engine/npc-controller";
+import {
+  createWorldTickWrapper,
+  type WorldTickHandle,
+} from "./engine/world-tick";
 import { approachSpotFor } from "./content/npc-approach";
 import { getActiveQuest } from "./content/quests";
 import type { GameState, NPC, NpcId } from "./types";
@@ -226,10 +233,51 @@ registerNpcDialoguePools();
 // greeting wrapper: off = never constructed, shadow = judge + log
 // without steering. Null on screens without the office.
 let dialogueSteerer: DialogueSteererHandle | null = null;
+// WS4 (C-77): the world-tick scheduler — ONE batched ambient request per
+// 6 unpaused real seconds (+ every period transition) covering chatter
+// pair/starter/exchange and next-period destinations. Same ?jev modes as
+// the other wrappers: "off" never constructs, "shadow" judges + logs
+// without steering, live otherwise (still inert while unconfigured).
+let worldTick: WorldTickHandle | null = null;
+// WS4: today's fired random-event slugs for the tick projection
+// (allowlisted content ids only; D-59). Reset at each day rollover.
+let worldTickFiredEvents: string[] = [];
 
 function buildDialogueSteerer(): DialogueSteererHandle | null {
   if (JEV_MODE === "off") return null;
   return createDialogueWrapper({ shadow: JEV_MODE === "shadow" });
+}
+
+function buildWorldTick(): WorldTickHandle | null {
+  if (JEV_MODE === "off") return null;
+  return createWorldTickWrapper({
+    hooks: jevDecisionHooks,
+    mode: JEV_MODE === "shadow" ? "shadow" : "live",
+    providers: {
+      getDay: () => game.get().day,
+      getPeriod: () => game.get().timeOfDay,
+      getChatCandidates: () => sceneObjects?.npcController.getChatterCandidatePairs() ?? [],
+      getDestinationNpcs: () => NPCS.map((npc) => npc.id),
+      getFiredEvents: () => worldTickFiredEvents,
+      // WS-note: pair relationship bands arrive when the WS-social pair
+      // matrix is exposed; until then the projection omits them.
+      getRelationshipBands: () => ({}),
+    },
+    // TAC-01 rng-order preservation: the exact pre-bound legacy pickers
+    // the events dispatcher uses as its fallback.
+    legacy: (() => {
+      const hooks = createDefaultDecisionHooks({
+        rng: Math.random,
+        getDay: () => game.get().day,
+      });
+      return {
+        pickChatterPair: hooks.pickChatterPair,
+        pickChatterStarter: hooks.pickChatterStarter,
+        pickChatterExchange: hooks.pickChatterExchange,
+        pickRandomDestination: hooks.pickRandomDestination,
+      };
+    })(),
+  });
 }
 // WS10 (C-77): shared positional-audio player. Created lazily on the
 // first office mount; reads player position/yaw/room LIVE via the
@@ -587,6 +635,12 @@ function startOffice(playIntro = false): void {
     // WS3: a fresh office session starts a fresh steerer memo.
     dialogueSteerer?.resetSession();
     dialogueSteerer = buildDialogueSteerer();
+    // WS4: a fresh world-tick scheduler per office mount. install() is a
+    // no-op while Jev is unconfigured, so the game plays legacy (TAC-01).
+    worldTick?.uninstall();
+    worldTick = buildWorldTick();
+    worldTick?.install();
+    worldTickFiredEvents = [];
     prefetchGreetingsNow();
     // L-2026-08-30-01: register the NPC controller with the events
     // dispatcher so every period transition can roll a random
@@ -1020,7 +1074,10 @@ function startOffice(playIntro = false): void {
   // entry to avoid stacking with the intro toast.
   if (game.get().flags["_seen-intro-toast"]) {
     setTimeout(() => {
-      runPeriodEvent(hud, "morning");
+      const fired = runPeriodEvent(hud, "morning");
+      // WS4: day-start event rides the projection; pre-decision round.
+      if (fired && !worldTickFiredEvents.includes(fired.id)) worldTickFiredEvents.push(fired.id);
+      worldTick?.onPeriodTransition();
     }, 1200);
   }
 }
@@ -1545,11 +1602,18 @@ function advanceOfficePeriods(periodCount: number): void {
   const prevDay = game.get().day;
   for (let i = 0; i < periodCount; i++) {
     game.dispatch({ type: "advance-time" });
-    if (game.get().day === prevDay) runPeriodEvent(hud, game.get().timeOfDay);
-    else break;
+    if (game.get().day === prevDay) {
+      const fired = runPeriodEvent(hud, game.get().timeOfDay);
+      // WS4: feed the fired event slug into the tick projection.
+      if (fired && !worldTickFiredEvents.includes(fired.id)) worldTickFiredEvents.push(fired.id);
+      // WS4 (D-48): transition trigger — pre-decides this period's
+      // chatter and prefetches NEXT period's destinations.
+      worldTick?.onPeriodTransition();
+    } else break;
   }
   if (game.get().day !== prevDay) {
     currentPeriodElapsed = 0;
+    worldTickFiredEvents = []; // WS4: a new day, a fresh event list
     // The rollover already moved the calendar; endDay must not advance
     // it a second time (C-52).
     endDay(true);
@@ -1885,6 +1949,10 @@ function frame(): void {
     const advanced = advancePeriodElapsed(game.get().timeOfDay, currentPeriodElapsed, dt);
     currentPeriodElapsed = advanced.elapsedInPeriod;
     if (advanced.periodsAdvanced > 0) advanceOfficePeriods(advanced.periodsAdvanced);
+    // WS4 (D-48): the tick cadence counts UNPAUSED simulation seconds —
+    // exactly the frames that feed the C-67 clock. Blocking overlays
+    // freeze chatter/destination pre-decisions with everything else.
+    worldTick?.update(dt);
   }
   if (hud && screen === "office") {
     renderHudClock(hud, game.get().timeOfDay, currentPeriodElapsed);
