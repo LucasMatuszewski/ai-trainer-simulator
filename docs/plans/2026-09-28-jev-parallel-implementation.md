@@ -248,6 +248,22 @@ playtest run leaves the artifact set in `playtests/<timestamp>/`.
 Escalation rule: any judge FAIL ⇒ work returns to the implementer with findings;
 two consecutive fails ⇒ orchestrator re-briefs or reverts (PR-4 revert rule).
 
+## 4b. Wave 2 revision (C-77, 2026-09-30)
+
+Lucas launched Wave 2 with an expanded scope: dialogue architecture v2 (turn
+builder + pools + pivot-on-exhaustion + task offers — Flow A2), massive-scale
+chatter selection (ALL eligible exchanges as Jev candidates per tick), and a
+NEW workstream:
+
+- **WS10 — positional audio + photocopier fix:** three.js listener-relative
+  volume (distance, same-room factor, facing), photocopier as the first
+  registered source at background level. Owns `src/audio/*` and the copier
+  call site patch; no shared-file ownership beyond patches.
+
+Execution order: WS3 (dialogue v2) + WS10 (audio) parallel; then WS4
+(world-tick) + WS6 (interactions). Content pools authored for the priority
+NPCs in WS3; the full-roster 10× push stays in Wave 3 (sacs-xtma.14).
+
 ## 5. Execution checklist (orchestrator, on Lucas's "go")
 
 1. Create `.agent-briefs/` files for Wave 1 (WS1, WS2, WS9a) — self-contained, with the
