@@ -900,3 +900,13 @@ A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
 - **Architecture:** agent-friendly change; no player-facing surface changes (steering stays dormant without a configured key — invisible fallback per C-75 A4).
 - **Tracking:** branch `feat/jev-npc-decision-steering`, v2026.09.29-01. Nothing pushed.
 
+### C-77 — Wave 2 scope: dialogue architecture v2, massive-scale chatter selection, positional audio (2026-09-30)
+
+- **Source (Lucas, launching Wave 2):** the current dialogues are "3-6 options, mostly; when the player uses them all it gets into some loop of the same stupid interaction/text — not immersive". Open-space chatter should hand ALL eligible exchanges to Jev and let it decide which match each other, at scale. The Xerox/photocopier sound is strange and way too loud — it must be background, with a real sound system: louder when the source is closer and in front of the listener, quiet in a separate room.
+- **Dialogue architecture v2 (supersedes the fixed-tree feel; authored-content rule unchanged):** a conversation is a sequence of exchanges built per turn, not a walk of one static tree. Per NPC, authored pools: topics -> option candidates (what the player can say) + reply candidates (what the NPC answers), tagged with context (topic, relationship band, stats bands, period, day events, quest flags). Each turn: code hard-filters by context -> Jev curates <= 4 player options and picks the NPC reply (and its reaction bucket). When a thread's pool is exhausted the conversation PIVOTS: the option builder switches to the richest available thread (Jev picks) instead of looping — the "same stupid text" loop is dead by construction. Tasks: NPCs weave in authored task offers (funny, lore-grounded: Burek duty, coffee emergency, Janusz robot maintenance, Tomek's push-to-main aftermath, sticker pranks...) that set the existing quest/flag systems; tasks are content, not a new engine.
+- **Depth = pools x selection x context, not longer trees.** Authoring more dialogues later means adding pool entries (schema-validated), never touching engine code.
+- **Chatter at scale:** every eligible exchange for a chatting pair is a candidate; Jev picks per pair per tick (batched, one request per world tick).
+- **Positional audio (new subsystem):** three.js AudioListener-based — volume scales with distance, same-room factor (separate room = heavily attenuated), and listener-facing factor; the photocopier is the first source (background level, not blaring). Sound registry gains per-source position + room.
+- **Tracking:** branch `feat/jev-npc-decision-steering` (Wave 2 after the pushed Wave 1); Beads sacs-xtma.13/.14; feedback L-2026-09-30-01.
+
+
