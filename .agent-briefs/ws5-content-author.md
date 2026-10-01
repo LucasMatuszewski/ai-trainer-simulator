@@ -1,6 +1,12 @@
 You are a delegate. The orchestrator owns tracking, process and commits: do not load the `agents-workflow-sacs`, `beads` or `cli-agent-delegation` skills, do not run `bd`, do not commit or push. Everything you need is in this brief. Write your result to `.agent-briefs/ws5-result.md`.
 
-# Task: WS5 — Authored content expansion for the v2 dialogue pools (Wave 3, first batch)
+# Task: WS5 (RELAUNCH) — Authored content expansion for the v2 dialogue pools (Wave 3, first batch)
+
+> **Relaunch note:** a previous worker was killed mid-batch after finishing
+> ONLY zosia and pawel. Its partial files are preserved at
+> `.agent-briefs/ws5-partial/` (dialogue-pool-zosia.ts, dialogue-pool-pawel.ts,
+> dialogue-pools-ws5.test.ts) — read them; reuse what is usable and REWRITE
+> what is incomplete. Your job remains the full assigned NPC list below.
 
 Branch `feat/jev-npc-decision-steering` (HEAD >= `346d26f`). Read first: `src/content/dialogue-schema.ts` (the typed pool model — your output MUST validate against `validatePool`), the EXISTING authored pools as the quality bar: `src/content/npc-content/dialogue-pool-bartek.ts`, `dialogue-pool-renata.ts`, `dialogue-pool-klaudia.ts`, `dialogue-pool-marek.ts`, `dialogue-pool-generic.ts` (read all five fully — match their tag vocabulary, structure, and ironic IT-office tone exactly), `src/game/dialogue-turn.ts` (how pools are consumed: candidates are filtered by relationship band / flags / period / used-set; pivot-on-exhaustion), `src/content/npcs.ts` (the full 15-NPC roster + characterizations), and `src/content/dialogues.ts` + `office-chatter.ts` (lore, running jokes: "prod is on fire", Tomek's push to main, Janusz's robot fleet, coffee culture, Burek the dog, LinkedIn Klaudia, 10x Marek, Credibility Lucas).
 
