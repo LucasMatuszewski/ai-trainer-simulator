@@ -301,10 +301,11 @@ describe("dialogue wrapper — full pool integration", () => {
     poolModule.registerNpcDialoguePools();
     const pool = poolModule.dialoguePoolFor("bartek") as NpcDialoguePool;
     const topic = pool.topics[0]!;
+    const topicReplies = topic.replyCandidates ?? [];
     const { wrapper } = makeHarness({
       [`dialogue:reply:bartek:${topic.id}`]: {
         type: "choice",
-        id: topic.replyCandidates[1]!.id,
+        id: topicReplies[1]!.id,
         confidence: 0.9,
       },
     });
@@ -312,10 +313,10 @@ describe("dialogue wrapper — full pool integration", () => {
       npcId: "bartek",
       topicId: topic.id,
       options: topic.optionCandidates.slice(0, 3),
-      replies: topic.replyCandidates,
+      replies: topic.replyCandidates ?? [],
       facts: {},
     }));
-    expect(decision.replyId).toBe(topic.replyCandidates[1]!.id);
+    expect(decision.replyId).toBe(topicReplies[1]!.id);
     expect(decision.fallback).toBe(false);
   });
 });

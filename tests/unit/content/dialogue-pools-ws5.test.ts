@@ -114,7 +114,7 @@ function textOf(pool: NpcDialoguePool): string {
   return pool.topics
     .flatMap((t) => [
       ...t.optionCandidates.map((o) => o.text),
-      ...t.replyCandidates.map((r) => r.text),
+      ...(t.replyCandidates ?? []).map((r) => r.text),
     ])
     .concat(pool.taskOffers.map((t) => `${t.title} ${t.description} ${t.rewardHint ?? ""}`))
     .join(" ");
@@ -134,7 +134,7 @@ describe("WS5 pool schema validity", () => {
     const all = [...WS5_POOLS, GENERIC_DIALOGUE_POOL];
     for (const pool of all) {
       for (const topic of pool.topics) {
-        for (const candidate of [...topic.optionCandidates, ...topic.replyCandidates]) {
+        for (const candidate of [...topic.optionCandidates, ...topic.replyCandidates ?? []]) {
           expect(seen.has(candidate.id), `duplicate candidate id ${candidate.id}`).toBe(false);
           seen.add(candidate.id);
         }
@@ -160,7 +160,7 @@ describe("WS5 per-NPC structure (the brief's counts)", () => {
       expect(pool.topics, `${npcId} topic count`).toHaveLength(3);
       for (const topic of pool.topics) {
         expect(topic.optionCandidates, `${npcId}/${topic.id} options`).toHaveLength(6);
-        expect(topic.replyCandidates, `${npcId}/${topic.id} replies`).toHaveLength(6);
+        expect(topic.replyCandidates ?? [], `${npcId}/${topic.id} replies`).toHaveLength(6);
       }
       expect(pool.taskOffers, `${npcId} task count`).toHaveLength(1);
     }
@@ -170,11 +170,11 @@ describe("WS5 per-NPC structure (the brief's counts)", () => {
     expect(BUREK_DIALOGUE_POOL.topics.length).toBeGreaterThanOrEqual(2);
     for (const topic of BUREK_DIALOGUE_POOL.topics) {
       expect(topic.optionCandidates.length).toBeGreaterThanOrEqual(4);
-      expect(topic.replyCandidates.length).toBeGreaterThanOrEqual(4);
+      expect((topic.replyCandidates ?? []).length).toBeGreaterThanOrEqual(4);
     }
     // Every burek reply speaks dog: at least one *sound*, [action] or (thought).
     for (const topic of BUREK_DIALOGUE_POOL.topics) {
-      for (const reply of topic.replyCandidates) {
+      for (const reply of topic.replyCandidates ?? []) {
         expect(
           /\*[^*]+\*|\[[^\]]+\]|\([^)]+\)/.test(reply.text),
           `burek reply not in dog marker form: ${reply.id}`,
@@ -187,7 +187,7 @@ describe("WS5 per-NPC structure (the brief's counts)", () => {
     for (const pool of WS5_POOLS) {
       const offered = new Set<string>();
       for (const topic of pool.topics) {
-        for (const reply of topic.replyCandidates) {
+        for (const reply of topic.replyCandidates ?? []) {
           if (reply.offersTaskId !== undefined) offered.add(reply.offersTaskId);
         }
       }
@@ -216,7 +216,7 @@ describe("WS5 authoring quality rules", () => {
   it("reply texts are substantial and within bounds", () => {
     for (const pool of WS5_POOLS) {
       for (const topic of pool.topics) {
-        for (const reply of topic.replyCandidates) {
+        for (const reply of topic.replyCandidates ?? []) {
           expect(reply.text.length, reply.id).toBeGreaterThanOrEqual(REPLY_MIN_LENGTH);
           expect(reply.text.length, reply.id).toBeLessThanOrEqual(REPLY_MAX_LENGTH);
           expect(reply.text.length, reply.id).toBeLessThanOrEqual(380);
@@ -229,9 +229,9 @@ describe("WS5 authoring quality rules", () => {
   it("every topic answers with at least 2 relationshipHint replies and 1 gated reply", () => {
     for (const pool of WS5_POOLS) {
       for (const topic of pool.topics) {
-        const hinted = topic.replyCandidates.filter((r) => r.relationshipHint !== undefined);
+        const hinted = (topic.replyCandidates ?? []).filter((r) => r.relationshipHint !== undefined);
         expect(hinted.length, `${pool.npcId}/${topic.id} relationshipHint count`).toBeGreaterThanOrEqual(2);
-        const gated = topic.replyCandidates.filter((r) => (r.tags ?? []).length > 0);
+        const gated = (topic.replyCandidates ?? []).filter((r) => (r.tags ?? []).length > 0);
         expect(gated.length, `${pool.npcId}/${topic.id} tagged-reply count`).toBeGreaterThanOrEqual(1);
       }
     }
@@ -240,7 +240,7 @@ describe("WS5 authoring quality rules", () => {
   it("the batch uses interesting tag COMBINATIONS (multi-tag replies)", () => {
     for (const pool of WS5_POOLS) {
       const combinations = pool.topics
-        .flatMap((t) => t.replyCandidates)
+        .flatMap((t) => t.replyCandidates ?? [])
         .filter((r) => (r.tags ?? []).length >= 2);
       expect(combinations.length, `${pool.npcId} multi-tag replies`).toBeGreaterThanOrEqual(2);
     }
@@ -273,7 +273,7 @@ describe("WS5 authoring quality rules", () => {
     const seen = new Map<string, string>();
     for (const pool of WS5_POOLS) {
       for (const topic of pool.topics) {
-        for (const candidate of [...topic.optionCandidates, ...topic.replyCandidates]) {
+        for (const candidate of [...topic.optionCandidates, ...topic.replyCandidates ?? []]) {
           const key = candidate.text.toLowerCase();
           const prev = seen.get(key);
           expect(prev, `${candidate.id} repeats ${prev}`).toBeUndefined();
@@ -322,7 +322,7 @@ describe("WS5 tag conventions are exercised across the batch", () => {
         for (const option of topic.optionCandidates) {
           for (const tag of option.tags ?? []) allTags.add(tag);
         }
-        for (const reply of topic.replyCandidates) {
+        for (const reply of topic.replyCandidates ?? []) {
           for (const tag of reply.tags ?? []) allTags.add(tag);
         }
       }
@@ -337,7 +337,7 @@ describe("WS5 tag conventions are exercised across the batch", () => {
   it("quest and event tags reference flags that exist in the game's vocabulary", () => {
     for (const pool of WS5_POOLS) {
       for (const topic of pool.topics) {
-        for (const candidate of [...topic.optionCandidates, ...topic.replyCandidates]) {
+        for (const candidate of [...topic.optionCandidates, ...topic.replyCandidates ?? []]) {
           for (const tag of candidate.tags ?? []) {
             if (tag.startsWith("quest:") || tag.startsWith("event:")) {
               const flag = tag.slice(tag.indexOf(":") + 1);
@@ -376,5 +376,18 @@ describe("WS5 registration", () => {
     registerNpcDialoguePools();
     expect(dialoguePoolFor("zosia")).toBe(ZOSIA_DIALOGUE_POOL);
     expect(dialoguePoolFor("burek")).toBe(BUREK_DIALOGUE_POOL);
+  });
+});
+
+describe("WS5 pools — C-78 positional pairing invariant", () => {
+  it("pairs every option 1:1 with a reply in every assigned pool", () => {
+    for (const pool of WS5_POOLS) {
+      for (const topic of pool.topics) {
+        expect(
+          topic.optionCandidates.length,
+          `${pool.npcId}/${topic.id} option/reply alignment`,
+        ).toBe((topic.replyCandidates ?? []).length);
+      }
+    }
   });
 });

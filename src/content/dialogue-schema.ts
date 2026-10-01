@@ -83,6 +83,16 @@ export interface OptionCandidate {
   topicId: string;
   /** Hard context filters. Empty/undefined = always eligible. */
   tags?: readonly ContextTag[];
+  /**
+   * C-78 (dialogue architecture v3): explicit paired replies that answer
+   * THIS option. OPTIONAL — when absent, the turn builder pairs
+   * positionally with the topic's reply pool (option i <-> reply i),
+   * which is how the authored pools are written; the per-topic alignment
+   * invariant is enforced by tests. One paired reply = deterministic
+   * answer (zero Jev involvement). Multiple = authored variants Jev
+   * chooses between using the full context.
+   */
+  replies?: readonly ReplyCandidate[];
 }
 
 /** One authored thing the NPC answers. */
@@ -127,7 +137,8 @@ export interface DialogueTopic {
   /** Short label (debug / roster-facing), never rendered as dialogue. */
   label: string;
   optionCandidates: readonly OptionCandidate[];
-  replyCandidates: readonly ReplyCandidate[];
+  /** C-78: DEPRECATED topic-level pool. Options carry replies now. */
+  replyCandidates?: readonly ReplyCandidate[];
   /** Topic-level relationship window (inclusive). Missing = unbounded. */
   minRelationship?: number;
   maxRelationship?: number;
@@ -165,6 +176,7 @@ export const WRAP_UP_OPTION: OptionCandidate = {
   id: WRAP_UP_OPTION_ID,
   text: "Wrap it up.",
   topicId: EXIT_TOPIC_ID,
+  replies: [], // the exit answers itself
 };
 
 /** The tree id v2 conversations use in the per-NPC option memory. */
@@ -236,7 +248,10 @@ export function validatePool(pool: NpcDialoguePool): string[] {
     if (!Array.isArray(topic.optionCandidates) || topic.optionCandidates.length === 0) {
       push(`topic "${topic.id}" has no option candidates`);
     }
-    if (!Array.isArray(topic.replyCandidates) || topic.replyCandidates.length === 0) {
+    if (
+      Array.isArray(topic.replyCandidates) &&
+      topic.replyCandidates.length === 0
+    ) {
       push(`topic "${topic.id}" has no reply candidates`);
     }
     if (topic.minRelationship !== undefined && topic.maxRelationship !== undefined
@@ -258,19 +273,32 @@ export function validatePool(pool: NpcDialoguePool): string[] {
       for (const tag of option.tags ?? []) {
         if (!CONTEXT_TAG_PATTERN.test(tag)) push(`option "${option.id}" has malformed tag "${tag}"`);
       }
+      // C-78: replies are PAIRED to options — either explicitly nested
+      // on the option, or positionally (option i <-> reply i) with the
+      // per-topic alignment invariant enforced by the pools tests.
+      for (const reply of option.replies ?? []) {
+        if (seenCandidateIds.has(reply.id)) push(`duplicate candidate id "${reply.id}"`);
+        seenCandidateIds.add(reply.id);
+        const textProblem = textProblemOf(reply.text, REPLY_MIN_LENGTH, REPLY_MAX_LENGTH);
+        if (textProblem) push(`reply "${reply.id}" ${textProblem}`);
+        for (const tag of reply.tags ?? []) {
+          if (!CONTEXT_TAG_PATTERN.test(tag)) push(`reply "${reply.id}" has malformed tag "${tag}"`);
+        }
+        if (reply.relationshipHint !== undefined
+          && !["offended", "annoyed", "neutral", "pleased", "delighted"].includes(reply.relationshipHint)) {
+          push(`reply "${reply.id}" has unknown relationshipHint "${reply.relationshipHint}"`);
+        }
+        if (reply.offersTaskId !== undefined && !taskIds.has(reply.offersTaskId)) {
+          push(`reply "${reply.id}" offers unknown task "${reply.offersTaskId}"`);
+        }
+      }
     }
-    for (const reply of topic.replyCandidates) {
+    // Legacy topic-level pool: still validated when present (migration aid).
+    for (const reply of topic.replyCandidates ?? []) {
       if (seenCandidateIds.has(reply.id)) push(`duplicate candidate id "${reply.id}"`);
       seenCandidateIds.add(reply.id);
       const textProblem = textProblemOf(reply.text, REPLY_MIN_LENGTH, REPLY_MAX_LENGTH);
       if (textProblem) push(`reply "${reply.id}" ${textProblem}`);
-      for (const tag of reply.tags ?? []) {
-        if (!CONTEXT_TAG_PATTERN.test(tag)) push(`reply "${reply.id}" has malformed tag "${tag}"`);
-      }
-      if (reply.relationshipHint !== undefined
-        && !["offended", "annoyed", "neutral", "pleased", "delighted"].includes(reply.relationshipHint)) {
-        push(`reply "${reply.id}" has unknown relationshipHint "${reply.relationshipHint}"`);
-      }
       if (reply.offersTaskId !== undefined && !taskIds.has(reply.offersTaskId)) {
         push(`reply "${reply.id}" offers unknown task "${reply.offersTaskId}"`);
       }

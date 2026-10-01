@@ -96,7 +96,8 @@ export const MAX_VISIBLE_OPTIONS = 4;
 /** Reads the turn context for one NPC out of the game state. Pure. */
 export function turnContextFor(state: Readonly<GameState>, npcId: string): TurnContext {
   return {
-    relationship: state.npcRelationships[npcId] ?? 50,
+    // C-78: an unknown NPC is a stranger, not a 50-friend.
+    relationship: state.npcRelationships[npcId] ?? 20,
     flags: state.flags,
     period: state.timeOfDay,
     stats: state.stats,
@@ -255,7 +256,10 @@ export function buildTurn(
 interface Slice {
   topic: DialogueTopic;
   options: readonly OptionCandidate[];
-  replies: readonly ReplyCandidate[];
+  /** C-78: replies resolve from the CHOSEN option (paired), not a pool. */
+  repliesFor: (optionId: string) => ReplyCandidate[];
+  /** Task ids whose flags are already set (never re-offered). */
+  doneTaskIds: ReadonlySet<string>;
 }
 
 function sliceOf(
@@ -273,21 +277,33 @@ function sliceOf(
     (option) => !usedOptions.has(option.id) && tagsEligible(option.tags, ctx),
   );
 
-  let replies = topic.replyCandidates.filter(
-    (reply) =>
-      !usedReplies.has(reply.id)
-      && tagsEligible(reply.tags, ctx)
-      && (reply.offersTaskId === undefined || !doneTaskIds.has(reply.offersTaskId)),
-  );
-  if (replies.length === 0) {
-    // Replies recycle before options do (options never repeat; a thread with
-    // options left must always have something to answer with).
-    replies = topic.replyCandidates.filter((reply) => tagsEligible(reply.tags, ctx));
-  }
-  if (replies.length === 0) {
-    replies = [...topic.replyCandidates];
-  }
-  return { topic, options, replies };
+  // C-78 (dialogue architecture v3): replies are PAIRED to the option
+  // they answer — the author writes "question -> its answers", and the
+  // engine serves exactly the chosen option's replies. The topic-level
+  // pool (legacy shape) is treated as a positional 1:1 author pairing:
+  // option i is answered by reply i. Deterministic, zero cost, always
+  // the answer to the question that was actually asked.
+  const repliesFor = (optionId: string): ReplyCandidate[] => {
+    const option = topic.optionCandidates.find((candidate) => candidate.id === optionId);
+    // 1. Explicit paired variants authored on the option (v3 nesting).
+    if (option !== undefined && Array.isArray(option.replies) && option.replies.length > 0) {
+      return [...option.replies];
+    }
+    // 2. Positional author pairing (option i <-> reply i) — deterministic.
+    const index = topic.optionCandidates.findIndex((candidate) => candidate.id === optionId);
+    const positional = topic.replyCandidates?.[index];
+    if (positional && !usedReplies.has(positional.id) && tagsEligible(positional.tags, ctx)) {
+      return [positional];
+    }
+    // 3. Recycle: an option must never dead-end (the old contract —
+    // replies recycle before options repeat).
+    const recycled = (topic.replyCandidates ?? []).filter(
+      (reply) => tagsEligible(reply.tags, ctx),
+    );
+    return recycled.length > 0 ? recycled : [...(topic.replyCandidates ?? [])];
+  };
+
+  return { topic, options, repliesFor, doneTaskIds };
 }
 
 function serveSlice(
@@ -297,6 +313,39 @@ function serveSlice(
   exhausted: boolean,
 ): DialogueTurn {
   const shown = slice.options.slice(0, MAX_VISIBLE_OPTIONS - 1);
+  // C-78: the served replies are the union of the visible options' paired
+  // replies — the panel/steerer can only answer an option on screen.
+  // Deduplicated (the recycle fallback can return the same fresh reply
+  // for several options) and ordered by first appearance.
+  const served: ReplyCandidate[] = [];
+  const seenReplyIds = new Set<string>();
+  for (const option of shown) {
+    for (const reply of slice.repliesFor(option.id)) {
+      if (!seenReplyIds.has(reply.id)) {
+        seenReplyIds.add(reply.id);
+        served.push(reply);
+      }
+    }
+  }
+  // Task replies stay visible while their flag is unset — even when their
+  // paired option was already consumed (offers are the point of tasks).
+  for (const task of pool.taskOffers) {
+    if (slice.doneTaskIds.has(task.id)) continue;
+    const taskReply = (slice.topic.replyCandidates ?? []).find(
+      (reply) => reply.offersTaskId === task.id,
+    );
+    if (taskReply && !seenReplyIds.has(taskReply.id)) {
+      seenReplyIds.add(taskReply.id);
+      served.push(taskReply);
+    }
+  }
+  // Authored pool order (deterministic; the task reply sorts naturally).
+  const poolOrder = new Map(
+    (slice.topic.replyCandidates ?? []).map((reply, index) => [reply.id, index]),
+  );
+  served.sort(
+    (a, b) => (poolOrder.get(a.id) ?? 999) - (poolOrder.get(b.id) ?? 999),
+  );
   return {
     topicId: slice.topic.id,
     pivotedFromTopicId,
@@ -304,9 +353,9 @@ function serveSlice(
       ...shown.map((option) => ({ option, isExit: false }) as TurnOption),
       { option: WRAP_UP_OPTION, isExit: true },
     ],
-    replyCandidates: slice.replies,
+    replyCandidates: served,
     taskOffers: pool.taskOffers.filter((task) =>
-      slice.replies.some((reply) => reply.offersTaskId === task.id),
+      served.some((reply) => reply.offersTaskId === task.id),
     ),
     exhausted,
   };
@@ -324,14 +373,22 @@ function exitTurn(ctx: TurnContext, session: ConversationSession): DialogueTurn 
   let bestTopic: DialogueTopic | undefined;
   for (const topic of GENERIC_DIALOGUE_POOL.topics) {
     if (!topicEligible(topic, ctx)) continue;
-    const unusedReplies = topic.replyCandidates.filter(
+    const unusedReplies = (topic.replyCandidates ?? []).filter(
       (reply) => !exitReplyUsage.has(reply.id) && tagsEligible(reply.tags, ctx),
-    ).length;
+    ).length
+      + topic.optionCandidates.filter((option) =>
+          (option.replies ?? []).some(
+            (reply) => !exitReplyUsage.has(reply.id) && tagsEligible(reply.tags, ctx),
+          )).length;
     const bestUnused = bestTopic === undefined
       ? -1
-      : bestTopic.replyCandidates.filter(
+      : (bestTopic.replyCandidates ?? []).filter(
           (reply) => !exitReplyUsage.has(reply.id) && tagsEligible(reply.tags, ctx),
-        ).length;
+        ).length
+        + bestTopic.optionCandidates.filter((option) =>
+            (option.replies ?? []).some(
+              (reply) => !exitReplyUsage.has(reply.id) && tagsEligible(reply.tags, ctx),
+            )).length;
     if (unusedReplies > bestUnused) bestTopic = topic;
   }
 
@@ -343,11 +400,18 @@ function exitTurn(ctx: TurnContext, session: ConversationSession): DialogueTurn 
       if (!tagsEligible(option.tags, ctx)) continue;
       options.push({ option, isExit: false });
     }
-    replies = bestTopic.replyCandidates.filter(
-      (reply) => !exitReplyUsage.has(reply.id) && tagsEligible(reply.tags, ctx),
+    // C-78: count the options that still have a fresh PAIRED reply —
+    // the pivot serves per-option answers, not a topic reply pool.
+    replies = bestTopic.optionCandidates.flatMap((option) =>
+      option.replies?.filter(
+        (reply) => !exitReplyUsage.has(reply.id) && tagsEligible(reply.tags, ctx),
+      ) ?? (bestTopic.replyCandidates
+        ? [bestTopic.replyCandidates[bestTopic.optionCandidates.indexOf(option)]]
+            .filter((reply): reply is ReplyCandidate => reply !== undefined)
+        : []),
     );
     if (replies.length === 0) {
-      replies = bestTopic.replyCandidates.filter((reply) => tagsEligible(reply.tags, ctx));
+      replies = (bestTopic.replyCandidates ?? []).filter((reply) => tagsEligible(reply.tags, ctx));
     }
   }
 

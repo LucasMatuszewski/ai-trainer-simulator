@@ -140,7 +140,7 @@ describe("dialogue v2 pool schema validity", () => {
           expect(ids.has(option.id), `duplicate option id ${option.id} in ${pool.npcId}`).toBe(false);
           ids.add(option.id);
         }
-        for (const reply of topic.replyCandidates) {
+        for (const reply of topic.replyCandidates ?? []) {
           expect(ids.has(reply.id), `duplicate reply id ${reply.id} in ${pool.npcId}`).toBe(false);
           ids.add(reply.id);
         }
@@ -163,10 +163,17 @@ describe("dialogue v2 pool schema validity", () => {
         ).toBeGreaterThanOrEqual(6);
         expect(topic.optionCandidates.length, `${npcId}/${topic.id} option count`).toBeLessThanOrEqual(8);
         expect(
-          topic.replyCandidates.length,
+          (topic.replyCandidates ?? []).length,
           `${npcId}/${topic.id} reply count`,
         ).toBeGreaterThanOrEqual(6);
-        expect(topic.replyCandidates.length, `${npcId}/${topic.id} reply count`).toBeLessThanOrEqual(8);
+        expect((topic.replyCandidates ?? []).length, `${npcId}/${topic.id} reply count`).toBeLessThanOrEqual(8);
+        // C-78 dialogue architecture v3: replies are POSITIONALLY PAIRED
+        // to options (option i answers reply i). The counts must match —
+        // a drift silently mis-pairs questions and answers.
+        expect(
+          topic.optionCandidates.length,
+          `${npcId}/${topic.id} option/reply alignment`,
+        ).toBe((topic.replyCandidates ?? []).length);
       }
       expect(pool.taskOffers.length, `${npcId} task count`).toBeGreaterThanOrEqual(1);
       expect(pool.taskOffers.length, `${npcId} task count`).toBeLessThanOrEqual(2);
@@ -178,7 +185,7 @@ describe("dialogue v2 pool schema validity", () => {
     expect(GENERIC_DIALOGUE_POOL.topics.length).toBeGreaterThanOrEqual(3);
     for (const topic of GENERIC_DIALOGUE_POOL.topics) {
       expect(topic.optionCandidates.length).toBeGreaterThanOrEqual(4);
-      expect(topic.replyCandidates.length).toBeGreaterThanOrEqual(4);
+      expect((topic.replyCandidates ?? []).length).toBeGreaterThanOrEqual(4);
     }
     // A fallback pool must never re-offer NPC-specific tasks from every desk.
     expect(GENERIC_DIALOGUE_POOL.taskOffers).toEqual([]);
@@ -215,7 +222,7 @@ describe("dialogue v2 task offers set existing flags", () => {
     for (const pool of Object.values(POOLS)) {
       const offered = new Set<string>();
       for (const topic of pool.topics) {
-        for (const reply of topic.replyCandidates) {
+        for (const reply of topic.replyCandidates ?? []) {
           if (reply.offersTaskId !== undefined) offered.add(reply.offersTaskId);
         }
       }
@@ -253,7 +260,7 @@ describe("dialogue v2 tag conventions are exercised", () => {
     for (const pool of Object.values(POOLS)) {
       for (const topic of pool.topics as readonly DialogueTopic[]) {
         for (const option of topic.optionCandidates) for (const tag of option.tags ?? []) allTags.add(tag);
-        for (const reply of topic.replyCandidates) for (const tag of reply.tags ?? []) allTags.add(tag);
+        for (const reply of topic.replyCandidates ?? []) for (const tag of reply.tags ?? []) allTags.add(tag);
       }
     }
     expect([...allTags].some((tag) => tag.startsWith("relationship:"))).toBe(true);
@@ -267,7 +274,7 @@ describe("dialogue v2 tag conventions are exercised", () => {
     const buckets = new Set(["offended", "annoyed", "neutral", "pleased", "delighted"]);
     for (const pool of Object.values(POOLS)) {
       for (const topic of pool.topics) {
-        for (const reply of topic.replyCandidates) {
+        for (const reply of topic.replyCandidates ?? []) {
           if (reply.relationshipHint !== undefined) {
             expect(buckets.has(reply.relationshipHint), reply.id).toBe(true);
           }
@@ -293,7 +300,7 @@ describe("dialogue v2 tone spot-assertions", () => {
   it("every reply is substantial and within bounds", () => {
     for (const pool of Object.values(POOLS)) {
       for (const topic of pool.topics) {
-        for (const reply of topic.replyCandidates) {
+        for (const reply of topic.replyCandidates ?? []) {
           expect(reply.text.length, reply.id).toBeGreaterThanOrEqual(20);
           expect(reply.text.length, reply.id).toBeLessThanOrEqual(REPLY_MAX_LENGTH);
           expect(reply.text, reply.id).not.toMatch(/lorem|todo|placeholder|xxx/i);
@@ -307,7 +314,7 @@ describe("dialogue v2 tone spot-assertions", () => {
       (pool.topics
         .flatMap((t) => [
           ...t.optionCandidates.map((o) => o.text),
-          ...t.replyCandidates.map((r) => r.text),
+          ...(t.replyCandidates ?? []).map((r) => r.text),
         ])
         .join(" "));
 
@@ -328,7 +335,7 @@ describe("dialogue v2 tone spot-assertions", () => {
       const texts = pool.topics
         .flatMap((t) => [
           ...t.optionCandidates.map((o) => o.text),
-          ...t.replyCandidates.map((r) => r.text),
+          ...(t.replyCandidates ?? []).map((r) => r.text),
         ])
         .concat(pool.taskOffers.map((t) => `${t.title} ${t.description} ${t.rewardHint ?? ""}`));
       for (const text of texts) {

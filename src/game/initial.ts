@@ -22,12 +22,17 @@ export function initialGameState(): GameState {
       patience: 50,
       focus: 50,
     },
+    // C-78 (Lucas): "We just joined the company as a new trainer!" —
+    // nobody starts as your BFF. Low acquaintances; Renata is warm-est
+    // because onboarding is her job. Everyone else (janusz, dawid, ...)
+    // defaults via the `?? 20` reads.
     npcRelationships: {
-      bartek: 50,
-      klaudia: 50,
-      marek: 50,
-      zosia: 50,
-      pawel: 50,
+      bartek: 20,
+      klaudia: 15,
+      marek: 10,
+      zosia: 25,
+      pawel: 20,
+      renata: 30,
     },
     flags: {},
     inventory: [],
