@@ -51,6 +51,7 @@ import {
   registerBuiltinInteractionPoints,
   resetInteractionPoints,
   setFaultReadout,
+  activateAction,
   updateInteractionPoints,
   updateRepair,
   usePoint,
@@ -420,7 +421,11 @@ window.addEventListener("keydown", (e) => {
         beginRepair(nearest.id, "player");
         heldE = true;
       } else {
-        usePoint(nearest.id, "player");
+        // WS6 verdict fix: usePoint only RESERVES; the player pressing E
+        // means "use it now" — activate immediately so the lifecycle
+        // advances reserved -> in-use -> done and the effect applies.
+        const used = usePoint(nearest.id, "player");
+        if (used.ok) activateAction(used.actionId);
       }
     }
   }
@@ -1302,6 +1307,9 @@ function updateHoverLabel(): void {
 
 function endDay(dayAlreadyAdvanced = false): void {
   if (screen !== "office") return;
+  // WS6 verdict fix: needs reset daily (AC: morning ok -> evening craving
+  // -> fresh tomorrow).
+  npcNeeds = createNeedsTable(NPCS.map((npc) => npc.id));
   // Close any open dialogue first. showDailySummary will clear uiRoot.innerHTML
   // which would otherwise orphan the dialogue DOM but leave the controller's
   // `state` set, and the next openDialogueWith() call would early-return as
@@ -1468,7 +1476,19 @@ function openDialogueWith(npc: NPC): void {
   // WS3 (C-77): NPCs with authored v2 pools run the conversation-turn
   // flow; everyone else keeps their legacy tree. Both paths work, and the
   // WebMCP snapshot/pickOption surface covers v2 conversations too.
-  if (dialoguePoolFor(npc.id) !== undefined) {
+  // Wave-2 verdict CRITICAL fix: the onboarding flags (renata-tut-finished,
+  // got-acme-contract) are set ONLY by the legacy trees — so Renata and
+  // Bartek stay on their onboarding trees until those flags are earned,
+  // then graduate to the v2 pools. A fresh player can never skip the
+  // tutorial or the contract quest.
+  const onboardingGate: Partial<Record<NpcId, string>> = {
+    renata: "renata-tut-finished",
+    bartek: "got-acme-contract",
+  };
+  const requiredFlag = onboardingGate[npc.id];
+  const v2Allowed =
+    requiredFlag === undefined || game.get().flags[requiredFlag] === true;
+  if (dialoguePoolFor(npc.id) !== undefined && v2Allowed) {
     audio().sfx.play("sfx_dialogue_open");
     roster?.setFocus(npc.id);
     panel.openV2(npc, dialogueSteerer);
@@ -1756,7 +1776,9 @@ function frame(): void {
     }
     lastRepairProgress = repairProgressNow;
     for (const id of Object.keys(npcNeeds)) {
-      npcNeeds[id as NpcId] = decayNeeds(npcNeeds[id as NpcId]!, dt / 60);
+      // Wave-2 verdict fix: dt (real seconds) IS in-game minutes at 1x —
+      // the /60 slowed decay 60x (a 600 s day drained ~1.3 points, not 80).
+      npcNeeds[id as NpcId] = decayNeeds(npcNeeds[id as NpcId]!, dt);
     }
     if (hud) {
       const nearest = nearestInteractionPoint();

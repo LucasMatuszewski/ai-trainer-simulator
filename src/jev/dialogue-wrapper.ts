@@ -89,6 +89,10 @@ export interface DialogueSteererHandle {
    * fallback decision (nulls + fallback=true). Never throws.
    */
   steerTurn(request: SteeredTurnRequest): Promise<SteeredTurnDecision>;
+  /** WS4-verdict fix: bump the session token, fencing in-flight steers. */
+  nextSession(): number;
+  /** The current session token (compare before applying an answer). */
+  currentSession(): number;
   /** Stored steered option order for the situation, or null. */
   memoOptionOrder(
     npcId: string,
@@ -323,7 +327,20 @@ export function createDialogueWrapper(options: DialogueWrapperOptions = {}): Dia
     return decision;
   }
 
+  let sessionToken = 0;
+  /** WS4-verdict fix: bumping the token fences every in-flight steer —
+   *  answers arriving after a close/reopen apply to nothing. */
+  function nextSession(): number {
+    sessionToken += 1;
+    return sessionToken;
+  }
+  function currentSession(): number {
+    return sessionToken;
+  }
+
   return {
+    nextSession,
+    currentSession,
     steerTurn,
     memoOptionOrder: (npcId, topicId, usedOptionIds) =>
       memo.get(memoKey(npcId, topicId, usedOptionIds))?.decision.optionIds ?? null,

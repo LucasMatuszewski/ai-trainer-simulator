@@ -261,6 +261,7 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
   function close(): void {
     if (!state && !agentTurnActive && !v2) return;
     agentTurnActive = false;
+    v2?.steerer?.nextSession(); // fence in-flight steering (WS4 verdict)
     v2 = null;
     state = null;
     currentNode = null;
@@ -615,6 +616,9 @@ wireActionButtons(container!);
   function steerCurrentTurn(): void {
     if (v2 === null || v2.steerer === null) return;
     const steerer = v2.steerer;
+    // WS4-verdict fix: capture the session NOW; a close (which bumps the
+    // token via the steerer's session counter) invalidates this answer.
+    const steerSession = steerer.currentSession();
     void steerer
       .steerTurn({
         npcId: v2.npc.id,
@@ -626,7 +630,9 @@ wireActionButtons(container!);
         facts: { "relationship.value": game.get().npcRelationships[v2.npc.id] ?? 50 },
       })
       .then(() => {
-        if (v2 !== null) renderV2();
+        // WS4-verdict fix: apply only if this session is still the one
+        // on screen (a close/reopen must not inherit stale steering).
+        if (v2 !== null && steerSession === steerer.currentSession()) renderV2();
       })
       .catch(() => undefined);
   }

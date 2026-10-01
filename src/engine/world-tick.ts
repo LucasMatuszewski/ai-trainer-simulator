@@ -385,6 +385,17 @@ export function createWorldTickWrapper(options: WorldTickOptions): WorldTickHand
       });
     }
     for (const npcId of destNpcs) {
+      // Wave-2 verdict fix: skip NPCs whose memo for the UPCOMING period
+      // is already fresh — re-judging the same destination every tick
+      // burned tokens and could flip an unconsumed pre-decided answer.
+      const existing = destMemos.get(npcId);
+      if (
+        existing !== undefined &&
+        existing.day === providers.getDay() &&
+        existing.period === next
+      ) {
+        continue;
+      }
       const fact = npcFact(npcId);
       plannedDests.push(npcId);
       questions.push({
@@ -499,11 +510,22 @@ export function createWorldTickWrapper(options: WorldTickOptions): WorldTickHand
           logDecision({ ...entry, surface: "chatter-exchange", outcome: "rejected", fallback: true, fallbackReason: "malformed-answer" });
         } else {
           // Candidate ids index into the eligible list that was sent.
-          const index = Number(exchangeAnswer.id.slice(`exchange:${poolId}:`.length));
+          // Validate EXACT membership first (ninth-verdict class): a
+          // malformed id like "anything" or "exchange:wrong:0" must be
+          // rejected, never silently parsed into candidate zero.
+          const expectedPrefix = `exchange:${poolId}:`;
+          const numericPart = exchangeAnswer.id.startsWith(expectedPrefix)
+            ? exchangeAnswer.id.slice(expectedPrefix.length)
+            : "";
+          const index = Number(numericPart);
+          const validId =
+            numericPart !== "" &&
+            /^\d+$/.test(numericPart) &&
+            Number.isInteger(index) &&
+            index >= 0 &&
+            index < planned.eligible.length;
           if (
-            !Number.isInteger(index) ||
-            index < 0 ||
-            index >= planned.eligible.length
+            !validId
           ) {
             logDecision({ ...entry, surface: "chatter-exchange", outcome: "rejected", fallback: true, fallbackReason: "unknown-candidate", confidence: exchangeAnswer.confidence });
           } else if (!Number.isFinite(exchangeAnswer.confidence) || exchangeAnswer.confidence < minChatter) {
