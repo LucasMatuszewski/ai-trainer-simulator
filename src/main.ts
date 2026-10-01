@@ -67,6 +67,9 @@ import { createGreetingWrapper, type GreetingWrapperHandle } from "./jev/greetin
 import { createDialogueWrapper, type DialogueSteererHandle } from "./jev/dialogue-wrapper";
 import { dialoguePoolFor, registerNpcDialoguePools } from "./content/npc-content/dialogue-pools";
 import { mountJevSettings } from "./ui/jev-settings";
+import { mountMissionUi, type MissionUiHandle } from "./ui/mission";
+import { createMissionWrapper, type MissionSteerer } from "./jev/mission-wrapper";
+import { missionResultActions } from "./game/mission";
 import {
   createDefaultDecisionHooks,
   jevDecisionHooks,
@@ -243,10 +246,20 @@ let worldTick: WorldTickHandle | null = null;
 // WS4: today's fired random-event slugs for the tick projection
 // (allowlisted content ids only; D-59). Reset at each day rollover.
 let worldTickFiredEvents: string[] = [];
+// WS7 (C-77): the conference-speech mission overlay. Open pauses the
+// simulation clock like a blocking modal (its presentation runs on its
+// own clock).
+let missionUi: MissionUiHandle | null = null;
 
 function buildDialogueSteerer(): DialogueSteererHandle | null {
   if (JEV_MODE === "off") return null;
   return createDialogueWrapper({ shadow: JEV_MODE === "shadow" });
+}
+
+// WS7: the mission steerer (question pick + answer scoring), sharing the
+// ?jev mode handling with the other wrappers.
+function buildMissionSteerer(): MissionSteerer {
+  return createMissionWrapper({ shadow: JEV_MODE === "shadow" });
 }
 
 function buildWorldTick(): WorldTickHandle | null {
@@ -1484,6 +1497,10 @@ function openDialogueWith(npc: NPC): void {
   const onboardingGate: Partial<Record<NpcId, string>> = {
     renata: "renata-tut-finished",
     bartek: "got-acme-contract",
+    // Wave-3 verdict fix: Dawid's CEO story arc (first-meeting sets
+    // ceo-met, then give-task/performance-review) must run before his
+    // v2 pool, whose workshop offer presumes it.
+    dawid: "ceo-met",
   };
   const requiredFlag = onboardingGate[npc.id];
   const v2Allowed =
@@ -1529,6 +1546,28 @@ function openDialogueWith(npc: NPC): void {
 }
 
 function openDebugMinigame(): void {
+  // WS7 (C-77): the computer is the mission entry once the ACME contract
+  // is signed — the conference speech IS the client training. Replays are
+  // flavor-only (the runtime/UI guard the double payout).
+  if (
+    game.get().flags["got-acme-contract"] === true &&
+    !missionUi?.isOpen()
+  ) {
+    if (missionUi === null) {
+      missionUi = mountMissionUi(uiRoot, {
+        steerer: buildMissionSteerer(),
+        isCompleted: (mission) =>
+          game.get().flags[mission.completionFlag] === true,
+        applyResult: (mission, result) => {
+          for (const action of missionResultActions(mission, result)) {
+            game.dispatch(action);
+          }
+        },
+      });
+    }
+    missionUi.open("conference-acme-training");
+    return;
+  }
   if (!debugGame) {
     debugGame = mountDebugScript(uiRoot, (result) => {
       if (result.won) {
@@ -1967,6 +2006,7 @@ function frame(): void {
     cinematicPlaying,
     helpOpen: helpModal?.isOpen() ?? false,
     endDayModalOpen: endDayModal?.isOpen() ?? false,
+    missionOpen: missionUi?.isOpen() ?? false,
   })) {
     const advanced = advancePeriodElapsed(game.get().timeOfDay, currentPeriodElapsed, dt);
     currentPeriodElapsed = advanced.elapsedInPeriod;

@@ -164,8 +164,11 @@ describe("MissionRuntime — abort, reload and duplicate finish (AC-26)", () => 
     const first = createMissionRuntime(mission);
     first.start();
     first.advance();
-    first.advance();
-    expect(first.snapshot().stepIndex).toBe(2);
+    // C-77 verdict fix: the script now interleaves points and questions
+    // (AC-23 — every talking point is shown), so the second step is a
+    // plant question and an unanswered question blocks advancement.
+    expect(first.snapshot().stepIndex).toBe(1);
+    expect(first.snapshot().phase).toBe("plant-question");
 
     const second = createMissionRuntime(mission);
     second.start();
@@ -350,10 +353,12 @@ describe("missionResultActions — rewards through existing actions (AC-25)", ()
       quotes: [],
       payoutApplied: true,
     };
+    // Wave-3 verdict fix: the completion flag leads — an interruption
+    // between saves can only lose the reward, never pay twice (AC-25).
     expect(missionResultActions(mission, result)).toEqual([
+      { type: "set-flag", flag: "mission-conference-acme-done", value: true },
       { type: "add-cash", amount: 400, reason: "mission:conference-acme-training" },
       { type: "add-stat", stat: "credibility", delta: 8 },
-      { type: "set-flag", flag: "mission-conference-acme-done", value: true },
     ]);
   });
 
@@ -368,8 +373,8 @@ describe("missionResultActions — rewards through existing actions (AC-25)", ()
     };
     const actions = missionResultActions(mission, result);
     expect(actions).toEqual([
-      { type: "add-stat", stat: "credibility", delta: -3 },
       { type: "set-flag", flag: "mission-conference-acme-done", value: true },
+      { type: "add-stat", stat: "credibility", delta: -3 },
     ]);
   });
 

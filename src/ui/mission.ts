@@ -184,6 +184,9 @@ export function mountMissionUi(root: HTMLElement, deps: MissionUiDeps = {}): Mis
   /** optionId -> bounded adjustment, valid for `adjustmentsQuestionId`. */
   let adjustments: Record<string, -1 | 0 | 1> | null = null;
   let adjustmentsQuestionId: string | null = null;
+  // WS7 (medium 7): questions already asked this run, so the pick request
+  // never advertises an exhausted question.
+  const askedQuestionIds = new Set<string>();
 
   const isOpen = (): boolean => wrap !== null;
 
@@ -259,6 +262,7 @@ export function mountMissionUi(root: HTMLElement, deps: MissionUiDeps = {}): Mis
     result = null;
     adjustments = null;
     adjustmentsQuestionId = null;
+    askedQuestionIds.clear();
     // Late import avoided: the runtime module is a static dependency.
     runtime = createRuntime(mission, { isCompleted });
     runtime.start();
@@ -280,6 +284,7 @@ export function mountMissionUi(root: HTMLElement, deps: MissionUiDeps = {}): Mis
         <div class="mission-hint">${hintFor(snap)}</div>
         <div class="mission-actions">
           <button class="ghost" data-mission-abandon type="button">Abandon</button>
+          <button data-mission-continue type="button">Continue</button>
         </div>
       </div>
     `;
@@ -288,6 +293,10 @@ export function mountMissionUi(root: HTMLElement, deps: MissionUiDeps = {}): Mis
         runtime?.abort();
         close();
       });
+    // Wave-3 verdict fix (medium 5): pointer players get a Continue button
+    // (Space already advances) — no dead-end after points or answers.
+    el.querySelector<HTMLButtonElement>("[data-mission-continue]")!
+      .addEventListener("click", () => advanceOrFinish());
     el.querySelectorAll<HTMLButtonElement>("[data-mission-option]").forEach((button) => {
       button.addEventListener("click", () => {
         answerByIndex(Number(button.dataset.missionOption ?? "-1"));
@@ -426,11 +435,21 @@ export function mountMissionUi(root: HTMLElement, deps: MissionUiDeps = {}): Mis
     if (snap.phase !== "plant-question" || snap.question === null) return;
     const request = pickRequest(snap);
     if (request === null) return;
+    // Wave-3 verdict fix (medium 7): never advertise questions that were
+    // already asked — the runtime rejects them and the pick silently
+    // falls back (the single-remaining-candidate optimization never
+    // fired on this shape).
+    const asked = askedQuestionIds;
+    request.questions = request.questions.filter(
+      (q) => !asked.has(q.id),
+    );
+    if (request.questions.length === 0) return;
 
     // While the asker's hand is up, try to steer WHICH question comes.
     // The panel shows the authored question the moment the pick
     // settles; without a steerer this branch never runs.
     renderSpeech();
+    if (snap.question !== null) askedQuestionIds.add(snap.question.questionId);
     const pick = await steerer.pickQuestion(request).catch(() => null);
     if (token !== runToken || runtime === null) return;
     const afterPick = runtime.snapshot();
@@ -467,7 +486,11 @@ export function mountMissionUi(root: HTMLElement, deps: MissionUiDeps = {}): Mis
     };
     const scores = await steerer.scoreOptions(scoreRequest).catch(() => null);
     if (token !== runToken || runtime === null) return;
-    if (scores !== null && !scores.fallback) {
+    // Wave-3 verdict fix (medium 6): a PARTIAL fallback still carries
+    // valid judgments for the options that cleared the threshold — apply
+    // them; only a total failure (no adjustments at all) leaves the
+    // authored baseScores in place.
+    if (scores !== null && Object.keys(scores.adjustments).length > 0) {
       adjustments = { ...scores.adjustments };
       adjustmentsQuestionId = questionSnap.questionId;
     }

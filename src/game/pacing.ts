@@ -74,6 +74,9 @@ export interface SimulationClockBlockers {
   cinematicPlaying?: boolean;
   helpOpen?: boolean;
   endDayModalOpen?: boolean;
+  /** WS7 (C-77): the conference-speech overlay pauses the clock like a
+   *  blocking modal (its presentation animates on its own clock). */
+  missionOpen?: boolean;
 }
 
 export function shouldAdvanceSimulationClock(blockers: SimulationClockBlockers): boolean {
@@ -81,5 +84,6 @@ export function shouldAdvanceSimulationClock(blockers: SimulationClockBlockers):
     && blockers.dialogueOpen !== true
     && blockers.cinematicPlaying !== true
     && blockers.helpOpen !== true
-    && blockers.endDayModalOpen !== true;
+    && blockers.endDayModalOpen !== true
+    && blockers.missionOpen !== true;
 }

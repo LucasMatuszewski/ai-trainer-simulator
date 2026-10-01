@@ -434,13 +434,16 @@ export function missionResultActions(mission: MissionDef, result: MissionResult)
   const reward =
     result.outcome === "won" ? mission.rewardOnWin : mission.rewardOnLoss;
   const actions: Action[] = [];
+  // Wave-3 verdict fix: the completion flag is set FIRST — an interruption
+  // between the saves can then only LOSE the reward, never pay twice
+  // (AC-25's durable exactly-once claim).
+  actions.push({ type: "set-flag", flag: mission.completionFlag, value: true });
   if (reward.cash !== 0) {
     actions.push({ type: "add-cash", amount: reward.cash, reason: `mission:${mission.id}` });
   }
   if (reward.credibility !== 0) {
     actions.push({ type: "add-stat", stat: "credibility", delta: reward.credibility });
   }
-  actions.push({ type: "set-flag", flag: mission.completionFlag, value: true });
   return actions;
 }
 

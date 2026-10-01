@@ -319,16 +319,21 @@ export const MISSIONS: readonly MissionDef[] = [
         ],
       },
     ],
+    // C-77 verdict fix (AC-23): points and questions strictly alternate —
+    // the runtime folds consecutive points when advancing (so the steered
+    // first question lands after one Space), which silently skipped any
+    // point that followed another point. This order shows all five
+    // talking points while preserving the question order.
     script: [
       { kind: "point", pointId: "pt-welcome" },
-      { kind: "point", pointId: "pt-spreadsheets" },
       { kind: "question", plantIndex: 1, questionIndex: 0 }, // kasia: LinkedIn ambush
-      { kind: "point", pointId: "pt-numbers" },
+      { kind: "point", pointId: "pt-spreadsheets" },
       { kind: "question", plantIndex: 0, questionIndex: 0 }, // marek: trust the numbers
-      { kind: "point", pointId: "pt-demo" },
-      { kind: "point", pointId: "pt-qa" },
+      { kind: "point", pointId: "pt-numbers" },
       { kind: "question", plantIndex: 0, questionIndex: 1 }, // marek: the last trainee
+      { kind: "point", pointId: "pt-demo" },
       { kind: "question", plantIndex: 1, questionIndex: 1 }, // kasia: the headhunters
+      { kind: "point", pointId: "pt-qa" },
     ],
     startingEngagement: 50,
     winEngagement: 60,

@@ -219,6 +219,14 @@ test("an NPC walking to the kitchen demonstrably reroutes around the robot parke
   outer: for (let window = 0; window < 8; window += 1) {
     await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
     await page.waitForTimeout(400);
+    // Wave-3 verdict fix: skipping from Evening rolls into the NEXT day
+    // via endDay, which shows the blocking Day Summary — dismiss it or
+    // every later sample runs against a paused sim (zero provers).
+    const summary = page.locator('[data-action="continue"]');
+    if ((await summary.count()) > 0 && (await summary.first().isVisible())) {
+      await summary.first().click();
+      await page.waitForTimeout(600);
+    }
     const trajectories = new Map<string, { first: XZ; last: XZ; minRobotDist: number; jumped: boolean }>();
     for (let i = 0; i < 60; i += 1) {
       await page.waitForTimeout(500);
