@@ -1,11 +1,12 @@
 /**
- * WS3 dialogue v2 pool registration index (C-77).
+ * WS3/WS5 dialogue v2 pool registration index (C-77).
  *
  * One import of this module activates the authored v2 pools for bartek,
- * renata, klaudia and marek via the WS0 npc-content registry. NPCs without
- * pools keep their legacy trees (grazyna, maciek, ...); the generic pool is
- * the fallback any v2 conversation pivots onto when every authored thread
- * is exhausted. Registration is idempotent.
+ * renata, klaudia, marek (WS3) and zosia, pawel, kasia, tomek, ania,
+ * janusz, grazyna, maciek, przemek, dawid and burek (WS5) via the WS0
+ * npc-content registry. NPCs without pools keep their legacy trees; the
+ * generic pool is the fallback any v2 conversation pivots onto when every
+ * authored thread is exhausted. Registration is idempotent.
  */
 
 import type { NpcId } from "../../types";
@@ -20,6 +21,17 @@ import { BARTEK_DIALOGUE_POOL } from "./dialogue-pool-bartek";
 import { RENATA_DIALOGUE_POOL } from "./dialogue-pool-renata";
 import { KLAUDIA_DIALOGUE_POOL } from "./dialogue-pool-klaudia";
 import { MAREK_DIALOGUE_POOL } from "./dialogue-pool-marek";
+import { ZOSIA_DIALOGUE_POOL } from "./dialogue-pool-zosia";
+import { PAWEL_DIALOGUE_POOL } from "./dialogue-pool-pawel";
+import { KASIA_DIALOGUE_POOL } from "./dialogue-pool-kasia";
+import { TOMEK_DIALOGUE_POOL } from "./dialogue-pool-tomek";
+import { ANIA_DIALOGUE_POOL } from "./dialogue-pool-ania";
+import { JANUSZ_DIALOGUE_POOL } from "./dialogue-pool-janusz";
+import { GRAZYNA_DIALOGUE_POOL } from "./dialogue-pool-grazyna";
+import { MACIEK_DIALOGUE_POOL } from "./dialogue-pool-maciek";
+import { PRZEMEK_DIALOGUE_POOL } from "./dialogue-pool-przemek";
+import { DAWID_DIALOGUE_POOL } from "./dialogue-pool-dawid";
+import { BUREK_DIALOGUE_POOL } from "./dialogue-pool-burek";
 
 export { GENERIC_DIALOGUE_POOL } from "./dialogue-pool-generic";
 
@@ -33,6 +45,17 @@ export function registerNpcDialoguePools(): void {
   registerNpcContent("renata", { dialoguePool: RENATA_DIALOGUE_POOL });
   registerNpcContent("klaudia", { dialoguePool: KLAUDIA_DIALOGUE_POOL });
   registerNpcContent("marek", { dialoguePool: MAREK_DIALOGUE_POOL });
+  registerNpcContent("zosia", { dialoguePool: ZOSIA_DIALOGUE_POOL });
+  registerNpcContent("pawel", { dialoguePool: PAWEL_DIALOGUE_POOL });
+  registerNpcContent("kasia", { dialoguePool: KASIA_DIALOGUE_POOL });
+  registerNpcContent("tomek", { dialoguePool: TOMEK_DIALOGUE_POOL });
+  registerNpcContent("ania", { dialoguePool: ANIA_DIALOGUE_POOL });
+  registerNpcContent("janusz", { dialoguePool: JANUSZ_DIALOGUE_POOL });
+  registerNpcContent("grazyna", { dialoguePool: GRAZYNA_DIALOGUE_POOL });
+  registerNpcContent("maciek", { dialoguePool: MACIEK_DIALOGUE_POOL });
+  registerNpcContent("przemek", { dialoguePool: PRZEMEK_DIALOGUE_POOL });
+  registerNpcContent("dawid", { dialoguePool: DAWID_DIALOGUE_POOL });
+  registerNpcContent("burek", { dialoguePool: BUREK_DIALOGUE_POOL });
 }
 
 /** True when this NPC has an authored v2 pool (v2 conversations allowed). */

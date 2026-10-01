@@ -92,16 +92,29 @@ const POOLS: Record<string, NpcDialoguePool> = (() => {
 const AUTHORED_NPC_IDS = ["bartek", "renata", "klaudia", "marek"] as const;
 
 describe("dialogue v2 pool registration", () => {
-  it("registers pools for bartek, renata, klaudia and marek and nobody else", () => {
+  it("registers the authored pools and leaves unregistered NPCs on legacy trees", () => {
     registerNpcDialoguePools();
+    // WS3 wave.
     expect(hasDialoguePool("bartek")).toBe(true);
     expect(hasDialoguePool("renata")).toBe(true);
     expect(hasDialoguePool("klaudia")).toBe(true);
     expect(hasDialoguePool("marek")).toBe(true);
-    // NPCs without authored pools stay on their legacy trees.
-    expect(hasDialoguePool("grazyna")).toBe(false);
-    expect(hasDialoguePool("burek")).toBe(false);
+    // WS5 wave (C-77 authored expansion): every remaining roster NPC.
+    expect(hasDialoguePool("zosia")).toBe(true);
+    expect(hasDialoguePool("pawel")).toBe(true);
+    expect(hasDialoguePool("kasia")).toBe(true);
+    expect(hasDialoguePool("tomek")).toBe(true);
+    expect(hasDialoguePool("ania")).toBe(true);
+    expect(hasDialoguePool("janusz")).toBe(true);
+    expect(hasDialoguePool("grazyna")).toBe(true);
+    expect(hasDialoguePool("maciek")).toBe(true);
+    expect(hasDialoguePool("przemek")).toBe(true);
+    expect(hasDialoguePool("dawid")).toBe(true);
+    expect(hasDialoguePool("burek")).toBe(true);
+    // The generic fallback stays unregistered (it is the pivot target), and
+    // unknown ids resolve to nothing.
     expect(hasDialoguePool("generic")).toBe(false);
+    expect(hasDialoguePool("nobody")).toBe(false);
   });
 
   it("resolution is stable: the same pool object comes back per NPC", () => {
