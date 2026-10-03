@@ -69,6 +69,7 @@ const buckets = {
   greetingLines: new Bucket("greetingLines"),
   goodbyeLines: new Bucket("goodbyeLines"),
   burekLines: new Bucket("burekLines"),
+  v2PoolStrings: new Bucket("v2PoolStrings"),
 };
 
 const everything = new Set();
@@ -104,6 +105,31 @@ try {
   const dogMod = await server.ssrLoadModule("/src/content/dog-dialogues.ts");
   const greetingsMod = await server.ssrLoadModule("/src/content/morning-greetings.ts");
   const goodbyesMod = await server.ssrLoadModule("/src/content/evening-goodbyes.ts");
+  // C-78/sacs-xtma.14 audit: the v2 dialogue pools (paired option/reply
+  // content) count as their own category — legacy trees are untouched, so
+  // the 10x growth lands here.
+  const poolsMod = await server.ssrLoadModule("/src/content/npc-content/dialogue-pools.ts");
+  const poolsBucket = buckets.v2PoolStrings;
+  const poolRegistryMod = await server.ssrLoadModule("/src/content/npc-content/registry.ts");
+  // NPC ids come from the profiles module (the roster source of truth).
+  const profilesMod = await server.ssrLoadModule("/src/content/npc-profiles.ts");
+  const npcIds = profilesMod.NPC_IDS;
+  poolsMod.registerNpcDialoguePools();
+  for (const npcId of npcIds) {
+    const pool = poolsMod.dialoguePoolFor(npcId);
+    if (pool === undefined) continue;
+    for (const topic of pool.topics) {
+      poolsBucket.add(topic.label ?? topic.id);
+      for (const option of topic.optionCandidates) {
+        poolsBucket.add(option.text);
+        for (const reply of option.replies ?? []) poolsBucket.add(reply.text);
+      }
+      for (const reply of topic.replyCandidates ?? []) poolsBucket.add(reply.text);
+    }
+    for (const task of pool.taskOffers ?? []) {
+      poolsBucket.add(`${task.title} ${task.description} ${task.rewardHint ?? ""}`);
+    }
+  }
 
   // Shape-agnostic walk: each DIALOGUES value is normally a
   // Record<treeId, DialogueTree>, but tolerate a bare tree as well.
