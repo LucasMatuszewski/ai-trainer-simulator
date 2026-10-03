@@ -31,10 +31,15 @@ import { QUESTS } from "../../../src/content/quests";
 /**
  * WS5 dialogue v2 pools — authored expansion batch 1 (C-77): zosia, pawel,
  * kasia, tomek, ania, janusz, grazyna, maciek, przemek, dawid and burek.
- * These tests pin schema validity, per-NPC counts, global id uniqueness,
- * the flag vocabulary for task offers, the authoring quality rules from
- * the brief (relationshipHints, gated replies, tone bounds), and the
- * registration in the WS0 registry.
+ * These tests pin schema validity, per-NPC minimum counts, global id
+ * uniqueness, the flag vocabulary for task offers, the authoring quality
+ * rules from the brief (relationshipHints, gated replies, tone bounds), and
+ * the registration in the WS0 registry.
+ *
+ * WS5 round 2 (sacs-xtma.14 volume push): the round-1 EXACT counts
+ * (3 topics, 6x6, 1 task) became FLOORS so the pools can keep growing
+ * toward the 10x volume target. Everything else (pairing, quality, flags,
+ * lore) is unchanged.
  */
 
 const QUEST_FLAGS = QUESTS.flatMap((q) => (q.completionFlag ? [q.completionFlag] : []));
@@ -154,15 +159,15 @@ describe("WS5 pool schema validity", () => {
 });
 
 describe("WS5 per-NPC structure (the brief's counts)", () => {
-  it("the ten human NPCs have 3 topics of 6 options + 6 replies and exactly 1 task", () => {
+  it("the ten human NPCs have >= 3 topics of >= 6 options + >= 6 replies and >= 1 task", () => {
     for (const npcId of FULL_STRUCTURE_NPC_IDS) {
       const pool = WS5_POOLS.find((p) => p.npcId === npcId)!;
-      expect(pool.topics, `${npcId} topic count`).toHaveLength(3);
+      expect(pool.topics.length, `${npcId} topic count`).toBeGreaterThanOrEqual(3);
       for (const topic of pool.topics) {
-        expect(topic.optionCandidates, `${npcId}/${topic.id} options`).toHaveLength(6);
-        expect(topic.replyCandidates ?? [], `${npcId}/${topic.id} replies`).toHaveLength(6);
+        expect(topic.optionCandidates.length, `${npcId}/${topic.id} options`).toBeGreaterThanOrEqual(6);
+        expect((topic.replyCandidates ?? []).length, `${npcId}/${topic.id} replies`).toBeGreaterThanOrEqual(6);
       }
-      expect(pool.taskOffers, `${npcId} task count`).toHaveLength(1);
+      expect(pool.taskOffers.length, `${npcId} task count`).toBeGreaterThanOrEqual(1);
     }
   });
 

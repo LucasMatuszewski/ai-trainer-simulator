@@ -229,8 +229,8 @@ export const DAWID_DIALOGUE_POOL: NpcDialoguePool = {
       id: "dawid:task-one-pager",
       title: "The one-pager",
       description: "One page for the CEO: what you would teach, to whom, and what the graph does afterward. If the page is good, it goes to the board as a workshop proposal, and momentum does the rest. One page, not two — the second page is where ideas go to wobble.",
-      flagToSet: "ceo-workshop-offered",
-      rewardHint: "+the board's agenda",
+      flagToSet: "dawid-graph-memo",
+      rewardHint: "+Dawid remembers who does the homework",
     },
   ],
 };

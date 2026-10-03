@@ -1551,11 +1551,11 @@ function openDialogueWith(npc: NPC): void {
   const onboardingGate: Partial<Record<NpcId, string>> = {
     renata: "renata-tut-finished",
     bartek: "got-acme-contract",
-    // Wave-3 verdict fix + closure verdict: Dawid's CEO story arc runs
-    // first-meeting -> give-task -> performance-review (which sets
-    // ceo-reviewed LAST). The v2 pool opens only after the WHOLE arc,
-    // or its later branches become unreachable.
-    dawid: "ceo-reviewed",
+    // Dawid: v2 flavor opens after the first meeting. The ARC beats
+    // (give-task -> performance-review) stay in his legacy trees — the
+    // v2 pool's one-pager task uses its own flag (dawid-graph-memo), so
+    // it can never skip or collide with an arc beat (closure verdict).
+    dawid: "ceo-met",
   };
   const requiredFlag = onboardingGate[npc.id];
   const v2Allowed =

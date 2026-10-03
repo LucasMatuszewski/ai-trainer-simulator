@@ -152,10 +152,12 @@ describe("dialogue v2 pool schema validity", () => {
     }
   });
 
-  it("every authored NPC has 4 topics with 6-8 options and 6-8 replies, plus 1-2 tasks", () => {
+  it("every authored NPC has >= 4 topics with 6-8 options and 6-8 replies, plus 1-2 tasks", () => {
     for (const npcId of AUTHORED_NPC_IDS) {
       const pool = POOLS[npcId]!;
-      expect(pool.topics, `${npcId} topic count`).toHaveLength(4);
+      // WS5 round 2: 4 was the round-1 count; it is a floor now so the
+      // pools can keep growing toward the 10x volume target.
+      expect(pool.topics.length, `${npcId} topic count`).toBeGreaterThanOrEqual(4);
       for (const topic of pool.topics) {
         expect(
           topic.optionCandidates.length,
