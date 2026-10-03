@@ -123,7 +123,6 @@ export function createDialogueWrapper(options: DialogueWrapperOptions = {}): Dia
   const client = options.client ?? createResolvingClient();
   const shadow = options.shadow ?? false;
   const minCuration = options.minCurationConfidence ?? DIALOGUE_CURATION_MIN_CONFIDENCE;
-  const minReply = options.minReplyConfidence ?? DIALOGUE_REPLY_MIN_CONFIDENCE;
   const timeoutMs = options.timeoutMs ?? DIALOGUE_BUDGET_MS;
   const now = options.now ?? (() => Date.now());
 
@@ -160,26 +159,19 @@ export function createDialogueWrapper(options: DialogueWrapperOptions = {}): Dia
         id: `dialogue:option:${request.npcId}:${option.id}`,
         type: "score",
         prompt:
-          `Score 0-10 how well this player line fits the current conversation ` +
-          `with coworker ${request.npcId}. Situation: ${JSON.stringify(facts)}. ` +
+          `How well does this player line fit the current conversation with ` +
+          `coworker ${request.npcId}? Situation: ${JSON.stringify(facts)}. ` +
           `Line: "${option.text}"`,
         subjectId: request.npcId,
-      });
-    }
-    if (request.replies.length > 0) {
-      questions.push({
-        id: `dialogue:reply:${request.npcId}:${request.topicId}`,
-        type: "choice",
-        prompt:
-          `Pick the reply line coworker ${request.npcId} says next, given the ` +
-          `situation: ${JSON.stringify(facts)}. Choose the candidate id whose ` +
-          `authored line fits best.`,
-        subjectId: request.npcId,
-        candidates: request.replies.map((reply, index) => ({
-          id: reply.id,
-          description: reply.text,
-          priority: index,
-        })),
+        // PR review fix: the provider needs the LEVELS as criteria — the
+        // old prompt alone described a 0-10 scale it could not answer with.
+        criteria: [
+          "does not fit this conversation at all right now",
+          "barely fits — an odd or off-key thing to say",
+          "a neutral, reasonable thing to say",
+          "fits well — natural and fitting for this moment",
+          "exactly the right thing to say to this coworker right now",
+        ],
       });
     }
 
@@ -191,7 +183,7 @@ export function createDialogueWrapper(options: DialogueWrapperOptions = {}): Dia
         questions,
         {
           decisionId: `dialogue-${request.npcId}-${(requestSeq += 1)}`,
-          surface: "reply-selection",
+          surface: "option-curation",
           timeoutMs,
           retries: 0, // a conversation must never stall on a judgment
         },
@@ -203,9 +195,8 @@ export function createDialogueWrapper(options: DialogueWrapperOptions = {}): Dia
     const base = { time: now(), subject: request.npcId, latencyMs };
 
     if (!result.ok) {
-      // One honest log entry per surface: both fell back together.
+      // One honest log entry: curation is the only judged surface.
       logDecision({ ...base, surface: "option-curation", outcome: "legacy", fallback: true, fallbackReason: `provider-${result.reason}` });
-      logDecision({ ...base, surface: "reply-selection", outcome: "legacy", fallback: true, fallbackReason: `provider-${result.reason}` });
       return FALLBACK(`provider-${result.reason}`);
     }
 
@@ -264,58 +255,16 @@ export function createDialogueWrapper(options: DialogueWrapperOptions = {}): Dia
       });
     }
 
-    // ---- reply selection (consequential, conservative) ----
-    let replyId: string | null = null;
-    let bucket: ReactionBucket | null = null;
-    let replyConfidence: number | null = null;
-    let replyFallbackReason: string | undefined;
-    const replyAnswer = result.answers.find(
-      (candidate) => candidate.questionId === `dialogue:reply:${request.npcId}:${request.topicId}`,
-    );
-    if (replyAnswer === undefined && request.replies.length > 0) {
-      replyFallbackReason = "missing-answer";
-    } else if (replyAnswer !== undefined) {
-      if (replyAnswer.type !== "choice") {
-        replyFallbackReason = "malformed-answer";
-      } else {
-        const chosen = request.replies.find((reply) => reply.id === replyAnswer.id);
-        if (chosen === undefined) {
-          replyFallbackReason = "unknown-candidate";
-        } else if (replyAnswer.confidence < minReply) {
-          replyFallbackReason = "low-confidence";
-        } else {
-          replyId = chosen.id;
-          bucket = bucketOfReply(chosen);
-          replyConfidence = replyAnswer.confidence;
-        }
-      }
-    }
-    if (replyId !== null) {
-      logDecision({
-        ...base,
-        surface: "reply-selection",
-        outcome: shadow ? "shadow" : "applied",
-        fallback: false,
-        chosenId: replyId,
-        confidence: replyConfidence ?? undefined,
-      });
-    } else {
-      logDecision({
-        ...base,
-        surface: "reply-selection",
-        outcome: "rejected",
-        fallback: true,
-        fallbackReason: replyFallbackReason,
-      });
-    }
+    // ---- C-78: reply selection is DETERMINISTIC (paired to the clicked
+    // option); the steerer only curates which options surface. ----
 
     const decision: SteeredTurnDecision = {
       optionIds,
-      replyId,
-      bucket,
-      confidence: replyConfidence ?? topConfidence ?? null,
-      fallback: optionIds === null && replyId === null,
-      fallbackReason: optionIds === null ? curationFallbackReason : replyFallbackReason,
+      replyId: null,
+      bucket: null,
+      confidence: topConfidence ?? null,
+      fallback: optionIds === null,
+      fallbackReason: curationFallbackReason,
     };
     if (shadow) {
       // D-55: the judgments were logged above as `shadow`, but neither the

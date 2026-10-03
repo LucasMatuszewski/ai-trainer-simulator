@@ -204,7 +204,8 @@ export class FakeDecisionClient implements DecisionClient {
           : [{ ...key, type: "choice", id: first.id, confidence: 0.9 }];
       }
       case "score":
-        return [{ ...key, type: "score", level: 5, confidence: 0.9 }];
+        // Neutral on the 3-authored-level scale (C-78 criteria).
+        return [{ ...key, type: "score", level: 2, confidence: 0.9 }];
       case "noul":
         return [{ ...key, type: "noul", noul: 0.5 }];
       case "subset": {

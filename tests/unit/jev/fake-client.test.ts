@@ -118,7 +118,9 @@ describe("fake client — scripting", () => {
 
     const score = await request(client, [question({ id: "q-score", type: "score", candidates: undefined })]);
     if (!score.ok) throw new Error("expected ok");
-    expect(score.answers[0]).toMatchObject({ type: "score", level: 5, confidence: 0.9 });
+    // C-78: the unscripted score default is NEUTRAL (level 2 on the
+    // 3-authored-level scale the adapter sends).
+    expect(score.answers[0]).toMatchObject({ type: "score", level: 2, confidence: 0.9 });
 
     const noul = await request(client, [question({ id: "q-noul", type: "noul", candidates: undefined })]);
     if (!noul.ok) throw new Error("expected ok");

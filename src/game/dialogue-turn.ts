@@ -78,8 +78,18 @@ export interface DialogueTurn {
   pivotedFromTopicId: string | null;
   /** Up to 4 options; the wrap-up exit always reserves the last slot. */
   options: readonly TurnOption[];
-  /** Eligible replies for this turn (Jev picks; fallback = first). */
+  /**
+   * Eligible replies for this turn (the union of the visible options'
+   * paired replies), in authored order. Legacy consumers and the Jev
+   * curation request read this; the DETERMINISTIC answer to a picked
+   * option comes from repliesFor(option.id) — pairing is the contract.
+   */
   replyCandidates: readonly ReplyCandidate[];
+  /**
+   * C-78: the replies THAT ANSWER the given option id (its authored
+   * pair, or the positional/legacy fallback). Deterministic; no Jev.
+   */
+  repliesFor(optionId: string): readonly ReplyCandidate[];
   /** Task offers referenced by this turn's replies, resolved. */
   taskOffers: readonly TaskOffer[];
   /** True when every authored thread is exhausted (exit set served). */
@@ -319,8 +329,10 @@ function serveSlice(
   // for several options) and ordered by first appearance.
   const served: ReplyCandidate[] = [];
   const seenReplyIds = new Set<string>();
+  const repliesFor = (optionId: string): readonly ReplyCandidate[] =>
+    slice.repliesFor(optionId);
   for (const option of shown) {
-    for (const reply of slice.repliesFor(option.id)) {
+    for (const reply of repliesFor(option.id)) {
       if (!seenReplyIds.has(reply.id)) {
         seenReplyIds.add(reply.id);
         served.push(reply);
@@ -354,6 +366,7 @@ function serveSlice(
       { option: WRAP_UP_OPTION, isExit: true },
     ],
     replyCandidates: served,
+    repliesFor,
     taskOffers: pool.taskOffers.filter((task) =>
       served.some((reply) => reply.offersTaskId === task.id),
     ),
@@ -420,6 +433,19 @@ function exitTurn(ctx: TurnContext, session: ConversationSession): DialogueTurn 
     pivotedFromTopicId: session.currentTopicId,
     options,
     replyCandidates: replies,
+    // C-78: the exit set's replies resolve from the same pairing —
+    // positional over whichever topic the pivot landed on.
+    repliesFor: (optionId: string): readonly ReplyCandidate[] => {
+      const index = (bestTopic?.optionCandidates ?? []).findIndex(
+        (candidate) => candidate.id === optionId,
+      );
+      const paired = index >= 0
+        ? [bestTopic!.replyCandidates?.[index]].filter(
+            (reply): reply is ReplyCandidate => reply !== undefined,
+          )
+        : [];
+      return paired.length > 0 ? paired : replies;
+    },
     taskOffers: [],
     exhausted: true,
   };

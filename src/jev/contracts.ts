@@ -147,6 +147,8 @@ export interface JevQuestion {
   subjectId?: string;
   /** Authored candidates for choice / subset questions. */
   candidates?: readonly DecisionCandidate[];
+  /** C-78: ordered level descriptions for score questions (2-10). */
+  criteria?: readonly string[];
   /** Subset cardinality bounds (default 0..candidates.length). */
   minSelections?: number;
   maxSelections?: number;

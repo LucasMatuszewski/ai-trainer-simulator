@@ -129,14 +129,14 @@ function toProviderQuestions(
         break;
       }
       case "score": {
-        if (!q.candidates || q.candidates.length === 0) {
+        // Levels come either as candidates or as plain criteria strings.
+        const levels = q.candidates
+          ? q.candidates.map((c) => c.description)
+          : q.criteria;
+        if (!levels || levels.length === 0) {
           throw new Error(`score question "${q.id}" has no levels`);
         }
-        wire[q.id] = {
-          type: "score",
-          instructions: q.prompt,
-          criteria: q.candidates.map((c) => c.description),
-        };
+        wire[q.id] = { type: "score", instructions: q.prompt, criteria: levels };
         break;
       }
       case "noul": {
@@ -274,7 +274,10 @@ export function createOpenRouterAdapter(
       if (res.status < 200 || res.status >= 300) {
         return { ok: false, reason: classifyStatus(res.status), detail: await describeErrorBody(res, apiKey) };
       }
-      return parseSuccessResponse(res, questions, opts, decisionId, model);
+      // PR review fix (major): await INSIDE the try — returning the parse
+      // promise directly cleared the abort timer before the body finished
+      // reading, so a stalled body escaped the deadline forever.
+      return await parseSuccessResponse(res, questions, opts, decisionId, model);
     } catch (err) {
       if (controller.signal.aborted) return { ok: false, reason: "timeout" };
       const message = err instanceof Error ? err.message : String(err);

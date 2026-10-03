@@ -214,16 +214,18 @@ describe("mission wrapper — scoreOptions (Score, D-60 consequential row)", () 
     expect(request.opts?.decisionId).toContain("conference-acme-training");
   });
 
-  it("maps score levels to bounded -1/0/+1 adjustments", async () => {
+  it("maps the 3 authored levels to bounded -1/0/+1 adjustments", async () => {
     const client = new FakeDecisionClient({
-      [scoreQid("own-it")]: { type: "score", level: 2, confidence: 0.9 },
-      [scoreQid("cite-source")]: { type: "score", level: 6, confidence: 0.9 },
-      [scoreQid("deflect")]: { type: "score", level: 5, confidence: 0.9 },
-      [scoreQid("bluff")]: { type: "score", level: 9, confidence: 0.9 },
+      [scoreQid("own-it")]: { type: "score", level: 1, confidence: 0.9 },
+      [scoreQid("cite-source")]: { type: "score", level: 3, confidence: 0.9 },
+      [scoreQid("deflect")]: { type: "score", level: 2, confidence: 0.9 },
+      [scoreQid("bluff")]: { type: "score", level: 2.5, confidence: 0.9 },
     });
     const steerer = createMissionWrapper({ client });
     const decision = await steerer.scoreOptions(scoreRequest);
     expect(decision).toEqual({
+      // 2.5 rounds to 3 -> +1 (a strongly-leaning-good answer still lands
+      // within the bounded band).
       adjustments: { "own-it": -1, "cite-source": 1, deflect: 0, bluff: 1 },
       fallback: false,
     });
@@ -232,7 +234,7 @@ describe("mission wrapper — scoreOptions (Score, D-60 consequential row)", () 
   it("a low-confidence score falls back to baseScore for that option only", async () => {
     expect(MISSION_SCORE_MIN_CONFIDENCE).toBe(0.6);
     const client = new FakeDecisionClient({
-      [scoreQid("own-it")]: { type: "score", level: 9, confidence: 0.5 },
+      [scoreQid("own-it")]: { type: "score", level: 3, confidence: 0.5 },
     });
     const steerer = createMissionWrapper({ client });
     const decision = await steerer.scoreOptions(scoreRequest);
@@ -273,11 +275,11 @@ describe("mission wrapper — scoreOptions (Score, D-60 consequential row)", () 
 });
 
 describe("adjustmentFromScoreLevel — the +/-1 band around neutral", () => {
-  it("levels below 5 land poorly, 5 lands, above 5 lands well — always within +/-1", () => {
+  it("maps the 3 authored levels to the +/-1 band (fractional rounds)", () => {
     expect(adjustmentFromScoreLevel(1)).toBe(-1);
-    expect(adjustmentFromScoreLevel(4)).toBe(-1);
-    expect(adjustmentFromScoreLevel(5)).toBe(0);
-    expect(adjustmentFromScoreLevel(6)).toBe(1);
-    expect(adjustmentFromScoreLevel(10)).toBe(1);
+    expect(adjustmentFromScoreLevel(1.5)).toBe(-1);
+    expect(adjustmentFromScoreLevel(2)).toBe(0);
+    expect(adjustmentFromScoreLevel(2.5)).toBe(1);
+    expect(adjustmentFromScoreLevel(3)).toBe(1);
   });
 });

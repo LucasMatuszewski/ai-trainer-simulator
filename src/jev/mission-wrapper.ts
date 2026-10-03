@@ -43,9 +43,15 @@ export type ScoreAdjustment = -1 | 0 | 1;
  * lands, >= 6 lands well — always within the +/-1 band (D-54).
  */
 export function adjustmentFromScoreLevel(level: number): ScoreAdjustment {
+  // The provider scores a position among the THREE authored levels
+  // (1..3, possibly fractional between them). Round AWAY from neutral:
+  // 1.5 leans poor -> -1; 2.5 leans well -> +1 (a half-step in either
+  // direction is already a lean, never a shrug).
   if (!Number.isFinite(level)) return 0;
-  if (level < 5) return -1;
-  if (level > 5) return 1;
+  const fromNeutral = level - 2;
+  const rounded = 2 + Math.sign(fromNeutral) * Math.round(Math.abs(fromNeutral));
+  if (rounded <= 1) return -1;
+  if (rounded >= 3) return 1;
   return 0;
 }
 
@@ -279,8 +285,14 @@ export function createMissionWrapper(options: MissionWrapperOptions = {}): Missi
       prompt:
         `The trainer answers the question "${request.questionText}" with: "${option.text}". ` +
         `Audience engagement: ${request.engagement}/100 (${request.engagementBand}). ` +
-        "How does this answer land with THIS audience? Score 2-4 = lands poorly, " +
-        "5 = lands, 6-10 = lands well.",
+        "How does this answer land with THIS audience right now?",
+      // PR review fix: the provider needs the LEVELS as criteria — the
+      // prompt alone described a 0-10 scale it could not answer with.
+      criteria: [
+        "lands poorly — visibly confuses, bores, or annoys the audience",
+        "lands — neutral, competent reception",
+        "lands well — the audience visibly appreciates it",
+      ],
     }));
 
     const startedAt = now();

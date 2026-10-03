@@ -3,21 +3,22 @@ import { FakeDecisionClient } from "../../../src/jev/fake-client";
 import {
   createDialogueWrapper,
   DIALOGUE_CURATION_MIN_CONFIDENCE,
-  DIALOGUE_REPLY_MIN_CONFIDENCE,
   bucketOfReply,
   type DialogueSteererHandle,
   type SteeredTurnRequest,
 } from "../../../src/jev/dialogue-wrapper";
 import { counters, recent, reset as resetLog } from "../../../src/jev/decision-log";
 import { unconfiguredDecisionClient } from "../../../src/jev/unconfigured-client";
-import type { NpcDialoguePool, OptionCandidate, ReplyCandidate } from "../../../src/content/dialogue-schema";
+import type { OptionCandidate, ReplyCandidate } from "../../../src/content/dialogue-schema";
 
 /**
- * WS3 dialogue wrapper (C-77, PRD Flow A2, D-60): two steered surfaces per
- * turn — option curation (one Score per option, cosmetic) and reply
- * selection (one Choice, consequential). Fallback is always the pure
- * builder output (authored priority, first-unused). Shadow mode judges and
- * logs but never steers. The memo is keyed by (npcId, topicId, used-set).
+ * WS3 dialogue wrapper (C-77/C-78, PRD Flow A2): ONE steered surface per
+ * turn — option curation (one Score per option, cosmetic, five authored
+ * fit levels). Reply selection is DETERMINISTIC since C-78: the chosen
+ * option's paired replies answer it, so the wrapper never judges replies.
+ * Fallback is always the pure builder output (authored priority,
+ * first-unused). Shadow mode judges and logs but never steers. The memo
+ * is keyed by (npcId, topicId, used-set).
  */
 
 const NPC = "testnpc";
@@ -61,7 +62,6 @@ function makeRequest(overrides: Partial<SteeredTurnRequest> = {}): SteeredTurnRe
 }
 
 const optKey = (optionId: string): string => `dialogue:option:${NPC}:${optionId}`;
-const replyKey = (): string => `dialogue:reply:${NPC}:${TOPIC}`;
 
 interface Harness {
   client: FakeDecisionClient;
@@ -79,37 +79,42 @@ function makeHarness(
 
 beforeEach(() => resetLog());
 
-describe("dialogue wrapper — steered path", () => {
-  it("asks one Score per option and one Choice for the reply, batched in one request", async () => {
+describe("dialogue wrapper — steered path (curation only, C-78)", () => {
+  it("asks ONLY one Score per option — no reply Choice question exists anymore", async () => {
     const { client, wrapper } = makeHarness();
     await wrapper.steerTurn(makeRequest());
     expect(client.callCount).toBe(1);
     const request = client.requests[0]!;
-    expect(request.opts?.surface).toBe("reply-selection");
-    expect(request.questions).toHaveLength(4); // 3 option scores + 1 reply choice
-    const scoreQuestions = request.questions.filter((q) => q.type === "score");
-    expect(scoreQuestions.map((q) => q.id)).toEqual(OPTIONS.map((o) => optKey(o.id)));
-    const choice = request.questions.find((q) => q.type === "choice")!;
-    expect(choice.id).toBe(replyKey());
-    expect(choice.candidates?.map((c) => c.id)).toEqual(REPLIES.map((r) => r.id));
+    expect(request.opts?.surface).toBe("option-curation");
+    expect(request.questions).toHaveLength(3); // 3 option scores, nothing else
+    expect(request.questions.every((q) => q.type === "score")).toBe(true);
+    expect(request.questions.map((q) => q.id)).toEqual(OPTIONS.map((o) => optKey(o.id)));
+    // C-78: every score question carries its authored fit LEVELS — the
+    // live 400 ("expected record") was caught because stubs skipped this.
+    for (const q of request.questions) {
+      expect(Array.isArray(q.criteria)).toBe(true);
+      expect(q.criteria!.length).toBeGreaterThanOrEqual(2);
+    }
   });
 
-  it("applies a non-default steered curation and reply (live-path proof)", async () => {
+  it("applies a non-default steered curation (live-path proof)", async () => {
     const { client, wrapper } = makeHarness({
-      [optKey("testnpc:t1:o3")]: { type: "score", level: 9, confidence: 0.9 },
-      [replyKey()]: { type: "choice", id: "testnpc:t1:r2", confidence: 0.8 },
+      // 5-level fit scale: o3 ranks highest, o1 lowest.
+      [optKey("testnpc:t1:o1")]: { type: "score", level: 1, confidence: 0.9 },
+      [optKey("testnpc:t1:o2")]: { type: "score", level: 3, confidence: 0.9 },
+      [optKey("testnpc:t1:o3")]: { type: "score", level: 5, confidence: 0.9 },
     });
     const decision = await wrapper.steerTurn(makeRequest());
     expect(decision.fallback).toBe(false);
     expect(decision.optionIds?.[0]).toBe("testnpc:t1:o3");
-    expect(decision.replyId).toBe("testnpc:t1:r2");
-    // The social reaction is CODE-mapped from the author-tagged hint.
-    expect(decision.bucket).toBe("pleased");
+    // C-78: reply selection is deterministic (paired to the clicked
+    // option) — the decision never carries a steered reply.
+    expect(decision.replyId).toBeNull();
+    expect(decision.bucket).toBeNull();
     // Serving is instant from the memo.
     expect(wrapper.memoOptionOrder(NPC, TOPIC, [])?.[0]).toBe("testnpc:t1:o3");
-    expect(wrapper.memoReply(NPC, TOPIC, [])?.replyId).toBe("testnpc:t1:r2");
-    // AC-31: applied counters prove the live path on both surfaces.
-    expect(counters().applied).toBeGreaterThanOrEqual(2);
+    // AC-31: applied counters prove the live path.
+    expect(counters().applied).toBeGreaterThanOrEqual(1);
     expect(client.callCount).toBe(1);
   });
 
@@ -128,27 +133,17 @@ describe("dialogue wrapper — steered path", () => {
     await wrapper.steerTurn(makeRequest({ usedOptionIds: ["testnpc:t1:o1"] }));
     expect(client.callCount).toBe(2);
   });
-
-  it("maps a missing relationshipHint to the neutral bucket", async () => {
-    const { wrapper } = makeHarness({
-      [replyKey()]: { type: "choice", id: "testnpc:t1:r1", confidence: 0.8 },
-    });
-    const decision = await wrapper.steerTurn(makeRequest());
-    expect(decision.bucket).toBe("neutral");
-  });
 });
 
 describe("dialogue wrapper — fallback paths", () => {
-  it("falls back on a provider timeout (both surfaces, logged as legacy)", async () => {
+  it("falls back on a provider timeout (logged as legacy)", async () => {
     const { client, wrapper } = makeHarness({ "*": { failure: "timeout" } });
     const decision = await wrapper.steerTurn(makeRequest());
     expect(decision.fallback).toBe(true);
     expect(decision.optionIds).toBeNull();
-    expect(decision.replyId).toBeNull();
     expect(wrapper.memoOptionOrder(NPC, TOPIC, [])).toBeNull();
-    expect(wrapper.memoReply(NPC, TOPIC, [])).toBeNull();
     const snapshot = counters();
-    expect(snapshot.legacy).toBe(2);
+    expect(snapshot.legacy).toBe(1);
     expect(snapshot.applied).toBe(0);
     expect(client.requests[0]?.opts).toMatchObject({ retries: 0 });
   });
@@ -160,38 +155,24 @@ describe("dialogue wrapper — fallback paths", () => {
     expect(decision.fallbackReason).toContain("network");
   });
 
-  it("rejects a reply answer below the conservative threshold, keeps cosmetic curation", async () => {
-    const { wrapper } = makeHarness({
-      [replyKey()]: { type: "choice", id: "testnpc:t1:r2", confidence: 0.5 },
-    });
-    const decision = await wrapper.steerTurn(makeRequest());
-    expect(decision.replyId).toBeNull(); // consequential -> conservative (0.6)
-    expect(decision.optionIds).not.toBeNull(); // cosmetic -> lenient (0.3)
-    const snapshot = counters();
-    expect(snapshot.rejected).toBe(1);
-    expect(snapshot.applied).toBe(1);
-    expect(recent().find((entry) => entry.surface === "reply-selection")?.fallbackReason).toBe("low-confidence");
-  });
-
   it("rejects curation when every score is below the cosmetic threshold", async () => {
-    const script: ConstructorParameters<typeof FakeDecisionClient>[0] = {
-      [replyKey()]: { type: "choice", id: "testnpc:t1:r2", confidence: 0.9 },
-    };
-    for (const o of OPTIONS) script[optKey(o.id)] = { type: "score", level: 7, confidence: 0.2 };
+    const script: ConstructorParameters<typeof FakeDecisionClient>[0] = {};
+    for (const o of OPTIONS) script[optKey(o.id)] = { type: "score", level: 2, confidence: 0.2 };
     const { wrapper } = makeHarness(script);
     const decision = await wrapper.steerTurn(makeRequest());
     expect(decision.optionIds).toBeNull();
-    expect(decision.replyId).toBe("testnpc:t1:r2");
     expect(DIALOGUE_CURATION_MIN_CONFIDENCE).toBe(0.3);
-    expect(DIALOGUE_REPLY_MIN_CONFIDENCE).toBe(0.6);
   });
 
-  it("treats an answer naming an unknown candidate as no judgment", async () => {
-    const { wrapper } = makeHarness({ [replyKey()]: { failure: "unknown-id" } });
+  it("ignores answers naming unknown options (they gate nothing)", async () => {
+    const { wrapper } = makeHarness({
+      "dialogue:option:testnpc:bogus": { type: "score", level: 5, confidence: 0.9 },
+    });
     const decision = await wrapper.steerTurn(makeRequest());
-    expect(decision.replyId).toBeNull();
-    expect(counters().rejected).toBe(1);
-    expect(recent().find((entry) => entry.surface === "reply-selection")?.fallbackReason).toBe("unknown-candidate");
+    // The unknown answer is skipped (unknown candidate); the real options
+    // still curate from their defaults. Per-option rejection coverage
+    // lives in the adapter contract tests (D-49).
+    expect(decision.optionIds).toEqual(OPTIONS.map((o) => o.id));
   });
 
   it("never requests when the client is unconfigured (invisible fallback)", async () => {
@@ -222,21 +203,16 @@ describe("dialogue wrapper — fallback paths", () => {
 describe("dialogue wrapper — shadow mode (D-55)", () => {
   it("judges and logs shadow outcomes but never steers", async () => {
     const { client, wrapper } = makeHarness(
-      {
-        [optKey("testnpc:t1:o2")]: { type: "score", level: 9, confidence: 0.9 },
-        [replyKey()]: { type: "choice", id: "testnpc:t1:r2", confidence: 0.9 },
-      },
+      { [optKey("testnpc:t1:o2")]: { type: "score", level: 2, confidence: 0.9 } },
       { shadow: true },
     );
     const decision = await wrapper.steerTurn(makeRequest());
     expect(wrapper.isShadow()).toBe(true);
     expect(decision.fallback).toBe(true);
     expect(decision.optionIds).toBeNull();
-    expect(decision.replyId).toBeNull();
     expect(wrapper.memoOptionOrder(NPC, TOPIC, [])).toBeNull();
-    expect(wrapper.memoReply(NPC, TOPIC, [])).toBeNull();
     const snapshot = counters();
-    expect(snapshot.shadow).toBe(2);
+    expect(snapshot.shadow).toBe(1);
     expect(snapshot.applied).toBe(0);
     expect(recent().every((entry) => entry.outcome === "shadow")).toBe(true);
     expect(client.callCount).toBe(1);
@@ -254,10 +230,8 @@ describe("dialogue wrapper — session lifecycle", () => {
   });
 
   it("budgets the dialogue surface and never retries mid-conversation", async () => {
-    const { client } = makeHarness();
     const wrapper = createDialogueWrapper({ client: new FakeDecisionClient() });
     await wrapper.steerTurn(makeRequest());
-    void client;
     expect(counters().requested).toBeGreaterThan(0);
   });
 });
@@ -266,18 +240,6 @@ describe("social reaction mapping", () => {
   it("bucketOfReply defaults to neutral and passes hints through", () => {
     expect(bucketOfReply(REPLIES[1]!)).toBe("pleased");
     expect(bucketOfReply(REPLIES[0]!)).toBe("neutral");
-  });
-
-  it("the wrapper's decision carries the bucket of the chosen reply only (no deltas)", async () => {
-    const { wrapper } = makeHarness({
-      [replyKey()]: { type: "choice", id: "testnpc:t1:r2", confidence: 0.9 },
-    });
-    const decision = await wrapper.steerTurn(makeRequest());
-    expect(decision.bucket).toBe("pleased");
-    // The judgment never returns numeric deltas (D-45/D-50).
-    const asJson = JSON.stringify(decision);
-    expect(asJson).not.toContain("relDelta");
-    expect(asJson).not.toContain("moodDelta");
   });
 });
 
@@ -292,31 +254,5 @@ describe("dialogue wrapper — pool-aware request shape", () => {
     expect(state["relationship.band"]).toBe("warm");
     expect(state["times.talkedToday"]).toBe(3);
     expect(JSON.stringify(state)).not.toContain("playerName");
-  });
-});
-
-describe("dialogue wrapper — full pool integration", () => {
-  it("steers a real turn built from a registered pool (smoke)", async () => {
-    const poolModule = await import("../../../src/content/npc-content/dialogue-pools");
-    poolModule.registerNpcDialoguePools();
-    const pool = poolModule.dialoguePoolFor("bartek") as NpcDialoguePool;
-    const topic = pool.topics[0]!;
-    const topicReplies = topic.replyCandidates ?? [];
-    const { wrapper } = makeHarness({
-      [`dialogue:reply:bartek:${topic.id}`]: {
-        type: "choice",
-        id: topicReplies[1]!.id,
-        confidence: 0.9,
-      },
-    });
-    const decision = await wrapper.steerTurn(makeRequest({
-      npcId: "bartek",
-      topicId: topic.id,
-      options: topic.optionCandidates.slice(0, 3),
-      replies: topic.replyCandidates ?? [],
-      facts: {},
-    }));
-    expect(decision.replyId).toBe(topicReplies[1]!.id);
-    expect(decision.fallback).toBe(false);
   });
 });

@@ -13,6 +13,27 @@ import { fileURLToPath, URL } from "node:url";
  */
 function jevDevProxy(): Plugin {
   const apiKey = process.env.OPENROUTER_API_KEY;
+  // PR review fix: the dev server binds 0.0.0.0, so this middleware must
+  // refuse non-loopback callers (any LAN device could otherwise spend the
+  // server key) and rate-limit per client (10 requests / minute).
+  const RATE_LIMIT = 10;
+  const WINDOW_MS = 60_000;
+  const hits = new Map<string, { count: number; windowStart: number }>();
+  function isLocal(req: { socket?: { remoteAddress?: string } }): boolean {
+    const addr = req.socket?.remoteAddress ?? "";
+    return addr === "127.0.0.1" || addr === "::1" || addr === "::ffff:127.0.0.1";
+  }
+  function rateLimited(req: { socket?: { remoteAddress?: string } }): boolean {
+    const key = req.socket?.remoteAddress ?? "unknown";
+    const now = Date.now();
+    const entry = hits.get(key);
+    if (entry === undefined || now - entry.windowStart > WINDOW_MS) {
+      hits.set(key, { count: 1, windowStart: now });
+      return false;
+    }
+    entry.count += 1;
+    return entry.count > RATE_LIMIT;
+  }
   return {
     name: "jev-dev-proxy",
     configureServer(server) {
@@ -22,6 +43,18 @@ function jevDevProxy(): Plugin {
         );
       }
       server.middlewares.use("/api/jev", (req, res) => {
+        // PR review fix (blocker): localhost callers only — the dev server
+        // binds all interfaces, and this endpoint spends the server key.
+        if (!isLocal(req)) {
+          res.statusCode = 403;
+          res.end(JSON.stringify({ error: "local only" }));
+          return;
+        }
+        if (rateLimited(req)) {
+          res.statusCode = 429;
+          res.end(JSON.stringify({ error: "rate limited" }));
+          return;
+        }
         if (req.method !== "POST") {
           res.statusCode = 405;
           res.end(JSON.stringify({ error: "POST only" }));

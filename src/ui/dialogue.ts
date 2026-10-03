@@ -706,12 +706,17 @@ wireActionButtons(container!);
       return;
     }
     const option = entry.option;
-    // The reply was pre-decided while the turn was on screen (D-48):
-    // stored steered answer first, deterministic authored fallback second.
-    const stored = v2.steerer?.memoReply(v2.npc.id, v2.turn.topicId, v2UsedOptionIds()) ?? null;
+    // C-78 (Lucas's playtest ruling): the answer to the option the player
+    // clicked is its PAIRED reply — deterministic, zero Jev involvement.
+    // The old steered reply ignored the clicked option entirely.
+    const paired = v2.turn.repliesFor(option.id);
+    const usedReplyIds = v2.memory.usedReplyIds;
     const reply =
-      v2.turn.replyCandidates.find((candidate) => candidate.id === stored?.replyId)
-      ?? v2.turn.replyCandidates[0]
+      paired.find((candidate) => !usedReplyIds.has(candidate.id))
+      ?? paired[0]
+      ?? v2.turn.replyCandidates.find(
+          (candidate) => candidate.offersTaskId !== undefined && !usedReplyIds.has(candidate.id),
+        )
       ?? null;
     const topicId = v2.turn.topicId;
     if (reply !== null) {
