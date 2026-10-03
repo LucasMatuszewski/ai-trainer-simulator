@@ -2124,6 +2124,16 @@ declare global {
        *  actors route with, so an e2e can assert no sampled position
        *  sits inside one. */
       inspectObstacles: () => Array<{ minX: number; maxX: number; minZ: number; maxZ: number }>;
+      /** Wave-4 (TAC-11): the decision-log counters, readable headlessly. */
+      jevCounters: () => {
+        requested: number;
+        applied: number;
+        legacy: number;
+        rejected: number;
+        stale: number;
+        skipped: number;
+        shadow: number;
+      };
     };
   }
 }
@@ -2234,6 +2244,7 @@ window.__aitrainer = {
   },
   inspectObstacles: () => getNpcObstacles().map((b) => ({ ...b })),
   inspectRobots: () => sceneObjects?.robotFleet.inspect() ?? null,
+  jevCounters: () => ({ ...jevCounters() }),
   toggleFps: (): boolean => {
     fpsMeter?.toggle();
     return fpsMeter?.isVisible() ?? false;

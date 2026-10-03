@@ -16,7 +16,7 @@ function jevDevProxy(): Plugin {
   // PR review fix: the dev server binds 0.0.0.0, so this middleware must
   // refuse non-loopback callers (any LAN device could otherwise spend the
   // server key) and rate-limit per client (10 requests / minute).
-  const RATE_LIMIT = 10;
+  const RATE_LIMIT = 60; // >= the game's 10 ticks/min cadence + dialogue bursts
   const WINDOW_MS = 60_000;
   const hits = new Map<string, { count: number; windowStart: number }>();
   function isLocal(req: { socket?: { remoteAddress?: string } }): boolean {
