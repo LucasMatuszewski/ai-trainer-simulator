@@ -63,6 +63,7 @@ import {
 } from "./game/npc-needs";
 import { roomAt } from "./engine/chatter";
 import { createGreetingWrapper, type GreetingWrapperHandle } from "./jev/greeting-wrapper";
+import { counters as jevCounters } from "./jev/decision-log";
 // WS3 (C-77): steered dialogue turns + the authored v2 pool content.
 import { createDialogueWrapper, type DialogueSteererHandle } from "./jev/dialogue-wrapper";
 import { dialoguePoolFor, registerNpcDialoguePools } from "./content/npc-content/dialogue-pools";
@@ -250,6 +251,22 @@ let worldTickFiredEvents: string[] = [];
 // simulation clock like a blocking modal (its presentation runs on its
 // own clock).
 let missionUi: MissionUiHandle | null = null;
+// D-55 (?jev=strict): when set, every fallback decision surfaces a
+// console warning — for QA hunts without a visible UI toast.
+const JEV_STRICT = new URLSearchParams(window.location.search).get("jev") === "strict";
+let lastStrictCheck = 0;
+function jevStrictCheck(): void {
+  // D-55 strict mode: surface fallback activity on the console. Polled
+  // at 1 Hz (cheap counters read, no per-decision noise).
+  if (!JEV_STRICT || performance.now() - lastStrictCheck < 1000) return;
+  lastStrictCheck = performance.now();
+  const c = jevCounters();
+  if (c.legacy + c.rejected > 0) {
+    console.warn(
+      `[jev][strict] fallbacks detected — legacy: ${c.legacy}, rejected: ${c.rejected} (see debug panel for details)`,
+    );
+  }
+}
 
 function buildDialogueSteerer(): DialogueSteererHandle | null {
   if (JEV_MODE === "off") return null;
@@ -2031,6 +2048,7 @@ function frame(): void {
       npcNeeds[id as NpcId] = decayNeeds(npcNeeds[id as NpcId]!, dt);
     }
   }
+  jevStrictCheck();
   if (hud && screen === "office") {
     renderHudClock(hud, game.get().timeOfDay, currentPeriodElapsed);
   }
