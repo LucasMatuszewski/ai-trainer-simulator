@@ -330,6 +330,9 @@ let lastRepairProgress = 0;
 let lastPurposefulId: NpcId | null = null;
 let purposefulCooldown = 0;
 const PURPOSE_CHECK_S = 45;
+// Pending NPC trips: actorId -> pointId. When the actor arrives within
+// range, the action activates (reserved -> in-use -> done -> caffeine).
+const pendingNpcTrips = new Map<NpcId, string>();
 
 /** WS6: the closest interaction point within use range, or null. */
 const INTERACTION_LABELS: Record<string, string> = {
@@ -2086,6 +2089,7 @@ function frame(): void {
         const trip = suggestNpcUse(craving, "coffee-machine");
         if (trip) {
           sceneObjects?.npcController.setOverride(craving, trip.destination);
+          pendingNpcTrips.set(craving, "coffee-machine");
           lastPurposefulId = craving;
         }
       }
