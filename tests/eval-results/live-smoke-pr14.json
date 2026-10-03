@@ -1,0 +1,28 @@
+{
+  "ran": "2026-10-03T08:58:17.199Z",
+  "result": {
+    "ok": true,
+    "answers": [
+      {
+        "decisionId": "live-smoke-pr14-001",
+        "subjectId": "tomek",
+        "surface": "reply-selection",
+        "questionId": "dialogue:reply:tomek",
+        "type": "choice",
+        "id": "tomek:prod:rep-3",
+        "confidence": 0.13
+      },
+      {
+        "decisionId": "live-smoke-pr14-001",
+        "subjectId": "tomek",
+        "surface": "reply-selection",
+        "questionId": "dialogue:reaction:tomek",
+        "type": "noul",
+        "noul": 0.33
+      }
+    ],
+    "rejectedCount": 0,
+    "usage": {},
+    "model": "typesafe/jev-1.13-20260917"
+  }
+}

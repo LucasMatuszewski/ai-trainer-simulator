@@ -990,15 +990,28 @@ function startOffice(playIntro = false): void {
   if (helpControls) {
     mountJevSettings(helpControls, {
       onConfigured: () => {
+        // CR fix: late activation installs EVERY wrapper — greetings,
+        // dialogue steerer, and the world-tick ambient hooks (a no-key
+        // mount left the hooks uninstalled and the counters lied).
         greetingWrapper?.uninstall();
         greetingWrapper = buildGreetingWrapper();
         greetingWrapper?.install();
+        dialogueSteerer?.resetSession();
+        dialogueSteerer = buildDialogueSteerer();
+        worldTick?.uninstall();
+        worldTick = buildWorldTick();
+        worldTick?.install();
         prefetchGreetingsNow();
       },
       onCleared: () => {
         greetingWrapper?.uninstall();
         greetingWrapper = buildGreetingWrapper();
         greetingWrapper?.install();
+        dialogueSteerer?.resetSession();
+        dialogueSteerer = buildDialogueSteerer();
+        worldTick?.uninstall();
+        worldTick = buildWorldTick();
+        worldTick?.install();
       },
     });
   }
@@ -1814,11 +1827,6 @@ function frame(): void {
       game.dispatch({ type: "set-equipment-fault", id: "printer", faulted: false });
     }
     lastRepairProgress = repairProgressNow;
-    for (const id of Object.keys(npcNeeds)) {
-      // Wave-2 verdict fix: dt (real seconds) IS in-game minutes at 1x —
-      // the /60 slowed decay 60x (a 600 s day drained ~1.3 points, not 80).
-      npcNeeds[id as NpcId] = decayNeeds(npcNeeds[id as NpcId]!, dt);
-    }
     if (hud) {
       const nearest = nearestInteractionPoint();
       if (nearest) {
@@ -2015,6 +2023,13 @@ function frame(): void {
     // exactly the frames that feed the C-67 clock. Blocking overlays
     // freeze chatter/destination pre-decisions with everything else.
     worldTick?.update(dt);
+    // WS6 (CR fix): needs decay inside the same gate — a paused clock
+    // (dialogue, mission, help) must not drain NPCs' caffeine/social.
+    for (const id of Object.keys(npcNeeds)) {
+      // dt (real seconds) IS in-game minutes at 1x — the /60 slowed
+      // decay 60x (a 600 s day drained ~1.3 points, not 80).
+      npcNeeds[id as NpcId] = decayNeeds(npcNeeds[id as NpcId]!, dt);
+    }
   }
   if (hud && screen === "office") {
     renderHudClock(hud, game.get().timeOfDay, currentPeriodElapsed);

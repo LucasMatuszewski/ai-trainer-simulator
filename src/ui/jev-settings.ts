@@ -13,7 +13,7 @@
  */
 
 import {
-  createKeyProvider,
+  sharedKeyProvider,
   type KeyProvider,
 } from "../jev/key-provider";
 
@@ -28,7 +28,7 @@ export function mountJevSettings(
   container: HTMLElement,
   options: { provider?: KeyProvider; onConfigured?: () => void; onCleared?: () => void } = {},
 ): JevSettingsHandle {
-  const provider = options.provider ?? createKeyProvider();
+  const provider = options.provider ?? sharedKeyProvider();
 
   const section = document.createElement("section");
   section.className = "jev-settings";

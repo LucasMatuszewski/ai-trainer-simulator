@@ -177,3 +177,15 @@ export function defaultKeyProvider(): KeyProvider {
   if (defaultProvider === null) defaultProvider = createKeyProvider();
   return defaultProvider;
 }
+
+
+// ── Shared instance (CR fix): every consumer must observe the same
+// memory-only key when localStorage is denied — separate instances
+// made the settings panel's successful key test invisible to the game.
+let sharedProvider: KeyProvider | null = null;
+
+/** The process-wide key provider. All wrappers + settings share it. */
+export function sharedKeyProvider(): KeyProvider {
+  if (sharedProvider === null) sharedProvider = createKeyProvider();
+  return sharedProvider;
+}

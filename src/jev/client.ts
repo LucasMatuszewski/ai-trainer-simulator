@@ -11,7 +11,7 @@
 import type { DecisionClient } from "./contracts";
 import { createOpenRouterAdapter } from "./openrouter-adapter";
 import { unconfiguredDecisionClient } from "./unconfigured-client";
-import { createKeyProvider, type JevAccess, type KeyProvider } from "./key-provider";
+import { sharedKeyProvider, type JevAccess, type KeyProvider } from "./key-provider";
 
 export type {
   DecisionClient,
@@ -38,7 +38,7 @@ export function createClientForAccess(access: JevAccess): DecisionClient {
  * Defaults to the shared key provider (proxy URL env -> localStorage
  * personal key -> none).
  */
-export function createResolvingClient(provider: KeyProvider = createKeyProvider()): DecisionClient {
+export function createResolvingClient(provider: KeyProvider = sharedKeyProvider()): DecisionClient {
   return {
     isConfigured(): boolean {
       return createClientForAccess(provider.getAccess()).isConfigured();
