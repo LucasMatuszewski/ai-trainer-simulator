@@ -52,11 +52,13 @@ import {
   resetInteractionPoints,
   setFaultReadout,
   activateAction,
+  suggestNpcUse,
   updateInteractionPoints,
   updateRepair,
   usePoint,
 } from "./engine/interaction-points";
 import {
+  caffeineBand,
   createNeedsTable,
   decayNeeds,
   type NpcNeedsTable,
@@ -322,6 +324,12 @@ let npcNeeds: NpcNeedsTable = createNeedsTable(
 );
 let heldE = false;
 let lastRepairProgress = 0;
+// AC-22 (CR): purposeful NPC equipment use — round-robin cursor; every
+// PURPOSE_CHECK_S one craving NPC heads for the coffee machine. The
+// caffeine effect applies through onActionCompleted.
+let lastPurposefulId: NpcId | null = null;
+let purposefulCooldown = 0;
+const PURPOSE_CHECK_S = 45;
 
 /** WS6: the closest interaction point within use range, or null. */
 const INTERACTION_LABELS: Record<string, string> = {
@@ -2063,6 +2071,24 @@ function frame(): void {
       // dt (real seconds) IS in-game minutes at 1x — the /60 slowed
       // decay 60x (a 600 s day drained ~1.3 points, not 80).
       npcNeeds[id as NpcId] = decayNeeds(npcNeeds[id as NpcId]!, dt);
+    }
+    // AC-22 (CR): a craving NPC heads for the coffee machine on its own.
+    purposefulCooldown -= dt;
+    if (purposefulCooldown <= 0) {
+      purposefulCooldown = PURPOSE_CHECK_S;
+      const craving = (Object.keys(npcNeeds) as NpcId[]).find(
+        (id) =>
+          id !== lastPurposefulId &&
+          caffeineBand(npcNeeds[id]?.caffeine ?? 100) === "craving" &&
+          sceneObjects?.npcController.hasArrived(id),
+      );
+      if (craving !== undefined) {
+        const trip = suggestNpcUse(craving, "coffee-machine");
+        if (trip) {
+          sceneObjects?.npcController.setOverride(craving, trip.destination);
+          lastPurposefulId = craving;
+        }
+      }
     }
   }
   jevStrictCheck();
