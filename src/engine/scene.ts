@@ -27,6 +27,9 @@ import { MAIN_OFFICE_WALLS, WORLD_ROOMS } from "../content/world-layout";
 import { createNpcController, type NpcController } from "./npc-controller";
 import { createNpcMesh } from "./npc-mesh";
 import { buildMultiRoomMeshes, drawPoster } from "./multi-room";
+import { registerSoundSource } from "../audio/positional";
+import type { PositionalSfx } from "../audio/positional-three";
+import { roomAt } from "./chatter";
 import { createJanuszRobotFleet, type JanuszRobotFleet } from "./janusz-robots";
 import { makeGarden, makeOutdoorScenery } from "./furniture/garden";
 import { makeReceptionGarden } from "./furniture/reception-garden";
@@ -152,6 +155,10 @@ export function buildOfficeScene(
   // period clock (main.ts owns it); injected so the chatter system
   // can switch to lunch lines wherever the NPCs happen to stand.
   isLunchActive: () => boolean = () => false,
+  // WS10 (C-77): when provided, the photocopier SFX is positioned
+  // (distance x room x facing gain on the shared SfxBus); when
+  // omitted, the controller's default full-volume play is kept.
+  positionalSfx?: PositionalSfx | null,
 ): SceneObjects {
   const updatables: Array<(dt: number) => void> = [];
 
@@ -330,7 +337,12 @@ export function buildOfficeScene(
     npcObjects[npc.id] = m;
   });
 
-  const npcController = createNpcController(NPCS, npcObjects, getCurrentPeriod, getDay, Math.random, isLunchActive);
+  const npcController = createNpcController(NPCS, npcObjects, getCurrentPeriod, getDay, Math.random, isLunchActive, positionalSfx ? {
+    playSfx: (id: "sfx_photocopier" | "sfx_error_buzzer") => {
+      if (id === "sfx_photocopier") positionalSfx.play(id, "photocopier");
+      else positionalSfx.play(id); // unregistered source = full-volume bus play
+    },
+  } : {});
   updatables.push(npcController.update);
 
   // C-70: Janusz's robot fleet. getJanusz reads the live NPC object
@@ -346,6 +358,16 @@ export function buildOfficeScene(
   updatables.push(robotFleet.update);
 
   const multiRoom = buildMultiRoomMeshes(scene, WORLD_ROOMS);
+  // WS10 (C-77): the photocopier is the first registered positional
+  // sound source. getPos/getRoom are re-read on every play, so the
+  // gain follows the player and the live printer object.
+  const printerObject = scene.getObjectByName("xerox-printer");
+  if (printerObject && positionalSfx) {
+    registerSoundSource("photocopier", {
+      getPos: () => ({ x: printerObject.position.x, z: printerObject.position.z }),
+      getRoom: () => roomAt(printerObject.position.x, printerObject.position.z),
+    });
+  }
 
   // C-44 #9: the internal garden (shared courtyard between the
   // CEO office and the training room) and the outdoor scenery

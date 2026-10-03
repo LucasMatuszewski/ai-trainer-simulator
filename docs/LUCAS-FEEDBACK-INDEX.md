@@ -1,5 +1,27 @@
 # Lucas's feedback index
 
+## 2026-09-28 — Jev decisions on PRD v1 assumptions (10x content, social simulation, PoC-first)
+
+**ID: L-2026-09-28-02 — Answers to A1–A6 with major scope upgrades** (branch `feat/jev-npc-decision-steering`)
+- **A1 overridden — full roster + 10× content + physical actions + missions:** not just 5 key NPCs. ALL 15 NPCs need ~10× more dialogues, stories, missions, events, jokes, miseries. Add animations expressed as movement/choreography, and reactions both verbal AND physical — "Jev decides creating simulation of the real world." Points at already-recorded mission ideas: go somewhere, do something, interact, give a speech to an audience in the conference room with mostly-background outside NPCs — or plants that ask hard questions and put the trainer in uncomfortable spots. Asks "how to make this game playable?" → answered in PRD v2 Flows G/F.
+- **A2 upgraded — non-dialogue interactions + whole-world batching:** use equipment, repair, make coffee, with simulation/sounds; Jev may decide. KEY: Jev can answer many questions at once and output is free — provide full game state and get a full decision object for ALL NPCs/objects at once, "not only for one simple NPC. But something to test and decide what will work better."
+- **A3 confirmed:** both access modes (proxy + BYO key).
+- **A4 confirmed invisible; asks HOW it works** (decision trees? hardcoded chains?) → answered: no new trees — the pre-Jev code paths themselves are the fallback, wrapped at every call site (PRD v2 Flow C).
+- **A5 upgraded — all-pairs relationships:** NPC↔NPC too, not only player↔NPC. Programmatic deltas from Jev-chosen options (e.g. −5…+5 points per dialogue AND physical action). Could lead to fights (animation candidate) or loud arguments. Asks for theories grounding world dynamics → answered: Big Five (OCEAN), Heider structural balance (triads), social-exchange reciprocity, valence/energy mood (PRD v2 Flow H; math pinned in ADR-0009).
+- **A6 confirmed:** debug panel.
+- **Process:** update PRD with these decisions, commit locally (no push), then start the ADR ("PoC minimal decisions; not production game yet — mechanics and playability first"), then create a parallel-implementation plan with multiple subagents (implementers, judges, QA helpers) using GLM models in ZCode.
+- Cross-reference: CHANGELOG C-75, PRD v2 (`docs/PRD-jev-npc-steering.md`), Beads sacs-xtma.13 (+ new children for content expansion and conference mission).
+
+## 2026-09-28 — Jev NPC decision steering (post-hackathon, local-only)
+
+**ID: L-2026-09-28-01 — Integrate Jev to steer NPC decisions; keep hackathon work local** (branch `feat/jev-npc-decision-steering`)
+- **Git housekeeping:** commit the pending `.gitignore` change (`.vercel`, `.env*`); **DO NOT PUSH ANYTHING** — the hackathon deadline has passed and all changes stay local. If pushing were ever needed, forking is the acceptable route, but Lucas prefers keeping work local for now ("It's safe."). Create a new branch from master for the Jev work.
+- **Feature direction:** integrate **Jev** (TypeSafe System One model, per the `jev-decision-routing` + `typesafe-ai` skills) to help NPCs make **better decisions** and bring the world to life. **NPCs make the decisions; Jev only steers their behavior** — it is a judgment layer, not a content generator. Goal: worlds that feel really alive, with NPCs taking actions, making decisions, and deciding what to say.
+- **Content requirement:** **many more dialogue options**, both when NPCs talk to each other and when they talk with the player.
+- **Process requested:** (1) research Jev — how to use it, how to implement it, how to get more information — and analyze the game code; (2) save research results in files that will later be used to create an ADR; (3) analyze the application, what we are doing and what the goal is; (4) then write a PRD for the feature using the `write-prd` skill.
+- **State after this session:** research files written to `docs/research/2026-09-28-jev-typesafe-platform.md` and `docs/research/2026-09-28-jev-npc-steering-analysis.md`; PRD at `docs/PRD-jev-npc-steering.md`; CHANGELOG C-74; Beads child under `sacs-xtma`. No code written yet; nothing pushed.
+- Cross-reference: CHANGELOG C-74, `docs/PRD-jev-npc-steering.md`, Beads `sacs-xtma` (child id recorded there).
+
 ## 2026-09-03 — production URL and continue
 
 **ID: L-2026-09-03-10 — Copy the correct game address** (20:38 Europe/Lisbon)

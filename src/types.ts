@@ -188,7 +188,7 @@ export interface PlayerPose {
 }
 
 export interface GameState {
-  saveVersion: 1;
+  saveVersion: 1 | 2;
   cash: number;
   day: number;
   timeOfDay: TimeOfDay;
@@ -212,6 +212,23 @@ export interface GameState {
    * (reset) has no pose, so New Game always spawns at the office door.
    */
   playerPose?: PlayerPose;
+  /**
+   * Save schema v2 (ADR-0009 D-50/D-51): social model, persisted dialogue
+   * memory (Sets as sorted arrays at the API boundary), world diary,
+   * equipment fault states, mission completion markers. Populated by
+   * `migrate()` on load and by `freshV2State()` on new games; absent
+   * (undefined) only in a raw v1 save before migration.
+   */
+  social?: {
+    relationships: Record<string, number>;
+    mood: Record<string, { valence: number; energy: number }>;
+    profilesVersion: number;
+    touched?: string[];
+  };
+  npcMemory?: Record<string, unknown>;
+  worldDiary?: string[];
+  equipment?: Record<string, "ok" | "faulted">;
+  missionCompletions?: string[];
 }
 
 export type Action =
@@ -228,4 +245,32 @@ export type Action =
   /** C-58: persist the player's live pose (throttled by the frame loop). */
   | { type: "set-player-pose"; pose: PlayerPose }
   | { type: "load"; state: GameState }
-  | { type: "reset" };
+  | { type: "reset" }
+  /**
+   * Save schema v2 social actions (ADR-0009 D-50). The bucket is the
+   * authored reaction vocabulary — code maps it to bounded deltas via
+   * the social model; a judgment never sends raw numbers.
+   */
+  | {
+      type: "apply-social-reaction";
+      pair: [NpcId, NpcId];
+      bucket: "offended" | "annoyed" | "neutral" | "pleased" | "delighted";
+      witnesses?: ReadonlyArray<{ pair: [NpcId, NpcId]; delta: number }>;
+      /** Optional authored delta from the dialogue effect that triggered this. */
+      authoredRelDelta?: number;
+    }
+  /** D-50: nightly 10% regression of every pair toward its archetype seed. */
+  | { type: "regress-social-nightly" }
+  /** D-51: notable world events, capped ring (newest last). */
+  | { type: "append-diary"; entry: string }
+  /** D-51: persistent equipment fault state ("ok" entries are removed). */
+  | { type: "set-equipment-fault"; id: string; faulted: boolean }
+  /** WS7 (AC-25): atomically completes a mission — flag + rewards land in
+   *  ONE dispatch, so ONE save: an interruption can never leave the
+   *  mission paid-but-incomplete or complete-but-unpaid. */
+  | {
+      type: "mission-complete";
+      completionFlag: string;
+      cash: number;
+      credibilityDelta: number;
+    };

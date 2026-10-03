@@ -163,13 +163,15 @@ export function mountOfficeRoster(
   };
 }
 
+// C-78 (Lucas): the 0-100 scale read like a legacy +/-20 scale and
+// labeled a brand-new hire "BFF". Aligned to the social-model bands
+// (social.ts: hostile <35, warm >65) with stranger/cold at the bottom.
 function relationshipLabel(rel: number): string {
-  if (rel >= 50) return `Relationship: BFF (${rel})`;
-  if (rel >= 20) return `Relationship: Friend (${rel})`;
-  if (rel >= 5) return `Relationship: Acquaintance (${rel})`;
-  if (rel > -5) return `Relationship: Neutral (${rel})`;
-  if (rel > -20) return `Relationship: Annoyed (${rel})`;
-  return `Relationship: Hostile (${rel})`;
+  if (rel >= 80) return `Relationship: BFF (${rel})`;
+  if (rel >= 65) return `Relationship: Friend (${rel})`;
+  if (rel >= 35) return `Relationship: Coworker (${rel})`;
+  if (rel >= 20) return `Relationship: Acquaintance (${rel})`;
+  return `Relationship: Stranger (${rel})`;
 }
 
 function relationshipMood(rel: number): string {

@@ -1,0 +1,42 @@
+{
+  "ran": "2026-10-03T09:23:10.903Z",
+  "live": {
+    "jevRequests": 11,
+    "lastStatus": 200,
+    "counters": {
+      "requested": 110,
+      "applied": 54,
+      "legacy": 15,
+      "rejected": 41,
+      "stale": 0,
+      "skipped": 0,
+      "shadow": 0
+    },
+    "screenshot": "screenshots/wave4-perceptibility-live.png"
+  },
+  "off": {
+    "jevRequests": 0
+  },
+  "checks": {
+    "appliedDecisions": {
+      "measured": 54,
+      "threshold": ">= 30",
+      "pass": true
+    },
+    "fallbackRate": {
+      "measured": "15/110 = 13.6%",
+      "threshold": "< 20%",
+      "pass": true
+    },
+    "liveRequests": {
+      "measured": 11,
+      "threshold": ">= 10 network calls"
+    },
+    "offRequests": {
+      "measured": 0,
+      "threshold": "== 0",
+      "pass": true
+    }
+  },
+  "gatePass": true
+}

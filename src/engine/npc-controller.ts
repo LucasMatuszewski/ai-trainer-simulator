@@ -6,7 +6,6 @@ import {
 } from "../content/corridor-waypoints";
 import { BUREK_LINES } from "../content/dog-dialogues";
 import { LUNCH_CHATTER } from "../content/lunch-dialogues";
-import { OFFICE_CHATTER } from "../content/office-chatter";
 import {
   KITCHEN_STOP_DWELL,
   LUNCH_STAGGER_OFFSET,
@@ -14,6 +13,7 @@ import {
   NPC_SCHEDULES,
   OFFICE_DOOR,
   pickKitchenSequence,
+  pickRandomDestination,
   planMorningArrivals,
   DEPARTURE_FIRST_AT_S,
   DEPARTURE_SPREAD_S,
@@ -27,8 +27,11 @@ import {
 } from "../content/npc-schedule";
 import { pickMorningGreeting } from "../content/morning-greetings";
 import { pickEveningGoodbye } from "../content/evening-goodbyes";
-import type { AABB } from "./collision";
+import { OFFICE_CHATTER, type ChatterExchange } from "../content/office-chatter";
+import { withRobotObstacle, type AABB } from "./collision";
 import type { NPC, NpcId } from "../types";
+import type { DecisionHooks } from "../jev/contracts";
+import { isFaulted } from "./interaction-points";
 import { createBubbleSystem, pickLine } from "./bubbles";
 import {
   CHATTER_RADIUS,
@@ -42,6 +45,7 @@ import {
   pickPair,
   pickStarter,
   roomAt,
+  type ChatterPair,
   type RoomId,
 } from "./chatter";
 import {
@@ -124,6 +128,14 @@ export interface NpcController {
   hasArrived: (npcId: NpcId) => boolean;
   /** C-46 debug/test hook: the conversations currently in flight. */
   getActiveConversations: () => readonly ActiveConversationView[];
+  /**
+   * WS4 (C-77): the most recent eligible chatter pair list the update
+   * loop computed (the `candidatePairs` output). The world-tick scheduler
+   * reads this as its conversation-candidate provider, so Jev judges
+   * exactly the pairs the controller could pick. Stale by at most one
+   * frame — far inside the 6 s tick cadence.
+   */
+  getChatterCandidatePairs: () => readonly ChatterPair[];
   /**
    * C-54: while the PLAYER is talking to an NPC, that NPC holds still
    * and keeps the face-the-player yaw for the whole dialogue - no
@@ -266,6 +278,7 @@ const ANCHOR_RETURN_SPEED = 0.6;
 // Half-size of the temporary AABB a STANDING NPC presents to the path
 // planner while someone re-routes around them.
 const BLOCKER_BOX_HALF = 0.45;
+const COMPANION_BLOCKER_HALF = 0.45;
 // A neighbour moving faster than this clears the way by itself, so it
 // never triggers a stop - only standing or head-on traffic does.
 const CROSSING_SPEED = 0.15;
@@ -396,6 +409,52 @@ interface ActiveConversation {
   starterAt: number;
 }
 
+// ── WS0 seam: DecisionHooks extension point (ADR-0009 §3.8/§10) ──────
+// THE extension point later Jev waves populate to steer NPC decisions
+// (morning greeting, evening goodbye, chatter pair/starter/exchange,
+// random destination). main.ts re-exports this holder; the controller
+// below reads it LIVE on every decision, so a wave can install or
+// remove a hook at any time without touching this file again. Members
+// left unset fall back to the legacy pickers — an unconfigured game
+// plays byte-for-byte like the pre-seam build (TAC-01).
+//
+// Invariants (judge review, WS0): (1) hook implementations must not
+// throw — these resolvers run inside the frame loop; throw containment
+// and fallback wrapping are owned by the WS1+ wrapper layer (ADR-0009
+// D-47/D-58). (2) The holder lives for the page session; save
+// load/reset must clear or reseed installed hooks alongside the game
+// state reset (D-58 generation rules) — the WS1 wave owns that wiring.
+export const jevDecisionHooks: DecisionHooks = {};
+
+export interface DecisionHookDeps {
+  /** The rng the hooks' legacy defaults consume (the controller's shared stream). */
+  rng: () => number;
+  /** Day source for the legacy destination roll (mirrors events.ts). */
+  getDay: () => number;
+}
+
+/**
+ * The pre-bound LEGACY defaults for every DecisionHooks member. Each
+ * member is the exact function call the pre-seam call site made, bound
+ * to the given rng/day sources — so when these defaults run, randomness
+ * is consumed at the same points and in the same order as before the
+ * seam existed. Tests build these with a seeded rng and compare them
+ * against the raw legacy pickers (fallback equivalence, TAC-01); the
+ * events.ts destination path can use `pickRandomDestination` from the
+ * result as its drop-in fallback when it grows its wrapper.
+ */
+export function createDefaultDecisionHooks(deps: DecisionHookDeps): Required<DecisionHooks> {
+  return {
+    pickMorningGreeting: (npcId) => pickMorningGreeting(npcId, deps.rng),
+    pickEveningGoodbye: (npcId) => pickEveningGoodbye(npcId, deps.rng),
+    pickChatterPair: (pairs) => pickPair(pairs, deps.rng),
+    pickChatterStarter: (a, b) => pickStarter(a, b, deps.rng),
+    pickChatterExchange: (pool, starterId) => pickExchange(pool, deps.rng, starterId),
+    pickRandomDestination: (npcId, period) =>
+      pickRandomDestination(npcId, deps.rng, deps.getDay(), period),
+  };
+}
+
 export interface NpcControllerOptions {
   /** C-51: run the staggered morning arrival (early birds at their
    *  desks, everyone else walking in through the door over the
@@ -410,9 +469,19 @@ export interface NpcControllerOptions {
    *  roll and make jam tests seed-fragile. */
   chatter?: boolean;
   /** C-64: injectable so controller tests do not need a browser AudioContext. */
-  playSfx?: (id: "sfx_photocopier") => void;
+  playSfx?: (id: "sfx_photocopier" | "sfx_error_buzzer") => void;
   /** C-64: explicit printer host for isolated controller tests. */
   printerObject?: THREE.Object3D;
+  /**
+   * WS0 seam (ADR-0009 §3.8): per-controller DecisionHooks. Members set
+   * here outrank the module-level `jevDecisionHooks` holder; members
+   * left unset on BOTH fall back to the legacy pickers pre-bound to
+   * this controller's rng (see `createDefaultDecisionHooks`), so the
+   * default path consumes the shared rng exactly like the pre-seam
+   * code. The holder is read live on every decision, so hooks can be
+   * installed or removed while the controller runs.
+   */
+  hooks?: DecisionHooks;
 }
 
 export function createNpcController(
@@ -426,12 +495,55 @@ export function createNpcController(
 ): NpcController {
   const arrivalsEnabled = options.arrivals ?? true;
   const chatterEnabled = options.chatter ?? true;
-  const playSfx = options.playSfx ?? ((id: "sfx_photocopier") => {
+  const playSfx = options.playSfx ?? ((id: "sfx_photocopier" | "sfx_error_buzzer") => {
     // Unit simulations run without a DOM or AudioContext. Production
     // browsers use the shared manager; headless runs stay silent.
     if (typeof window !== "undefined") audio().sfx.play(id);
   });
+  // ── WS0 seam: DecisionHooks resolution (ADR-0009 §3.8/§10) ──────────
+  // Every NPC decision surface below resolves through the same three
+  // layers: options.hooks (per-controller) -> the module-level
+  // jevDecisionHooks holder (populated by later Jev waves) -> the
+  // legacy picker pre-bound to THIS controller's rng. The legacy branch
+  // is the same call the pre-seam code made at the same point in the
+  // flow, so the seeded-rng stream is consumed in exactly the same
+  // order and default behavior is unchanged. Both hook layers are read
+  // live per call, so hooks can come and go while the controller runs.
+  // NOTE (WS0): pickRandomDestination has no resolver HERE — its only
+  // live call site is the events dispatcher (src/game/events.ts,
+  // rollRandomNpcDestinations), which now reads the same holder with a
+  // presence-first check and the pre-bound legacy default (a steered
+  // `null` means "stay at desk" and must not fall through).
+  const optionHooks = options.hooks ?? {};
+  const defaultHooks = createDefaultDecisionHooks({ rng, getDay });
+  const pickGreetingFor = (npcId: NpcId): string => {
+    const hook = optionHooks.pickMorningGreeting ?? jevDecisionHooks.pickMorningGreeting;
+    return hook !== undefined ? hook(npcId) : defaultHooks.pickMorningGreeting(npcId);
+  };
+  const pickGoodbyeFor = (npcId: NpcId): string => {
+    const hook = optionHooks.pickEveningGoodbye ?? jevDecisionHooks.pickEveningGoodbye;
+    return hook !== undefined ? hook(npcId) : defaultHooks.pickEveningGoodbye(npcId);
+  };
+  const pickChatterPairFor = (pairs: readonly ChatterPair[]): ChatterPair | null => {
+    const hook = optionHooks.pickChatterPair ?? jevDecisionHooks.pickChatterPair;
+    return hook !== undefined ? hook(pairs) : defaultHooks.pickChatterPair(pairs);
+  };
+  const pickChatterStarterFor = (a: string, b: string): string => {
+    const hook = optionHooks.pickChatterStarter ?? jevDecisionHooks.pickChatterStarter;
+    return hook !== undefined ? hook(a, b) : defaultHooks.pickChatterStarter(a, b);
+  };
+  const pickChatterExchangeFor = (
+    pool: readonly ChatterExchange[],
+    starterId: NpcId,
+  ): ChatterExchange => {
+    const hook = optionHooks.pickChatterExchange ?? jevDecisionHooks.pickChatterExchange;
+    return hook !== undefined ? hook(pool, starterId) : defaultHooks.pickChatterExchange(pool, starterId);
+  };
   const obstacles = getNpcObstacles();
+  // WS9a: the live companion keep-out box, refreshed each frame by the
+  // walking pass; read by applyDisplacement and escape spawning so no
+  // displacement path can push an NPC into the robot.
+  let currentRobotBox: ReadonlyArray<AABB> = [];
   const edges = buildWaypointEdges(CORRIDOR_WAYPOINTS, obstacles, DEFAULT_MAX_EDGE_LENGTH);
   const runtime = new Map<NpcId, NpcRuntime>();
   const idleStates = new Map<NpcId, IdleState>();
@@ -451,6 +563,9 @@ export function createNpcController(
   // the same two NPCs do not monopolize the office chatter.
   const conversations = new Map<string, ActiveConversation>();
   const pairCooldowns = new Map<string, number>();
+  // WS4 (C-77): last eligible-pair list computed by the chatter block,
+  // exposed via getChatterCandidatePairs for the world-tick scheduler.
+  let lastChatterCandidatePairs: readonly ChatterPair[] = [];
   // C-56: every morning, every NPC that has shown up fires one
   // random greeting bubble. door-entering NPCs greet on
   // `releaseArrival`; the already-in crowd is spread across the first
@@ -526,12 +641,19 @@ export function createNpcController(
     ? COPY_RUN_INTERVAL_S.min + copyRandom() * (COPY_RUN_INTERVAL_S.max - COPY_RUN_INTERVAL_S.min)
     : Infinity;
   let lastBurekBubbleAt = -Infinity;
+  // WS6: cooldown for Renata's jammed-printer balk so the bubble does
+  // not spam every chatter tick while the printer is jammed.
+  let lastCopyBalkAt = -999;
   let barkAt = nextBarkDelay(rng);
 
   const firstNpc = npcs[0];
   let root: THREE.Object3D | null = firstNpc === undefined ? null : npcObjects[firstNpc.id];
   while (root?.parent) root = root.parent;
   const sceneRoot = root instanceof THREE.Scene ? root : null;
+  const companionPosition = (): { x: number; z: number } | null => {
+    const body = sceneRoot?.getObjectByName("agent-companion-body");
+    return body?.visible ? { x: body.position.x, z: body.position.z } : null;
+  };
   const printer = options.printerObject ?? sceneRoot?.getObjectByName("xerox-printer") ?? null;
   const scannerFlash = printer === null ? null : new THREE.Mesh(
     new THREE.PlaneGeometry(0.7, 0.09),
@@ -587,6 +709,52 @@ export function createNpcController(
     return result;
   };
 
+  /** WS9a: nudges `pos` out of the companion keep-out. Wide ring
+   *  search (8 rings x 8 spokes, ~2.4 m); if EVERY candidate is still
+   *  blocked, takes the candidate with the largest clearance from the
+   *  robot instead of silently overlapping (seventh verdict). Schedule
+   *  teleports and morning arrivals both land through here. */
+  const nudgeOutOfCompanion = (pos: { x: number; y: number; z: number }): void => {
+    if (currentRobotBox.length === 0) return;
+    const blockedAt = (x: number, z: number): boolean =>
+      isSpawnBlocked(
+        { x, z, radius: NPC_DEFAULT_RADIUS },
+        [...obstacles, ...currentRobotBox],
+      );
+    if (!blockedAt(pos.x, pos.z)) return;
+    // Farthest-from-the-robot fallback: when all candidates are blocked,
+    // place the NPC at the candidate with the MAXIMUM distance to the
+    // robot centre (the least-overlapping spot), never at a known
+    // deep-overlap position (eighth verdict).
+    const robotCentre = currentRobotBox.length > 0
+      ? {
+          x: (currentRobotBox[0]!.minX + currentRobotBox[0]!.maxX) / 2,
+          z: (currentRobotBox[0]!.minZ + currentRobotBox[0]!.maxZ) / 2,
+        }
+      : null;
+    let best: { x: number; z: number; d: number } | null = null;
+    for (let ring = 1; ring <= 8; ring += 1) {
+      for (let spoke = 0; spoke < 8; spoke += 1) {
+        const angle = (spoke * Math.PI) / 4 + ring * 0.3;
+        const candX = pos.x + Math.sin(angle) * 0.3 * ring;
+        const candZ = pos.z + Math.cos(angle) * 0.3 * ring;
+        if (!blockedAt(candX, candZ)) {
+          pos.x = candX;
+          pos.z = candZ;
+          return;
+        }
+        if (robotCentre !== null) {
+          const d = Math.hypot(candX - robotCentre.x, candZ - robotCentre.z);
+          if (best === null || d > best.d) best = { x: candX, z: candZ, d };
+        }
+      }
+    }
+    if (best !== null) {
+      pos.x = best.x;
+      pos.z = best.z;
+    }
+  };
+
   const settle = (npcId: NpcId, entry: ScheduleEntry): void => {
     const object = npcObjects[npcId];
     const state = runtime.get(npcId)!;
@@ -594,6 +762,10 @@ export function createNpcController(
     state.target = entry;
     state.velocity = { x: 0, z: 0 };
     object.position.set(entry.position.x, entry.position.y, entry.position.z);
+    // WS9a: a schedule teleport must never land an actor inside the
+    // companion's keep-out (Lucas's overlap bug, robot parked on a
+    // stop). Bounded fan nudge; the schedule entry is never mutated.
+    nudgeOutOfCompanion(object.position);
     object.rotation.y = entry.face;
     object.rotation.z = 0;
     // C-48: park the gait in a neutral pose - the walk cycle leaves
@@ -613,10 +785,15 @@ export function createNpcController(
   /** C-48: apply one separation displacement per axis, keeping the NPC
    *  out of furniture AABBs (a shove can never push through a wall). */
   const applyDisplacement = (object: THREE.Object3D, dx: number, dz: number): void => {
-    if (dx !== 0 && !isSpawnBlocked({ x: object.position.x + dx, z: object.position.z, radius: NPC_DEFAULT_RADIUS }, obstacles)) {
+    // WS9a: the robot box joins the obstacle set so a separation shove
+    // can never displace an NPC into the companion.
+    const blocked = currentRobotBox.length > 0
+      ? [...obstacles, ...currentRobotBox]
+      : obstacles;
+    if (dx !== 0 && !isSpawnBlocked({ x: object.position.x + dx, z: object.position.z, radius: NPC_DEFAULT_RADIUS }, blocked)) {
       object.position.x += dx;
     }
-    if (dz !== 0 && !isSpawnBlocked({ x: object.position.x, z: object.position.z + dz, radius: NPC_DEFAULT_RADIUS }, obstacles)) {
+    if (dz !== 0 && !isSpawnBlocked({ x: object.position.x, z: object.position.z + dz, radius: NPC_DEFAULT_RADIUS }, blocked)) {
       object.position.z += dz;
     }
   };
@@ -642,9 +819,14 @@ export function createNpcController(
       if (!otherObject.visible) continue;
       others.push({ x: otherObject.position.x, z: otherObject.position.z });
     }
+    const robot = companionPosition();
+    if (robot !== null) others.push(robot);
     const escape = escapeWaypoint(
       self, next.x - self.x, next.z - self.z, others,
-      (x, z) => isSpawnBlocked({ x, z, radius: NPC_DEFAULT_RADIUS }, obstacles),
+      (x, z) => isSpawnBlocked(
+        { x, z, radius: NPC_DEFAULT_RADIUS },
+        withRobotObstacle(obstacles, robot, COMPANION_BLOCKER_HALF),
+      ),
       {
         attempt,
         rng,
@@ -704,6 +886,11 @@ export function createNpcController(
       };
       if (blockerBoxCoversDestination(box, to)) continue;
       boxes.push(box);
+    }
+    const robot = companionPosition();
+    if (robot !== null && Math.hypot(robot.x - from.x, robot.z - from.z) <= 6) {
+      const box = withRobotObstacle([], robot, COMPANION_BLOCKER_HALF)[0]!;
+      if (!blockerBoxCoversDestination(box, to)) boxes.push(box);
     }
     return boxes;
   };
@@ -818,6 +1005,19 @@ export function createNpcController(
   const startCopyRun = (): void => {
     const state = runtime.get(RENATA_COPY_NPC_ID);
     if (state === undefined || playerTalkingTo === RENATA_COPY_NPC_ID) return;
+    // WS6 (AC-21): a jammed printer visibly blocks the errand — Renata
+    // balks (bubble + buzzer) and retries on a later window instead of
+    // copying on a broken machine.
+    if (isFaulted("printer")) {
+      const renataObject = npcObjects[RENATA_COPY_NPC_ID];
+      if (renataObject && controllerElapsed - lastCopyBalkAt >= 20) {
+        bubbleSystem?.show(renataObject.position, "Not again. Someone fix the copier!");
+        playSfx("sfx_error_buzzer");
+        lastCopyBalkAt = controllerElapsed;
+      }
+      scheduleNextCopyRun();
+      return;
+    }
     const desk = scheduleFor(RENATA_COPY_NPC_ID, getCurrentPeriod());
     state.returnEntry = desk;
     state.copyElapsed = 0;
@@ -1082,7 +1282,7 @@ export function createNpcController(
     // silently instead of standing around as a phantom "at-desk".
     if (object.userData.npcState === "walking") {
       object.visible = true;
-      bubbleSystem?.show(object.position, pickEveningGoodbye(npcId, rng));
+      bubbleSystem?.show(object.position, pickGoodbyeFor(npcId));
       markSpoke(npcId, controllerElapsed);
     } else {
       object.visible = false;
@@ -1131,7 +1331,10 @@ export function createNpcController(
     pendingArrivals.delete(npcId);
     const object = npcObjects[npcId];
     object.position.set(arrival.door.x, arrival.door.y, arrival.door.z);
-    runtime.get(npcId)!.baseY = arrival.door.y;
+    // WS9a: a doorway lane can be occupied by the parked companion —
+    // an arrival must not materialize inside it (sixth-verdict major).
+    nudgeOutOfCompanion(object.position);
+    runtime.get(npcId)!.baseY = object.position.y;
     planForEntry(npcId, scheduleFor(npcId, period));
     // After planning, not before: an unroutable destination strands the
     // NPC (which leaves `visible` alone), and someone who walked in
@@ -1166,7 +1369,7 @@ export function createNpcController(
       if (inOffice || waitedLong) {
         pendingGreetings.delete(npcId);
         greetWaitSince.delete(npcId);
-        bubbleSystem?.show(object.position, pickMorningGreeting(npcId, rng));
+        bubbleSystem?.show(object.position, pickGreetingFor(npcId));
         markSpoke(npcId, controllerElapsed);
       }
     }
@@ -1180,7 +1383,7 @@ export function createNpcController(
       const npcId = alreadyInGreetOrder[morningGreetIndex] as NpcId;
       const object = npcObjects[npcId];
       if (object && object.visible && object.userData.npcState !== "gone-home") {
-        bubbleSystem?.show(object.position, pickMorningGreeting(npcId, rng));
+        bubbleSystem?.show(object.position, pickGreetingFor(npcId));
         markSpoke(npcId, controllerElapsed);
         morningGreeted.add(npcId);
       }
@@ -1351,6 +1554,12 @@ export function createNpcController(
         });
       }
     }
+    const robot = companionPosition();
+    const robotBox = robot === null ? [] : withRobotObstacle([], robot, COMPANION_BLOCKER_HALF);
+    // WS9a: share this frame's robot keep-out with every position-changing
+    // path (separation shoves, escape spawns) so no NPC can be displaced
+    // into the companion.
+    currentRobotBox = robotBox;
     const othersOf = (npcId: NpcId): Neighbour[] => {
       const others: Neighbour[] = [];
       for (const [id, point] of snapshot) {
@@ -1414,11 +1623,14 @@ export function createNpcController(
         nextWaypoint.z - here.z,
         othersOf(npc.id).filter((other) => obstructing(here, other)),
       ) as NpcId | null;
+      const robotAhead = robot !== null && nextWaypoint !== undefined &&
+        blockerAhead(here, nextWaypoint.x - here.x, nextWaypoint.z - here.z,
+          [{ id: "agent-companion", x: robot.x, z: robot.z }]) !== null;
       // While an escape leg is pending, the stop check is suspended for
       // this NPC: the escape exists precisely to break a jam, and the
       // rule that triggered it must not freeze it. Hard separation
       // still keeps everyone MIN_SEPARATION apart.
-      const blockedByCapsule = state.escapeIndex < 0 && state.blockedBy !== null;
+      const blockedByCapsule = state.escapeIndex < 0 && (state.blockedBy !== null || robotAhead);
       // Stop, do not creep. Creeping into the person ahead was measured
       // WORSE across a full day (jam episodes 63 -> 155): pressing
       // forward fights the separation constraint every frame and simply
@@ -1430,6 +1642,11 @@ export function createNpcController(
       }
       const before = object.position.clone();
       const advanced = advanceAlongPath(before, state.path, state.segmentIndex, state.distanceInSegment, npc.walkSpeed, movementDt);
+      if (isSpawnBlocked({ x: advanced.position.x, z: advanced.position.z, radius: NPC_DEFAULT_RADIUS }, robotBox)) {
+        state.velocity = { x: 0, z: 0 };
+        walkFrames.push({ npc, before, movementDt });
+        continue;
+      }
       state.segmentIndex = advanced.segmentIndex;
       state.distanceInSegment = advanced.distanceInSegment;
       object.position.copy(advanced.position);
@@ -1764,7 +1981,8 @@ export function createNpcController(
           now: controllerElapsed,
           activeRooms,
         });
-        const pair = pickPair(pairs, rng);
+        lastChatterCandidatePairs = pairs;
+        const pair = pickChatterPairFor(pairs);
         const first = pair === null ? undefined : npcObjects[pair.a as NpcId];
         const second = pair === null ? undefined : npcObjects[pair.b as NpcId];
         // candidatePairs already enforces CHATTER_RADIUS on every pair;
@@ -1775,13 +1993,16 @@ export function createNpcController(
           // C-46: the STARTER is a chattiness-weighted coin flip
           // inside the pair - this is what stops "only one person
           // talks all the time".
-          const starterId = pickStarter(pair.a, pair.b, rng) as NpcId;
+          const starterId = pickChatterStarterFor(pair.a, pair.b) as NpcId;
           const responderId = (starterId === pair.a ? pair.b : pair.a) as NpcId;
           // C-46 (Lucas): lunch lines are TIME-gated, not
           // location-gated - during the lunch window every human pair
           // sounds like lunch, wherever they stand. The starter's
-          // topic affinities filter the pool (C-46 amendment).
-          const exchange = pickExchange(isLunchActive() ? LUNCH_CHATTER : OFFICE_CHATTER, rng, starterId);
+          // topic affinities filter the pool (C-46 amendment). The
+          // pool selection stays at the call site (the hook receives
+          // the active pool as its candidate list, WS0 seam).
+          const chatterPool = isLunchActive() ? LUNCH_CHATTER : OFFICE_CHATTER;
+          const exchange = pickChatterExchangeFor(chatterPool, starterId);
           // Burek cannot do small talk: as a starter he just barks
           // (one turn); as a responder he barks back.
           const starterLine = starterId === "burek"
@@ -1853,6 +2074,7 @@ export function createNpcController(
       responseIn: Math.max(0, RESPONSE_DELAY_S - (controllerElapsed - conversation.starterAt)),
       starterLine: conversation.starterLine,
     })),
+    getChatterCandidatePairs: () => lastChatterCandidatePairs,
     setOverride: (npcId, entry) => {
       const period = ensureCurrentPeriod();
       const state = runtime.get(npcId);

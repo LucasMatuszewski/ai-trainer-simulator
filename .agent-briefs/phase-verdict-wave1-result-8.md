@@ -1,0 +1,11 @@
+# Wave 1 phase QA verdict (current HEAD `81df5f8`)
+
+Checks: `pnpm typecheck` passed; `pnpm test` passed (964/964); `pnpm test:e2e --project=chromium tests/e2e/ws9a-robot-collision.spec.ts` exited 0 after one retry (first office-crossing attempt travelled only 1.79 m against the 5 m assertion; retry passed; kitchen reroute passed). The configured game version is `v2026.09.28-08`. Focused HEAD probes confirmed that an NPC occupying a room centre no longer causes an endless walk, and that nine NPCs covering the old spawn candidates still leave the robot at least 0.45 m from everyone.
+
+## Findings
+
+- **BLOCKER: join can materialize the robot inside furniture.** `src/engine/agent-companion.ts:566-585` checks only distances to NPCs when choosing a nudge; it does not check `deps.obstacles` or `deps.bounds`. Focused HEAD probe: NPC at spawn `(0,0)`, clear spawn floor, furniture box `[0.2,0.5] x [0.4,0.6]`. `join` returned success and placed the robot at `(0.339,0.495)`, inside that box. This violates Wave 1's robot/furniture collision rule before movement begins.
+- **MAJOR: the strictly-deeper rule permits a frame to cross an NPC's centre while ending inside the personal radius.** `src/engine/agent-companion.ts:896-909` checks only the next endpoint and allows `nextDist === curDist`. The manual step has the same rule at `src/engine/agent-companion.ts:719-726`. Focused HEAD probe: robot at `(0,0)`, NPC moves to `(0,0.06)`, robot steps toward positive Z with a normal 0.1 s frame. It moves to `(0,0.12)`, crossing the NPC's centre; both endpoints are only 0.06 m from the NPC, well inside the 0.45 m keep-out. The previous `<=` comparison would have held this exact frame.
+- **MAJOR: the NPC placement exhaustion path still selects a blocked point.** `src/engine/npc-controller.ts:710-731` stores only the first blocked candidate and uses it if all 64 are blocked, despite the stated farthest-candidate fallback. Since `blockedAt` includes furniture and the robot box, this branch necessarily puts the NPC at a position already known to collide; the first candidate is only 0.3 m from the requested spot. Schedule settling and morning arrival use this helper at `src/engine/npc-controller.ts:744,1299`.
+
+PHASE-VERDICT: FAIL — join can spawn inside furniture, equal-distance frames can cross NPCs, and exhausted NPC placement chooses a known collision.

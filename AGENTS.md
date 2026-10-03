@@ -223,6 +223,29 @@ hand control back to Lucas:
    dev server is single-tenant; starting a second one binds to a
    different port and Lucas cannot tell which one is current.
 
+### PR-14: E2E tests === NOTHING is mocked (2026-09-29, from Lucas)
+
+End-to-end tests (`tests/e2e/`) run the REAL game against REAL services with
+REAL credentials. **Nothing in an E2E may be mocked, stubbed, shimmed, or
+faked** — not the network, not the AI service, not the game systems. A "pass"
+from a mocked E2E is a lie and wastes everyone's time; a mocked integration
+test let a malformed request shape reach production review unnoticed (2026-09-29:
+the Jev adapter was "verified" against our own stub and OpenRouter rejected its
+first real request with a 400).
+
+- **Unit tests** may use fakes and stubs (determinism), but adapter/integration
+  tests must assert the REAL provider wire format, and every new external
+  service integration requires **one live smoke test with real credentials**
+  (from the approved secret store, values never printed) before its phase can
+  pass. The live call and its provider-side evidence (request id / dashboard
+  entry / response body) are part of the Definition of Done.
+- If a real credential is unavailable, the E2E is skipped with an explicit
+  "live credentials unavailable" marker — never faked, never silently mocked.
+- **CPU discipline:** E2E drives headless software-rendered WebGL at full frame
+  rate and heats Lucas's laptop (100 °C observed). The suite is bounded
+  (`retries: 1`); do not run ad-hoc repeated full sweeps — one green run per
+  change, extra runs only when hunting a reported flake.
+
 ## Current design direction (post-2026-08-29 corrections)
 
 The user's corrections changed the design direction. Current requirements are in `docs/PRD.md`; their dated history is in `docs/CHANGELOG.md`. Summary:

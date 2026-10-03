@@ -1,0 +1,14 @@
+You are a delegate. Do not load the `agents-workflow-sacs`, `beads` or `cli-agent-delegation` skills, do not run `bd`, do not commit or push. Write your verdict to `.agent-briefs/phase-verdict-wave1-result-2.md`.
+
+# Task: per-wave phase QA verdict for Wave 1 of the Jev NPC-steering feature (PR-4.6)
+
+Repo: /home/lucas/DEV/Projects/ai-trainer-simulator, branch `feat/jev-npc-decision-steering`. Wave 1 spans commits `d85da34..HEAD` (7 commits). A FIRST verdict FAILED with four findings (recorded in `.agent-briefs/phase-verdict-wave1-result.md`); commit `c51942e` claims to fix all four. Re-verify each: (1) New Game/reset now produces saveVersion 2; (2) the social reducer actions exist, clamp, lazy-seed, and persist; (3) the greeting wrapper is constructed+installed+prefetched in main.ts; (4) tests/e2e/ws9a-robot-collision.spec.ts exists and passes (the dev server is already running on 5173; you may re-run `pnpm test:e2e --project=chromium tests/e2e/ws9a-robot-collision.spec.ts` yourself). You are the INDEPENDENT phase judge (different model family from the implementers).
+
+**Context to read (skim, do not re-derive):** `docs/ADR/0009-jev-npc-decision-steering.md` (§9 testing strategy, TACs), `docs/plans/2026-09-28-jev-parallel-implementation.md` (§3 WS1/WS2/WS9a "Done" lines), `.agent-briefs/ws0-seam-result.md`, `.agent-briefs/ws9a-result.md`.
+
+**Verify with your own commands (you have workspace-write; run them):**
+1. `pnpm typecheck` and `pnpm test` — exit 0, ~950 tests (already reported; confirm).
+2. Spot-check 3 load-bearing claims in the diffs: (a) WS0 hooks default to legacy with unchanged rng order (`src/engine/npc-controller.ts` seam block); (b) the save path migrates v1→v2 and backs up v1 before the first v2 write (`src/game/state.ts`); (c) the robot's step motion uses traced axis legs and the NPC avoidance includes the robot (`src/engine/agent-companion.ts`, `src/engine/npc-controller.ts`).
+3. Check the Wave-1 "Done" lines against reality: WS1's adapter contract tests exist network-free (`tests/unit/jev/adapter-contract.test.ts` — confirm no real fetch); WS2's stability test exists and is deterministic (`tests/unit/game/social-stability.test.ts`); WS9a's no-robot regression test exists.
+
+**Deliver:** findings by severity (blocker/major/minor) with file:line, then EXACTLY one final line: `PHASE-VERDICT: PASS` or `PHASE-VERDICT: FAIL — <reason>`. Be adversarial but judge only Wave-1 scope (mechanics correctness and test quality — visual/UX judgment happens later via screenshots).
