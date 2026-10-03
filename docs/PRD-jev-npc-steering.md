@@ -138,6 +138,12 @@ agent player gets the same livelier world.
    lore-grounded: Burek duty, coffee emergencies, Janusz's robot maintenance,
    Tomek's push-to-main aftermath). A task offer sets the existing quest/flag
    systems — tasks are content, not a new engine.
+   **Flag-vocabulary note (CR fix):** a task's `flagToSet` must reference a
+   flag that already exists in the game (see `src/content/quests.ts` and the
+   `set-flag` call sites) — when a task needs a NEW flag, name it
+   `<npcId>-<kebab-action>` (e.g. `kasia-referral-open`,
+   `janusz-knows-the-plug`) so future authors can grep the flag space by
+   owner. The pools test verifies ids and spot-checks known flags.
 5. Depth grows by adding pool entries (schema-validated data), never by
    touching engine code.
 

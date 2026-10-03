@@ -399,6 +399,8 @@ const npcFaceAnimations = new Map<string, number>(); // npcId -> target yaw
 const npcScheduleYaws = new Map<string, number>();    // npcId -> schedule yaw
 
 window.addEventListener("keyup", (e) => {
+  // The release always finishes the hold, regardless of focus/modals —
+  // dropping a repair hold must not leave the lifecycle stuck in-use.
   if ((e.code === "KeyE" || e.key.toLowerCase() === "e") && heldE) {
     heldE = false;
     finishRepair();
@@ -443,7 +445,21 @@ window.addEventListener("keydown", (e) => {
   }
   // WS6 (AC-20/21): E uses the nearest interaction point; at a faulted
   // printer it is a HOLD-to-repair (keydown begins, keyup finishes).
-  if ((e.code === "KeyE" || e.key.toLowerCase() === "e") && screen === "office" && !dialogue?.isOpen()) {
+  // CR-minor fix: never swallow "e" while typing in a text field, and
+  // never trigger behind an open modal.
+  const eTarget = e.target;
+  const eIsTextEntry = eTarget instanceof HTMLElement && (
+    eTarget.tagName === "INPUT" || eTarget.tagName === "TEXTAREA" || eTarget.isContentEditable
+  );
+  if (
+    (e.code === "KeyE" || e.key.toLowerCase() === "e") &&
+    screen === "office" &&
+    !dialogue?.isOpen() &&
+    !helpModal?.isOpen() &&
+    !endDayModal?.isOpen() &&
+    missionUi?.isOpen() !== true &&
+    !eIsTextEntry
+  ) {
     const nearest = nearestInteractionPoint();
     if (nearest) {
       e.preventDefault();

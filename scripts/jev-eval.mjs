@@ -188,6 +188,47 @@ async function judge(client, c) {
   return { choice: answer?.choice, confidence: answer?.confidence, model: json.model, cost: json.usage?.cost };
 }
 
+/**
+ * Second measured surface (CR fix): a LIVE Score call in the exact shape
+ * the mission wrapper sends — levels as criteria, fractional position —
+ * proving the scored provider surface works, not just the Choice one.
+ * Scores how well the player's question lands with the NPC (1 poor ->
+ * 3 well).
+ */
+async function scoreQuestionLanding(c) {
+  const body = {
+    model: "typesafe/jev-1.13",
+    state: {
+      npc: c.facts.npc,
+      relationship: c.facts.relationship,
+      period: c.facts.period,
+      question: c.question,
+    },
+    questions: {
+      landing: {
+        type: "score",
+        instructions:
+          `The player just asked coworker \`npc\`: "${c.question}". ` +
+          "How well does this question land with the NPC right now, given the relationship and the setting?",
+        criteria: [
+          "lands poorly — off-key, intrusive, or annoying for this relationship",
+          "lands — a normal, acceptable thing to ask",
+          "lands well — exactly what this NPC enjoys being asked right now",
+        ],
+      },
+    },
+  };
+  const res = await fetch("https://openrouter.ai/api/alpha/decisions", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json();
+  if (res.status !== 200) return { error: `HTTP ${res.status}` };
+  const answer = json.answers?.landing;
+  return { score: answer?.score, confidence: answer?.confidence, cost: json.usage?.cost };
+}
+
 // ---------------------------------------------------------------------------
 const results = [];
 let correct = 0;
@@ -195,6 +236,8 @@ const byFactor = { cold: [0, 0], neutral: [0, 0], warm: [0, 0] };
 
 for (const c of CASES.slice(0, limit === Infinity ? CASES.length : limit)) {
   const r = await judge(null, c);
+  // CR fix: one live SCORE call per case (the mission-wrapper surface).
+  const scoreRun = await scoreQuestionLanding(c);
   const band = c.facts.relationship.band;
   const accepted = c.expectedAny ?? [c.expected];
   const row = {
@@ -205,6 +248,7 @@ for (const c of CASES.slice(0, limit === Infinity ? CASES.length : limit)) {
     correct: r.choice !== undefined && accepted.includes(r.choice),
     model: r.model,
     cost: r.cost,
+    scoreSurface: scoreRun.error ?? scoreRun.score,
   };
   results.push(row);
   byFactor[band] = byFactor[band] ?? [0, 0];
@@ -227,6 +271,8 @@ const model = results.find((r) => r.model)?.model ?? "unknown";
 console.log(`model: ${model}`);
 const totalCost = results.reduce((sum, r) => sum + (r.cost ?? 0), 0);
 console.log(`total cost: $${totalCost.toFixed(6)}`);
+const scoreSurfaces = results.filter((r) => typeof r.scoreSurface === "number").length;
+console.log(`live score calls: ${scoreSurfaces}/${results.length} (mission-wrapper surface)`);
 
 mkdirSync("tests/eval-results", { recursive: true });
 writeFileSync(
