@@ -1,7 +1,25 @@
 # Plan — NPC↔NPC Deep Conversations (branching, 1–5 levels) + Jev's proper role
 
 **Date:** 2026-09-30 (evening) · **Author:** orchestrator (ZCode/GLM-5.3) ·
-**For review by:** Codex CLI (gpt-6.1 Sol) + Claude CLI (Opus) · **Status:** DRAFT for CR
+**For review by:** Codex CLI (gpt-6.1 Sol) + Claude CLI (Opus) · **Status:** REVISE — both reviews in (`.agent-briefs/npcnpc-review-codex.md`,
+`.agent-briefs/npcnpc-review-claude.md`). Consolidated revision contract:
+(1) **split pairClass into static cast x dynamic band** and re-seed the
+matrix with real poles (3-5 hostile, 6-8 warm human pairs — pilots are all
+neutral today); (2) **step 0 = wire relationship bands** into the projection
++ production dispatch of apply-social-reaction/nightly regression, before
+any Jev branch work; (3) **pre-decide the whole path at pair formation**
+(one Choice over enumerated root-to-leaf paths, seeded-deterministic
+fallback instead of "first", exactly-once serving) — never mid-conversation
+picks that fight the 6 s prefetch cadence; (4) specify an **ambient session
+lifecycle** (generation, cursors, freshness on node/parent identity,
+exactly-once effects, interruption table, room budget) in a pure
+conversation-runner; (5) **eval per surface**: 40+ held-out cases across
+three social bands, Jev vs first-branch/seeded/tag-rule baselines;
+consequential branches (relationship deltas) need a separate stronger gate;
+(6) **authoring shifts from wide trees to state-triggered scripts with
+band-specific endings** — causality beats length (70% one-liners, 25%
+2-3 levels, 5% 4-5 level set pieces near the player), named anchor pairs
+carry the drama, eavesdropping becomes a mechanic.
 **Relates to:** C-77/C-78, ADR-0009 D-45…D-61, sacs-xtma.13/.14 · **Branch:** `feat/jev-npc-decision-steering`
 
 ---
