@@ -264,4 +264,13 @@ export type Action =
   /** D-51: notable world events, capped ring (newest last). */
   | { type: "append-diary"; entry: string }
   /** D-51: persistent equipment fault state ("ok" entries are removed). */
-  | { type: "set-equipment-fault"; id: string; faulted: boolean };
+  | { type: "set-equipment-fault"; id: string; faulted: boolean }
+  /** WS7 (AC-25): atomically completes a mission — flag + rewards land in
+   *  ONE dispatch, so ONE save: an interruption can never leave the
+   *  mission paid-but-incomplete or complete-but-unpaid. */
+  | {
+      type: "mission-complete";
+      completionFlag: string;
+      cash: number;
+      credibilityDelta: number;
+    };

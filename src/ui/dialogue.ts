@@ -630,9 +630,11 @@ wireActionButtons(container!);
         facts: { "relationship.value": game.get().npcRelationships[v2.npc.id] ?? 50 },
       })
       .then(() => {
-        // WS4-verdict fix: apply only if this session is still the one
-        // on screen (a close/reopen must not inherit stale steering).
-        if (v2 !== null && steerSession === steerer.currentSession()) renderV2();
+        // C-78 fix (Lucas: "the options jump"): the landing order is
+        // stored in the memo for the NEXT occurrence of this situation —
+        // the panel on screen keeps its rendered order. Re-rendering
+        // mid-turn made the visible options shuffle under the cursor.
+        void steerSession;
       })
       .catch(() => undefined);
   }
@@ -711,12 +713,11 @@ wireActionButtons(container!);
     // The old steered reply ignored the clicked option entirely.
     const paired = v2.turn.repliesFor(option.id);
     const usedReplyIds = v2.memory.usedReplyIds;
+    // Unused variant first; an exhausted option repeats its own answer
+    // (never another option's line). Task offers ride their own option.
     const reply =
       paired.find((candidate) => !usedReplyIds.has(candidate.id))
       ?? paired[0]
-      ?? v2.turn.replyCandidates.find(
-          (candidate) => candidate.offersTaskId !== undefined && !usedReplyIds.has(candidate.id),
-        )
       ?? null;
     const topicId = v2.turn.topicId;
     if (reply !== null) {

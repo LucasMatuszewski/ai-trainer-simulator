@@ -510,23 +510,15 @@ export function createWorldTickWrapper(options: WorldTickOptions): WorldTickHand
           logDecision({ ...entry, surface: "chatter-exchange", outcome: "rejected", fallback: true, fallbackReason: "malformed-answer" });
         } else {
           // Candidate ids index into the eligible list that was sent.
-          // Validate EXACT membership first (ninth-verdict class): a
-          // malformed id like "anything" or "exchange:wrong:0" must be
-          // rejected, never silently parsed into candidate zero.
-          const expectedPrefix = `exchange:${poolId}:`;
-          const numericPart = exchangeAnswer.id.startsWith(expectedPrefix)
-            ? exchangeAnswer.id.slice(expectedPrefix.length)
-            : "";
-          const index = Number(numericPart);
-          const validId =
-            numericPart !== "" &&
-            /^\d+$/.test(numericPart) &&
-            Number.isInteger(index) &&
-            index >= 0 &&
-            index < planned.eligible.length;
-          if (
-            !validId
-          ) {
+          // EXACT membership (closure verdict): rebuild the id that was
+          // sent and require equality — "exchange:<pool>:00" or any
+          // never-sent id is rejected, never parsed into candidate zero.
+          const expectedId = (index: number): string =>
+            `exchange:${poolId}:${index}`;
+          const index = planned.eligible.findIndex(
+            (_entry, i) => exchangeAnswer.id === expectedId(i),
+          );
+          if (index < 0) {
             logDecision({ ...entry, surface: "chatter-exchange", outcome: "rejected", fallback: true, fallbackReason: "unknown-candidate", confidence: exchangeAnswer.confidence });
           } else if (!Number.isFinite(exchangeAnswer.confidence) || exchangeAnswer.confidence < minChatter) {
             logDecision({ ...entry, surface: "chatter-exchange", outcome: "rejected", fallback: true, fallbackReason: "low-confidence", confidence: exchangeAnswer.confidence });

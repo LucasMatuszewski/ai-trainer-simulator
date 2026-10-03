@@ -451,6 +451,11 @@ export function mountMissionUi(root: HTMLElement, deps: MissionUiDeps = {}): Mis
     renderSpeech();
     if (snap.question !== null) askedQuestionIds.add(snap.question.questionId);
     const pick = await steerer.pickQuestion(request).catch(() => null);
+    // Closure-verdict fix: record the STEERED id too — the pick replaces
+    // the authored question on screen, so it is consumed either way.
+    if (pick !== null && !pick.fallback && pick.questionId !== null) {
+      askedQuestionIds.add(pick.questionId);
+    }
     if (token !== runToken || runtime === null) return;
     const afterPick = runtime.snapshot();
     if (

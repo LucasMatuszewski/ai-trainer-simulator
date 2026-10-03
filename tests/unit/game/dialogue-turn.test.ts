@@ -137,8 +137,11 @@ function makePool(): NpcDialoguePool {
           ...opts("t:warm", ["w4"], { w4: ["relationship:warm"] }),
         ],
         replyCandidates: [
+          // Positional pairing: w4 <-> s4. The hostile s3 sits at w3's
+          // index — irrelevant while w3 is consumed, hostile-gated if not.
           ...replies("t:warm", [{ id: "s1" }, { id: "s2" }]),
-          ...replies("t:warm", [{ id: "s3" }], ).map((r) => ({ ...r, tags: ["relationship:hostile" as const] })),
+          ...replies("t:warm", [{ id: "s3" }]).map((r) => ({ ...r, tags: ["relationship:hostile" as const] })),
+          ...replies("t:warm", [{ id: "s4" }]),
         ],
       },
       {
@@ -270,7 +273,10 @@ describe("buildTurn — hard context filters", () => {
     const turn = buildTurn(state, NPC, memory, newConversationSession(), makePool())!;
     // w4 is relationship:warm: eligible at 70.
     expect(optionIds(turn)).toEqual(["t:warm:w4"]);
-    expect(turn.replyCandidates.map((r) => r.id)).toEqual(["t:warm:s1", "t:warm:s2"]); // s3 is hostile-only
+    // C-78: replyCandidates is the union of the VISIBLE options' PAIRED
+    // replies — w4's pair is s4. The hostile-tagged s3 belongs to no
+    // visible option, so it never serves.
+    expect(turn.replyCandidates.map((r) => r.id)).toEqual(["t:warm:s4"]);
 
     const neutralTurn = buildTurn(
       makeState({ relationship: 50, period: "afternoon" }),
@@ -458,12 +464,12 @@ describe("buildTurn — a session never repeats an option", () => {
       if (pick === undefined) break;
       expect(seen.has(pick.option.id), `option repeated: ${pick.option.id}`).toBe(false);
       seen.add(pick.option.id);
-      const reply = turn.replyCandidates[0]!;
+      const reply = turn.replyCandidates[0]?.id ?? "none";
       memory = {
         usedOptionIds: new Set([...memory.usedOptionIds, pick.option.id]),
         usedReplyIds: memory.usedReplyIds,
       };
-      session = recordExchange(session, turn.topicId, pick.option.id, reply.id);
+      session = recordExchange(session, turn.topicId, pick.option.id, reply);
     }
 
     // The conversation must eventually exhaust (finite pools) and must have
@@ -494,7 +500,11 @@ describe("buildTurn — task offers", () => {
 });
 
 describe("buildTurn — reply fallback order", () => {
-  it("recycles replies (never returns an empty reply pool) while options remain", () => {
+  it("serves each visible option's own PAIRED reply (never another option's)", () => {
+    // C-78 (Lucas's playtest ruling): the served union is exactly the
+    // visible options' positional pairs — o1->r1, o2->r2, o3->r3. The
+    // old whole-pool recycle (which could answer o4 with r1) is gone:
+    // an exhausted option repeats ITS OWN answer instead.
     const seeded = sessionWith("t:main", {
       "t:main": {
         options: ["t:main:o1", "t:main:o2", "t:main:o3"],
@@ -503,8 +513,11 @@ describe("buildTurn — reply fallback order", () => {
     });
     const turn = buildTurn(makeState(), NPC, emptyMemory(), seeded, makePool())!;
     expect(turn.topicId).toBe("t:main");
-    expect(turn.replyCandidates.length).toBe(6); // recycled, authored order
-    expect(turn.replyCandidates[0]!.id).toBe("t:main:r1");
+    // The served union = visible options' positional pairs (r4, r5) PLUS
+    // the unset-flag task reply r1 (authored pool order).
+    expect(turn.replyCandidates.map((r) => r.id)).toEqual([
+      "t:main:r1", "t:main:r4", "t:main:r5",
+    ]);
   });
 });
 

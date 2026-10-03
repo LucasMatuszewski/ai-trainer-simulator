@@ -1543,10 +1543,11 @@ function openDialogueWith(npc: NPC): void {
   const onboardingGate: Partial<Record<NpcId, string>> = {
     renata: "renata-tut-finished",
     bartek: "got-acme-contract",
-    // Wave-3 verdict fix: Dawid's CEO story arc (first-meeting sets
-    // ceo-met, then give-task/performance-review) must run before his
-    // v2 pool, whose workshop offer presumes it.
-    dawid: "ceo-met",
+    // Wave-3 verdict fix + closure verdict: Dawid's CEO story arc runs
+    // first-meeting -> give-task -> performance-review (which sets
+    // ceo-reviewed LAST). The v2 pool opens only after the WHOLE arc,
+    // or its later branches become unreachable.
+    dawid: "ceo-reviewed",
   };
   const requiredFlag = onboardingGate[npc.id];
   const v2Allowed =

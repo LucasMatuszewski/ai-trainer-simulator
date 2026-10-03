@@ -281,36 +281,23 @@ function sliceOf(
 ): Slice {
   const usage = session.usage[topic.id];
   const usedOptions = unionUsed(memory.usedOptionIds, usage?.usedOptionIds);
-  const usedReplies = unionUsed(memory.usedReplyIds, usage?.usedReplyIds);
-
   const options = topic.optionCandidates.filter(
     (option) => !usedOptions.has(option.id) && tagsEligible(option.tags, ctx),
   );
 
-  // C-78 (dialogue architecture v3): replies are PAIRED to the option
-  // they answer — the author writes "question -> its answers", and the
-  // engine serves exactly the chosen option's replies. The topic-level
-  // pool (legacy shape) is treated as a positional 1:1 author pairing:
-  // option i is answered by reply i. Deterministic, zero cost, always
-  // the answer to the question that was actually asked.
+  // C-78 (dialogue architecture v3, Lucas's playtest ruling): a reply
+  // must ANSWER the option that was picked — never another option's
+  // line. Resolution: explicit paired variants on the option, else the
+  // POSITIONAL reply (option i <-> reply i). An exhausted option
+  // repeats its own answer; cross-option recycling is forbidden.
   const repliesFor = (optionId: string): ReplyCandidate[] => {
     const option = topic.optionCandidates.find((candidate) => candidate.id === optionId);
-    // 1. Explicit paired variants authored on the option (v3 nesting).
     if (option !== undefined && Array.isArray(option.replies) && option.replies.length > 0) {
       return [...option.replies];
     }
-    // 2. Positional author pairing (option i <-> reply i) — deterministic.
     const index = topic.optionCandidates.findIndex((candidate) => candidate.id === optionId);
-    const positional = topic.replyCandidates?.[index];
-    if (positional && !usedReplies.has(positional.id) && tagsEligible(positional.tags, ctx)) {
-      return [positional];
-    }
-    // 3. Recycle: an option must never dead-end (the old contract —
-    // replies recycle before options repeat).
-    const recycled = (topic.replyCandidates ?? []).filter(
-      (reply) => tagsEligible(reply.tags, ctx),
-    );
-    return recycled.length > 0 ? recycled : [...(topic.replyCandidates ?? [])];
+    const positional = index >= 0 ? topic.replyCandidates?.[index] : undefined;
+    return positional ? [positional] : [];
   };
 
   return { topic, options, repliesFor, doneTaskIds };

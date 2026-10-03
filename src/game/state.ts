@@ -190,6 +190,17 @@ export function reduce(state: GameState, action: Action): GameState {
     }
     case "set-player-pose":
       return { ...state, playerPose: action.pose };
+    case "mission-complete": {
+      // WS7 (AC-25, closure verdict): ONE dispatch applies the completion
+      // flag + rewards together — a single save, so an interruption can
+      // never leave a paid-but-incomplete or complete-but-unpaid state.
+      let next = reduce(state, { type: "set-flag", flag: action.completionFlag, value: true });
+      if (action.cash !== 0) next = reduce(next, { type: "add-cash", amount: action.cash });
+      if (action.credibilityDelta !== 0) {
+        next = reduce(next, { type: "add-stat", stat: "credibility", delta: action.credibilityDelta });
+      }
+      return next;
+    }
     case "load":
       return action.state;
     case "reset":
