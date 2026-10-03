@@ -92,6 +92,18 @@ const TREE_FLAGS = [
   "tomek-reviewed-pr",
   "zosia-opened-up",
   "zosia-training-block",
+  // WS5-r2 minted flags (set via task offers; Flow A2 naming note):
+  "pawel-restore-drill",
+  "dawid-graph-memo",
+  "kasia-referral-open",
+  "tomek-apprentice",
+  "ania-webinar-volunteered",
+  "janusz-knows-the-plug",
+  "grazyna-candle-partner",
+  "maciek-training-buzzword",
+  "przemek-robot-plan",
+  "zosia-sticker-campaign",
+  "burek-person",
 ];
 const KNOWN_FLAGS = new Set([...QUEST_FLAGS, ...TREE_FLAGS]);
 

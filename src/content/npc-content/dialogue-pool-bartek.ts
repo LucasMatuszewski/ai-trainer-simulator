@@ -323,6 +323,564 @@ export const BARTEK_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "bartek:invoices",
+      label: "The invoice line items",
+      optionCandidates: [
+        {
+          id: "bartek:invoices:opt-1",
+          topicId: "bartek:invoices",
+          text: "What is the most absurd thing you have invoiced?",
+        },
+        {
+          id: "bartek:invoices:opt-2",
+          topicId: "bartek:invoices",
+          text: "Is there an art to rounding hours?",
+        },
+        {
+          id: "bartek:invoices:opt-3",
+          topicId: "bartek:invoices",
+          text: "A client questioned one of my line items.",
+        },
+        {
+          id: "bartek:invoices:opt-4",
+          topicId: "bartek:invoices",
+          text: "Do you invoice for travel time?",
+        },
+        {
+          id: "bartek:invoices:opt-5",
+          topicId: "bartek:invoices",
+          text: "What happens when an invoice goes unpaid?",
+        },
+        {
+          id: "bartek:invoices:opt-6",
+          topicId: "bartek:invoices",
+          text: "Teach me the three-word invoice.",
+          tags: ["relationship:warm"],
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:invoices:rep-1",
+          text: "Two hours of 'ambient awareness'. I attended a meeting, said nothing, and the meeting went well BECAUSE nobody filled the silence. The line item survives in my template to this day. Ambience is a service. Museums charge for it and they do not even attend.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:invoices:rep-2",
+          text: "Round to the quarter hour, never to the hour. The quarter is invisible; the hour is a confession. Fifteen minutes of thinking IS work — thinking is where the client's money actually goes, and the invoice simply reports where the time lived.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:invoices:rep-3",
+          text: "Never defend a line item. RETITLE it. 'Workshop facilitation' becomes 'stakeholder alignment session' and the question evaporates, because nobody escalates over words they do not understand. The work never changed. The vocabulary did. That is the entire fix.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:invoices:rep-4",
+          text: "Travel time is 'knowledge transfer in motion'. The train ride where I listened to two podcasts and read the client's annual report is RESEARCH, and research bills at full rate. I once arrived at a client better informed than their own staff. The travel paid for itself. Literally.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:invoices:rep-5",
+          text: "The polite ladder: a reminder, a statement, a friendly call, and then the final email, which is one line — 'per my last'. Nothing frightens an accounts department like a consultant who has stopped being chatty. Silence is the only collection agency I have ever needed.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "bartek:invoices:rep-6",
+          text: "Since you are in the will: 'Discovery. Ongoing.' Three words, no comma, and the number does the singing. The shorter the line, the bigger the number — the client's imagination bills higher than your hourly rate ever could. This replaces the Loop as my top trade secret. Tell no one.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "quest:bartek-shared-consulting-secret"],
+        },
+      ],
+    },
+    {
+      id: "bartek:decks",
+      label: "Deck aikido",
+      optionCandidates: [
+        {
+          id: "bartek:decks:opt-1",
+          topicId: "bartek:decks",
+          text: "How many slides does a real deck need?",
+        },
+        {
+          id: "bartek:decks:opt-2",
+          topicId: "bartek:decks",
+          text: "The client sent their own template.",
+        },
+        {
+          id: "bartek:decks:opt-3",
+          topicId: "bartek:decks",
+          text: "What goes on the last slide?",
+        },
+        {
+          id: "bartek:decks:opt-4",
+          topicId: "bartek:decks",
+          text: "Someone fell asleep in my workshop.",
+        },
+        {
+          id: "bartek:decks:opt-5",
+          topicId: "bartek:decks",
+          text: "Do slide animations ever work?",
+        },
+        {
+          id: "bartek:decks:opt-6",
+          topicId: "bartek:decks",
+          text: "Can I reuse last year's deck?",
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:decks:rep-1",
+          text: "Eleven. Ten to talk over and one you refuse to read aloud, because the unread slide is the one they photograph. Twelve is a webinar, nine is a tweet, and thirty is a hostage situation. Eleven has been tested by my entire career and the career is still here.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:decks:rep-2",
+          text: "The template is a loyalty test. Use their font, their colors, their logo — and then keep YOUR margins, because margins are where authority lives. I have presented entire strategies inside a client's branding and they approved everything. It felt like their idea. It was my deck.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:decks:rep-3",
+          text: "'Next steps' with exactly ONE step. A single step reads as a decision already made; two steps reads as a menu, and menus get argued with. If someone asks what step two is, you say 'step two depends on step one', which is unarguable and slightly profound. I have closed contracts on that sentence.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:decks:rep-4",
+          text: "Sleeping means trust. A room that watches you is a room that suspects you; a room that naps has accepted you into the background noise of their life. Wake them gently — ask a question you cannot answer yourself. Vulnerability is the jolt of the industry. Then move on before they remember.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:decks:rep-5",
+          text: "One animation per career. Mine is a checkmark that appears after a four-second pause, and I have only used it twice: both times during refund negotiations, both times it worked. Animations are a savings account. Spend yours when the invoice is on the table, never before.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:decks:rep-6",
+          text: "Decks age like deadlines: badly, but predictably. Update the dates, swap one verb for 'strategically', and change the example client. Nobody remembers slides; everybody remembers being billed twice for the same deck. We do not do that. We do it once, and then it is 'the framework'.",
+          relationshipHint: "neutral",
+          tags: ["relationship:warm", "stats:high-credibility"],
+        },
+      ],
+    },
+    {
+      id: "bartek:mentoring",
+      label: "The apprenticeship economics",
+      optionCandidates: [
+        {
+          id: "bartek:mentoring:opt-1",
+          topicId: "bartek:mentoring",
+          text: "Pawel asked me to mentor him. Am I qualified?",
+        },
+        {
+          id: "bartek:mentoring:opt-2",
+          topicId: "bartek:mentoring",
+          text: "Tomek pasted something into prod-adjacent code.",
+        },
+        {
+          id: "bartek:mentoring:opt-3",
+          topicId: "bartek:mentoring",
+          text: "What do I charge for mentoring?",
+        },
+        {
+          id: "bartek:mentoring:opt-4",
+          topicId: "bartek:mentoring",
+          text: "How do I give feedback that actually lands?",
+        },
+        {
+          id: "bartek:mentoring:opt-5",
+          topicId: "bartek:mentoring",
+          text: "I taught someone and now they surpass me.",
+        },
+        {
+          id: "bartek:mentoring:opt-6",
+          topicId: "bartek:mentoring",
+          text: "Marek mentors by silence. Does that work?",
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:mentoring:rep-1",
+          text: "Qualification is a calendar invite. Say yes, hold the slot, and be two pages ahead of him in the manual. I have mentored people in subjects I learned on the tram ride over. The distance between mentor and mentee is one reusable answer, and you are about to manufacture it.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:mentoring:rep-2",
+          text: "Triage, not execution. You cannot stop the pasting — the internet is load-bearing now. Teach retrieval: 'find it, understand it, rename it'. If he renames the variables, the paste becomes his. If he does not, main becomes a museum of other people's work. We already have one museum; it is called the wiki.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:mentoring:rep-3",
+          text: "Nothing. Mentoring is invoiced in favors, and favors compound at a rate HR cannot audit. The intern you coach today books you the conference slot in 2028. I once explained a pivot table to a junior who now signs off my invoices. Coincidence? The invoice says no.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:mentoring:rep-4",
+          text: "Feedback is a question wearing a gift. Never 'you did this wrong' — always 'what would happen if'. The first starts a defense, the second starts a thought, and a person who arrives at your answer by themselves will defend it with their life. Free labor for the right cause, essentially.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:mentoring:rep-5",
+          text: "That is the exit milestone. A mentor whose student surpasses him has finished the product and shipped it. Be proud, then reposition: senior people do not compete with their students, they CONSULT to them. Bill double. Gratitude has the highest margin of any emotion in this building.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:mentoring:rep-6",
+          text: "Silence mentoring only works when the silence is monitored. Marek watches you struggle, and the watching IS the lesson — you leave knowing he knows you know. With anyone else it is neglect. With Marek it is pedagogy. Do not copy it unless you can also glower like a firewall.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+      ],
+    },
+    {
+      id: "bartek:conferences",
+      label: "The talk circuit",
+      optionCandidates: [
+        {
+          id: "bartek:conferences:opt-1",
+          topicId: "bartek:conferences",
+          text: "Should I speak at a conference?",
+        },
+        {
+          id: "bartek:conferences:opt-2",
+          topicId: "bartek:conferences",
+          text: "My talk got accepted. Panic now?",
+        },
+        {
+          id: "bartek:conferences:opt-3",
+          topicId: "bartek:conferences",
+          text: "Nobody laughed at my conference joke.",
+        },
+        {
+          id: "bartek:conferences:opt-4",
+          topicId: "bartek:conferences",
+          text: "They want me to speak for free. For exposure.",
+        },
+        {
+          id: "bartek:conferences:opt-5",
+          topicId: "bartek:conferences",
+          text: "What is your speaker fee, actually?",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "bartek:conferences:opt-6",
+          topicId: "bartek:conferences",
+          text: "Someone filmed my talk without asking.",
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:conferences:rep-1",
+          text: "Once. Exactly once, because a talk is an invoice addressed to the entire room. Forty people hear you be right for thirty minutes and a percentage of them call their boss. One of those calls becomes a retainer. I have measured this. The retainer-to-punchline ratio is beautiful.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:conferences:rep-2",
+          text: "Panic is preparation with worse posture. The talk has three beats: a problem everyone has, the triangle applied, and hope with a timeline. Rehearse once in an empty room, once to Burek, and never to a mirror — mirrors make you perform, dogs make you honest.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:conferences:rep-3",
+          text: "The joke was never for the room — it was for the recording. Laughter is live-only content; the clip needs the JOKE to exist so the editors can cut around it. Some of my best lines died in silent rooms and killed in the highlight reel. Grieve quickly and post the clip.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "bartek:conferences:rep-4",
+          text: "Exposure is a currency, and like all currencies it has one official exchange rate: one workshop, invoiced. Say yes to the free talk, attend, be brilliant, and then invoice the ORGANIZER's employer for the workshop their staff will beg for. The system funds itself. It has funded mine for years.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:conferences:rep-5",
+          text: "Between us: my fee is whatever the client's last invoice to us was, plus eleven percent. It sounds arbitrary. It is ARBITRAGE. They never notice the number, they notice the confidence, and the eleven percent covers the slides. You did not hear this. The slides never existed.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "quest:bartek-shared-consulting-secret"],
+        },
+        {
+          id: "bartek:conferences:rep-6",
+          text: "That is not theft, that is distribution. Reply with a thank you, a correction for one slide, and an invoice for the slide deck. Half the time they pay it — paying for the deck is cheaper than admitting they filmed you. Either outcome is a win and neither requires anger before coffee.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "bartek:vending",
+      label: "Vending machine diplomacy",
+      optionCandidates: [
+        {
+          id: "bartek:vending:opt-1",
+          topicId: "bartek:vending",
+          text: "The vending machine ate my coin again.",
+        },
+        {
+          id: "bartek:vending:opt-2",
+          topicId: "bartek:vending",
+          text: "What is the diplomatic way to take the last crisps?",
+        },
+        {
+          id: "bartek:vending:opt-3",
+          topicId: "bartek:vending",
+          text: "Zosia proposed a snack inclusion initiative.",
+        },
+        {
+          id: "bartek:vending:opt-4",
+          topicId: "bartek:vending",
+          text: "Is the vending machine cheaper than the coffee?",
+        },
+        {
+          id: "bartek:vending:opt-5",
+          topicId: "bartek:vending",
+          text: "I bought Burek a treat from the machine.",
+        },
+        {
+          id: "bartek:vending:opt-6",
+          topicId: "bartek:vending",
+          text: "What does the vending machine say about us?",
+          tags: ["stats:low-caffeine", "period:afternoon"],
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:vending:rep-1",
+          text: "The machine keeps a ledger and the ledger is never wrong. It is owed, and it collects with the patience of a company that has never once discounted. Feed it exact change, thank it out loud, and never shake it — the last person who shook it now buys rounds for the office. Ask around. Nobody will say who.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:vending:rep-2",
+          text: "Eleven fifty-eight, before the lunch crowd forms opinions. Take them, walk away at a normal speed, and eat them at your desk with the face of a person who has bought nothing. Guilt is the only evidence this office has ever prosecuted. The stairs witness everything, so use the corridor.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:vending:rep-3",
+          text: "An initiative implies a deck, and the machine has operated for eleven years without asking anyone for a single slide. It is the most self-sufficient employee we have. I will support the initiative in the meeting and bury it in the follow-up, which is what 'alignment' is actually for.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "bartek:vending:rep-4",
+          text: "Cheaper, yes. Braver, no. The machine sells you exactly what the picture shows, at the price on the button, in under nine seconds. The coffee machine makes you WAIT while it decides your future. I trust the vending machine the way I trust an invoice: fully, and only because it is itemized.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:vending:rep-5",
+          text: "Then you have made an investment the stock market cannot match. Burek's economy runs on treats and attention, and its exchange rate makes my retainers look sentimental. He will now audit for you first. Marek pays for that privilege in walks. You got it for one vending machine. Well played.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "bartek:vending:rep-6",
+          text: "Look at the empty rows. Row three — the decent crisps — sells out by eleven. Row seven — the raisins — has never moved. The machine is a morale graph with a coin slot, and we are the raisins if we are not careful. That is why you are tired. The office agrees with you, row by row.",
+          relationshipHint: "neutral",
+          tags: ["stats:low-caffeine", "period:afternoon"],
+        },
+      ],
+    },
+    {
+      id: "bartek:escalations",
+      label: "The escalation calls",
+      optionCandidates: [
+        {
+          id: "bartek:escalations:opt-1",
+          topicId: "bartek:escalations",
+          text: "A client escalated to Dawid. About me.",
+        },
+        {
+          id: "bartek:escalations:opt-2",
+          topicId: "bartek:escalations",
+          text: "The client is shouting. Which voice do I use?",
+        },
+        {
+          id: "bartek:escalations:opt-3",
+          topicId: "bartek:escalations",
+          text: "Should I apologize for the outage?",
+        },
+        {
+          id: "bartek:escalations:opt-4",
+          topicId: "bartek:escalations",
+          text: "They threatened to leave us.",
+        },
+        {
+          id: "bartek:escalations:opt-5",
+          topicId: "bartek:escalations",
+          text: "Dawid took the call and sold an upgrade.",
+        },
+        {
+          id: "bartek:escalations:opt-6",
+          topicId: "bartek:escalations",
+          text: "How do you end an escalation call?",
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:escalations:rep-1",
+          text: "Escalation is a redirect, not a verdict. Dawid will align them, I will align the invoice, and your job is the timeline: one page, timestamps, no adjectives. Documentation is the only armor that survives an escalation, and it conveniently also proves you were the calmest person in the file.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:escalations:rep-2",
+          text: "The apology voice: half your usual speed, one octave down. Shouting is an auction and volume is a bid — refuse to bid. The slower voice makes them slow down to understand you, and by the third sentence they are matching YOUR pace. I have de-escalated entire boardrooms with punctuation alone.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:escalations:rep-3",
+          text: "Apologize for the impact, never the code. The code has a family, the code has a git history, and the code will be reviewed by people who were not on the call. 'I am sorry your team lost the morning' survives. 'I am sorry we shipped it' becomes an exhibit. Words outlive incidents. Choose them like invoices.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:escalations:rep-4",
+          text: "A threat to leave is a negotiation opening wearing a coat. Nobody who has already decided says so out loud — decided clients send lawyers, and lawyers do not threaten, they invoice. Book the retention lunch. Bring the triangle. The triangle has saved more accounts than the product ever has.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "bartek:escalations:rep-5",
+          text: "Escalation is sales in a hi-vis vest. The client came to yell about uptime and left owning more uptime, sold to them by the man they trusted enough to yell at. Dawid does not defuse situations. He REPRICES them. Watch the call recording if he ever makes one. He will not. The skill does not survive documentation.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:escalations:rep-6",
+          text: "Book the follow-up before the goodbyes. An ending without a calendar is a rumor, and rumors get re-litigated; an ending with a date is a plan, and plans make people feel heard. Summarize in one sentence, agree the date, hang up FIRST. He who hangs up first, invoices calm.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "bartek:estimates",
+      label: "The estimation game",
+      optionCandidates: [
+        {
+          id: "bartek:estimates:opt-1",
+          topicId: "bartek:estimates",
+          text: "How long will this training build take?",
+        },
+        {
+          id: "bartek:estimates:opt-2",
+          topicId: "bartek:estimates",
+          text: "My estimate was off by a factor of three.",
+        },
+        {
+          id: "bartek:estimates:opt-3",
+          topicId: "bartek:estimates",
+          text: "Can I pad an estimate ethically?",
+        },
+        {
+          id: "bartek:estimates:opt-4",
+          topicId: "bartek:estimates",
+          text: "The client set the deadline before the scope.",
+        },
+        {
+          id: "bartek:estimates:opt-5",
+          topicId: "bartek:estimates",
+          text: "When do I admit an estimate is wrong?",
+        },
+        {
+          id: "bartek:estimates:opt-6",
+          topicId: "bartek:estimates",
+          text: "What is the real estimation formula?",
+          tags: ["relationship:warm", "quest:bartek-shared-consulting-secret"],
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:estimates:rep-1",
+          text: "Take whatever number you just said in your head, double it, and add a workshop. The doubling is for reality; the workshop is for morale, yours and theirs. An estimate is not a measurement, it is a down payment on a conversation. The conversation is also billable, which is the elegant part.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:estimates:rep-2",
+          text: "A factor of three is a rounding error with confidence. Nobody has ever gone to prison for an optimistic estimate; they have gone to bankruptcy. Reframe it in the retro as 'scope discovery' and it becomes a deliverable: you DISCOVERED the true size. Discovery is billable. You basically prepaid.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:estimates:rep-3",
+          text: "Padding is not a sin, it is a contingency, and contingencies are professional. Call it what it is on the form — 'risk buffer' — and the ethics committee of your mind can stand down. The client who never needed the buffer thinks you are efficient. The client who needed it thinks you are psychic. Win twice.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:estimates:rep-4",
+          text: "Deadline-first means the scope is a surprise party and you are the venue. Respond in writing: 'deliverable by that date: version one'. The words 'version one' are load-bearing — they promise a future, they commit to nothing, and they have saved my weekends more than any boundary speech ever has.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "bartek:estimates:rep-5",
+          text: "The day you know, not the day it shows. An estimate corrected early is a professional updating a forecast; the same correction a week later is an apology tour. Early admissions compound into trust, and trust is the only asset in this building that appreciates without a spreadsheet.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:estimates:rep-6",
+          text: "The formula, mentor-rate: base it on the LAST similar job, add the coefficient of the new client's optimism, then round to a number ending in five because it looks calculated rather than guessed. The rounding is psychology. All of estimation is psychology wearing a calculator. Now you owe me a coffee too.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "quest:bartek-shared-consulting-secret"],
+        },
+      ],
+    },
+    {
+      id: "bartek:fridays",
+      label: "Friday afternoon folklore",
+      optionCandidates: [
+        {
+          id: "bartek:fridays:opt-1",
+          topicId: "bartek:fridays",
+          text: "Is Friday afternoon safe for big changes?",
+        },
+        {
+          id: "bartek:fridays:opt-2",
+          topicId: "bartek:fridays",
+          text: "Everyone's out-of-office is on. Should I work?",
+        },
+        {
+          id: "bartek:fridays:opt-3",
+          topicId: "bartek:fridays",
+          text: "Is there an end-of-week ritual here?",
+        },
+        {
+          id: "bartek:fridays:opt-4",
+          topicId: "bartek:fridays",
+          text: "I broke something at 4pm on a Friday.",
+        },
+        {
+          id: "bartek:fridays:opt-5",
+          topicId: "bartek:fridays",
+          text: "Do you actually rest on weekends?",
+        },
+        {
+          id: "bartek:fridays:opt-6",
+          topicId: "bartek:fridays",
+          text: "Monday morning. What survived?",
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:fridays:rep-1",
+          text: "Safety is a Tuesday concept. On a Friday afternoon, 'safe' means the blast radius is asleep and the rollback is Monday's problem, which is exactly how Marek likes his deploys and exactly how I like my invoices. Nothing shipped on Friday dies on Friday. It dies on Monday, with witnesses.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:fridays:rep-2",
+          text: "Work, yes — but visibly. The empty office amplifies presence by a factor of the absentee rate. Be at your desk with coffee and a focused face at three, and the ONE person who comes back for a forgotten charger reports you as 'the backbone of this place'. Visibility is cheapest when nobody can verify it.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:fridays:rep-3",
+          text: "Four forty-five: the shutdown playlist. Marek pretends not to hear it, Janusz harmonizes with the vacuum, and whoever complains loudest is having the worst week and gets the first coffee Monday. Rituals do not need permission. They need witnesses, a start time, and absolutely no documentation.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:fridays:rep-4",
+          text: "Congratulations, you have a Monday project and a weekend narrative. Log it, label it 'known issue, fix scheduled', and close the laptop with intention. Do not fix it at eleven pm in a hoodie — that fix is how heroes are made and how weekends are lost. The office reopens. The guilt should not.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "bartek:fridays:rep-5",
+          text: "Rest is invoicing yourself at zero, and I am excellent at zero because I price it deliberately. Saturday is offline by design: no email, no decks, one glance at main — a glance, not a review. Sunday evening the dread arrives on schedule and I welcome it like a retainer. Boundaries, but booked.",
+          relationshipHint: "neutral",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "bartek:fridays:rep-6",
+          text: "The Monday triage, in order: coffee, tickets, grievances. Coffee first because the tickets lie less on caffeine, tickets second because the grievances amplify them, grievances last because by then half of them have resolved themselves over the weekend, which is the only miracle this office performs regularly.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
   ],
   taskOffers: [
     {

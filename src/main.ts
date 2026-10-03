@@ -277,7 +277,8 @@ function buildDialogueSteerer(): DialogueSteererHandle | null {
 
 // WS7: the mission steerer (question pick + answer scoring), sharing the
 // ?jev mode handling with the other wrappers.
-function buildMissionSteerer(): MissionSteerer {
+function buildMissionSteerer(): MissionSteerer | null {
+  if (JEV_MODE === "off") return null;
   return createMissionWrapper({ shadow: JEV_MODE === "shadow" });
 }
 

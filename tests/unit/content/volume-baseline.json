@@ -1,7 +1,7 @@
 {
   "generatedBy": "node scripts/content-volume.mjs (imports the real content modules via Vite SSR)",
   "frozenAgainstCommit": "42000fd",
-  "sourceCommit": "d380988",
+  "sourceCommit": "e3aee15",
   "normalization": "trim + collapse whitespace + lowercase; per-category distinct sets",
   "scopeNotes": [
     "dialogueNodes/dialogueOptions come from DIALOGUES (dialogues.ts, which already merges dialogues-more.ts and dialogues-renata.ts).",
@@ -38,11 +38,15 @@
     "burekLines": {
       "raw": 18,
       "distinct": 18
+    },
+    "v2PoolStrings": {
+      "raw": 2111,
+      "distinct": 2109
     }
   },
   "totals": {
-    "raw": 1096,
-    "distinctNormalized": 1069,
+    "raw": 3207,
+    "distinctNormalized": 3178,
     "distinctNormalizedGlobal": 1069
   }
 }

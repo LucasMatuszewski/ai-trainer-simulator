@@ -608,37 +608,6 @@ wireActionButtons(container!);
     return container;
   }
 
-  /**
-   * Judge the current turn in the background. The authored fallback is
-   * already on screen, so a slow/failed judgment can never block or blank
-   * the panel (AC-10/11) - a landing curation merely reorders options.
-   */
-  function steerCurrentTurn(): void {
-    if (v2 === null || v2.steerer === null) return;
-    const steerer = v2.steerer;
-    // WS4-verdict fix: capture the session NOW; a close (which bumps the
-    // token via the steerer's session counter) invalidates this answer.
-    const steerSession = steerer.currentSession();
-    void steerer
-      .steerTurn({
-        npcId: v2.npc.id,
-        topicId: v2.turn.topicId,
-        options: v2.turn.options.filter((entry) => !entry.isExit).map((entry) => entry.option),
-        replies: v2.turn.replyCandidates,
-        usedOptionIds: v2UsedOptionIds(),
-        usedReplyIds: [...v2.memory.usedReplyIds],
-        facts: { "relationship.value": game.get().npcRelationships[v2.npc.id] ?? 50 },
-      })
-      .then(() => {
-        // C-78 fix (Lucas: "the options jump"): the landing order is
-        // stored in the memo for the NEXT occurrence of this situation —
-        // the panel on screen keeps its rendered order. Re-rendering
-        // mid-turn made the visible options shuffle under the cursor.
-        void steerSession;
-      })
-      .catch(() => undefined);
-  }
-
   function openV2(npc: NPC, steerer: DialogueSteererHandle | null): void {
     if (state !== null || v2 !== null || agentTurnActive) return;
     const pool = dialoguePoolFor(npc.id);
@@ -659,7 +628,6 @@ wireActionButtons(container!);
       steerer,
     };
     setMemory(npc.id, { lastTopic: turn.topicId });
-    steerCurrentTurn();
     renderV2();
   }
 
@@ -749,7 +717,6 @@ wireActionButtons(container!);
     }
     v2.turn = nextTurn;
     v2.reply = nextTurn.replyCandidates[0] ?? null;
-    steerCurrentTurn();
     renderV2();
   }
 

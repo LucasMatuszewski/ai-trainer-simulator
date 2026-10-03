@@ -288,6 +288,562 @@ export const KLAUDIA_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "klaudia:personal-life",
+      label: "How much of you is content",
+      optionCandidates: [
+        {
+          id: "klaudia:personal-life:opt-1",
+          topicId: "klaudia:personal-life",
+          text: "Is any part of your life off camera?",
+        },
+        {
+          id: "klaudia:personal-life:opt-2",
+          topicId: "klaudia:personal-life",
+          text: "Your Sunday hike — was that staged?",
+        },
+        {
+          id: "klaudia:personal-life:opt-3",
+          topicId: "klaudia:personal-life",
+          text: "Do you ever just experience things?",
+        },
+        {
+          id: "klaudia:personal-life:opt-4",
+          topicId: "klaudia:personal-life",
+          text: "What does your family think of the content?",
+        },
+        {
+          id: "klaudia:personal-life:opt-5",
+          topicId: "klaudia:personal-life",
+          text: "You looked tired in the Thursday story.",
+        },
+        {
+          id: "klaudia:personal-life:opt-6",
+          topicId: "klaudia:personal-life",
+          text: "If you stopped posting tomorrow, who are you?",
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "klaudia:personal-life:rep-1",
+          text: "There is a four-hour window every Sunday where the phone stays in the bag. I call it my off-grid hours. My most engaged post ever was the one announcing the off-grid hours, which taught me that even the boundary is content if you announce it. The second year, I did not announce it. Growth has a Silence setting.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:personal-life:rep-2",
+          text: "The hike was real. The ENTHUSIASM was directed. I was alone on a mountain feeling genuinely small and insignificant, which is restorative, and then I took nine photos, deleted six, and shared a moment of manufactured solitude. The mountain did not mind. Mountains are above engagement, which is why I respect them.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "klaudia:personal-life:rep-3",
+          text: "Constantly. Experiencing is my raw material. The mistake people make is thinking the camera replaces the experience — it does not, it ARCHIVES it. I watched that sunset with both eyes, I promise you. One eye was also composing a caption. That is not less real. It is just real with a second channel.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "klaudia:personal-life:rep-4",
+          text: "My mother likes every post within four minutes, which is my real engagement metric — the algorithm can fake reach but it cannot fake a mother with her glasses on. My cousin asked for a shoutout for his plumbing business, I gave him one, and he now has more work than the entire regional competition. The channel is real. Respect the channel.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "klaudia:personal-life:rep-5",
+          text: "That was 'authentic exhaustion', posted at the exact minute the demographic scrolls in bed. Was I tired? Deeply. Was the tiredness usable? Also yes. Nothing is wasted in this economy, especially not a Tuesday. The comments said 'so relatable' and the follow-up post about my morning routine did numbers. The tiredness funded the routine.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:personal-life:rep-6",
+          text: "Someone with excellent lighting instincts and a content calendar she would rewrite within a week, honestly. I have thought about this at 2am like everyone does, and the answer stopped scaring me: the persona is a tire, but the ROAD is mine. I built the road. The road is senior to the tire. That is the healthiest thing I have ever said on the record.",
+          relationshipHint: "neutral",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "klaudia:haters",
+      label: "The comments section",
+      optionCandidates: [
+        {
+          id: "klaudia:haters:opt-1",
+          topicId: "klaudia:haters",
+          text: "How do you deal with negative comments?",
+        },
+        {
+          id: "klaudia:haters:opt-2",
+          topicId: "klaudia:haters",
+          text: "Someone called your content 'soulless'.",
+        },
+        {
+          id: "klaudia:haters:opt-3",
+          topicId: "klaudia:haters",
+          text: "Do you ever reply to the trolls?",
+        },
+        {
+          id: "klaudia:haters:opt-4",
+          topicId: "klaudia:haters",
+          text: "Your most-liked comment is an insult.",
+        },
+        {
+          id: "klaudia:haters:opt-5",
+          topicId: "klaudia:haters",
+          text: "A client quoted a hate thread in a meeting.",
+        },
+        {
+          id: "klaudia:haters:opt-6",
+          topicId: "klaudia:haters",
+          text: "Does it ever actually hurt?",
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "klaudia:haters:rep-1",
+          text: "There is a taxonomy. 'Cringe' means you were seen. 'Sellout' means you were seen earning. 'Who is this?' means the reach is working. Actual criticism — the kind with punctuation and a point — I screenshot and keep in a folder called 'free consulting'. The folder has paid for itself twice. Hate is just engagement wearing a bad outfit.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:haters:rep-2",
+          text: "Soulless. In THIS attention economy. A soul is overhead — it wants breaks, privacy, and to not be A/B tested. I run a lean operation. But he wrote 'soulless' at 7am, meaning my content was the first thing he engaged with that day, and that is reach you cannot buy. I screen-recorded it. It is in my media kit.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "klaudia:haters:rep-3",
+          text: "Once. Never again. I replied to a troll with a calm paragraph and he screenshot it, framed it, and it became HIS content. That day I learned: the reply is a donation. Now I do silence — the algorithm cannot argue with silence, and silence does not need copy approval. The troll rage-posts into the void and the void does not tag me.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "klaudia:haters:rep-4",
+          text: "'This is everything wrong with LinkedIn' — four hundred likes, and it is pinned under a post of mine that got eleven thousand. Do the math on attention: my insult-to-impression ratio is elite. Hate comments are backlinks. I have suggested, gently, to the marketing textbooks of the future, that they chapter it.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "klaudia:haters:rep-5",
+          text: "Which one, the thread or the meme? Both performed. The client quoted it while renewing, which proves the deepest law of this industry: people do business with what they cannot stop discussing. I thanked them for the reach and the meeting moved on. The thread is now 'market feedback' in the deck. Nothing is wasted. Nothing.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:haters:rep-6",
+          text: "The honest answer is one particular comment, 2023, about my voice. It was precise, it was fair, and it was from someone I went to school with, which is cheating. I took the note, adjusted the pacing, and the retention graph thanked me. The ones that hurt are the ones that are right, and I monetize those fastest. That is the whole coping strategy.",
+          relationshipHint: "neutral",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "klaudia:brand-course",
+      label: "Teaching personal branding",
+      optionCandidates: [
+        {
+          id: "klaudia:brand-course:opt-1",
+          topicId: "klaudia:brand-course",
+          text: "Could you teach personal branding? As a course.",
+        },
+        {
+          id: "klaudia:brand-course:opt-2",
+          topicId: "klaudia:brand-course",
+          text: "What would lesson one even be?",
+        },
+        {
+          id: "klaudia:brand-course:opt-3",
+          topicId: "klaudia:brand-course",
+          text: "Bartek says teaching is invoicing attention.",
+        },
+        {
+          id: "klaudia:brand-course:opt-4",
+          topicId: "klaudia:brand-course",
+          text: "Could the course be filmed in this office?",
+        },
+        {
+          id: "klaudia:brand-course:opt-5",
+          topicId: "klaudia:brand-course",
+          text: "Would Grazyna approve the course budget?",
+        },
+        {
+          id: "klaudia:brand-course:opt-6",
+          topicId: "klaudia:brand-course",
+          text: "Who is the course actually for?",
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "klaudia:brand-course:rep-1",
+          text: "I have been workshopping the title for a year: 'Be Perceived'. Four modules, one workbook, and a graduation photo with ring lighting. Teaching the brand is the natural endgame of having one — the brand becomes the curriculum, and the curriculum becomes the content, and at that point the funnel eats its own tail, profitably.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:brand-course:rep-2",
+          text: "Lesson one is 'audit yourself': google your own name in a private window and describe what a stranger would hire. Everyone is horrified. Horror is the hook. Lesson two fixes the horror, lesson three monetizes it, and lesson four is just me reading lesson one reviews. It is a perfect loop. I have the slides. Nine of them.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "klaudia:brand-course:rep-3",
+          text: "Bartek invoices attention, I COMPOUND it. He gets paid once; a recorded lesson gets paid while I sleep, which is the only honest passive income in this building — Pawel's backup claims to be passive and it hums anxiously all night. The course is my backup script: run once, pays forever, and I actually know what it does.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "klaudia:brand-course:rep-4",
+          text: "Filmed here, with the glass wall behind me — 'authentic workplace', the algorithm can smell a studio. Bruce in the background of one module, Burek in the intro if his agent agrees, and the printer NOT at all, because that monument has a licensing aura I am not equipped to negotiate. Zosia will want a values poster in shot. There will be negotiations.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:brand-course:rep-5",
+          text: "Grazyna approves anything with 'recurring revenue' in the description — she said the words 'annuity with thumbnails' and I nearly fainted from respect. The budget line will read 'knowledge products', which is true, and the course will pay for the gear, which pays for the course. She called it a closed loop. She meant it as a compliment.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral", "stats:high-credibility"],
+        },
+        {
+          id: "klaudia:brand-course:rep-6",
+          text: "For the person who is excellent and invisible — this office employs eleven of them, starting with whoever is reading the wiki. The course is not for people like me; we are the demo. It is for the quietly competent who flinch at the word 'content'. I will teach them to be seen WITHOUT becoming me. One of me per office is plenty. Ask anyone.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "klaudia:gear",
+      label: "The gear",
+      optionCandidates: [
+        {
+          id: "klaudia:gear:opt-1",
+          topicId: "klaudia:gear",
+          text: "Is the ring light really that important?",
+        },
+        {
+          id: "klaudia:gear:opt-2",
+          topicId: "klaudia:gear",
+          text: "Why do you need three microphones?",
+        },
+        {
+          id: "klaudia:gear:opt-3",
+          topicId: "klaudia:gear",
+          text: "Your tripod is older than Tomek's career.",
+        },
+        {
+          id: "klaudia:gear:opt-4",
+          topicId: "klaudia:gear",
+          text: "Grazyna flagged your gear on expenses.",
+        },
+        {
+          id: "klaudia:gear:opt-5",
+          topicId: "klaudia:gear",
+          text: "Could the office pool money for a proper camera?",
+        },
+        {
+          id: "klaudia:gear:opt-6",
+          topicId: "klaudia:gear",
+          text: "What gear would you take to a desert island?",
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "klaudia:gear:rep-1",
+          text: "The ring light is not equipment, it is a MENTOR. It flattens flaws, softens Tuesdays, and makes every face look like it sleeps eight hours a night. There are people in this office whose entire opinion of me was formed inside that halo, and I protect it the way Marek protects monitor six. We all have a monitor six. Mine glows.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:gear:rep-2",
+          text: "One for the voice, one for the room, one for the car — the car mic has captured my best content, because the car is where the honesty lives. Everyone has a car mic, they just have not admitted it yet. Meetings about it happen at red lights. The red lights are my studio. Traffic is my producer.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "klaudia:gear:rep-3",
+          text: "That tripod has survived four phones, one flood-adjacent scare, and being sat on by Burek, who walked away unimpressed and slightly higher. New gear is a gamble. Old gear is a relationship. When it finally dies I will bury it in the storage room next to the banners, and the funeral content will do numbers.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "klaudia:gear:rep-4",
+          text: "She flagged it, I reclassified it, we met in the middle: the light is 'workplace lighting with a side hustle', the mics are 'client communication infrastructure', and the car mic is 'mobile office equipment'. She approved all three and called my expense descriptions 'the best fiction I audit'. From her that is a grant. It is framed. Mentally.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:gear:rep-5",
+          text: "Pool money means shared custody, and shared custody means booking conflicts with the exact people who do not respect calendars. No. I will keep buying my own gear, and the office may RENT it from me at a rate Grazyna and I will describe as 'friendly'. This is how equipment becomes an annuity. I told you the course would fund itself.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "klaudia:gear:rep-6",
+          text: "The ring light and the phone, because the desert island content writes itself: 'day one of unplugging' — posted, obviously, once I get back. That is the joke AND the strategy. The gear is never the story. The gear just holds the story still long enough to be caught. Everything else is boxes and receipts, and Grazyna handles the receipts.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "klaudia:filming-rules",
+      label: "The office filming rules",
+      optionCandidates: [
+        {
+          id: "klaudia:filming-rules:opt-1",
+          topicId: "klaudia:filming-rules",
+          text: "Can you film me without asking first?",
+        },
+        {
+          id: "klaudia:filming-rules:opt-2",
+          topicId: "klaudia:filming-rules",
+          text: "Why is the kitchen the best filming location?",
+        },
+        {
+          id: "klaudia:filming-rules:opt-3",
+          topicId: "klaudia:filming-rules",
+          text: "Janusz photobombed the b-roll again.",
+        },
+        {
+          id: "klaudia:filming-rules:opt-4",
+          topicId: "klaudia:filming-rules",
+          text: "Dawid wants approval on every office shot.",
+        },
+        {
+          id: "klaudia:filming-rules:opt-5",
+          topicId: "klaudia:filming-rules",
+          text: "The out-of-focus colleague trick — explain it.",
+        },
+        {
+          id: "klaudia:filming-rules:opt-6",
+          topicId: "klaudia:filming-rules",
+          text: "Is there a rule about filming the printer?",
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "klaudia:filming-rules:rep-1",
+          text: "Asking ruins the authenticity, and also the answer would be no, and also you would blink. The rules are: I never film faces without a release, I never film screens, and out-of-focus backs of heads are communal property. You have been an out-of-focus head in four posts. The comments called our office 'vibrant'. You are welcome.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:filming-rules:rep-2",
+          text: "The kitchen has the only honest light in the building — the glass wall gives the morning side six usable minutes and the kitchen hoards five of them. Plus a kitchen says 'we are a real company with real humans' without a single word of copy. Every viral office video is secretly a kitchen video. I have spreadsheets.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "klaudia:filming-rules:rep-3",
+          text: "That is not a photobomb, that is a WALKTHROUGH — the man exists on routes and the routes are fixed. Honestly, the Janusz cameo outperforms my talking head by forty percent, so now I schedule around him. The internet has decided he is 'the real CEO'. I cannot argue. He has the keys, the robots, and the consent of the dog.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "klaudia:filming-rules:rep-4",
+          text: "Dawid's approval is a watermark with eyebrows. He reviews shots for 'graph energy', by which he means the angle where the company looks like it is ascending. I have learned to shoot everything pointing slightly upward. Nobody has noticed. Everyone has felt it. That is the difference between art and content, and content pays for the art.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "klaudia:filming-rules:rep-5",
+          text: "Focus is for advertisements. An out-of-focus colleague means 'real company, real work, real Tuesday' — the viewer's brain fills in the rest and what the brain fills in is always flattering. You were blurry in the latte post and a recruiter DMed you. Blur is a career strategy. I am planning a masterclass. The seats will be out of focus.",
+          relationshipHint: "pleased",
+          tags: ["quest:klaudia-rebranded-you", "relationship:warm"],
+        },
+        {
+          id: "klaudia:filming-rules:rep-6",
+          text: "The printer is not filmed for the same reason the server rack is not filmed: some infrastructure is load-bearing and attention is a load. Marek made me sign nothing, but he stood near me for the entire afternoon of the one time I tried, and the footage was unusable. His disapproval has a frequency. It interferes with the mic.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "klaudia:trends",
+      label: "Trend chasing",
+      optionCandidates: [
+        {
+          id: "klaudia:trends:opt-1",
+          topicId: "klaudia:trends",
+          text: "How fast do you have to jump on a trend?",
+        },
+        {
+          id: "klaudia:trends:opt-2",
+          topicId: "klaudia:trends",
+          text: "Remember when everyone posted that AI office trend?",
+        },
+        {
+          id: "klaudia:trends:opt-3",
+          topicId: "klaudia:trends",
+          text: "Quiet quitting — did you ride that one?",
+        },
+        {
+          id: "klaudia:trends:opt-4",
+          topicId: "klaudia:trends",
+          text: "Maciek wants our content to be 'AI-first'.",
+        },
+        {
+          id: "klaudia:trends:opt-5",
+          topicId: "klaudia:trends",
+          text: "Which trend are you embarrassed you missed?",
+        },
+        {
+          id: "klaudia:trends:opt-6",
+          topicId: "klaudia:trends",
+          text: "How do you know a trend is dead?",
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "klaudia:trends:rep-1",
+          text: "Within forty-eight hours or you are not riding the trend, you are its historian. The first wave gets the reach, the second wave gets the mocking think-pieces, and the third wave gets cited in university courses. I have done all three with the same dance and only regretted one of them professionally.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:trends:rep-2",
+          text: "The one where everyone's office turned into an AI-generated paradise? I did it, it did numbers, and three people asked if we were relocating. We are next to a parking lot with one heroic tree. The comment section believed in us more than the windows do. That is the whole job: believing harder than the evidence.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "klaudia:trends:rep-3",
+          text: "I posted 'quiet quitting is just loud boundaries' and the post outperformed my product announcements, which says everything about this economy. The trend was already dying when I posted, which is the sweet spot — the discourse is hungry and the contrarians have not arrived. Timing a trend is half astrology and half reading the replies first.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "klaudia:trends:rep-4",
+          text: "Maciek says AI-first like it is a destination. For content it is a HAT — I wear the hat, the feed wears the hat, and the actual work remains humans with ring lights. I told him the algorithm cannot tell what first means, only what fast means. He wrote that on the whiteboard. The whiteboard now outranks both of us.",
+          relationshipHint: "neutral",
+          tags: ["quest:maciek-briefed-you"],
+        },
+        {
+          id: "klaudia:trends:rep-5",
+          text: "The ice bucket era. I thought it was a plumbing trend — I was new, the office had real plumbing problems, and the ambiguity was reasonable. By the time I understood, the moment had passed and taken my reach with it. I keep a screenshot of my 'our pipes are fine' post as a reminder. The pipes were fine. The reach was not.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "klaudia:trends:rep-6",
+          text: "When the ACCOUNTANTS arrive. First come creators, then brands, then your bank's social team does one — and the moment the bank posts, the trend is a pension product. There is a two-day window between cool and deductible. I have timed it across nine trends and the bank has never once been early. God bless the bank. It is my closing bell.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "klaudia:networking",
+      label: "The DM economy",
+      optionCandidates: [
+        {
+          id: "klaudia:networking:opt-1",
+          topicId: "klaudia:networking",
+          text: "How do you answer a cold DM from a stranger?",
+        },
+        {
+          id: "klaudia:networking:opt-2",
+          topicId: "klaudia:networking",
+          text: "Kasia says networking is a census. You say?",
+        },
+        {
+          id: "klaudia:networking:opt-3",
+          topicId: "klaudia:networking",
+          text: "I have four hundred contacts and zero jobs.",
+        },
+        {
+          id: "klaudia:networking:opt-4",
+          topicId: "klaudia:networking",
+          text: "Is a conference just a DM with a venue?",
+        },
+        {
+          id: "klaudia:networking:opt-5",
+          topicId: "klaudia:networking",
+          text: "Someone offered to collab. It feels scammy.",
+        },
+        {
+          id: "klaudia:networking:opt-6",
+          topicId: "klaudia:networking",
+          text: "What is your connection request acceptance rate?",
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "klaudia:networking:rep-1",
+          text: "Three tiers. If they compliment a specific post, they read, and readers get replies. If they say 'love your content', they are a template, and templates get a template. If they pitch in the first message, they go in the folder marked 'later', which is where ambition goes to be appreciated from a distance.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:networking:rep-2",
+          text: "Kasia counts people. I PERCEIVE them. The census tells you how many; the feed tells you who is about to move jobs, divorce, or rebrand, because people announce everything now — grief, gym, career. She has the spreadsheet, I have the timeline. Together we are an intelligence agency with lanyards, and neither of us has ever needed a warrant.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "klaudia:networking:rep-3",
+          text: "Contacts are not network. Network is contacts who would take your call at 11pm, and you get those by being useful in public. Post what you know, help one person per week with no ask, and in six months your inbox is a warm room. Four hundred cold contacts is a phonebook. Phonebooks do not get hired. People do.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:networking:rep-4",
+          text: "A conference is a DM with a venue, a bar tab, and witnesses. It is the only place where following someone is legal in person. I work the room in circles of nine — small enough to be heard, large enough to escape politely. And the badge is a conversation-starting device that no cold message has ever matched. Wear it high. Print your real name.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "klaudia:networking:rep-5",
+          text: "Scammy collabs have a smell: they want your audience, not your work. The real ones ask about YOUR posting schedule before mentioning theirs. Test them: ask for one specific edit they would make to your last post. Scammers compliment. Professionals critique. I have closed more real partnerships from critiques than from love letters.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "klaudia:networking:rep-6",
+          text: "Sixty-two percent, and I can tell you the exact variable: your face in the profile picture. Not attractive — PRESENT. Half the rejections are people declining accounts with logos or cars instead of faces. The audience does not follow brands, it follows humans, and the connection request is the smallest possible audition. Show up. Be a face.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "klaudia:burnout",
+      label: "Being perceived",
+      optionCandidates: [
+        {
+          id: "klaudia:burnout:opt-1",
+          topicId: "klaudia:burnout",
+          text: "Are you ever exhausted by being perceived?",
+        },
+        {
+          id: "klaudia:burnout:opt-2",
+          topicId: "klaudia:burnout",
+          text: "What do you do when the numbers dip?",
+        },
+        {
+          id: "klaudia:burnout:opt-3",
+          topicId: "klaudia:burnout",
+          text: "Have you ever deleted a post?",
+        },
+        {
+          id: "klaudia:burnout:opt-4",
+          topicId: "klaudia:burnout",
+          text: "Do you have an actual best friend here?",
+        },
+        {
+          id: "klaudia:burnout:opt-5",
+          topicId: "klaudia:burnout",
+          text: "What happens when you take real holidays?",
+        },
+        {
+          id: "klaudia:burnout:opt-6",
+          topicId: "klaudia:burnout",
+          text: "Would you do all this again?",
+        },
+      ],
+      replyCandidates: [
+        {
+          id: "klaudia:burnout:rep-1",
+          text: "Perception is a full-time audience and audiences do not respect the evening. I have a rule now: the phone sleeps in the kitchen, which is far enough to require intention and close enough to feel safe, like a fire extinguisher. The burnout is real but it is SCHEDULED, which makes it a sport. Athletes get tired. Nobody panics at athletes.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "klaudia:burnout:rep-2",
+          text: "First I check if the dip is me or the algorithm — the algorithm dips everyone twice a quarter like a tide with a grudge. If it is the tide, I post through it with archived content and call it 'consistency'. If it is me, I post the authentic exhaustion. Both recover. One of them is even true, and I no longer need to tell you which.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:burnout:rep-3",
+          text: "Twice. Once for a typo that changed the meaning of a hashtag into something legal had to see, and once for a post that was honest at 9am and unrecognizable by noon. Deletion is the one superpower the timeline does not forgive — the screenshots live forever. The typo is why legal loves me now. Oddly mutual.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "klaudia:burnout:rep-4",
+          text: "Ania. We speak fluent funnel to each other and nothing else, which is either friendship or a very advanced working relationship with snacks. We once spent a full lunch planning a campaign for a brand that does not exist, and I have never felt more understood. Everyone needs one person with whom the metaphors are not performance.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "klaudia:burnout:rep-5",
+          text: "I schedule eleven posts, pin three stories, and vanish to my aunt's village where there is one bar of signal and zero bars of interest. The queue performs fine without me, which was humiliating the first year and liberating ever since. The brand survives my absence. I come back tanned and the graph does not even dip. We are colleagues, the graph and I. Not friends.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "klaudia:burnout:rep-6",
+          text: "With better lighting and an earlier therapist, yes. I turned being seen into a trade, and the trade has a pension, a ring light, and strangers who tell me my content helped them ask for a raise. The last one makes the 2am doubt negotiable. Perception costs. But it pays in both directions, and the invoice always balances. Eventually. On camera.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
   ],
   taskOffers: [
     {
