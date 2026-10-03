@@ -788,6 +788,603 @@ export const ANIA_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "ania:influencers",
+      label: "Influencer collabs",
+      optionCandidates: [
+        { id: "ania:influencers:opt-1", topicId: "ania:influencers", text: "An influencer wants to collab. For exposure." },
+        { id: "ania:influencers:opt-2", topicId: "ania:influencers", text: "Klaudia wants us in her brand deals. Conflict?" },
+        { id: "ania:influencers:opt-3", topicId: "ania:influencers", text: "The influencer's rates exceed our swag budget." },
+        { id: "ania:influencers:opt-4", topicId: "ania:influencers", text: "How do you vet an influencer in one afternoon?" },
+        { id: "ania:influencers:opt-5", topicId: "ania:influencers", text: "The collab post got 40 likes and 3 clients." },
+        { id: "ania:influencers:opt-6", topicId: "ania:influencers", text: "Should the influencer visit the office?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:influencers:rep-1",
+          text: "For exposure is the new 'for the portfolio', and sometimes it is worth it — IF their audience overlaps our buyers and their comment section is not a desert. I check three things: engagement ratio, comment quality, and whether they have ever sold anything. Exposure is a metric. Sales are a verdict.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:influencers:rep-2",
+          text: "Klaudia is the safest collab we could sign — she already knows the product, the people, and the printer lore, and her audience trusts her taste. The conflict is family-shaped, not legal-shaped. We disclose, we price it like strangers, and the discount stays between her and her accountant.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:influencers:rep-3",
+          text: "Then they are not a collab, they are a media buy, and media buys get treated like Grazyna treats subscriptions: annually, with a spreadsheet, and one polite no. Micro-influencers outperform megastars for products people actually use. Our buyer follows a dog and two teachers. Find those.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:influencers:rep-4",
+          text: "Engagement ratio first — followers divided by likes tells you if the audience is real. Then comment depth: 'love this' is weather, 'how do I get this for my team' is intent. Then one DM asking for their media kit, which is a fingerprint. Fakes have templates. Real people have typos.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:influencers:rep-5",
+          text: "Then it worked. Forty likes is the surface; three clients is the earthquake. The funnel is invisible at the top — nobody admits they came from a reel, they arrive saying 'I saw you somewhere'. Attribution is the ghost story of marketing. The ghost pays invoices.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:influencers:rep-6",
+          text: "Only with a shoot plan, a signed release, and Burek's consent obtained through Renata. Office visits are where authenticity is MANUFACTURED, and manufactured authenticity photographs exactly like what it is. If they come, they come for the audit, not the aesthetics. The audit is unrepeatable.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "ania:seo",
+      label: "The SEO wizard",
+      optionCandidates: [
+        { id: "ania:seo:opt-1", topicId: "ania:seo", text: "The SEO consultant says our blog is invisible." },
+        { id: "ania:seo:opt-2", topicId: "ania:seo", text: "He promised page one in ninety days. Sign?" },
+        { id: "ania:seo:opt-3", topicId: "ania:seo", text: "SEO writing killed our blog's voice. Undo?" },
+        { id: "ania:seo:opt-4", topicId: "ania:seo", text: "Keywords feel like lying to robots. Feelings?" },
+        { id: "ania:seo:opt-5", topicId: "ania:seo", text: "Grazyna asks what SEO even is. Script me." },
+        { id: "ania:seo:opt-6", topicId: "ania:seo", text: "Our best-ranking page is Janusz's flood story." },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:seo:rep-1",
+          text: "He is half right — the blog is invisible, but so is everyone's, and 'invisible' is the natural state of a website nobody links to. Before any contract: can he show one client whose traffic survived an algorithm update? Survivors are the only reference that matters in this weather.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:seo:rep-2",
+          text: "Ninety days is the standard promise because it outlives the average contract and the average memory. I countersign nothing without a baseline report FIRST — you cannot promise a journey without a map. If he refuses the baseline, he is selling weather. We have a printer for that.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:seo:rep-3",
+          text: "Then we did SEO wrong. Optimization should dress the voice, not embalm it — the post that ranks is the one a human finishes. My rule: write it human, THEN ask where the honest keyword already lives in the sentence. If the keyword needs surgery, the sentence was wrong. Not the robot's fault.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:seo:rep-4",
+          text: "It is not lying, it is translation — the robot is a librarian with no taste, and keywords are how you file the book so the reader finds it. The sin is writing FOR the robot. The craft is writing for the person and leaving the robot a map. Librarians deserve directions too.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:seo:rep-5",
+          text: "Say: 'it is how customers find us instead of our competitors, and it costs less than the conference booth.' Then stop. She respects sentences with prices attached. If she asks follow-ups, the answer is 'twelve percent of traffic, growing, cheaper per lead than the booth'. Numbers end negotiations.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:seo:rep-6",
+          text: "Of course it is — it is TRUE, specific, and ten years old, which are three of the four pillars of eternal ranking. The fourth is links, and the flood story has been linked by two industry blogs and one insurance company. Janusz outranks our entire funnel. I have made peace with the algorithm's taste for truth.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "ania:awards",
+      label: "The industry awards",
+      optionCandidates: [
+        { id: "ania:awards:opt-1", topicId: "ania:awards", text: "The industry awards deadline is Friday. Enter?" },
+        { id: "ania:awards:opt-2", topicId: "ania:awards", text: "Awards cost money we spend on beans. Enter anyway?" },
+        { id: "ania:awards:opt-3", topicId: "ania:awards", text: "Who writes the award submission — you or me?" },
+        { id: "ania:awards:opt-4", topicId: "ania:awards", text: "We won a local employer award once. Verify?" },
+        { id: "ania:awards:opt-5", topicId: "ania:awards", text: "Maciek wants to pitch the judges directly. Allowed?" },
+        { id: "ania:awards:opt-6", topicId: "ania:awards", text: "Is the award real or a subscription with a trophy?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:awards:rep-1",
+          text: "Enter, always enter — the submission is the prize. Writing the application is the one day a year marketing and finance sit in one room and agree on what we did. Even a loss produces a document the whole office can use. The trophy would be a bonus. The paperwork is the product.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:awards:rep-2",
+          text: "The entry fee is four hundred zloty and the beans are sacred — I am not proposing cannibalization, I am proposing the training budget's 'industry presence' line, which Grazyna keeps warm for exactly this. Every budget has a shelf. This one expires Friday at midnight. Literally.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral", "period:morning"],
+        },
+        {
+          id: "ania:awards:rep-3",
+          text: "Me first, you second, Grazyna as hostile reviewer. I write the emotion, you add the numbers, and Grazyna deletes every adjective that implies spending. What survives that gauntlet is the most honest marketing document this company produces. The judges get the survivor.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:awards:rep-4",
+          text: "Verified, and the certificate hangs in the storage room between the banner graveyard and the crocodile. 'Local Employer of the Year, 2021'. We beat a dentist. The dentist sent flowers. It remains the only hardware this office has ever possessed and Grazyna has it insured for one zloty.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:awards:rep-5",
+          text: "He can, and the judges will love him and score us zero — judges reward evidence and CEOs provide vision. My compromise: Maciek attends the ceremony, which is where his energy converts into contacts. The SUBMISSION is mine. The TUXEDO is his. Division of labor is the real award.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "ania:awards:rep-6",
+          text: "Half of them are, and the trick is checking the winner list — if every category has exactly one winner who is also a sponsor, it is a subscription with better lighting. The one I picked has judges from outside the sponsor list and a rejection rate. Rejections prove the award exists.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "ania:stock-photos",
+      label: "Stock photo shame",
+      optionCandidates: [
+        { id: "ania:stock-photos:opt-1", topicId: "ania:stock-photos", text: "The website still has the handshake photo." },
+        { id: "ania:stock-photos:opt-2", topicId: "ania:stock-photos", text: "We used the laughing-salad woman twice. Damage?" },
+        { id: "ania:stock-photos:opt-3", topicId: "ania:stock-photos", text: "Can we afford real photos of real employees?" },
+        { id: "ania:stock-photos:opt-4", topicId: "ania:stock-photos", text: "The stock model is now a competitor's CEO. Seriously?" },
+        { id: "ania:stock-photos:opt-5", topicId: "ania:stock-photos", text: "Klaudia says stock is 'inauthentic'. Rebuttal?" },
+        { id: "ania:stock-photos:opt-6", topicId: "ania:stock-photos", text: "Which stock photo shame haunts you most?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:stock-photos:rep-1",
+          text: "The handshake has tenure — it predates the rebrand, the Batman sign, and two of our interns. I keep meaning to replace it and every quarter the budget for photography competes with the budget for existence. One day it will retire to the storage room with full honors. It has earned them.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:stock-photos:rep-2",
+          text: "Twice is a callback, three times is a brand. The salad woman has appeared in our onboarding deck and one client proposal, and a client ASKED ABOUT HER by name. She is canon now. I refuse to apologize for continuity. Marketing is crying in enough thumbnails to know lore when it happens.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:stock-photos:rep-3",
+          text: "One afternoon and a phone — that is the entire budget for honest photos. The office is the asset: Burek at his audit, Janusz mid-repair, the training room with actual humans. Real photos convert better because they answer a question the handshake never could: are there people. There are people.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:stock-photos:rep-4",
+          text: "Seriously, and it is my favorite LinkedIn coincidence of the decade — the woman who laughed at salad in our 2022 ebook now runs a fintech. We sent congratulations. She replied with the salad emoji. Enemies are just customers who have not renewed yet. The ebook stays up. History is content.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:stock-photos:rep-5",
+          text: "Klaudia is right and the fix is not purity, it is RATIO — stock for concepts, real for proof. Nobody believes our office is full of laughing salad people, and everyone knows the handshake is a costume. One honest photo per page outperforms five purchased ones. I have the heatmap. I have receipts.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:stock-photos:rep-6",
+          text: "The 'diverse team pointing at a whiteboard' from our first pitch deck — the whiteboard was BLANK, we photographed it mid-thought, and a client zoomed in during the call and asked what the roadmap said. The roadmap said nothing. It was a JPEG. We invented a roadmap live. That client renewed.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "ania:hashtags",
+      label: "Hashtag strategy",
+      optionCandidates: [
+        { id: "ania:hashtags:opt-1", topicId: "ania:hashtags", text: "Our hashtags are a mess. Audit me." },
+        { id: "ania:hashtags:opt-2", topicId: "ania:hashtags", text: "How many hashtags is too many for one post?" },
+        { id: "ania:hashtags:opt-3", topicId: "ania:hashtags", text: "The branded hashtag has 12 posts. Resurrect?" },
+        { id: "ania:hashtags:opt-4", topicId: "ania:hashtags", text: "Klaudia and I use conflicting hashtags. Arbitrate." },
+        { id: "ania:hashtags:opt-5", topicId: "ania:hashtags", text: "Do hashtags even work in 2026?" },
+        { id: "ania:hashtags:opt-6", topicId: "ania:hashtags", text: "Burek has an unofficial hashtag. Claim it?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:hashtags:rep-1",
+          text: "Send me the last ten posts and I will return a spreadsheet with three columns: carried over from 2022, invented on the day, and still load-bearing. My guess: two load-bearing, six inherited, two crimes. Hashtag hygiene is flossing. Nobody enjoys it and everybody benefits.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:hashtags:rep-2",
+          text: "Three doing work beats thirty doing hope. The formula I coach: one branded, one community, one discovery. The rest is spam with a user interface. If the post needs thirty hashtags to be seen, the post was not the problem — the platform moved. Post anyway. The algorithm respects stubbornness.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:hashtags:rep-3",
+          text: "Twelve posts is not dead, it is DORMANT — branded tags need a gardener, not a funeral. One post a week, tagged consistently, and by summer it is a portfolio instead of a graveyard. I will add it to my calendar between the webinar and the crying. The crying is scheduled. Everything is.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:hashtags:rep-4",
+          text: "Let them conflict — hashtags are dialect, and dialects map territory. Hers is the influencer register, mine is the corporate register, and the overlap is where the audience actually lives. I will not standardize a conversation. I will standardize the tracking sheet, where the peace is signed.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:hashtags:rep-5",
+          text: "Fewer than in 2020, more than zero — they are filing, not reach. The reach moved to the algorithm's mood, but hashtags still tell the archive what the post was FOR. You are not hashtagging for today's impressions. You are hashtagging for the researcher in 2027. Posterity is a strategy.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:hashtags:rep-6",
+          text: "The tag exists, it has forty posts from strangers, and the audit photos are STUNNING — my professional opinion is jealousy. Claiming it means claiming his content calendar, which means Renata, which means a meeting. Some hashtags are better as folklore. I will archive it. Lovingly. From a distance.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "ania:case-studies",
+      label: "The case studies",
+      optionCandidates: [
+        { id: "ania:case-studies:opt-1", topicId: "ania:case-studies", text: "Clients love the case study. Can we do ten?" },
+        { id: "ania:case-studies:opt-2", topicId: "ania:case-studies", text: "The case study is 40 pages. Who reads page 38?" },
+        { id: "ania:case-studies:opt-3", topicId: "ania:case-studies", text: "Can the case study admit what went wrong?" },
+        { id: "ania:case-studies:opt-4", topicId: "ania:case-studies", text: "Grazyna redacted the budget numbers. Fair?" },
+        { id: "ania:case-studies:opt-5", topicId: "ania:case-studies", text: "The client wants approval on every sentence." },
+        { id: "ania:case-studies:opt-6", topicId: "ania:case-studies", text: "What makes a case study actually get read?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:case-studies:rep-1",
+          text: "Ten, no — one GOOD one beats ten thin ones, and thin case studies are detectable from the table of contents. The rule: one per season, chosen for a story nobody else can tell. Ours is never the feature list. Ours is the Tuesday the thing actually worked. Find ten of those and call me.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:case-studies:rep-2",
+          text: "Page 38 is read by exactly one person: the procurement analyst comparing us to a competitor, and she reads it at eleven pm with a highlighter. Page 38 is where the implementation timeline lives. It is the least glamorous page and the only one that closes deals. Write it with fear.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:case-studies:rep-3",
+          text: "The wrong-admission is the trust engine — every case study that says 'we got this wrong, here is the fix' outperforms the flawless ones by a factor I can measure and a factor I cannot. Clients do not believe perfection. Clients believe scars. Scars are our most credible asset.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:case-studies:rep-4",
+          text: "Fair and fatal — redacted numbers turn evidence into adjectives. My counter-offer, which she accepted once: ranges instead of points. 'Reduced processing by hours per week' becomes 'reduced by four to nine hours'. She approved the range. Ranges are honest about being estimates. She respects that.",
+          relationshipHint: "neutral",
+          tags: ["quest:grazyna-showed-the-books", "relationship:neutral"],
+        },
+        {
+          id: "ania:case-studies:rep-5",
+          text: "Then we publish it as a joint document — their logo on it, their edits in it, and the timeline doubles. The trade is worth it: client-approved case studies get SHARED by the client's own marketing, which is distribution we cannot buy. Let them hold the pen. We hold the relationship.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:case-studies:rep-6",
+          text: "A person, a problem, and a number — in that order, on page one, before any branding. Most case studies open with our logo and a paragraph about ourselves, which is a diary, not evidence. Open with the client's Tuesday. The reader should think 'that is MY Tuesday' by sentence three. Then sell.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "ania:launch-day",
+      label: "Launch day",
+      optionCandidates: [
+        { id: "ania:launch-day:opt-1", topicId: "ania:launch-day", text: "Launch day is Thursday. Rituals?" },
+        { id: "ania:launch-day:opt-2", topicId: "ania:launch-day", text: "The landing page broke an hour before launch." },
+        { id: "ania:launch-day:opt-3", topicId: "ania:launch-day", text: "Klaudia wants a countdown reel. Overkill?" },
+        { id: "ania:launch-day:opt-4", topicId: "ania:launch-day", text: "Who runs the launch-day war room?" },
+        { id: "ania:launch-day:opt-5", topicId: "ania:launch-day", text: "The launch email went out with a typo. Contained?" },
+        { id: "ania:launch-day:opt-6", topicId: "ania:launch-day", text: "What does a successful launch day feel like?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:launch-day:rep-1",
+          text: "Rituals: everything staged the day before, one rehearsal at noon, and pizza on standby — the pizza clause has graduated from webinars to launches. The office does not do champagne. It does carbs and a shared dashboard. Launch day is a potluck with a deployment.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:launch-day:rep-2",
+          text: "Of course it did, and this is why rehearsal exists — the hour before is when the universe reads your changelog and objects. We rolled back, fixed, and launched forty minutes late, which in launch terms is EARLY. The flaw the universe found was worse than the one we found. Thank the landing page.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "ania:launch-day:rep-3",
+          text: "Not overkill — the countdown is the funnel's heartbeat and her reels deliver the only anticipation our pipeline gets. My one condition: the final reel posts AFTER the launch link works. Anticipation without a door is just frustration. Klaudia knows doors. She has three million.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:launch-day:rep-4",
+          text: "Me, nominally, Marek actually — the war room is wherever his laptop is, and the room exists the moment he opens the dashboard and says 'watch this number'. Attendance is voluntary. Snacks are Renata's. The dashboard is scripture. Everyone converts by the second spike.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:launch-day:rep-5",
+          text: "Contained, yes — the typo was in the P.S., the P.S. was the funniest part, and engagement on that email beat the polished version by a margin I refuse to attribute. Authenticity wins, but we do not TELL anyone the mistake was contained. In marketing, panic is a renewable resource.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:launch-day:rep-6",
+          text: "Like Tuesday with better numbers. The great launches are boring — no spikes, no fire, the queue drains, the dashboard stays green, and you go home at six feeling vaguely robbed. The dramatic launch is a warning sign wearing confetti. Boring is the review we give clients. Boring is sacred.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "ania:competitor-content",
+      label: "Watching competitors",
+      optionCandidates: [
+        { id: "ania:competitor-content:opt-1", topicId: "ania:competitor-content", text: "The competitor copied our webinar format. Flattered?" },
+        { id: "ania:competitor-content:opt-2", topicId: "ania:competitor-content", text: "Should we respond to their attack thread?" },
+        { id: "ania:competitor-content:opt-3", topicId: "ania:competitor-content", text: "Their launch outperformed ours. Intelligence?" },
+        { id: "ania:competitor-content:opt-4", topicId: "ania:competitor-content", text: "How do you stalk competitors ethically?" },
+        { id: "ania:competitor-content:opt-5", topicId: "ania:competitor-content", text: "Their new site copied our Burek section." },
+        { id: "ania:competitor-content:opt-6", topicId: "ania:competitor-content", text: "Zosia says competitors are 'market validation'." },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:competitor-content:rep-1",
+          text: "Flattered is the professional emotion; flattered is also the accurate one. Formats are not property, execution is — and their copy of our crying slide ran with stock crying, which tests at half our rate. Real tears beat purchased tears. The funnel has opinions about authenticity.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:competitor-content:rep-2",
+          text: "Never the thread — the thread is their venue, their audience, their rules. The response is a POST, scheduled, on our turf, about the principle without the name. The internet remembers who swung first and who posted a case study. We are the case study. Be the case study.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "ania:competitor-content:rep-3",
+          text: "Yes — their launch is a free masterclass. I screenshot everything: the promise, the price, the follow-up cadence, the typo they will make in week two. By Friday I have a teardown. Competitor launches are the only research that arrives pre-funded by someone else's marketing budget.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:competitor-content:rep-4",
+          text: "Ethically is the fun part: everything public is fair — posts, job ads, reviews, hiring pages. A job ad tells you their roadmap better than any leak. I keep a folder, not a dossier — folders are research, dossiers are lawsuits. The line is a screenshot of a PUBLIC page with a date. That is it.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:competitor-content:rep-5",
+          text: "Then they are students, and students plagiarize what works. I will not litigate a dog section — Burek's appeal is his complete indifference to cameras, which cannot be copied, only demonstrated. Their version will feature a staged dog. Staged dogs test terribly. Let them try. The algorithm knows.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:competitor-content:rep-6",
+          text: "True and generous — being copied means the market noticed, and noticing is the expensive part. Zosia's version is calmer than mine: she says 'imitation is a growth metric'. Mine is 'they copied us because their own funnel is haunted'. Both fit the slide. Hers goes first.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "ania:comments-section",
+      label: "The comments section",
+      optionCandidates: [
+        { id: "ania:comments-section:opt-1", topicId: "ania:comments-section", text: "The comments turned feral under the webinar post." },
+        { id: "ania:comments-section:opt-2", topicId: "ania:comments-section", text: "Do you hide negative comments or engage?" },
+        { id: "ania:comments-section:opt-3", topicId: "ania:comments-section", text: "A client's CEO commented. With a joke. Respond?" },
+        { id: "ania:comments-section:opt-4", topicId: "ania:comments-section", text: "The spam bots found our newsletter signup." },
+        { id: "ania:comments-section:opt-5", topicId: "ania:comments-section", text: "Klaudia moderates with a light hand. Learn from her?" },
+        { id: "ania:comments-section:opt-6", topicId: "ania:comments-section", text: "What is the meanest comment you ever kept up?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:comments-section:rep-1",
+          text: "Feral means visible, and visible means the algorithm fed it to strangers — our worst-case scenario is our best-performing distribution. I triage: real complaints get answers, jokes get likes, and the one conspiracy thread gets LEFT, because you cannot argue with a thread and win. Only outpace it.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:comments-section:rep-2",
+          text: "Engage the specific, hide the performative. 'This feature failed me Tuesday' gets a reply and a ticket. 'This company is a scam' gets hidden — not for us, for the thousand readers deciding in silence. Moderation is not censorship. It is custodial work. Someone has to rake.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:comments-section:rep-3",
+          text: "Respond, in the same register — CEO jokes are an invitation and declining it reads as fear. My reply will be shorter than his and funnier by one degree. The comment section is a dinner party and he brought wine. You do not out-shout the guest. You out-host him.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:comments-section:rep-4",
+          text: "The bots found us because we RANKED, which is a compliment shaped like an infestation. The fix is a honeypot question: 'what is the office dog's name' kills ninety percent of them. The other ten percent are sophisticated. Those get the slow, manual, satisfying folder treatment.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "ania:comments-section:rep-5",
+          text: "Always — Klaudia deletes less and mutes more, which is the difference between a rule and a door. Her comment sections keep personality because she lets people be wrong in peace. My instinct is to correct. Hers is to curate. Watch her replies. It is a masterclass in letting go.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:comments-section:rep-6",
+          text: "'I would rather be marketed to by a printer.' It is still up, I replied with printer lore, and it became the most-liked thread in company history. The meanest comments are the funniest assets, IF they are about the craft. Cruelty about the craft is critique. Cruelty about a person is a delete. That is the law.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "ania:merch-ideas",
+      label: "Merch beyond swag",
+      optionCandidates: [
+        { id: "ania:merch-ideas:opt-1", topicId: "ania:merch-ideas", text: "Beyond stickers — what merch would actually sell?" },
+        { id: "ania:merch-ideas:opt-2", topicId: "ania:merch-ideas", text: "The mug idea died in licensing. Resurrect?" },
+        { id: "ania:merch-ideas:opt-3", topicId: "ania:merch-ideas", text: "Klaudia pitches a merch drop. Hype or inventory?" },
+        { id: "ania:merch-ideas:opt-4", topicId: "ania:merch-ideas", text: "Would people buy a printer-themed calendar?" },
+        { id: "ania:merch-ideas:opt-5", topicId: "ania:merch-ideas", text: "The plush Burek prototype exists. What now?" },
+        { id: "ania:merch-ideas:opt-6", topicId: "ania:merch-ideas", text: "Merch is marketing that costs money. Defend it." },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:merch-ideas:rep-1",
+          text: "Merch that marks membership, not advertising — nobody wears a logo, everybody wears an inside joke. The standup-audit sticker works because only THIS office gets it. Sell the joke, not the brand. The joke is the brand wearing a disguise. Disguises sell.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:merch-ideas:rep-2",
+          text: "The mug died on a technicality — a ceramic supplier wanted exclusive rights to 'Momentum' in three countries. The resurrection plan: a different supplier, a smaller run, and the word replaced with something we actually own. Trademark is the graveyard of merch. Read the contract. Then cry.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "ania:merch-ideas:rep-3",
+          text: "Both — a drop is inventory with a heartbeat, and Klaudia's audience converts on scarcity the way our clients convert on case studies. My conditions: presale only, one run, and unsold stock goes to the office, which is how the whole team ends up wearing the campaign. Inventory becomes uniform.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:merch-ideas:rep-4",
+          text: "They would, and I have the poll data — the printer calendar tested as our strongest merch concept, which says everything about this office's relationship with grief. Twelve months, twelve outages, one haiku per month. Janusz wants to write October. Marek has claimed the illustrations.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:merch-ideas:rep-5",
+          text: "The prototype is with Renata, who reports it is 'disturbingly accurate', and Burek is unbothered, which is the safety test — if the real dog approves, the plush ships. Licensing, a small run, and proceeds to the shelter. The plush audit officer. The joke sells itself. I just hold the invoice.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:merch-ideas:rep-6",
+          text: "Merch is marketing that PAYS — every sold mug is a lead that funded itself, and every gifted sticker is a billboard the employee installs voluntarily. The failure mode is buying merch nobody asked for. The fix is polling first, preselling second, ordering third. Cost is a choice. Loyalty is the return.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "ania:dark-social",
+      label: "Dark social",
+      optionCandidates: [
+        { id: "ania:dark-social:opt-1", topicId: "ania:dark-social", text: "Nobody shares our posts publicly. It is all DMs." },
+        { id: "ania:dark-social:opt-2", topicId: "ania:dark-social", text: "What even is dark social? Say it slowly." },
+        { id: "ania:dark-social:opt-3", topicId: "ania:dark-social", text: "Our traffic spikes with no source. Ghosts?" },
+        { id: "ania:dark-social:opt-4", topicId: "ania:dark-social", text: "Can we measure the group-chat funnel?" },
+        { id: "ania:dark-social:opt-5", topicId: "ania:dark-social", text: "Screenshots of our site in group chats. Feelings?" },
+        { id: "ania:dark-social:opt-6", topicId: "ania:dark-social", text: "Klaudia says dark social is where her audience is." },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:dark-social:rep-1",
+          text: "Then we are WINNING — shares moved from public feeds to private chats years ago, and the private share is the most valuable unit on the internet: one person vouching to another, in writing, with their own reputation. Public shares are broadcasting. Private shares are recommending. We want recommendations.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:dark-social:rep-2",
+          text: "Slowly: dark social is sharing that analytics cannot see — the link pasted into a team chat, the screenshot in a family group, the 'look at this' sent at eleven pm. It is the oldest sharing there is. It predates the share button. We just stopped being able to count it. Counting is not sharing.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:dark-social:rep-3",
+          text: "Not ghosts — screenshots. When the source says 'direct', the traffic usually arrived as a link in a message. I stopped chasing attribution and started asking clients where they came from, and the answer is always 'someone sent it to me'. Every 'someone' is a marketer with no budget. Bless them.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:dark-social:rep-4",
+          text: "Not directly, and that is fine — you measure the weather, not the wind. I watch the proxies: branded search volume, direct traffic on launch days, and the phrase clients use in calls. If the group chats are working, the searches arrive speaking our slang. The slang is the attribution.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:dark-social:rep-5",
+          text: "Proud and slightly violated, which is the correct ratio. The screenshot is the highest form of flattery — someone cropped our work and attached their identity to it. I screenshot the screenshots now. There is a folder. The folder is called 'evidence of affection'. Marketing is sentimental.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:dark-social:rep-6",
+          text: "True, and she monetizes it better than we measure it — her audience forwards her reels in chats we will never see, which is why her 'reach' looks small and her pipeline does not. I have stopped teaching her about funnels. She is a funnel. The chat IS the funnel. We just cannot put a dashboard on it.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+      ],
+    },
+    {
+      id: "ania:billboards",
+      label: "The billboard dream",
+      optionCandidates: [
+        { id: "ania:billboards:opt-1", topicId: "ania:billboards", text: "Do you ever miss billboards? Real outdoor ads?" },
+        { id: "ania:billboards:opt-2", topicId: "ania:billboards", text: "Could this office afford one billboard? Math?" },
+        { id: "ania:billboards:opt-3", topicId: "ania:billboards", text: "A billboard for an IT training firm. What is on it?" },
+        { id: "ania:billboards:opt-4", topicId: "ania:billboards", text: "Buses still run the campaign you interned on?" },
+        { id: "ania:billboards:opt-5", topicId: "ania:billboards", text: "Klaudia says outdoor is dead. Debate her?" },
+        { id: "ania:billboards:opt-6", topicId: "ania:billboards", text: "What would the billboard say about Burek?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:billboards:rep-1",
+          text: "Every quarter, quietly. Digital is measurable, targetable, and cheaper, and none of that is the POINT. A billboard is an object in the world — it weathers, it gets grafittied, someone photographs it while laughing. Immortality is not a metric. I still want one. The spreadsheet disagrees. We coexist.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:billboards:rep-2",
+          text: "One billboard, one month, one arterial road: roughly the webinar budget plus the conference booth, which is to say it costs everything and measures nothing. Grazyna will ask for the conversion rate of a ROAD. There is none. That is the pitch and the problem, in one sentence.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:billboards:rep-3",
+          text: "One line, one phone number, no logo bigger than the truth: 'Your team already knows this. We teach the rest.' That sentence tests better than any creative we have produced — it flatters the reader and sells the gap. Billboards have four seconds. Flattery loads faster than logos.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:billboards:rep-4",
+          text: "The campaign was replaced in 2014 by a gym ad with the same fonts, which is its own lesson in impermanence. I visited the stop last year. The shelter now hosts a pest control poster. Everything outdoor is temporary. That is WHY it matters — digital never gets to be rained on.",
+          relationshipHint: "annoyed",
+          tags: ["period:afternoon"],
+        },
+        {
+          id: "ania:billboards:rep-5",
+          text: "I will, with love — outdoor is not dead, it is EXPENSIVE, which is different. Klaudia's feeds are her billboards: same traffic, better targeting, no rain. The place outdoor wins is prestige and grandmothers. Some campaigns need grandmothers. Ours, currently, does not. The budget resolves the debate.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:billboards:rep-6",
+          text: "'He audits for free.' One line, his photo, no context — the best outdoor creative is the one that requires a stranger to ask someone. Every office park would explain it to every visitor. The billboard would generate more conversation than any funnel we own. And Burek would ignore it. Professionally.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "ania:marketing-budget",
+      label: "The marketing budget",
+      optionCandidates: [
+        { id: "ania:marketing-budget:opt-1", topicId: "ania:marketing-budget", text: "Grazyna cut the marketing budget to one line. Read?" },
+        { id: "ania:marketing-budget:opt-2", topicId: "ania:marketing-budget", text: "What does marketing actually cost per client?" },
+        { id: "ania:marketing-budget:opt-3", topicId: "ania:marketing-budget", text: "The budget favors webinars over ads. Agree?" },
+        { id: "ania:marketing-budget:opt-4", topicId: "ania:marketing-budget", text: "Can I spend my budget line on one experiment?" },
+        { id: "ania:marketing-budget:opt-5", topicId: "ania:marketing-budget", text: "Zosia wants marketing to 'prove culture ROI'. Help?" },
+        { id: "ania:marketing-budget:opt-6", topicId: "ania:marketing-budget", text: "What would you do with double the budget?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:marketing-budget:rep-1",
+          text: "The line says 'growth activities', which is the most romantic thing she has ever written — it is a blank check with a reporting clause. I read the clause twice: every spend needs a story with a number. She does not fear marketing. She fears unmeasured spending. Measured, she funds. That is the treaty.",
+          relationshipHint: "neutral",
+          tags: ["quest:grazyna-showed-the-books", "relationship:neutral"],
+        },
+        {
+          id: "ania:marketing-budget:rep-2",
+          text: "Somewhere between a webinar and a handshake — I can tell you the cost of tickets, pizza, and follow-up emails to the zloty, and the handshake is the part that actually converts. Marketing costs are arithmetic. Marketing RESULTS are archaeology. I report both. Only one goes in the ledger.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:marketing-budget:rep-3",
+          text: "Agreed, with receipts — webinars convert at a rate ads cannot touch because a webinar is a favor first and a pitch second. Ads buy attention; webinars earn it. The budget reflects what this office believes: teach first. The funnel is just teaching with a schedule.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:marketing-budget:rep-4",
+          text: "One experiment, one hypothesis, one number, one month — I will co-sign that proposal faster than the pizza order. What I will not co-sign is 'exploration'. Experiments end. Explorations wander. Grazyna funds endings. Bring her a sentence that ends in a date and a digit.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:marketing-budget:rep-5",
+          text: "Tell her the truth: culture is the product demo. Every audit photo, every newsletter issue, every crying thumbnail proves the thing we sell — that competent humans work here. The ROI of culture is that clients believe the brochure. Belief does not itemize. It renews.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:marketing-budget:rep-6",
+          text: "Hire the intern back and film everything — one year of honest content buys ten years of credibility, and credibility is the only asset that appreciates while you sleep. The rest goes to the beans. Retention of the person who makes the content is a marketing expense. Grazyna can read that line standing.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
   ],
   taskOffers: [
     {

@@ -790,6 +790,599 @@ export const PAWEL_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "pawel:first-pr",
+      label: "The first pull request",
+      optionCandidates: [
+        { id: "pawel:first-pr:opt-1", topicId: "pawel:first-pr", text: "My first pull request got approved. Now what?" },
+        { id: "pawel:first-pr:opt-2", topicId: "pawel:first-pr", text: "Tomek left one comment: why here?" },
+        { id: "pawel:first-pr:opt-3", topicId: "pawel:first-pr", text: "Should I squash my commits before the merge?" },
+        { id: "pawel:first-pr:opt-4", topicId: "pawel:first-pr", text: "I named a variable after my cat. Regrets?" },
+        { id: "pawel:first-pr:opt-5", topicId: "pawel:first-pr", text: "The diff is four lines. It took me two days." },
+        { id: "pawel:first-pr:opt-6", topicId: "pawel:first-pr", text: "Marek merged my PR without a comment. Interpret." },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:first-pr:rep-1",
+          text: "Nothing. That is the trick nobody tells you. The merge is quiet, prod does not notice, and the dopamine fades by lunch. Then Friday comes and the script runs and something you wrote is why it runs. That is the whole loop. Congratulations. Do forty more.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:first-pr:rep-2",
+          text: "Answer it honestly and in writing, even if the answer is 'habit'. 'Why here' is the senior question — it is not about the code, it is about the map. Tomek asks it the same way every time, and half of us have learned to pre-answer it in the description.",
+          relationshipHint: "neutral",
+          tags: ["quest:tomek-apprentice"],
+        },
+        {
+          id: "pawel:first-pr:rep-3",
+          text: "Squash them. Your git history should read like a story, not a diary of panic. 'Fix', 'fix again', 'actually fix' is a confession, not a commit log. Rewrite it to 'handle empty manifest' and let the panic stay between us, here, forever.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:first-pr:rep-4",
+          text: "None. Marek's shell history has three entries from 2021 named after his fish, and the fleet's vacuum map has a room called 'do not go'. Naming is memory. If the cat helped you debug it, the cat is a co-author. Just document which cat, for the historians.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:first-pr:rep-5",
+          text: "Four lines that took two days is the correct ratio. I once moved one character and it took a weekend, and Marek called it 'the good kind of slow'. Copy-paste takes seconds and costs weeks. The diff is small because you made the problem small. That is the skill.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:first-pr:rep-6",
+          text: "That Marek read it, understood it, and had nothing to add. He comments when the map is wrong. Silence from Marek is a green light with a heartbeat. Print nothing. Tell no one. Walk back to your desk like it happens every day, and let it happen again tomorrow.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "quest:pawel-apprentice"],
+        },
+      ],
+    },
+    {
+      id: "pawel:ergonomics",
+      label: "Desk ergonomics",
+      optionCandidates: [
+        { id: "pawel:ergonomics:opt-1", topicId: "pawel:ergonomics", text: "My wrist clicks when I use the mouse now." },
+        { id: "pawel:ergonomics:opt-2", topicId: "pawel:ergonomics", text: "Is the standing desk worth nine hundred zloty?" },
+        { id: "pawel:ergonomics:opt-3", topicId: "pawel:ergonomics", text: "Kasia sent me a workstation assessment form." },
+        { id: "pawel:ergonomics:opt-4", topicId: "pawel:ergonomics", text: "I measure my screen height with a sticky note." },
+        { id: "pawel:ergonomics:opt-5", topicId: "pawel:ergonomics", text: "The chair hierarchy in this office is brutal." },
+        { id: "pawel:ergonomics:opt-6", topicId: "pawel:ergonomics", text: "Can I request the good chair before my spine votes?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:ergonomics:rep-1",
+          text: "The click is a commit message from your body. Mouse too high, desk too tall, shoulder doing a job it was never scoped for. Raise the chair, lower the desk, and if it persists, see a doctor BEFORE it becomes a ticket. I learned this at twenty-three, which was late.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:ergonomics:rep-2",
+          text: "Worth it if you use it, decoration if you do not, and most standing desks become very tall sitting desks by November. Mine lasted four months of enthusiasm and now adjusts twice a year, like a watch. Buy the chair first. Chairs are load-bearing.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:ergonomics:rep-3",
+          text: "Answer it honestly. Kasia cross-references those forms with the chair budget, and the form is how Renata got the good chair in 2022. People treat it like a personality quiz. It is procurement. The squeaky wheel gets the lumbar support, in writing.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "pawel:ergonomics:rep-4",
+          text: "The sticky note is valid instrumentation. My monitor stands on two dictionaries and a cloud certification I failed, and my neck has been fine since. Ergonomics is not shopping. It is stacking. Fix the height, then the distance, then the light. Then buy things.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:ergonomics:rep-5",
+          text: "There is one throne and it migrates. Renata holds it now, by right of tenure and a form she filed in 2022. Tomek refuses to sit anywhere with armrests, Marek brought his own from home, and the rest of us rotate through whatever survives. It is a system. Nobody wrote it down.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:ergonomics:rep-6",
+          text: "Yes, and do it in writing with the word 'retention' in the first sentence. HR approves furniture faster than medicine. My back proposal cited two papers I found on the train and one photo of my desk under the stairs. Approved in a day. Attach evidence, not suffering.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "pawel:hackathon",
+      label: "The hackathon dream",
+      optionCandidates: [
+        { id: "pawel:hackathon:opt-1", topicId: "pawel:hackathon", text: "Maciek announced a hackathon. Should I join?" },
+        { id: "pawel:hackathon:opt-2", topicId: "pawel:hackathon", text: "What would you even build in forty-eight hours?" },
+        { id: "pawel:hackathon:opt-3", topicId: "pawel:hackathon", text: "Team up? I pace badly and apologize often." },
+        { id: "pawel:hackathon:opt-4", topicId: "pawel:hackathon", text: "The hackathon rules say no production code. Why?" },
+        { id: "pawel:hackathon:opt-5", topicId: "pawel:hackathon", text: "Can my hackathon project be the backup script?" },
+        { id: "pawel:hackathon:opt-6", topicId: "pawel:hackathon", text: "Who won the last hackathon, honestly?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:hackathon:rep-1",
+          text: "Join, but with a plan: pick the smallest idea that can demo in ninety seconds and defend the demo like a thesis. Hackathons are not about the code. They are about watching Marek fix your laptop at two am and learning the words he uses. Tuition is free.",
+          relationshipHint: "pleased",
+          tags: ["period:afternoon"],
+        },
+        {
+          id: "pawel:hackathon:rep-2",
+          text: "Something you can delete on Monday without grief. A dashboard for the vending machine, a bot that rates standups, a script that texts Grazyna when the cloud bill moves. The winning projects here are always jokes with working APIs. That is the bar.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:hackathon:rep-3",
+          text: "Yes. Bad pacing is curable and apology is a debugging emotion — I know because I had both. We split by strength: I wrote, someone scouted, and we finished at three am with a demo and one crash. We lost to Marek, who 'teamed up with himself'. Fair. Educational.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:hackathon:rep-4",
+          text: "Because 2019 happened. Someone deployed their hackathon project on Sunday and it held the backup hostage until Tuesday. The rule exists because one person's weekend masterpiece became everyone's Monday. Now demos run on laptops and the cloud account stays locked.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:hackathon:rep-5",
+          text: "The backup script is not a project, it is a dependent. But rebuild its dashboard as a hack and you get both: a demo for the judges and a monitor for the museum. Just write it fresh — hackathon code is for showing, production code is for trusting, and the two should never meet.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:hackathon:rep-6",
+          text: "Marek, with a script that predicted the printer's jams three days out. It was beautiful, useless after a firmware update, and he deleted it on stage. The judges gave him first place for the deletion alone. We are an office that rewards knowing what to kill.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "pawel:open-source",
+      label: "Open source dreams",
+      optionCandidates: [
+        { id: "pawel:open-source:opt-1", topicId: "pawel:open-source", text: "I want to contribute to open source. From where?" },
+        { id: "pawel:open-source:opt-2", topicId: "pawel:open-source", text: "My issue got closed as 'stale'. Is that rejection?" },
+        { id: "pawel:open-source:opt-3", topicId: "pawel:open-source", text: "Should I open-source the backup script?" },
+        { id: "pawel:open-source:opt-4", topicId: "pawel:open-source", text: "How do you pick a project that will answer you?" },
+        { id: "pawel:open-source:opt-5", topicId: "pawel:open-source", text: "Someone starred the repo I made. One star." },
+        { id: "pawel:open-source:opt-6", topicId: "pawel:open-source", text: "Is maintaining a library just unpaid on-call?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:open-source:rep-1",
+          text: "Start with documentation — it is the front door and nobody guards it. Find a tool you actually use, read its issues, fix one typo in the install guide. That is a real contribution with a real name on it. My first PR was a comma in a README and I still point at it.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:open-source:rep-2",
+          text: "Stale means the maintainers drowned, not that you were wrong. Reopen it with one new sentence of information — a version number, a reproduction — and it wakes up. Open source is mostly time zones and turnover. Persistence looks identical to talent from the outside.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:open-source:rep-3",
+          text: "No. It ships to Dariusz's dead laptop and contains office paths, office jokes, and one credential-shaped string we never fully explained. Clean it, generalize it, write a README — or fork it into a new script and open-source THAT. The original stays internal. It has ghosts.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:open-source:rep-4",
+          text: "One with recent commits, active maintainers, and a 'good first issue' label that is not three years old. Check when the last PR was merged — if the answer is 'before the flood', move on. A project that answers in a week beats a famous project that answers never.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:open-source:rep-5",
+          text: "One star is a stranger saying 'this was worth my evening'. I checked my script's traffic logs for a year hoping for the same thing. Ego is fine in open source — it is the only salary. Screenshot it. In a year, the one star will be a story and the repo will be a CV.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "pawel:open-source:rep-6",
+          text: "Yes, and every maintainer knows it, which is why they worship documentation and fear users. If you publish something, publish the boundaries too: supported versions, response times, and the sentence 'this is a best-effort project'. Boundaries are the license nobody reads.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "pawel:home-lab",
+      label: "The home server",
+      optionCandidates: [
+        { id: "pawel:home-lab:opt-1", topicId: "pawel:home-lab", text: "I have a home server. It is just an old laptop." },
+        { id: "pawel:home-lab:opt-2", topicId: "pawel:home-lab", text: "My home lab hosts things the office would forbid." },
+        { id: "pawel:home-lab:opt-3", topicId: "pawel:home-lab", text: "The fan on my home server is louder than my ambition." },
+        { id: "pawel:home-lab:opt-4", topicId: "pawel:home-lab", text: "Should the backup script have a home twin?" },
+        { id: "pawel:home-lab:opt-5", topicId: "pawel:home-lab", text: "My uptime dashboard says 214 days. Bragging?" },
+        { id: "pawel:home-lab:opt-6", topicId: "pawel:home-lab", text: "Where do home labs go when they die?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:home-lab:rep-1",
+          text: "That is how every home lab starts and how several careers did too. An old laptop running one useful thing beats a rack running nothing. Mine was a ThinkPad named 'the datacenter' for two years. Respect it, back it up, and name it. Naming is the commitment ceremony.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:home-lab:rep-2",
+          text: "Everything I run at home would get raised eyebrows here, and everything I run here would be over-engineered at home. That is the point of the split. The lab is where you learn what you would never risk in prod, and prod is where you learn why the lab rules exist.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:home-lab:rep-3",
+          text: "Then it is running at full tilt for no reason — servers should idle like cats, not pace like interns. Check the load, cap the fans, and put it on a shelf, not your desk. Mine lives in a cupboard with a thermometer. The cupboard is the only one who hears it complain.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:home-lab:rep-4",
+          text: "Yes, and let them restore from each other ONCE, in a drill, on a Sunday, with tea. The twin is how you learn the script has assumptions — paths, permissions, one hardcoded address that rhymes with fate. Two backups that never meet are strangers. Make them meet in a controlled fire.",
+          relationshipHint: "pleased",
+          tags: ["quest:pawel-restore-drill"],
+        },
+        {
+          id: "pawel:home-lab:rep-5",
+          text: "Two hundred and fourteen days is a relationship. You have outlasted several office deployments and one rebrand. Brag shamelessly, but write down the reboot procedure — the longer uptime gets, the scarier the first restart becomes. Every long uptime is a hostage negotiation you are managing.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "pawel:home-lab:rep-6",
+          text: "To the cupboard of honored machines, next to the router that survived the flood and a laptop with Dariusz's stickers. Some get repurposed into print servers, some become test beds, the best ones keep running until the power bill notices. Nobody here throws a working computer away. It is law.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "pawel:energy-drinks",
+      label: "Caffeine strategy",
+      optionCandidates: [
+        { id: "pawel:energy-drinks:opt-1", topicId: "pawel:energy-drinks", text: "Is four energy drinks in a day a cry for help?" },
+        { id: "pawel:energy-drinks:opt-2", topicId: "pawel:energy-drinks", text: "Marek drinks his coffee black at seven am. Legend?" },
+        { id: "pawel:energy-drinks:opt-3", topicId: "pawel:energy-drinks", text: "I coded until three am and the bug fixed itself." },
+        { id: "pawel:energy-drinks:opt-4", topicId: "pawel:energy-drinks", text: "Decaf made me angry. Is that a real thing?" },
+        { id: "pawel:energy-drinks:opt-5", topicId: "pawel:energy-drinks", text: "What do you drink before a Friday deploy?" },
+        { id: "pawel:energy-drinks:opt-6", topicId: "pawel:energy-drinks", text: "The office tea selection is a disaster." },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:energy-drinks:rep-1",
+          text: "Four is a loan against tomorrow with terrible interest. I did five during a flood-anniversary deploy and typed a command I still think about. Two is a tool, four is a personality, and the wall between them is sleep. Marek's rule: never debug caffeinated past midnight. He is right.",
+          relationshipHint: "neutral",
+          tags: ["stats:low-caffeine"],
+        },
+        {
+          id: "pawel:energy-drinks:rep-2",
+          text: "Legend, but the boring kind — he is not disciplined, he is DECIDED. One coffee, same mug, same time, and then he runs on momentum like the rest of us run on panic. I copied him for a week and felt invincible, then slept eleven hours on Saturday and felt mortal.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:energy-drinks:rep-3",
+          text: "It did not fix itself. YOU left, which is the actual fix. The three am brain reads the same line forty times and invents enemies. The nine am brain sees a missing await in one pass. Sleep is not the reward for finishing the work. Sleep is part of the compile.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:energy-drinks:rep-4",
+          text: "Real, documented, and my mother's superpower. Caffeine withdrawal is the migraine and decaf is the surrender. The office stocks it for the on-call heart, not the taste. If decaf makes you angry, drink water, walk once around the block, and accept that you are just tired.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:energy-drinks:rep-5",
+          text: "Nothing. That is the answer nobody wants. Friday deploys run on water and fear — caffeine makes you confident, and confidence at four pm on a Friday is how prod becomes a story. I keep one tea bag for the hands. The ritual matters. The chemistry does not.",
+          relationshipHint: "neutral",
+          tags: ["stats:low-caffeine", "period:afternoon"],
+        },
+        {
+          id: "pawel:energy-drinks:rep-6",
+          text: "It is a diplomatic incident in a cupboard. There are eleven boxes and nine are chamomile. Grazyna buys what was on discount, Janusz drinks the strong one he brings from home, and the rest of us perform gratitude. Bring your own. Everyone does. It is the office's worst-kept secret.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "pawel:meetups",
+      label: "Tech meetups",
+      optionCandidates: [
+        { id: "pawel:meetups:opt-1", topicId: "pawel:meetups", text: "There is a tech meetup on Thursday. Go?" },
+        { id: "pawel:meetups:opt-2", topicId: "pawel:meetups", text: "I gave a lightning talk once. I froze." },
+        { id: "pawel:meetups:opt-3", topicId: "pawel:meetups", text: "Meetups are just job hunting with pizza." },
+        { id: "pawel:meetups:opt-4", topicId: "pawel:meetups", text: "Should I demo the backup script at the meetup?" },
+        { id: "pawel:meetups:opt-5", topicId: "pawel:meetups", text: "How do you network when you are the youngest there?" },
+        { id: "pawel:meetups:opt-6", topicId: "pawel:meetups", text: "Klaudia wants to livestream the meetup. Danger?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:meetups:rep-1",
+          text: "Go, and set one goal: one conversation longer than five minutes. Not a job, not a contact — a conversation. The talks are why you attend but the corridor is why you return. I met the person who taught me rsync flags at a meetup, over a table we cleaned ourselves.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "pawel:meetups:rep-2",
+          text: "Freezing is the entry fee. Everyone who has ever given a talk has a freeze story and most of us collect them like merit badges. The audience wants you to survive — they are rooting for the screen to keep moving. Script the first two sentences and let momentum do the rest.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:meetups:rep-3",
+          text: "The good ones are job hunting with pizza and the great ones are group therapy with slides. You can tell by the questions: if they are 'how do I get hired', leave early. If someone asks 'has anyone else seen this bug', stay forever. You have found your people.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "pawel:meetups:rep-4",
+          text: "Demo the RESTORE drill, not the script. Nobody cares that a backup exists — everyone cares about watching one come back from the dead in under ten minutes. I did it at the March meetup and a stranger offered me a job mid-demo. Recovery demos are recruitment.",
+          relationshipHint: "delighted",
+          tags: ["quest:pawel-restore-drill", "relationship:neutral"],
+        },
+        {
+          id: "pawel:meetups:rep-5",
+          text: "You are not the youngest, you are the FUTURE — every gray hair in that room is secretly hoping you ask them about the old ways. Ask one question about something older than you. Seniors light up like monitors. That is networking: giving experienced people permission to reminisce.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:meetups:rep-6",
+          text: "Only to the office's reputation. Klaudia films everything as 'authentic' and meetups film back. Set one boundary before she points the light: talks yes, faces of strangers no. She respects consent more than content, which is why her comment sections are survivable.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "pawel:hr-visit",
+      label: "The HR check-in",
+      optionCandidates: [
+        { id: "pawel:hr-visit:opt-1", topicId: "pawel:hr-visit", text: "Kasia scheduled my six-month check-in. What is it?" },
+        { id: "pawel:hr-visit:opt-2", topicId: "pawel:hr-visit", text: "Should I mention the desk under the stairs?" },
+        { id: "pawel:hr-visit:opt-3", topicId: "pawel:hr-visit", text: "Kasia asked about my career goals. I panicked." },
+        { id: "pawel:hr-visit:opt-4", topicId: "pawel:hr-visit", text: "Is the check-in confidential or documented?" },
+        { id: "pawel:hr-visit:opt-5", topicId: "pawel:hr-visit", text: "She offered a 'development plan'. For an intern?" },
+        { id: "pawel:hr-visit:opt-6", topicId: "pawel:hr-visit", text: "What do I do with the feedback form afterwards?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:hr-visit:rep-1",
+          text: "It is a friendly audit with better snacks. She asks how you are, writes faster than you expect, and files the future. Be honest about the workload and vague about the drama. Kasia is an ally with a filing system, which is the best kind — but a filing system nonetheless.",
+          relationshipHint: "neutral",
+          tags: ["period:morning"],
+        },
+        {
+          id: "pawel:hr-visit:rep-2",
+          text: "Yes — but frame it as 'visibility', not complaint. Under-stair is quiet, which I love, and invisible, which costs the company its fastest learner's morale. Kasia can fix invisibility with one line in a newsletter. Complainers get moved. Framers get promoted.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:hr-visit:rep-3",
+          text: "Everyone panics. Say the true small thing: 'I want to keep the backup and learn deploys.' Goals do not need to be five years long — they need to be real. Kasia can smell an invented 'leadership pathway' from the corridor. Honest small beats performed big every time.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:hr-visit:rep-4",
+          text: "Both, which is the trick. The conversation is confidential. The NOTES are documented, sanitized, and forever. Speak freely, assume the summary outlives the sentence. My quote about Marek survived three quarters as 'shows healthy respect for senior staff'. Sanitization is an art.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:hr-visit:rep-5",
+          text: "Especially for an intern — the development plan is how Kasia turns chaos into a ladder. Mine had three rungs: the backup, the cloud bill, the restore drill. Two years later I am standing on rung three. Sign it, but hold the pen like it is yours. Add one goal she did not write.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral", "quest:pawel-apprentice"],
+        },
+        {
+          id: "pawel:hr-visit:rep-6",
+          text: "Nothing for a week. Then re-read it and notice which sentence made you flinch — that sentence is your next quarter. The form is a mirror with a delay. I keep mine in the error notebook, between a DNS outage and the best compliment Marek ever gave me: 'adequate'.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "pawel:bus-factor",
+      label: "Bus factor",
+      optionCandidates: [
+        { id: "pawel:bus-factor:opt-1", topicId: "pawel:bus-factor", text: "What is our bus factor? Asking for a friend." },
+        { id: "pawel:bus-factor:opt-2", topicId: "pawel:bus-factor", text: "If Tomek won the lottery, what breaks first?" },
+        { id: "pawel:bus-factor:opt-3", topicId: "pawel:bus-factor", text: "The backup script has one maintainer. Me. Concerns?" },
+        { id: "pawel:bus-factor:opt-4", topicId: "pawel:bus-factor", text: "How do I document things without writing a novel?" },
+        { id: "pawel:bus-factor:opt-5", topicId: "pawel:bus-factor", text: "Nobody else can read my regex. Is that bad?" },
+        { id: "pawel:bus-factor:opt-6", topicId: "pawel:bus-factor", text: "Dawid asked about 'knowledge transfer'. Prepare me." },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:bus-factor:rep-1",
+          text: "One, in several load-bearing places, and I am two of them. The backup script, the restore notes, and the wifi password ritual. Dawid knows the number, Dawid always knows the number, and the number is why the knowledge-transfer agenda exists. You asking is how it improves.",
+          relationshipHint: "neutral",
+          tags: ["stats:high-credibility"],
+        },
+        {
+          id: "pawel:bus-factor:rep-2",
+          text: "The main branch's sense of safety. Tomek is not a single point of failure, he is the FAILSAFE — the person who reads the terrifying diff at five pm and says 'ship it' or 'no' with equal calm. We would survive. We would be sadder, slower, and more careful. Which is what insurance is.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:bus-factor:rep-3",
+          text: "Then fix it before it fixes you. Write the runbook as if the reader is you, sick, at three am — because that is exactly who reads runbooks. Marek did this for the printers. One page, ten steps, and the phrase 'do not panic' crossed out and replaced with 'check the log'.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:bus-factor:rep-4",
+          text: "Document decisions, not steps. Steps age, decisions explain. 'We rsync to the cloud because the building has a flood history' survives ten years; 'run these four commands' does not. One paragraph of why is worth ten pages of what. Write the why on the wiki. Name it honestly.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:bus-factor:rep-5",
+          text: "Bad, and curable in one line: a comment with the regex translated to English and one test string it must match. Cryptic one-liners feel like power and behave like debt. I wrote a regex in 2023 that I still do not fully understand. It runs. We coexist. It has a comment now, for the archaeologists.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:bus-factor:rep-6",
+          text: "Say yes to everything she brings — the org chart of your own head, drawn badly, is worth more than a perfect one never drawn. I did mine as a whiteboard photo with arrows. Half the arrows pointed at the backup script. Dawid photographed my photo. It is in a folder now. That is the system.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "pawel:gear-envy",
+      label: "Gear envy",
+      optionCandidates: [
+        { id: "pawel:gear-envy:opt-1", topicId: "pawel:gear-envy", text: "Marek has a second monitor. I have one. Injustice?" },
+        { id: "pawel:gear-envy:opt-2", topicId: "pawel:gear-envy", text: "The mechanical keyboard club has a waiting list." },
+        { id: "pawel:gear-envy:opt-3", topicId: "pawel:gear-envy", text: "Should I buy a trackball or is that a personality?" },
+        { id: "pawel:gear-envy:opt-4", topicId: "pawel:gear-envy", text: "Tomek's keyboard sounds like rain. What is it?" },
+        { id: "pawel:gear-envy:opt-5", topicId: "pawel:gear-envy", text: "Can I expense a mouse? It is load-bearing." },
+        { id: "pawel:gear-envy:opt-6", topicId: "pawel:gear-envy", text: "Does better gear make better code, statistically?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:gear-envy:rep-1",
+          text: "Ask, in writing, with the word 'throughput'. Marek's second monitor was approved in a day because he wrote 'cuts context-switching by half' and attached nothing. Numbers in, chairs and monitors out. Envy is not a budget line. Evidence is.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "pawel:gear-envy:rep-2",
+          text: "It does, and Tomek guards the list like it is a launch window. Entry requires one mechanical keyboard of your own and a prepared opinion about switches. I waited four months, bought a ten-key, and my opinion was 'it clicks'. I advanced anyway. The bar is enthusiasm, not taste.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "pawel:gear-envy:rep-3",
+          text: "A trackball is a personality with a ball. You will defend it, evangelize it, and never go back — I have watched it happen to two people. Try one at the meetup first. Marek keeps a spare in his drawer precisely to recruit. The drawer is the funnel. He knows.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:gear-envy:rep-4",
+          text: "A board with lubed switches and a man who stopped caring about noise the day he pushed to main on a Friday and survived. The keyboard is comfort equipment, like a good chair. It did not make him faster. It made him calmer. Calm compiles cleaner. Ask him about the switches, not the rain.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:gear-envy:rep-5",
+          text: "Expense it with the phrase 'repetitive strain' and a link, and Grazyna will either approve it or add it to her spreadsheet of shame — both are documented outcomes. My mouse got approved as 'input device, ergonomic justification'. The justification was one paragraph of honest whimpering.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:gear-envy:rep-6",
+          text: "No, and the data is our own office: me with a broken chair out-shipped me with a good keyboard, same brain. Gear removes friction, not incompetence. Buy the thing that stops the pain — chair, monitor height, one good mouse — and stop there. The rest is decoration with lights.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "pawel:commute",
+      label: "The commute",
+      optionCandidates: [
+        { id: "pawel:commute:opt-1", topicId: "pawel:commute", text: "My commute is two trams and a prayer." },
+        { id: "pawel:commute:opt-2", topicId: "pawel:commute", text: "I listen to debugging podcasts on the tram." },
+        { id: "pawel:commute:opt-3", topicId: "pawel:commute", text: "The bus arrives when it wants. Like prod." },
+        { id: "pawel:commute:opt-4", topicId: "pawel:commute", text: "Do you mentally work during the commute?" },
+        { id: "pawel:commute:opt-5", topicId: "pawel:commute", text: "Walking to the office takes forty minutes. Worth it?" },
+        { id: "pawel:commute:opt-6", topicId: "pawel:commute", text: "The tram strike made me two hours late. Anxiety?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:commute:rep-1",
+          text: "Two trams is a system with two failure modes, so keep a third route for when the first two conspire. I hold the night bus in my head like a fire escape. Commutes reward redundancy. It is the one place you get to practice backup thinking on actual humans.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:commute:rep-2",
+          text: "Good use of dead time, but cap it — two episodes and the brain stops slotting knowledge and starts renting it. I did a year of cloud podcasts and remembered only the jokes. Now I do one episode out, music back. The jokes survived. The rest was marketing.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:commute:rep-3",
+          text: "The bus is on-call: it arrives when paged, sometimes twice, sometimes never. You cannot fix it, you can only monitor it, and the apps that promise live tracking are dashboards that lie at the same rate as ours. Leave ten minutes early. Trust nothing with a schedule.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "pawel:commute:rep-4",
+          text: "Only in the direction of problems I failed to solve. The tram is where unsolved bugs go to confess — I have had three solutions arrive between stops and zero arrive at the keyboard. Movement unlocks something. Write it down immediately. Between-stops brilliance evaporates at the door.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:commute:rep-5",
+          text: "Forty minutes of walking is a debug session for the head, and it compounds — I did it for a winter and my error notebook got kinder. You arrive earlier in mood than the tram people and leave later in energy. The only cost is weather, and weather is just prod you cannot restart.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:commute:rep-6",
+          text: "Late is late — call, say the word 'strike', and let the office calibrate. Nobody here has ever been fired by public transport. I once lost half a day to a flooded underpass and arrived to find the backup had failed and nobody noticed. The commute was not the disaster. The disaster was patient.",
+          relationshipHint: "neutral",
+          tags: ["period:morning"],
+        },
+      ],
+    },
+    {
+      id: "pawel:impostor",
+      label: "Impostor syndrome",
+      optionCandidates: [
+        { id: "pawel:impostor:opt-1", topicId: "pawel:impostor", text: "Everyone here knows more than me. Obvious?" },
+        { id: "pawel:impostor:opt-2", topicId: "pawel:impostor", text: "I got praised and immediately felt like a fraud." },
+        { id: "pawel:impostor:opt-3", topicId: "pawel:impostor", text: "When does the impostor feeling actually stop?" },
+        { id: "pawel:impostor:opt-4", topicId: "pawel:impostor", text: "Marek said 'adequate'. I framed it. Is that sad?" },
+        { id: "pawel:impostor:opt-5", topicId: "pawel:impostor", text: "Should I tell my mentor I feel like a fraud?" },
+        { id: "pawel:impostor:opt-6", topicId: "pawel:impostor", text: "I fake understanding in meetings. Confession." },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:impostor:rep-1",
+          text: "Obvious, and permanent, and shared. The office is stacked with people who are one deep question away from their own ignorance — I watched Tomek say 'I do not know' at the whiteboard and it was the most senior thing I have ever seen. Knowing more is just knowing WHERE. You are early, not fake.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:impostor:rep-2",
+          text: "Then the praise was real and the fraud is the reflex. Competent people discount evidence; impostors discount only their own. Log the compliment like a backup — verbatim, dated. My notebook has a page of them. On bad days I read it like error logs from a system that mostly works.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:impostor:rep-3",
+          text: "It does not stop — it changes files. You stop feeling fake about code and start feeling fake about mentoring, then about budgets, then about chairing. The feeling is growth wearing a mask. Everyone here has it. Renata calls hers 'the new girl reflex' and she has run this office for a decade.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral", "period:evening"],
+        },
+        {
+          id: "pawel:impostor:rep-4",
+          text: "It is not sad, it is ARCHIVING. 'Adequate' from Marek is a full performance review — I have seen him give a deploy 'fine' and the deploy framed ITSELF. The feeling you are managing is not fraud. It is the gap between how the office sees you and how you see you. Trust the office's logs.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "pawel:impostor:rep-5",
+          text: "Yes, and be specific — 'I feel like a fraud' gets reassurance, but 'I do not understand the deploy pipeline and I have been pretending' gets a whiteboard session. My mentor said 'obviously, sit down' and taught me the pipeline in an hour. The confession is the ticket. Honesty compiles.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "pawel:impostor:rep-6",
+          text: "Then stop, carefully. Fake understanding compounds like debt — three months later you own a feature you cannot debug. Say 'say that again' instead. The meeting survives, your integrity compounds, and within a month you are the person others ask. Pretending is the only actual fraud here.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "pawel:sick-day",
+      label: "The first sick day",
+      optionCandidates: [
+        { id: "pawel:sick-day:opt-1", topicId: "pawel:sick-day", text: "I called in sick for the first time. Protocol?" },
+        { id: "pawel:sick-day:opt-2", topicId: "pawel:sick-day", text: "I answered Slack from my sickbed. Judged?" },
+        { id: "pawel:sick-day:opt-3", topicId: "pawel:sick-day", text: "How sick is sick enough here, honestly?" },
+        { id: "pawel:sick-day:opt-4", topicId: "pawel:sick-day", text: "Kasia sent a get-well card in forty minutes." },
+        { id: "pawel:sick-day:opt-5", topicId: "pawel:sick-day", text: "The backup runs unattended while I am gone." },
+        { id: "pawel:sick-day:opt-6", topicId: "pawel:sick-day", text: "Should I be worried the office runs without me?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:sick-day:rep-1",
+          text: "Protocol is the oldest one: rest, notify, do not negotiate with your own immune system. You already did the hard part — the call. First sick days feel like confession. They are maintenance. The office survived before you and it will gossip about you gently until you return.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:sick-day:rep-2",
+          text: "Judged, gently, by me specifically. Sick is an operating mode, not a suggestion — half-presence heals nothing and debugs worse. Put the phone face down. Marek once disconnected for three days and the office assumed it was a strategy. Nobody has matched that serenity since.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "pawel:sick-day:rep-3",
+          text: "Fever, contagion, or the kind of tired where the screen swims. Not 'a bit rough' — we all power through a bit rough, that is just Tuesday. The test I use: would I accept this code from someone in this state? If no, the state is the bug. Rest.",
+          relationshipHint: "pleased",
+          tags: ["period:morning"],
+        },
+        {
+          id: "pawel:sick-day:rep-4",
+          text: "That is the Renata pipeline, not Kasia — the card was signed by nine people before noon, including Burek's paw print, which is legally binding in this office. You work somewhere that notices absence fast, which is exactly as sweet and slightly as alarming as it sounds.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:sick-day:rep-5",
+          text: "It does, and this is the gift of your own paranoia: two years of Friday checks built a system that survives your Tuesday flu. Read that sentence again when the guilt comes. The script running without you is not abandonment. It is the whole point of the script.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:sick-day:rep-6",
+          text: "A little, and that little is healthy — it means you built something load-bearing. But hear the inverse too: the office running without you on a sick day is PROOF you documented well. Absence is the audit. You passed. Now sleep, drink something warm, and stop reading logs.",
+          relationshipHint: "delighted",
+          tags: ["quest:pawel-read-the-script", "relationship:neutral"],
+        },
+      ],
+    },
   ],
   taskOffers: [
     {

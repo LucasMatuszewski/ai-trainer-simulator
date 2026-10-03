@@ -790,6 +790,593 @@ export const KASIA_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "kasia:wellness",
+      label: "The wellness program",
+      optionCandidates: [
+        { id: "kasia:wellness:opt-1", topicId: "kasia:wellness", text: "HR sent a wellness newsletter. Is this mandatory?" },
+        { id: "kasia:wellness:opt-2", topicId: "kasia:wellness", text: "The wellness webinar is at lunch. Analysis?" },
+        { id: "kasia:wellness:opt-3", topicId: "kasia:wellness", text: "A meditation app subscription was proposed." },
+        { id: "kasia:wellness:opt-4", topicId: "kasia:wellness", text: "Is a step-count competition a good idea?" },
+        { id: "kasia:wellness:opt-5", topicId: "kasia:wellness", text: "The wellness budget is one zloty. Confirm?" },
+        { id: "kasia:wellness:opt-6", topicId: "kasia:wellness", text: "Can wellness include just... fewer meetings?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:wellness:rep-1",
+          text: "Mandatory wellness is an oxymoron I refuse to administer. The newsletter is an offering, like bread at a restaurant. Read it or do not — the only tracked metric is whether I exist, and I do. Everything else is yours. That is the entire policy, in one breath.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:wellness:rep-2",
+          text: "Lunch is the one hour the calendar cannot colonize, so scheduling wellness AT lunch is self-defeating, and I have said so in three lines of excellent prose. The webinar will run to four attendees and a plant. I will count. The plant will not be counted.",
+          relationshipHint: "annoyed",
+          tags: ["period:lunch"],
+        },
+        {
+          id: "kasia:wellness:rep-3",
+          text: "Proposed, costed, and denied — the app wanted per-seat pricing and Grazyna wanted outcomes. I brokered a compromise: one shared account, rotating, which is either generous or hilarious depending on your relationship with booking calendars. It has one five-star review. Mine.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:wellness:rep-4",
+          text: "Terrible, and I can prove it with data from the one we ran: participation was forty percent, shaming was one hundred percent, and the winner was Marek, who walks as a lifestyle and made everyone else feel like furniture. Wellness that ranks is a performance review with sneakers.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:wellness:rep-5",
+          text: "The wellness budget is one zloty and it is SYMBOLIC — I fought for its existence so the line item exists to be grown. Budgets are arguments that survived paperwork. That zloty has rolled over four years running. It is the most consistent investment this company has ever made.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:wellness:rep-6",
+          text: "That is the one intervention with actual evidence behind it, and I put it in the deck: replace two recurring meetings with nothing and measure everyone's mood in a month. Maciek approved it as 'async wellness'. The meetings died. The mood went up. Nobody credits HR. Fine.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+      ],
+    },
+    {
+      id: "kasia:confidentiality",
+      label: "HR confidentiality",
+      optionCandidates: [
+        { id: "kasia:confidentiality:opt-1", topicId: "kasia:confidentiality", text: "Is what I tell HR actually confidential?" },
+        { id: "kasia:confidentiality:opt-2", topicId: "kasia:confidentiality", text: "Gossip says you know everyone's salary. Confirm?" },
+        { id: "kasia:confidentiality:opt-3", topicId: "kasia:confidentiality", text: "Someone reported the kitchen. Anonymously. Cowardly?" },
+        { id: "kasia:confidentiality:opt-4", topicId: "kasia:confidentiality", text: "If I disclose a conflict, what happens next?" },
+        { id: "kasia:confidentiality:opt-5", topicId: "kasia:confidentiality", text: "What can HR never unsee?" },
+        { id: "kasia:confidentiality:opt-6", topicId: "kasia:confidentiality", text: "Klaudia offered me confidentiality. In writing." },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:confidentiality:rep-1",
+          text: "Confidential with a scope: what you tell me stays with me unless it involves safety, law, or a decision that cannot be made without it. That is not a loophole, it is the job. I hold eleven years of other people's Tuesdays. The folder is fireproof. So is the discretion.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:confidentiality:rep-2",
+          text: "I know the bands, the exceptions, and the arithmetic — knowing salaries is the job, the way a doctor knows rashes. Sharing them is a firing offense I have never committed and never will. Test it with your most embarrassing disclosure. The archive holds worse.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:confidentiality:rep-3",
+          text: "Anonymous reports are a pressure valve, and pressure valves are ugly and necessary. The kitchen report led to the fridge audit that found the yoghurt, which is now senior to us all. Cowardly? Sometimes. Useful? The fridge says yes. I take the system over the sentiment.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "kasia:confidentiality:rep-4",
+          text: "Then I map it, quietly: who is affected, what the policy says, and what you actually want. Most conflicts want a conversation, not a committee. I will offer you a script, a room, and a deadline. What I will not offer is a memo. Conflicts handled loudly multiply.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:confidentiality:rep-5",
+          text: "The gap between what people say in surveys and what they say at the coffee machine — I hold both datasets, and the distance between them is the actual culture. Every office has one. Ours is three centimeters on a good day. Genuinely good. It will never appear in a deck.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:confidentiality:rep-6",
+          text: "Then she learned it from watching me, which is the highest compliment an influencer can pay. Klaudia's NDA covers vibes and hashtags. Mine covers humans. Keep hers for the brand, mine for the person, and never confuse which folder a sentence belongs in. That is the whole skill.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "kasia:probation",
+      label: "Probation periods",
+      optionCandidates: [
+        { id: "kasia:probation:opt-1", topicId: "kasia:probation", text: "My probation ends Friday. What actually happens?" },
+        { id: "kasia:probation:opt-2", topicId: "kasia:probation", text: "Can someone actually fail probation here?" },
+        { id: "kasia:probation:opt-3", topicId: "kasia:probation", text: "Three months feels long for both sides. Agree?" },
+        { id: "kasia:probation:opt-4", topicId: "kasia:probation", text: "Who decides the probation verdict, you or the team?" },
+        { id: "kasia:probation:opt-5", topicId: "kasia:probation", text: "The probation form asks for 'gut feeling'." },
+        { id: "kasia:probation:opt-6", topicId: "kasia:probation", text: "Does passing probation change anything real?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:probation:rep-1",
+          text: "A form, a conversation, and a decision that was made around Tuesday. Probation endings are ceremonies — the real evaluation happened weekly, in whether you asked better questions in week eight than week one. You did. The form is a receipt for a verdict that already exists.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:probation:rep-2",
+          text: "Twice, and both times it was mutual dishonesty — we hoped, they hoped, and nobody said the true sentence early enough. My rule now: the first real conversation happens at week three. Late verdicts are cruel to everyone, including the paperwork, which can tell.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:probation:rep-3",
+          text: "Agreed, and the length is legal tradition, not design. Three months is how long it takes a company to admit it was wrong and a person to admit the job is not the ad. If either side cannot tell by month two, more time will not help. I schedule honesty at day sixty.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:probation:rep-4",
+          text: "The team decides, I translate, and the manager signs — three signatures for one verdict, which is why bad hires survive nowhere in this building. If those three disagree, I investigate before I file. The disagreement IS the data. Consensus written too fast is fear of the form.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:probation:rep-5",
+          text: "That field is the most honest box in the company. Metrics tell me what happened; the gut field tells me whether we want more of it. I have approved candidates with mediocre metrics and a good gut and never regretted it. The reverse, I have regretted. Twice. It is filed.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:probation:rep-6",
+          text: "Your sick days become yours, the training budget unlocks, and the 'other duties' clause becomes legally enforceable — cake carrying is now official. Spiritually: the desk gets a plant. Renata issues plants only to permanents. That is the real ceremony. The form is the permit.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "period:afternoon"],
+        },
+      ],
+    },
+    {
+      id: "kasia:contracts",
+      label: "Contract types",
+      optionCandidates: [
+        { id: "kasia:contracts:opt-1", topicId: "kasia:contracts", text: "Why is one desk contracted and another employed?" },
+        { id: "kasia:contracts:opt-2", topicId: "kasia:contracts", text: "My contract renewal has a new clause. Read it?" },
+        { id: "kasia:contracts:opt-3", topicId: "kasia:contracts", text: "What is a 'letter of intent' actually for?" },
+        { id: "kasia:contracts:opt-4", topicId: "kasia:contracts", text: "The contractors bill hourly. We draw salary. Why?" },
+        { id: "kasia:contracts:opt-5", topicId: "kasia:contracts", text: "Can a contractor become an employee here?" },
+        { id: "kasia:contracts:opt-6", topicId: "kasia:contracts", text: "Grazyna calls contracts 'pre-negotiated exits'. Fair?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:contracts:rep-1",
+          text: "Law, history, and the price of flexibility. Employment is a relationship; contracts are a transaction, and this office needs one of each per desk-shaped problem. The mix is deliberate — employees hold the culture, contractors hold the peaks. Kasia's taxonomy. Quote it freely.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "kasia:contracts:rep-2",
+          text: "Read it, then read it to me — clauses breed in renewal season, and one of them once granted 'perpetual desk rights' to a contractor who treated the office as a registered address. I check every renewal against the incident archive. Bring the clause. I bring the history.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:contracts:rep-3",
+          text: "It is a promise wearing a suit — non-binding, useful for calendar-blocking a hire who is choosing between us and a bigger logo. I issue them when I believe the person and doubt the timing. They expire like milk. Everyone signs them. Nobody enforces them. Ritual, with a fax machine.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:contracts:rep-4",
+          text: "Because risk is priced. The contractor prices their own unemployment; the salary absorbs it. An hourly contractor at peak billing can out-earn a salaried senior, and the salaried one sleeps in August. Neither is better. They are different animals for different weather.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:contracts:rep-5",
+          text: "It has happened twice, both times after a winter of the contractor being functionally staff. My trigger is informal: when I catch myself writing their name into the org chart, the conversation starts. Paper follows reality here. It is the only place the paperwork is ever honest.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:contracts:rep-6",
+          text: "Grim, accurate, and the most useful definition in her ledger. A contract is an ending agreed in advance, which is why endings here are so boring — the drama was prepaid. Employees get stories. Contractors get terms. I keep both calm and Grazyna keeps both cheap. The system works.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "kasia:handbook",
+      label: "The employee handbook",
+      optionCandidates: [
+        { id: "kasia:handbook:opt-1", topicId: "kasia:handbook", text: "Does anyone actually read the handbook?" },
+        { id: "kasia:handbook:opt-2", topicId: "kasia:handbook", text: "The handbook has a section on gift crocodiles?" },
+        { id: "kasia:handbook:opt-3", topicId: "kasia:handbook", text: "Which policy would you delete from the handbook?" },
+        { id: "kasia:handbook:opt-4", topicId: "kasia:handbook", text: "The handbook's tone changes in chapter nine. Notice?" },
+        { id: "kasia:handbook:opt-5", topicId: "kasia:handbook", text: "Can the handbook win an argument with Maciek?" },
+        { id: "kasia:handbook:opt-6", topicId: "kasia:handbook", text: "Who updates the handbook, and how often, really?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:handbook:rep-1",
+          text: "Cover to cover: nobody. As an oracle: everyone, once something breaks. The handbook is read the way insurance is read — after the flood, at the exact page. I maintain it for the day it is needed, and the day always comes, usually involving the printer or a heart.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:handbook:rep-2",
+          text: "It does — 'no live animals as gifts between employees' — because of the 2021 aquarium incident, where a client gifted us a crocodile figurine, life-sized, and legal had opinions. The figurine is in the storage room. The policy is in the handbook. Burek remains unbothered by both.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:handbook:rep-3",
+          text: "The dress code page. Four paragraphs describing what everyone already does, enforced by nobody, violated weekly, consulted never. I keep it because deleting it requires a committee, and the committee would write six pages to replace four. Bureaucracy conserves itself.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:handbook:rep-4",
+          text: "I wrote chapters one through eight and chapter nine onward arrived from a consultant with a thesaurus. 'Utilize' appears eleven times. Every year I translate one chapter back into human. Two remain. The handbook is being restored at a sustainable pace. Progress is a spectrum.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:handbook:rep-5",
+          text: "Once. The return-to-office debate of 2022 ended when I placed the handbook, open, at the phrase 'outcomes over presence', and let the silence work. Maciek read it, said 'fine, outcomes', and left. The handbook's power is archival. You do not argue with it. You display it.",
+          relationshipHint: "delighted",
+          tags: ["quest:ceo-met"],
+        },
+        {
+          id: "kasia:handbook:rep-6",
+          text: "Me, annually, and after every incident worth a policy. The changelog is the real history of this company: each date is something that happened once and must never happen twice. Read the changelog instead of the handbook. It is shorter, funnier, and entirely true.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "kasia:vacation",
+      label: "Vacation policy",
+      optionCandidates: [
+        { id: "kasia:vacation:opt-1", topicId: "kasia:vacation", text: "Nobody books August. Is vacation competitive here?" },
+        { id: "kasia:vacation:opt-2", topicId: "kasia:vacation", text: "I have forty days saved. Is that a cry for help?" },
+        { id: "kasia:vacation:opt-3", topicId: "kasia:vacation", text: "Kasia, when did YOU last take two weeks off?" },
+        { id: "kasia:vacation:opt-4", topicId: "kasia:vacation", text: "Can I take a vacation without the guilt attachment?" },
+        { id: "kasia:vacation:opt-5", topicId: "kasia:vacation", text: "The out-of-office replies here are literature." },
+        { id: "kasia:vacation:opt-6", topicId: "kasia:vacation", text: "What happens to unclaimed vacation days?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:vacation:rep-1",
+          text: "It inverts — summer is the quietest quarter and the bravest bookers get the calmest office. Vacation feels competitive because calendars are visible and courage is not. I watch booking patterns the way Grazyna watches invoices: the gaps are the actual data.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:vacation:rep-2",
+          text: "Yes, and I send the same letter to everyone over thirty: unused vacation is a loan you made to the company at zero percent interest, and we are not a bank. Book the Tuesdays. Banks of days rot. I have archived enough December regrets to know.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:vacation:rep-3",
+          text: "October, two weeks, a cabin with one bar of signal, and I checked nothing — my firewall is documented policy, I cannot exempt myself. I came back to zero fires because Renata ran the floor and the census survived without its census-taker. That is what a system is.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm", "period:morning"],
+        },
+        {
+          id: "kasia:vacation:rep-4",
+          text: "The guilt is not in the policy, it is in the culture, and cultures change from the top of the booking sheet. When the seniors vanish loudly and return tan, permission propagates. I schedule my own vacations like infrastructure maintenance. Leaders may steal the format.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:vacation:rep-5",
+          text: "They are. Tomek's 'I am unreachable and the code knows why' is framed in my office. The out-of-office is the one place this company writes truthfully — no buzzword survives the autoresponder. Mine says 'back Monday, delete this'. The delete rate is one hundred percent.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:vacation:rep-6",
+          text: "They expire, which is the most quietly violent sentence in any policy. I fight it yearly: carryover of one week, cash-out below grade, anything but the void. The void teaches people that rest is a trap. Grazyna calls carryover 'liability'. I call the void 'turnover'. We compromise in writing.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "kasia:presenteeism",
+      label: "Presenteeism",
+      optionCandidates: [
+        { id: "kasia:presenteeism:opt-1", topicId: "kasia:presenteeism", text: "Tomek worked through a fever. Hero or biohazard?" },
+        { id: "kasia:presenteeism:opt-2", topicId: "kasia:presenteeism", text: "Is coming in sick ever the right call?" },
+        { id: "kasia:presenteeism:opt-3", topicId: "kasia:presenteeism", text: "We award attendance quietly. What does that teach?" },
+        { id: "kasia:presenteeism:opt-4", topicId: "kasia:presenteeism", text: "I answered emails from a hospital queue. Normal?" },
+        { id: "kasia:presenteeism:opt-5", topicId: "kasia:presenteeism", text: "How do I unlearn working while ill?" },
+        { id: "kasia:presenteeism:opt-6", topicId: "kasia:presenteeism", text: "Does anyone here actually use their sick days?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:presenteeism:rep-1",
+          text: "Biohazard, affectionately. Tomek at a fever ships code with a cough track. The heroic narrative is a leftover from factories where presence equaled output — our output is judgment, and judgment has a temperature coefficient. I sent him home with a form and a soup.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "kasia:presenteeism:rep-2",
+          text: "Only for the kind of crisis where a body at a desk matters, which in this office is never. Everything here is remote-capable, which means presenteeism is not dedication, it is a typo. Contagious means camera off. Fever means laptop closed. Heroism means REST.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:presenteeism:rep-3",
+          text: "That attendance is loyalty, which breeds the wrong immune system — people start attending to be seen, not to work. I killed the quiet award in 2023. It now exists as a certificate in the storage room, awarded to a chair. Nobody noticed. Healthiest metric we ever produced.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:presenteeism:rep-4",
+          text: "Normal, common, and the exact behavior I exist to phase out. A person in a hospital queue answering email is two half-jobs and zero rest. I would rather lose your Tuesday entirely than rent a fraction of you. Half-presence is the most expensive thing nobody invoices.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:presenteeism:rep-5",
+          text: "With a script: 'I am out today, back tomorrow, nothing is on fire' — then CLOSE the laptop like Tomek closes tabs at five. The first sick day is the hardest, the third is a habit. I have watched four people unlearn it. All four were promoted within a year. Coincidence is for surveys.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:presenteeism:rep-6",
+          text: "Statistically yes — twelve days average, up from four in 2022, which I count as this office's greatest cultural achievement and nobody will ever put on a slide. People got sicker faster and recovered slower. That is what health looks like in a dashboard. It is beautiful.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "kasia:referral-bonus",
+      label: "The referral bonus",
+      optionCandidates: [
+        { id: "kasia:referral-bonus:opt-1", topicId: "kasia:referral-bonus", text: "Is the referral bonus real money or lore?" },
+        { id: "kasia:referral-bonus:opt-2", topicId: "kasia:referral-bonus", text: "I referred someone who got hired. Where is my money?" },
+        { id: "kasia:referral-bonus:opt-3", topicId: "kasia:referral-bonus", text: "Can I refer my roommate? Total conflict of interest." },
+        { id: "kasia:referral-bonus:opt-4", topicId: "kasia:referral-bonus", text: "The bonus is paid after six months. Why so slow?" },
+        { id: "kasia:referral-bonus:opt-5", topicId: "kasia:referral-bonus", text: "Przemek wants commission on referrals. Response?" },
+        { id: "kasia:referral-bonus:opt-6", topicId: "kasia:referral-bonus", text: "What is the best referral this office ever had?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:referral-bonus:rep-1",
+          text: "Real, budgeted, and paid through payroll like an adult. The lore version is funnier — 'a bonus paid in coffee beans and Kasia's approval' — but the truth is zloty, taxed, and attached to a form. Lore spreads faster than payroll. I have made peace with being the boring version.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:referral-bonus:rep-2",
+          text: "In the payroll after their month three — the bonus waits for mutual survival, because half of referrals fail by coffee-machine standards, not probation standards. You vouched; the company verifies. Then decide together who tells the story at the Christmas party.",
+          relationshipHint: "pleased",
+          tags: ["quest:kasia-referral-open", "relationship:neutral"],
+        },
+        {
+          id: "kasia:referral-bonus:rep-3",
+          text: "Refer them, disclose them, and let the process do its job — nepotism is not hiring your roommate, it is skipping the interview. Disclosed conflicts are my favorite referrals: everyone over-performs to disprove the suspicion. The roommate tax is one extra form. Cheap.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:referral-bonus:rep-4",
+          text: "Because referrals that survive probation are worth ten that dazzle for a month, and the delay filters sunk-cost enthusiasm. Six months is one season of Tuesdays. If the hire is still good and you are still proud, the money arrives warm. If not, nobody fakes a smile at payroll.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:referral-bonus:rep-5",
+          text: "Denied, with a form. Referrals are favors with accountability, not sales — the moment a bonus becomes commission, people refer resumes instead of people. Przemek's gym pipeline works BECAUSE it is unpaid loyalty. I would pay him in protein bars before I let him invoice friendship.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:referral-bonus:rep-6",
+          text: "Pawel, referred by his neighbor, who described him as 'keeps a notebook, apologizes to servers'. Two sentences, zero buzzwords, one perfect hire. The best referrals read like witness statements. I keep that email pinned above the desk. It is the standard every ad should fail against.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "kasia:training-budget",
+      label: "The training budget",
+      optionCandidates: [
+        { id: "kasia:training-budget:opt-1", topicId: "kasia:training-budget", text: "Is there a training budget or is that a myth?" },
+        { id: "kasia:training-budget:opt-2", topicId: "kasia:training-budget", text: "The course I want costs more than the budget." },
+        { id: "kasia:training-budget:opt-3", topicId: "kasia:training-budget", text: "Do certifications get reimbursed here? Which ones?" },
+        { id: "kasia:training-budget:opt-4", topicId: "kasia:training-budget", text: "Can training time count as work time?" },
+        { id: "kasia:training-budget:opt-5", topicId: "kasia:training-budget", text: "The budget favors cloud courses. Why?" },
+        { id: "kasia:training-budget:opt-6", topicId: "kasia:training-budget", text: "What training would you take with someone else's money?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:training-budget:rep-1",
+          text: "Real, annual, and underspent — the myth is not the budget but the approval process, which people imagine is harder than asking me. Last year we spent sixty percent and returned the rest, and Grazyna nearly cancelled it as evidence of lacking ambition. Spend it. Underspending kills benefits.",
+          relationshipHint: "neutral",
+          tags: ["stats:high-credibility"],
+        },
+        {
+          id: "kasia:training-budget:rep-2",
+          text: "Then split it: the budget, the project, and one persuasive paragraph about what the gap costs per month. I have approved over-budget courses twice — both written like business cases, both true. The form asks what you will DO. Nobody funds 'growth'. Everyone funds a deadline.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:training-budget:rep-3",
+          text: "The ones with exams, dates, and a skill this office will use within a quarter. The cloud cert passed. The blockchain one is still pending in someone's drawer, and its holder now says 'decentralized' at parties. Reimbursement follows relevance. The drawer knows.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:training-budget:rep-4",
+          text: "Yes, and I defend that policy against people who call it 'double paying'. Learning ON the clock produces work I can see; learning at home produces burnout I also see, at three am, in my inbox. Thirty minutes of course time daily, logged like a meeting. The policy survives.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:training-budget:rep-5",
+          text: "Because the cloud is the only vendor whose bill arrives with a story, and Marek demanded staff who could read it. Demand creates budget. If this office ever loses a client to a bad slide deck, watch presentation courses fund themselves by Friday. Pain writes budgets. That is the rule.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:training-budget:rep-6",
+          text: "A negotiation course, for me, at an advanced level — I broker salaries and conflicts daily and I have never once been trained at it. HR is assumed to come pre-installed. It does not. Give me the budget you give Marek's monitoring tools and I will return you a calmer building.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "kasia:comms-tone",
+      label: "The office comms tone",
+      optionCandidates: [
+        { id: "kasia:comms-tone:opt-1", topicId: "kasia:comms-tone", text: "The team channel turned passive-aggressive. Fix?" },
+        { id: "kasia:comms-tone:opt-2", topicId: "kasia:comms-tone", text: "Is 'per my last message' banned or legal here?" },
+        { id: "kasia:comms-tone:opt-3", topicId: "kasia:comms-tone", text: "Can I use emojis in client emails?" },
+        { id: "kasia:comms-tone:opt-4", topicId: "kasia:comms-tone", text: "Someone sent a voice note to the whole channel." },
+        { id: "kasia:comms-tone:opt-5", topicId: "kasia:comms-tone", text: "What is the office rule on ALL CAPS?" },
+        { id: "kasia:comms-tone:opt-6", topicId: "kasia:comms-tone", text: "Klaudia writes emails like captions. Problem?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:comms-tone:rep-1",
+          text: "Passive-aggressive is unspoken feedback with extra steps, so the fix is making feedback speakable. I run a one-hour 'say the thing' session quarterly and the channel self-corrects for six weeks. Culture decays at a known rate. Maintenance is scheduled, not miraculous.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:comms-tone:rep-2",
+          text: "Legal but radioactive. It translates to 'I am keeping receipts' and everyone can smell the filing cabinet. The house style I coach: restate the ask, add the deadline, drop the archaeology. 'Per my last message' is a trophy — winning it means the thread already failed.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:comms-tone:rep-3",
+          text: "One per email, and it must be doing work — a thumbs up is punctuation, a fireworks display is a mood. The client who reads us weekly has learned our dialect: one rocket means 'shipped', two means 'Marek shipped'. Emojis are vocabulary. Fluency is knowing the count.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:comms-tone:rep-4",
+          text: "Then we had the conversation about async manners, and the rule wrote itself: voice notes for tone, text for facts, and never the whole channel before coffee. The offender now sends lovely texts. People are navigable. That is the HR thesis nobody believes until they try it.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "kasia:comms-tone:rep-5",
+          text: "ALL CAPS is reserved for incidents involving prod, the printer, or free cake — a grammar everyone learned by example rather than memo. Caps are our emergency broadcast system. When Tomek types in caps, laptops close. The day caps stop working, we will have bigger problems than typography.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:comms-tone:rep-6",
+          text: "Only in length. Klaudia's subject lines could sell a fridge to ice, and the bodies are four words long, but her open rate is perfect and her thread answers arrive in minutes. I fixed one thing only: client emails get a signature block. Even influencers need jurisdictions.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "kasia:diversity",
+      label: "The diversity slide",
+      optionCandidates: [
+        { id: "kasia:diversity:opt-1", topicId: "kasia:diversity", text: "The diversity slide is one chart. Impress me." },
+        { id: "kasia:diversity:opt-2", topicId: "kasia:diversity", text: "Are our job ads reaching beyond the usual suspects?" },
+        { id: "kasia:diversity:opt-3", topicId: "kasia:diversity", text: "What does an inclusive interview actually change?" },
+        { id: "kasia:diversity:opt-4", topicId: "kasia:diversity", text: "Maciek wants a diversity quota. Careful response?" },
+        { id: "kasia:diversity:opt-5", topicId: "kasia:diversity", text: "Is Burek part of the inclusion policy?" },
+        { id: "kasia:diversity:opt-6", topicId: "kasia:diversity", text: "The office is more diverse than the org chart. Why?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:diversity:rep-1",
+          text: "Then read the footnote: the chart is headcount and the footnote is retention — who stays is the honest number, because hiring diverse is one campaign and keeping diverse is a culture. Our retention gap narrowed two points last year. Two points is a career of Tuesdays. Quietly proud.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:diversity:rep-2",
+          text: "Partly. The band transparency helped more than any campaign — ranges pull in people who were filtering themselves out at the salary step. Inclusion is often just arithmetic made visible. The next lever is the interview loop, which is why I train the panelists twice a year.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:diversity:rep-3",
+          text: "The questions. A structured loop asks everyone the same things in the same order, which converts charisma into evidence and gives the nervous candidate a floor. Unstructured interviews measure similarity. Structured ones measure ability. I have the before-and-after data. Not subtle.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:diversity:rep-4",
+          text: "I told him: quotas without process are targets with no engine, and the engine is where the work lives — sourcing, structured loops, salary bands, retention metrics. He wrote 'engine' on a slide and took credit. The work survived the theft. That is how you let a CEO be useful.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "kasia:diversity:rep-5",
+          text: "Burek is the INCLUSION policy — the audit found that offices with a dog report conversations across hierarchies that org charts otherwise prevent. He sits with the intern, the CFO, and the CEO in one afternoon without once reading a title. The paw print on the policy is a joke. It is also correct.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:diversity:rep-6",
+          text: "Because the org chart counts titles and the office counts Tuesdays — look at who people actually ask: Renata for the building, Janusz for the truth, Burek for the mood. Influence here is earned in conversations, not granted in meetings. The chart is the map. The office is the territory.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "kasia:hot-desking",
+      label: "The desk allocation",
+      optionCandidates: [
+        { id: "kasia:hot-desking:opt-1", topicId: "kasia:hot-desking", text: "Hot-desking was announced. Survivable?" },
+        { id: "kasia:hot-desking:opt-2", topicId: "kasia:hot-desking", text: "The window desks have an informal waiting list." },
+        { id: "kasia:hot-desking:opt-3", topicId: "kasia:hot-desking", text: "Marek refuses to hot-desk. Enforcement?" },
+        { id: "kasia:hot-desking:opt-4", topicId: "kasia:hot-desking", text: "My desk has someone else's sticky notes. Ethics?" },
+        { id: "kasia:hot-desking:opt-5", topicId: "kasia:hot-desking", text: "Who actually assigns desks in this office?" },
+        { id: "kasia:hot-desking:opt-6", topicId: "kasia:hot-desking", text: "Can I book the meeting room desk as my office?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:hot-desking:rep-1",
+          text: "Survivable, and honestly overdue — the desk map was drawn in 2019 for a company that no longer exists, and the map has outlived three reorgs and one flood. My compromise, already in policy: teams cluster, walls are sacred, and Burek's spot is permanent because some infrastructure is not mobile.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:hot-desking:rep-2",
+          text: "There is, and it predates the spreadsheet — window seats trade on seniority, light preference, and one legendary dispute involving Klaudia's ring light. I refuse to formalize it. Some markets must stay informal to stay peaceful. The list self-corrects every rebrand.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:hot-desking:rep-3",
+          text: "You cannot enforce a desk on Marek. He has a cable ecosystem, a chair from home, and a monitoring rig that would take a day to transplant. The policy has an exception clause and the clause is named Marek. Every office rule has one. Mine is that I never write them down.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "kasia:hot-desking:rep-4",
+          text: "Read them. Then archive them respectfully — sticky notes are the emails of the previous tenant, and last month someone found 'password is the printer's birthday', which took us an hour and one espresso to undo. Desk archaeology is real. Report the password-grade finds. Keep the jokes.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:hot-desking:rep-5",
+          text: "Officially me, actually the building — Renata knows who needs quiet, Janusz knows which desks flood in April, and the map they maintain is better than my spreadsheet. I sign what they draft. Desks are allocated by people who watch the office exist. I just notarize.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:hot-desking:rep-6",
+          text: "As a day base, yes — book it, note it on the board, and leave it emptier than you found it. As a siege, no: the meeting room desk was claimed for six weeks in 2022 and we found a civilization — mugs, a blanket, a tiny flag. The flag was returned to Przemek with ceremony. The mugs stayed.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "kasia:burek-hr",
+      label: "Burek's HR file",
+      optionCandidates: [
+        { id: "kasia:burek-hr:opt-1", topicId: "kasia:burek-hr", text: "Does Burek have a contract or just a folder?" },
+        { id: "kasia:burek-hr:opt-2", topicId: "kasia:burek-hr", text: "Who is Burek's emergency contact?" },
+        { id: "kasia:burek-hr:opt-3", topicId: "kasia:burek-hr", text: "Burek missed two standups. Formal warning?" },
+        { id: "kasia:burek-hr:opt-4", topicId: "kasia:burek-hr", text: "Can Burek's role survive an HR audit?" },
+        { id: "kasia:burek-hr:opt-5", topicId: "kasia:burek-hr", text: "What is in the drawer marked BUREK?" },
+        { id: "kasia:burek-hr:opt-6", topicId: "kasia:burek-hr", text: "If Burek retired, what is the offboarding plan?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:burek-hr:rep-1",
+          text: "A folder, a schedule, and a title — Chief Audit Officer, unpaid, unfireable, and unhireable elsewhere. The contract question reaches legal twice a year and legal responds with the same sentence: 'the dog is a presence, not a resource'. It has survived two audits. I have it framed.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:burek-hr:rep-2",
+          text: "Renata, then Janusz, then me — a chain of care with three links and zero gaps. The emergency contact form lists steak preferences, the vet, and the phrase 'do not let Przemek forecast at him'. It is the most complete file I maintain. Some humans could learn from its completeness.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:burek-hr:rep-3",
+          text: "The missed standups were a Monday in June and a Thursday in September, both weather, both excused by Janusz with photographic evidence of rain. Burek's attendance record is better than most and his excuses are better than ours. No warning. A note in the file: 'good year'.",
+          relationshipHint: "annoyed",
+          tags: ["quest:burek-standup-observed", "relationship:neutral"],
+        },
+        {
+          id: "kasia:burek-hr:rep-4",
+          text: "It has — twice. The auditor asked for his role description and I produced one: morale infrastructure, unregistered stakeholder, audit functions performed voluntarily. She wrote 'non-standard but coherent' in the margin, which is the highest praise an auditor has ever issued this office.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:burek-hr:rep-5",
+          text: "A vaccination record, a photo from 2019, a cast of the paw print used for the team calendar legend, and one complaint form against the vacuum, filed by Burek and countersigned by Janusz. The form was denied. The complaint was noted. The vacuum is watched.",
+          relationshipHint: "neutral",
+          tags: ["quest:burek-standup-observed", "relationship:warm"],
+        },
+        {
+          id: "kasia:burek-hr:rep-6",
+          text: "There is one, drafted with Renata over tea and seen by nobody else — the paw print retires, the title goes emeritus, and the standup gains one minute of silence, which will be the only minute that office has ever kept quiet voluntarily. I update the plan yearly. I hope to never use it. Both are the job.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
   ],
   taskOffers: [
     {

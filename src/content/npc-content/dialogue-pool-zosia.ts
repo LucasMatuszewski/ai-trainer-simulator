@@ -785,6 +785,586 @@ export const ZOSIA_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "zosia:budgets",
+      label: "Budget season",
+      optionCandidates: [
+        { id: "zosia:budgets:opt-1", topicId: "zosia:budgets", text: "Budget season opened this week. Hide me." },
+        { id: "zosia:budgets:opt-2", topicId: "zosia:budgets", text: "How do I ask for budget without flinching?" },
+        { id: "zosia:budgets:opt-3", topicId: "zosia:budgets", text: "Grazyna asked what problem the budget solves." },
+        { id: "zosia:budgets:opt-4", topicId: "zosia:budgets", text: "My budget line is called 'miscellaneous morale'." },
+        { id: "zosia:budgets:opt-5", topicId: "zosia:budgets", text: "Can I budget for things that do not exist yet?" },
+        { id: "zosia:budgets:opt-6", topicId: "zosia:budgets", text: "The budget doc has a column called 'courage'." },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:budgets:rep-1",
+          text: "Then you are already late. Budget season rewards the early and devours the honest. Bring me three numbers: what you need, what you actually need, and the number you can survive with. Grazyna only ever reads the third one, but watching you write them teaches me your character.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:budgets:rep-2",
+          text: "You flinch before the sentence, not during it. Lead with the outcome, pause, then say the number like it is a fact about the world. 'The course needs two thousand' lands differently than 'I think maybe two thousand'. Confidence is mostly decimal placement.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:budgets:rep-3",
+          text: "Then answer on her terms: one sentence, one measurable thing, no adjectives with feelings. She once approved a standing desk because Marek wrote 'reduces future sick days'. She denied mine because I wrote 'wellbeing'. I have made peace with it. Mostly.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:budgets:rep-4",
+          text: "Rename it. Miscellaneous is where budgets go to be audited. Call it 'retention infrastructure' and attach the price of one exit interview. Suddenly it is not morale, it is arithmetic, and arithmetic always passes. This is not cynicism. This is translation.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "zosia:budgets:rep-5",
+          text: "That is the entire profession. You budget for the printer that will fail, the chair that will break, and the hire you are not allowed to want yet. Grazyna calls it padding. I call it respecting the future, which arrives here unfunded every single quarter.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:budgets:rep-6",
+          text: "Grazyna added it herself in 2021, after approving something brave. It is one zloty wide and nobody has ever claimed it. Ask her about it sometime — she will deny it exists, then smile for the rest of the day. That column is the most human thing in this office.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "quest:zosia-opened-up"],
+        },
+      ],
+    },
+    {
+      id: "zosia:remote",
+      label: "Remote work policy",
+      optionCandidates: [
+        { id: "zosia:remote:opt-1", topicId: "zosia:remote", text: "Can I work from home on Fridays?" },
+        { id: "zosia:remote:opt-2", topicId: "zosia:remote", text: "The remote policy is two pages of the word 'trust'." },
+        { id: "zosia:remote:opt-3", topicId: "zosia:remote", text: "Maciek wants everyone back in the office for the vibes." },
+        { id: "zosia:remote:opt-4", topicId: "zosia:remote", text: "My home office is a kitchen table. That is the whole office." },
+        { id: "zosia:remote:opt-5", topicId: "zosia:remote", text: "Does anyone actually measure remote productivity?" },
+        { id: "zosia:remote:opt-6", topicId: "zosia:remote", text: "I am more productive when nobody can find me." },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:remote:rep-1",
+          text: "Fridays are already unofficially remote — the office just agrees not to notice. Officially, ask in writing so Kasia can file it, and mention 'focus'. Unofficially: the printer does not follow you home, which is its own argument.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:remote:rep-2",
+          text: "Two pages of trust and one paragraph of exceptions. That is how every policy here works: the rule is a poem and the exceptions are the meter. Read the paragraph. It is where the company accidentally tells the truth.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:remote:rep-3",
+          text: "He does. The word he used in the leadership meeting was 'serendipity', which means he misses an audience. Offer him one scheduled serendipity a week — a demo slot, an audience, applause — and he will sign anything. Egos are easier to schedule than people.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:remote:rep-4",
+          text: "Then your kitchen table is doing more infrastructure work than half our servers. Claim the chair on expenses. Grazyna will deny it, but the denial goes in the file, and the file has a memory. Systems here reward patience, not permission.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:remote:rep-5",
+          text: "Nobody measures it, which is why it works. The moment a number exists, people manage the number instead of the work. We tried tracking hours in 2021 and got beautiful dashboards and worse software. The dashboards are still up. Nobody dares delete them.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:remote:rep-6",
+          text: "Then you learned the senior lesson early: presence is not contribution. Protect two afternoons a week like a doctor's appointment, put 'deep work' in the calendar so it looks official, and defend them like territory. The work thanks you in deploy velocity.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "period:evening"],
+        },
+      ],
+    },
+    {
+      id: "zosia:offsite",
+      label: "The team offsite",
+      optionCandidates: [
+        { id: "zosia:offsite:opt-1", topicId: "zosia:offsite", text: "Is the offsite actually happening this year?" },
+        { id: "zosia:offsite:opt-2", topicId: "zosia:offsite", text: "Last year's trust fall is still in my spine." },
+        { id: "zosia:offsite:opt-3", topicId: "zosia:offsite", text: "Where would we even go on an offsite?" },
+        { id: "zosia:offsite:opt-4", topicId: "zosia:offsite", text: "Kasia proposed a silent retreat. For a team meeting." },
+        { id: "zosia:offsite:opt-5", topicId: "zosia:offsite", text: "Can the offsite be one honest meeting instead?" },
+        { id: "zosia:offsite:opt-6", topicId: "zosia:offsite", text: "Who pays for the offsite, and may I see the receipts?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:offsite:rep-1",
+          text: "It is happening because I put it in the budget under the word 'culture', which Grazyna cannot veto without admitting culture is a cost. Destination undecided. My method: pick the place with the fewest stairs, because somewhere on those stairs is where the real conversation happens anyway.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:offsite:rep-2",
+          text: "The facilitator is banned, yes. He also broke the projector, two expectations, and one internship. The falls are why every offsite plan since has been reviewed by me, Janusz, and a person holding a first aid certificate. Progress has many forms. That was one of them.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:offsite:rep-3",
+          text: "Anywhere with wifi worse than ours, so the laptop excuse dies on arrival, and a kitchen, because teams bond over whoever cooks. The lake cabin in 2022 produced the roadmap refresh, two friendships, and one resignation. Strong return on a rented grill.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:offsite:rep-4",
+          text: "Kasia books the retreat every year and I approve it every year, and every year the team talks MORE after the silence than after paintball. Do not ask me why. The quietest day of our year produces the loudest retro. I stopped fighting the data.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:offsite:rep-5",
+          text: "No, because an honest meeting needs a deadline and a bus home. The offsite is a machine for extracting truth from people who cannot leave the room. In the office, honesty has a calendar escape. At the offsite, the escape rides home in the same van as the truth.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:offsite:rep-6",
+          text: "Grazyna pays, which means she attends, which means the receipts are theater. She itemizes marshmallows. She has a line for 'fire'. She once disputed the cabin's own invoice with the cabin. It is the only company event where the finance report outperforms the event.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],        },
+      ],
+    },
+    {
+      id: "zosia:headcount",
+      label: "Headcount and the freeze",
+      optionCandidates: [
+        { id: "zosia:headcount:opt-1", topicId: "zosia:headcount", text: "Is the hiring freeze real or a rumor?" },
+        { id: "zosia:headcount:opt-2", topicId: "zosia:headcount", text: "When does the freeze lift? Asking for my workload." },
+        { id: "zosia:headcount:opt-3", topicId: "zosia:headcount", text: "Maciek wants to hire two people and a robot." },
+        { id: "zosia:headcount:opt-4", topicId: "zosia:headcount", text: "Can I refer someone during the freeze?" },
+        { id: "zosia:headcount:opt-5", topicId: "zosia:headcount", text: "The freeze is making my team resent the roadmap." },
+        { id: "zosia:headcount:opt-6", topicId: "zosia:headcount", text: "Who decides which jobs count as essential?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:headcount:rep-1",
+          text: "It is real the way the printer is broken: officially permanent, unofficially negotiable, and everyone's workload quietly absorbs the difference. There is a spreadsheet. The spreadsheet has one green row. Ask me again in the quarter that follows a good invoice.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:headcount:rep-2",
+          text: "When the ACME invoice clears, and everyone will pretend that is a coincidence. Headcount here follows revenue with a three-month delay and zero communication. You are not asking for a date. You are asking about the invoice. Smart.",
+          relationshipHint: "neutral",
+          tags: ["quest:got-acme-contract"],        },
+        {
+          id: "zosia:headcount:rep-3",
+          text: "He does, every quarter, and every quarter the robot line item dies in finance and the two people become one intern. The system self-corrects. My job is to let him dream out loud until the spreadsheet does the veto for me. It is gentler than mine.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:headcount:rep-4",
+          text: "Refer them anyway. Kasia keeps a 'future network' folder that has survived three freezes and one acquisition rumor. Referrals during a freeze are just applications with better patience. The folder has a heartbeat. Feed it.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:headcount:rep-5",
+          text: "Then say that sentence in the retro, exactly as you said it to me, minus the word 'quietly'. Resentment that stays quiet becomes attrition, attrition becomes a job posting, and job postings are frozen. Loud problems get budgets. That is the whole trick.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:headcount:rep-6",
+          text: "Grazyna decides, Dawid influences, and I translate. Essential means: does the absence of this person stop an invoice? Everything else is 'important', which is a different budget with better manners. Cold arithmetic. Also the only arithmetic that ever hired anyone.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "zosia:book-club",
+      label: "The leadership book club",
+      optionCandidates: [
+        { id: "zosia:book-club:opt-1", topicId: "zosia:book-club", text: "Is the leadership book club still meeting?" },
+        { id: "zosia:book-club:opt-2", topicId: "zosia:book-club", text: "We have been on chapter three for a month." },
+        { id: "zosia:book-club:opt-3", topicId: "zosia:book-club", text: "Which business book would you actually recommend?" },
+        { id: "zosia:book-club:opt-4", topicId: "zosia:book-club", text: "Maciek quotes the book wrong every meeting." },
+        { id: "zosia:book-club:opt-5", topicId: "zosia:book-club", text: "Can we read fiction instead, just once?" },
+        { id: "zosia:book-club:opt-6", topicId: "zosia:book-club", text: "The book club has become a second status meeting." },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:book-club:rep-1",
+          text: "Meeting, thriving, and undefeated by resignation. Three chapters a month, one hour, and attendance is voluntary in the way the values workshop was voluntary. Read the first chapter and steal one sentence for your next review. That is the entire curriculum.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:book-club:rep-2",
+          text: "Chapter three is where books go to die. It is the exact page where authors run out of anecdotes and start inventing frameworks. We have been stuck there since spring. I blame the framework. The club blames the quarter. Nobody blames the chapter.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:book-club:rep-3",
+          text: "'The Goal'. It is a novel where the hero saves a factory one bottleneck at a time, and it is the only business book that respects you enough to have a plot. Everything else here is a keynote in a hardcover. Read it on the tram and come back dangerous.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:book-club:rep-4",
+          text: "He does, and the club corrects him with the gentleness of a footnote. Last month he attributed 'circle of influence' to himself. We let him have it. The man once pitched a client using a quote from our own roadmap. Community theater needs its lead.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:book-club:rep-5",
+          text: "Once, for me, yes. I have campaigned for a novel since 2022. My argument: half of management is predicting what people want before they say it, and that is called literature. The club voted for a book about shrimp. There is always next year.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:book-club:rep-6",
+          text: "Then we fix the format, not the club. Status updates are banned, phones go in the bowl by the door, and the only agenda is one page nobody prepared. A book club that produces status was never a book club. It was a meeting wearing a cardigan.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral", "period:afternoon"],
+        },
+      ],
+    },
+    {
+      id: "zosia:linkedin",
+      label: "Zosia on LinkedIn",
+      optionCandidates: [
+        { id: "zosia:linkedin:opt-1", topicId: "zosia:linkedin", text: "You post on LinkedIn now. Since when?" },
+        { id: "zosia:linkedin:opt-2", topicId: "zosia:linkedin", text: "Your post about meeting hygiene went viral." },
+        { id: "zosia:linkedin:opt-3", topicId: "zosia:linkedin", text: "Klaudia offered to manage your personal brand." },
+        { id: "zosia:linkedin:opt-4", topicId: "zosia:linkedin", text: "Do you actually believe your own posts?" },
+        { id: "zosia:linkedin:opt-5", topicId: "zosia:linkedin", text: "Please write fewer posts. For all of us." },
+        { id: "zosia:linkedin:opt-6", topicId: "zosia:linkedin", text: "What is your engagement strategy, honestly?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:linkedin:rep-1",
+          text: "Since the rebrand agency asked for 'executive presence' and I discovered I already had opinions with no outlet. LinkedIn is where managers go to say the true thing slightly too loudly. I post at nine, I regret it by ten, and the metrics forgive everything.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:linkedin:rep-2",
+          text: "It did, and HR asked me to write a follow-up about boundaries, which is the funniest request this office has produced. The post took eleven minutes. The comment section has taken years off my life. Engagement is a loan you repay in dignity.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:linkedin:rep-3",
+          text: "She did, with a ring light and a content calendar. I declined, then watched her reel about my decline outperform my actual post by four hundred percent. The lesson cost me nothing and I think about it daily. The algorithm prefers whoever agrees to be filmed.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral", "period:afternoon"],        },
+        {
+          id: "zosia:linkedin:rep-4",
+          text: "The posts are ninety percent true and one hundred percent confident, which is the standard ratio. The method: write the thing you would whisper at the coffee machine, remove the names, add a lesson. That is thought leadership. That is all it is.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:linkedin:rep-5",
+          text: "I post once a week and the office survives. You consume it voluntarily, the clients quote it in calls, and last quarter it replaced an entire pitch deck. Fewer posts would be kinder to you. That week's post was for the pipeline. We all serve something.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:linkedin:rep-6",
+          text: "One true sentence, one number, and the courage to stop typing before the wisdom starts. No hashtags after noon, no engagement bait, and I never punch down — only sideways, at process. It is the same method as the meetings, with a like button as the exit survey.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "zosia:okrs",
+      label: "OKRs",
+      optionCandidates: [
+        { id: "zosia:okrs:opt-1", topicId: "zosia:okrs", text: "Are we doing OKRs now instead of goals?" },
+        { id: "zosia:okrs:opt-2", topicId: "zosia:okrs", text: "My OKR has an objective but no key results." },
+        { id: "zosia:okrs:opt-3", topicId: "zosia:okrs", text: "Can an OKR just be 'survive the quarter'?" },
+        { id: "zosia:okrs:opt-4", topicId: "zosia:okrs", text: "The OKR workshop produced forty objectives." },
+        { id: "zosia:okrs:opt-5", topicId: "zosia:okrs", text: "Who reads the OKRs after the workshop ends?" },
+        { id: "zosia:okrs:opt-6", topicId: "zosia:okrs", text: "Our key result is literally 'feel more aligned'." },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:okrs:rep-1",
+          text: "We are doing OKRs the way we do everything: renamed, rebranded, and fulfilled by the same three people. The letter O stands for objective, and nobody here has ever had one. We have moods with deadlines. The framework is fine. The office is the challenge.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:okrs:rep-2",
+          text: "Then it is not an OKR, it is a wish with formatting. Key results are the tax you pay for wanting something out loud. Give it two numbers you would be embarrassed to miss, and if you cannot find them, the objective was decoration. Delete it and feel lighter.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:okrs:rep-3",
+          text: "Half this company's OKRs are 'survive the quarter' wearing a suit. Mine last year were 'keep the team intact', 'keep the clients calm', and 'keep the printer blamed'. All three hit. No framework survives contact with this office unchanged. That is its charm.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral", "quest:got-acme-contract"],
+        },
+        {
+          id: "zosia:okrs:rep-4",
+          text: "Forty is the workshop's honest output and the quarter's honest capacity is four. I let everyone keep their forty in the doc, where objectives go to be admired. The real four live on my whiteboard, unformatted, and they are all about the printer and one client.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:okrs:rep-5",
+          text: "I read them. That is the secret nobody wants: the OKR document has exactly one reader and she is tired. Write for the one reader. If your objective makes me exhale through the nose, it passes. If it makes me schedule a meeting about it, we have both failed.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:okrs:rep-6",
+          text: "That key result was mine, and I stand by it. We measured alignment by counting how many decisions needed a follow-up meeting, and the number fell from eleven to two. Feelings are data once you attach them to a count. It is the only slide from that workshop that survived.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "zosia:perks",
+      label: "Office perks",
+      optionCandidates: [
+        { id: "zosia:perks:opt-1", topicId: "zosia:perks", text: "Are we getting the good coffee back as a perk?" },
+        { id: "zosia:perks:opt-2", topicId: "zosia:perks", text: "The job ad promised a ping pong table." },
+        { id: "zosia:perks:opt-3", topicId: "zosia:perks", text: "Fruit day is Thursday. Why Thursday?" },
+        { id: "zosia:perks:opt-4", topicId: "zosia:perks", text: "Can perks count as salary? Asking seriously." },
+        { id: "zosia:perks:opt-5", topicId: "zosia:perks", text: "The nap pod from the job ad became a storage rack." },
+        { id: "zosia:perks:opt-6", topicId: "zosia:perks", text: "What perk would you add with unlimited budget?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:perks:rep-1",
+          text: "The good beans are a Grazyna line item that reappears whenever a client visits and vanishes when the invoice does. My negotiation stance: I link the beans to the ACME account in writing. Perks funded by revenue survive longer than perks funded by hope.",
+          relationshipHint: "annoyed",
+          tags: ["period:morning"],        },
+        {
+          id: "zosia:perks:rep-2",
+          text: "It is in the training room, under the boxes, next to the projector from the offsite. Ping pong was a hiring-year promise from 2022. Renata has the paddles and issues them like weapons. Nobody has played since March, but the table exists, which is what the ad said.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:perks:rep-3",
+          text: "Because Thursday is the day morale measurably dips, and the bananas arrive before the dip becomes a conversation. It is not kindness, it is scheduling. Fruit day was invented by a manager who noticed Wednesday is the new Friday and did the math before HR could.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:perks:rep-4",
+          text: "They cannot, and I admire the audacity. Legally the beans are not money. Spiritually the beans have been compensation since 2019. Kasia keeps a benefits sheet that treats coffee as culture and Grazyna treats culture as overhead. Between them, a lifestyle.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:perks:rep-5",
+          text: "The nap pod was real for six weeks in 2021. Then someone napped through a client call, and the pod became 'flexible storage'. The job ad is written by marketing, the office is written by incidents. Every perk you were promised is a story with a body count.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:perks:rep-6",
+          text: "One silence. A room with no roadmap, no values poster, and a door that locks from the inside. Every other perk performs wellness. That one would fund it. I have drafted the proposal three times, and every time Grazyna asks what it produces, and I say 'people who stay'.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "zosia:dog-policy",
+      label: "Burek and office policy",
+      optionCandidates: [
+        { id: "zosia:dog-policy:opt-1", topicId: "zosia:dog-policy", text: "Is Burek an employee or a policy exception?" },
+        { id: "zosia:dog-policy:opt-2", topicId: "zosia:dog-policy", text: "Burek attended the budget review. Again." },
+        { id: "zosia:dog-policy:opt-3", topicId: "zosia:dog-policy", text: "Can we legally put Burek in the team photo?" },
+        { id: "zosia:dog-policy:opt-4", topicId: "zosia:dog-policy", text: "Who is Burek's manager on paper?" },
+        { id: "zosia:dog-policy:opt-5", topicId: "zosia:dog-policy", text: "The client asked if the dog is a partner." },
+        { id: "zosia:dog-policy:opt-6", topicId: "zosia:dog-policy", text: "Should Burek have an OKR?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:dog-policy:rep-1",
+          text: "He is infrastructure with a heartbeat. On paper he is 'a visitor with tenure', which is the strangest sentence HR has ever ratified. Kasia keeps his file between two exits, and inside it there is a photo, a vaccination record, and one complaint that was withdrawn.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:dog-policy:rep-2",
+          text: "He attends everything that matters. Budget review, the roadmap read-through, the all-hands tail. He has never once blocked a decision and he has ended three arguments by falling asleep on the agenda. Some chairs could learn from his exit strategy.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:dog-policy:rep-3",
+          text: "Legally he is not in the photo. Practically he is the center of it, and the last client calendar used him as the header without asking. Our lawyer said 'the dog is fine'. It is the only legal opinion in this building that nobody has quoted back yet.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],        },
+        {
+          id: "zosia:dog-policy:rep-4",
+          text: "On paper, me. In practice, Renata runs his schedule, Janusz handles logistics, and Kasia keeps the file. I sign the form. Burek delegates better than most directors I have met, and he has never once CC'd the whole office on a feeling.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:dog-policy:rep-5",
+          text: "Then the client understands our org chart better than the org chart does. Dawid said 'founder emeritus', legal said nothing, and the client renewed. The dog closes deals by being the only one in the room with no forecast. Some sales teams could study him.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:dog-policy:rep-6",
+          text: "He has one. It is unwritten and identical every quarter: audit the standup, guard the kitchen, and keep one exhale in reserve for Przemek's forecast. He has never missed it. I review his performance by watching the office survive another quarter.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "zosia:dress-code",
+      label: "Dress code",
+      optionCandidates: [
+        { id: "zosia:dress-code:opt-1", topicId: "zosia:dress-code", text: "Is there a dress code or is it vibes?" },
+        { id: "zosia:dress-code:opt-2", topicId: "zosia:dress-code", text: "Client day: blazer or honesty?" },
+        { id: "zosia:dress-code:opt-3", topicId: "zosia:dress-code", text: "Tomek wore slides to the board demo." },
+        { id: "zosia:dress-code:opt-4", topicId: "zosia:dress-code", text: "Can I wear the hoodie with the old logo?" },
+        { id: "zosia:dress-code:opt-5", topicId: "zosia:dress-code", text: "Klaudia wants a branded staff hoodie line." },
+        { id: "zosia:dress-code:opt-6", topicId: "zosia:dress-code", text: "Why does everyone dress up when Grazyna visits?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:dress-code:rep-1",
+          text: "There is a dress code the way there is a roadmap: unwritten, universally felt, and enforced by one raised eyebrow. The rule is 'client visible means human present'. Everything else is a negotiation between your laundry and your calendar.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:dress-code:rep-2",
+          text: "Blazer. Not for the client — for you. The blazer is armor that says the invoice is justified. I have watched Bartek close a renewal in that blazer, and I watched it fail exactly once, in August, when the air conditioning did. Wear the blazer. Repair the AC.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:dress-code:rep-3",
+          text: "He did, and the board remembered the demo, not the slides. That is the trick nobody admits: one memorable detail outperforms thirty polished ones. I banned nothing. I did schedule his next board demo for a day when I control the room temperature and the seating chart.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:dress-code:rep-4",
+          text: "The old logo hoodie is vintage now. Klaudia calls it heritage wear and Marek calls it the one that survived the flood. Wear it. The only dress rule with teeth is client-facing days, and that hoodie has attended more launches than most employees.",
+          relationshipHint: "pleased",
+          tags: ["quest:klaudia-rebranded-you"],        },
+        {
+          id: "zosia:dress-code:rep-5",
+          text: "She does, with a waitlist. HR says uniforms need a policy, marketing says hoodies ARE the policy, and the design has Burek in a tiny blazer. It is the single most popular proposal this office has ever produced. Kasia is drafting the wording. The dog is the easy part.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:dress-code:rep-6",
+          text: "Because Grazyna once sent a junior home to change, in 2018, and the story has done more compliance work than any policy since. She denies it. The denial is part of the ritual. Fear of one accountant outperforms the entire employee handbook, and it is cheaper.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "zosia:party",
+      label: "The anniversary party",
+      optionCandidates: [
+        { id: "zosia:party:opt-1", topicId: "zosia:party", text: "Are we doing an anniversary party this year?" },
+        { id: "zosia:party:opt-2", topicId: "zosia:party", text: "Who is on the party committee? Is it just Renata?" },
+        { id: "zosia:party:opt-3", topicId: "zosia:party", text: "Last year's party had a speech and a fire alarm." },
+        { id: "zosia:party:opt-4", topicId: "zosia:party", text: "Can we skip the speeches this year?" },
+        { id: "zosia:party:opt-5", topicId: "zosia:party", text: "The party budget survived Grazyna. How?" },
+        { id: "zosia:party:opt-6", topicId: "zosia:party", text: "Is Burek invited to the anniversary party?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:party:rep-1",
+          text: "It is happening because the office turned ten and Renata started planning in July without asking anyone, which is how every good tradition here was founded. There will be cake, a photo wall, and one speech I will cut to ninety seconds by force.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:party:rep-2",
+          text: "It is Renata, with me for budget, Janusz for logistics, and Klaudia self-appointing as documentarian. The committee has no meetings. Renata has a notebook and a look. Things simply get decided. I have stopped investigating and started funding.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:party:rep-3",
+          text: "The alarm was Tomek's candle. The candle was a gift. The gift was from the team. I have reviewed the guest list for gifts since. The speech, by contrast, was mine, and it ran fourteen minutes, and only the fire alarm saved us both. Traditions have casualties.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:party:rep-4",
+          text: "We cannot. One speech is the tax the party pays for existing. I have optimized it: ninety seconds, three names, no slide. If I go under ninety, Grazyna speaks. Nobody wants that. Her fiscal-year recap once cleared a room at a wedding. Not ours. Still counts.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:party:rep-5",
+          text: "I filed it under 'client retention' with the ACME contract attached. Grazyna read the attachment, approved the line, and asked for the photo rights. The party is now a business expense with a DJ. It is this office's greatest diplomatic achievement, and I will never explain it to anyone.",
+          relationshipHint: "delighted",
+          tags: ["quest:got-acme-contract", "relationship:warm"],
+        },
+        {
+          id: "zosia:party:rep-6",
+          text: "He is the guest of honor and he does not know it, which is the correct mindset for any celebration. Renata orders him a steak. Janusz keeps him away from the cake table. Last year he napped through the speeches, which is the review every speaker deserves and none receive.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "zosia:survey",
+      label: "The happiness survey",
+      optionCandidates: [
+        { id: "zosia:survey:opt-1", topicId: "zosia:survey", text: "The happiness survey is open again." },
+        { id: "zosia:survey:opt-2", topicId: "zosia:survey", text: "Everyone writes 'fine' in the happiness survey." },
+        { id: "zosia:survey:opt-3", topicId: "zosia:survey", text: "Are the survey results anonymous or theater?" },
+        { id: "zosia:survey:opt-4", topicId: "zosia:survey", text: "My survey comment mentioned the chairs. HR replied." },
+        { id: "zosia:survey:opt-5", topicId: "zosia:survey", text: "What is the best survey answer you ever got?" },
+        { id: "zosia:survey:opt-6", topicId: "zosia:survey", text: "Can we survey the clients' happiness instead?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:survey:rep-1",
+          text: "It is open, it is anonymous, and it takes four minutes, which makes it the fastest meeting in this company's history. Response rate is sixty percent, which in survey terms is a mandate. Read it or do not, but the comments section is where this office tells the truth.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:survey:rep-2",
+          text: "'Fine' is not nothing — it is a baseline. I worry when the fines stop. In 2023 everyone wrote 'busy', which took me three weeks and one budget line to decode into 'we need a second intern'. People answer surveys in code. My job is the cipher.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:survey:rep-3",
+          text: "Anonymous in the technical sense: I see word clouds, HR sees sentiment, and Kasia sees comments with the names surgically removed. The system has survived two audits and one very specific accusation. The anonymity is real. The word clouds are just judgmental.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral", "period:morning"],
+        },
+        {
+          id: "zosia:survey:rep-4",
+          text: "Then the system worked. Chairs were budgeted, backs were saved, and one comment changed a real line item. Most survey comments die in a folder. Yours got furniture. That is the return nobody believes until it happens to them. Complain in writing. It is literally how things move here.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:survey:rep-5",
+          text: "Someone wrote 'the printer has better job security than me' in 2022. It was funny, it was fair, and it became the retention discussion that unlocked two salaries. The best survey answers are jokes with a budget attached. I read for the punchlines first.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:survey:rep-6",
+          text: "We do, quarterly, disguised as a check-in call, and the clients lie more than we do. They write 'all good' while renewing late and paying late. At least the staff survey has a comments section. The client survey is an invoice with feelings. I stopped reading it in 2023.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "zosia:mentorship",
+      label: "The mentorship program",
+      optionCandidates: [
+        { id: "zosia:mentorship:opt-1", topicId: "zosia:mentorship", text: "Is the mentorship program real or a poster?" },
+        { id: "zosia:mentorship:opt-2", topicId: "zosia:mentorship", text: "You paired me with Tomek. Was that revenge?" },
+        { id: "zosia:mentorship:opt-3", topicId: "zosia:mentorship", text: "What makes a mentor actually work here?" },
+        { id: "zosia:mentorship:opt-4", topicId: "zosia:mentorship", text: "My mentor cancelled twice. Is that the program?" },
+        { id: "zosia:mentorship:opt-5", topicId: "zosia:mentorship", text: "Can I mentor someone? I have been here a year." },
+        { id: "zosia:mentorship:opt-6", topicId: "zosia:mentorship", text: "Who mentors the mentors?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:mentorship:rep-1",
+          text: "It is real, it is a spreadsheet, and it has produced two careers, one friendship, and one lawsuit threat that turned out to be a joke. The poster came later, designed by Klaudia, approved by nobody. The program is just adults trading time on purpose. It works.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:mentorship:rep-2",
+          text: "It was triage. Tomek reviews code the way surgeons review incisions, and you needed a mentor who would not lie to you. Revenge would have paired you with Przemek — he would have taught you forecasting and left you optimistic. Tomek leaves you accurate. You are welcome.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:mentorship:rep-3",
+          text: "Time, honesty, and a shared artifact. Every pairing that worked here had a real thing to review — a script, a deck, a forecast. Every pairing that failed was 'monthly chats'. Mentoring over coffee evaporates. Mentoring over a pull request compounds. That is the program.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:mentorship:rep-4",
+          text: "Twice is a pattern, three times is a decision. Tell me and I re-pair you within the week — the program has a bench, and the bench has Marek, who has never cancelled anything, including his own wedding rehearsal. Mentors who flake teach flaking. The program survives a swap.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:mentorship:rep-5",
+          text: "Yes, and do it before you feel ready. The best mentor here is one year ahead, not ten — the gap is small enough to remember. Pawel was mentored by Marek and now mentors the new intern with the same spreadsheet. The knowledge compounds. That is the point of the office.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:mentorship:rep-6",
+          text: "Me, and it is the loneliest part of the job. Dawid listens, Burek does not judge, and once a year I buy a business book I never finish and call it development. If you ever become the person people bring their calendars to, schedule your own mentor before you need one.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "quest:zosia-opened-up"],
+        },
+      ],
+    },
   ],
   taskOffers: [
     {

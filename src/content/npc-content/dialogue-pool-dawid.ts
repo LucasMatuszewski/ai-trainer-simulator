@@ -787,6 +787,602 @@ export const DAWID_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "dawid:silence",
+      label: "The strategic silence",
+      optionCandidates: [
+        { id: "dawid:silence:opt-1", topicId: "dawid:silence", text: "You pause five seconds before answering. Why?" },
+        { id: "dawid:silence:opt-2", topicId: "dawid:silence", text: "Silence in meetings — tactic or digestion?" },
+        { id: "dawid:silence:opt-3", topicId: "dawid:silence", text: "I filled your silence with a discount. Lesson?" },
+        { id: "dawid:silence:opt-4", topicId: "dawid:silence", text: "Does silence ever mean you disagree?" },
+        { id: "dawid:silence:opt-5", topicId: "dawid:silence", text: "Trainees say you listen with your eyebrows." },
+        { id: "dawid:silence:opt-6", topicId: "dawid:silence", text: "Could the office function if you never spoke?" },
+      ],
+      replyCandidates: [
+        {
+          id: "dawid:silence:rep-1",
+          text: "Five seconds is the distance between hearing and understanding. Most people answer from the first half. I answer from both. The pause also tells me who is afraid of it — the room reveals itself in silence the way a floor reveals itself under weight. Five seconds is an audit. It is free. I run it daily.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:silence:rep-2",
+          text: "Both. Digestion is the personal half. The tactic is that silence transfers the floor — someone will fill it, and what they fill it with is the real agenda. I learned this from a chairman who never spoke first. Twenty years of meetings and the pattern holds: the silence speaks, and everyone else transcribes.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:silence:rep-3",
+          text: "Then you learned the lesson at tuition rates most people pay for years. The discount is yours to keep — it was your anxiety, not my ask. Next time, let the five seconds sit. Whatever you offer into silence becomes the new baseline. The silence is a ratchet. I did not invent it. I merely refuse to defeat it.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "dawid:silence:rep-4",
+          text: "Disagreement is silence with weight. I disagree out loud exactly once per quarter, on the thing that matters. The rest of my disagreements are pauses of different lengths — two seconds means 'noted', five means 'wrong', and ten means withdraw the proposal before I name it. The office has learned the scale.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "dawid:silence:rep-5",
+          text: "Accurate. The eyebrows carry the meeting so the mouth can carry the quarter. A raised brow is a question, a furrow is a veto, and the slow blink is 'we will revisit this in the next quarter'. The team has achieved full literacy. I could run this office in charades and the numbers would not notice for a month.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "dawid:silence:rep-6",
+          text: "It has, for three days, twice a year. The silent operation is a test of the systems, and the systems pass, which is the point. The company should run on documents, defaults, and good hires — not on the founder's voice. My silence is the loudest thing I have ever built. It took ten years and it says everything.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "dawid:migration",
+      label: "The great migration",
+      optionCandidates: [
+        { id: "dawid:migration:opt-1", topicId: "dawid:migration", text: "The big migration — when does it actually start?" },
+        { id: "dawid:migration:opt-2", topicId: "dawid:migration", text: "Why migrate if the old system still works?" },
+        { id: "dawid:migration:opt-3", topicId: "dawid:migration", text: "The migration plan is one page. Confidence?" },
+        { id: "dawid:migration:opt-4", topicId: "dawid:migration", text: "What breaks first in every migration?" },
+        { id: "dawid:migration:opt-5", topicId: "dawid:migration", text: "Marek says the migration is 'a mood'. Fair?" },
+        { id: "dawid:migration:opt-6", topicId: "dawid:migration", text: "How will you know the migration succeeded?" },
+      ],
+      replyCandidates: [
+        {
+          id: "dawid:migration:rep-1",
+          text: "When two things are true: the new system survives a fire drill, and the old system has become the thing we apologize for. Neither is true yet, which is why the start date is a quarter with no name. Migrations do not fail on technology. They fail on STARTING. The one-page plan exists so that starting is small.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:migration:rep-2",
+          text: "Because 'still works' is a status, not a destination — the old system works the way a bridge works with one lane closed: technically, and at a cost nobody invoices. Every year we keep it, the migration gets harder and the apology gets longer. The graph says migrate. The graph has never once been sentimental.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:migration:rep-3",
+          text: "One page is the confidence. A thick migration plan is a diary of fears; a one-page plan is a list of promises with owners. Mine has four lines: sequence, rollback, owner, date. Everything else is discovered, and discovery is what the team is FOR. I have seen forty-page plans. They migrate beautifully. In the plan.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "dawid:migration:rep-4",
+          text: "The org chart. Every migration breaks the same thing first: the informal knowledge of who to ask. The tool moves in a weekend; the folklore takes a quarter. My whole preparation is documentation with pensions — write the folklore down before the move, pay the writers well, and the migration is a formality.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "dawid:migration:rep-5",
+          text: "Fair, and partially intended. Migrations are moods before they are projects — the mood is 'we deserve better', and without the mood nothing moves. Marek's job is to distrust the mood with load tests. My job is to keep the mood alive until his tests pass. Between us, the truth gets built. It is a two-man engine.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:migration:rep-6",
+          text: "Nobody notices. The success metric of a migration is a Tuesday where nothing is mentioned — no nostalgia, no complaints, no war stories. I will consider it done when the new system gets its first genuinely boring outage. Boring is the sound of a migration that finished. I am waiting for the boredom. It will come.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "dawid:reading",
+      label: "The reading list",
+      optionCandidates: [
+        { id: "dawid:reading:opt-1", topicId: "dawid:reading", text: "You read one book a week. Retention or ritual?" },
+        { id: "dawid:reading:opt-2", topicId: "dawid:reading", text: "What are you reading right now? Be specific." },
+        { id: "dawid:reading:opt-3", topicId: "dawid:reading", text: "Business books or fiction? Your shelf is mixed." },
+        { id: "dawid:reading:opt-4", topicId: "dawid:reading", text: "Do you recommend books to the team? Or assign?" },
+        { id: "dawid:reading:opt-5", topicId: "dawid:reading", text: "The reading list is public. Intimidation?" },
+        { id: "dawid:reading:opt-6", topicId: "dawid:reading", text: "Which book changed how you run meetings?" },
+      ],
+      replyCandidates: [
+        {
+          id: "dawid:reading:rep-1",
+          text: "Ritual, with light retention — I read in the same chair at the same hour, and the book matters less than the hour does. A page a night before sleep is the cheapest brain maintenance in existence. Some books stay. Most are scaffolding. The habit is the asset. The habit has run for twenty years.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:reading:rep-2",
+          text: "A history of the Suez Canal, for the second time. It is a book about one man's bet that a ditch could change the trade winds of the world — every chapter is a stakeholder meeting I have attended in another costume. Business books describe the present. History describes it in costume. Costume teaches better.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:reading:rep-3",
+          text: "Mixed on purpose. Fiction is where I practice empathy at scale — a novel is a hundred hours inside someone else's balance sheet. Business books give frameworks. Fiction gives the reason the frameworks keep failing: people. I alternate. One for the machine, one for the machine's operators.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "dawid:reading:rep-4",
+          text: "Recommend, never assign — assigned books die unread on desks and breed resentment. A recommendation carries no homework; it travels by curiosity. I leave books on the shelf by the coffee with a sticky note that says one word: 'chapter four'. Those who read it come back changed. The rest were never my audience.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "dawid:reading:rep-5",
+          text: "It is transparency, not intimidation — the list is how I think in public, and reading my list tells you my fears six months early. The canal phase means I am worried about infrastructure bets. The biography phase means succession is on my mind. The list is a mood ring with footnotes. I update it. I mean it.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:reading:rep-6",
+          text: "A book about parliamentary procedure, of all things — it taught me that a meeting is a machine for converting disagreement into decisions, and most meetings skip the second half. Now every meeting I chair ends with 'decision, owner, date', said out loud. Three words. The book gets the credit. The meetings get the exit.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "dawid:chair",
+      label: "The chair question",
+      optionCandidates: [
+        { id: "dawid:chair:opt-1", topicId: "dawid:chair", text: "Your chair is fifteen years old. Sentiment or spine?" },
+        { id: "dawid:chair:opt-2", topicId: "dawid:chair", text: "You stand for board calls. Why the change?" },
+        { id: "dawid:chair:opt-3", topicId: "dawid:chair", text: "The office chairs — renew or endure?" },
+        { id: "dawid:chair:opt-4", topicId: "dawid:chair", text: "Is there a chair hierarchy here? Be honest." },
+        { id: "dawid:chair:opt-5", topicId: "dawid:chair", text: "Marek brought his own chair from home. Respect?" },
+        { id: "dawid:chair:opt-6", topicId: "dawid:chair", text: "What does a chair say about a company?" },
+      ],
+      replyCandidates: [
+        {
+          id: "dawid:chair:rep-1",
+          text: "Both. The chair is broken in exactly the places my spine prefers, which took two years of negotiation and has held for thirteen. Replacing it is a week of adjustment I decline annually. Grazyna has offered. The chair declines. Some equipment becomes a limb. The invoices stopped calling it an asset in 2015.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:chair:rep-2",
+          text: "Standing keeps the board call at forty minutes — the body has opinions about sitting through a second agenda. I learned it from a general who reviewed troops standing. Decisions take the shape of the posture. Sitting says 'discuss'. Standing says 'decide'. The board gets the version of me that decides.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:chair:rep-3",
+          text: "Endure, repair, and replace in secret — there is a standing order: when a chair dies, it is replaced overnight with the same model. Nobody grieves, nobody adjusts, nobody files a ticket. The chair fleet operates like a submarine service. Continuity without ceremony. The budget line is two lines long.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "dawid:chair:rep-4",
+          text: "There is a hierarchy and it is light-based, not title-based — the window chairs belong to whoever's eyes suffer most, and the assignment changes with the season. I sit with my back to the window on principle. The CEO who takes the worst chair daily has ended every chair argument for a decade. A cheap, brilliant war.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "dawid:chair:rep-5",
+          text: "Respect. The man audited every office chair, found them wanting, and imported his own — that is not diva behavior, that is infrastructure thinking. His chair has survived two floods and one rebrand. I have considered putting it in the org chart. Marek sits in Marek's chair. The company sits in continuity.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:chair:rep-6",
+          text: "Whether it expects people to stay. Startups buy stools — light, cheap, mobile. Institutions buy chairs that outlive their occupants. This office buys the second kind now, deliberately. The day we buy stools again is the day we start over, and I would rather repair the chairs and the culture than replace either.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "dawid:whiteboard",
+      label: "The whiteboard",
+      optionCandidates: [
+        { id: "dawid:whiteboard:opt-1", topicId: "dawid:whiteboard", text: "The whiteboard has not been erased since March." },
+        { id: "dawid:whiteboard:opt-2", topicId: "dawid:whiteboard", text: "What is actually on it right now?" },
+        { id: "dawid:whiteboard:opt-3", topicId: "dawid:whiteboard", text: "May I add something to the whiteboard?" },
+        { id: "dawid:whiteboard:opt-4", topicId: "dawid:whiteboard", text: "It is a photo in the onboarding deck. Know?" },
+        { id: "dawid:whiteboard:opt-5", topicId: "dawid:whiteboard", text: "Digital boards exist. Defend the wall." },
+        { id: "dawid:whiteboard:opt-6", topicId: "dawid:whiteboard", text: "What happens when the board runs out of space?" },
+      ],
+      replyCandidates: [
+        {
+          id: "dawid:whiteboard:rep-1",
+          text: "Because erasing is a decision and March's decision is still correct. The board is a standing hypothesis: as long as nobody has proven it wrong, it stays. Some companies run on roadmaps. This corner runs on one board that refuses to lie. When it is finally wrong, the erasing will feel like a funeral. None is scheduled.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "dawid:whiteboard:rep-2",
+          text: "Three words, one arrow, and a question mark. The words are the strategy. The arrow is the sequence. The question mark is the part the market has not answered yet — I keep the question visible so nobody mistakes the plan for prophecy. The question mark is the most honest mark on the wall. It earns its ink.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:whiteboard:rep-3",
+          text: "Ask first, in writing, on the board itself — there is a column for petitions. If your idea survives two weeks without anyone crossing it out, it has passed the office's test and moves to the main board. The whiteboard is a meritocracy with an entrance exam. The exam is other people's silence.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "dawid:whiteboard:rep-4",
+          text: "I know, and the photo is out of date, which the deck's authors will discover when they compare it to the wall. The board changes; the PHOTO is a rumor. I have asked for the caption to say 'as of March'. Documentation that pretends to be current is worse than none. The board is current. The deck is folklore.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "dawid:whiteboard:rep-5",
+          text: "The wall board is public, always-on, and impossible to secretly edit — a digital board has permissions, history, and deniability. The wall has none. Everyone sees the same truth at the same time, including me. The day strategy needs access controls, it has stopped being strategy. Digital can wait.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:whiteboard:rep-6",
+          text: "Then it is full of decisions and we buy a second board and put them back to back, so the room has a past and a present facing each other. I have seen offices archive whiteboards digitally. I archive them by ADDING WALLS. The office grows one board per era. You can date any idea by which wall it lives on.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "dawid:decision-log",
+      label: "The decision log",
+      optionCandidates: [
+        { id: "dawid:decision-log:opt-1", topicId: "dawid:decision-log", text: "Every decision gets one line in the log. Why?" },
+        { id: "dawid:decision-log:opt-2", topicId: "dawid:decision-log", text: "What is the format of a decision line?" },
+        { id: "dawid:decision-log:opt-3", topicId: "dawid:decision-log", text: "Can decisions be reopened once logged?" },
+        { id: "dawid:decision-log:opt-4", topicId: "dawid:decision-log", text: "The log is public to the whole office. Risky?" },
+        { id: "dawid:decision-log:opt-5", topicId: "dawid:decision-log", text: "The most expensive decision in the log?" },
+        { id: "dawid:decision-log:opt-6", topicId: "dawid:decision-log", text: "You logged 'do nothing' once. Justify." },
+      ],
+      replyCandidates: [
+        {
+          id: "dawid:decision-log:rep-1",
+          text: "Because a decision that is not written is a rumor with authority. The log costs thirty seconds per decision and saves quarters of archaeology — 'why did we do it this way' has an address instead of a memory. The log is the office's long-term memory. Brains are for the current quarter. The log is for the new hire in three years.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:decision-log:rep-2",
+          text: "Date, decision, owner, and the option we declined. The declined option is the load-bearing part — six months later, when someone proposes the rejected path with fresh enthusiasm, the log shows them the grave, the date, and the reasons. Most meetings are people re-proposing logged options. The log is the anti-meeting.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:decision-log:rep-3",
+          text: "Yes, with a ceremony: reopen in writing, log the reopening, and pay the reversal cost in one line. Decisions are not marriages. They are leases with renewal terms. The log does not judge reversals — it prices them. A reversal that cannot afford one honest line was not a decision. It was a mood in a suit.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "dawid:decision-log:rep-4",
+          text: "The risk is the point. A public log means a junior can read why the office declined the acquisition — the real reasons, not the all-hands version. Some lines are uncomfortable. Discomfort is cheaper than mythology. The day the log needs a private layer is the day the office has two truths, and two truths rot.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "dawid:decision-log:rep-5",
+          text: "The one that nearly sold the company — the full line includes the number, the counter-number, and Grazyna's confidence interval, which was wider than the offer. Reading it still raises my pulse. That is the log working as intended: expensive lessons stay expensive on paper so they stay cheap in practice.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:decision-log:rep-6",
+          text: "Easily. 'Decision: do nothing. Owner: me. Declined option: panic.' The quarter before the flood anniversary, three vendors proposed three urgent rebuilds, and the correct move was patience. Doing nothing is a decision with a cost, a risk, and an owner. It is the rarest line in the log and the hardest to defend. I defend it annually.",
+          relationshipHint: "pleased",
+          tags: ["quest:janusz-told-the-flood", "relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "dawid:oncall-creed",
+      label: "The on-call creed",
+      optionCandidates: [
+        { id: "dawid:oncall-creed:opt-1", topicId: "dawid:oncall-creed", text: "You take night rotations with the team. Why?" },
+        { id: "dawid:oncall-creed:opt-2", topicId: "dawid:oncall-creed", text: "The wall creed — 'the pager is a teacher'. Yours?" },
+        { id: "dawid:oncall-creed:opt-3", topicId: "dawid:oncall-creed", text: "What did on-call teach you that meetings cannot?" },
+        { id: "dawid:oncall-creed:opt-4", topicId: "dawid:oncall-creed", text: "Tomek slept through an alert. His defense?" },
+        { id: "dawid:oncall-creed:opt-5", topicId: "dawid:oncall-creed", text: "Would you exempt the CEO from the rotation?" },
+        { id: "dawid:oncall-creed:opt-6", topicId: "dawid:oncall-creed", text: "What does a final on-call week feel like?" },
+      ],
+      replyCandidates: [
+        {
+          id: "dawid:oncall-creed:rep-1",
+          text: "Because the pager is the only meeting where the company tells the truth at three am. No slides, no agenda, no optics — just the system, its failures, and whoever showed up. A CEO who has never held the pager is a CEO who has read about the company. I hold it quarterly. My calendar holds itself.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:oncall-creed:rep-2",
+          text: "Mine, and it is one sentence on purpose: 'the pager is a teacher, the alert is a lesson, and the postmortem is the tuition receipt.' Every rotation pays into the same education. The wall copy was Janusz's idea — he said the closet has a creed too, unwritten, and the pager deserved the same dignity.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "dawid:oncall-creed:rep-3",
+          text: "The difference between urgency and importance. At three am everything is urgent and almost nothing is important — the skill is triage in pajamas. Meetings teach the opposite: everything feels important and nothing is urgent. A leader needs both lies and both truths. The pager keeps my truth calibrated.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:oncall-creed:rep-4",
+          text: "His defense was 'the alert was noise and the graph agreed' — and he was RIGHT, which is worse than being wrong. We adjusted the thresholds that week. Sleeping through a false alert is a symptom, not a crime. The crime is tuning the alerts to protect sleep instead of signal. We tuned for signal. Tomek sleeps.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "dawid:oncall-creed:rep-5",
+          text: "Exempting the CEO teaches the office that authority buys exemption, and exemption is how organizations learn to hide incidents from the top. I take the same rotation, the same phone, the same three am. The one concession: my rotation never lands on a board week. That is scheduling, not privilege. The pager does not know my title.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "dawid:oncall-creed:rep-6",
+          text: "Quiet. The last rotation is the one where you finally do it right — fewer pages, cleaner handoffs, and one alert resolved before it wakes anyone. The senior on-call's reward is silence. I have watched three engineers finish their last rotation and smile at the phone like an old colleague. A good retirement.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "dawid:bats",
+      label: "The bat merchandising",
+      optionCandidates: [
+        { id: "dawid:bats:opt-1", topicId: "dawid:bats", text: "The office accumulates bat merch. Sanctioned?" },
+        { id: "dawid:bats:opt-2", topicId: "dawid:bats", text: "A client gifted a bat statue. Where does it go?" },
+        { id: "dawid:bats:opt-3", topicId: "dawid:bats", text: "Is there a Batman line item in the budget? Truly?" },
+        { id: "dawid:bats:opt-4", topicId: "dawid:bats", text: "Interns give bat gifts at every departure. Since?" },
+        { id: "dawid:bats:opt-5", topicId: "dawid:bats", text: "Do you actually like bats? The animal." },
+        { id: "dawid:bats:opt-6", topicId: "dawid:bats", text: "When does bat branding become a liability?" },
+      ],
+      replyCandidates: [
+        {
+          id: "dawid:bats:rep-1",
+          text: "Tolerated, cataloged, and taxed — Klaudia keeps a registry, Grazyna assigns each item a value of one zloty, and the shelf acquires one item per month like a reef. I sanction nothing and forbid nothing. The bat merchandise is the office's folk art. Museums do not commission folk art. They provide the shelf.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:bats:rep-2",
+          text: "The gift shelf, by height — it must never out-rank Bruce. The statue from the Warsaw client stands eleven centimeters tall, which is correct diplomacy: bats must observe the protocol of size. A client bat larger than OUR bat would be a statement. There is a rule and the rule has a ruler.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "dawid:bats:rep-3",
+          text: "There is, and it is one zloty, line item 'brand heritage, miscellaneous', which Grazyna invented to stop ME from asking. The forty thousand was a one-time wound. The one zloty is a vaccine. Every year it renews, the auditors smile, and the bat costs nothing and anchors everything. Finance as folklore.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "dawid:bats:rep-4",
+          text: "It started in 2021, with a felt bat, and it is now a tradition with rules: handmade, small, and one per person. The shelf is the archive of everyone who left. I know which intern gave which bat. It is the only farewell ceremony this office has never had to organize. The tradition organizes itself. Those are the best ones.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:bats:rep-5",
+          text: "Genuinely — they are the only mammal that truly flies, they navigate by listening, and they keep the mosquito population of this city in balance. A company could do worse than a mascot that sees in the dark and eats problems. There is a bat house on the roof. Janusz approves of the pest control. The symmetry is intentional.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "dawid:bats:rep-6",
+          text: "When a lawyer says the word 'trademark' in a sentence with ours in it, or when a client's child is frightened in the lobby — whichever comes first. So far the children adore it and the lawyers bill elsewhere. The day a bat costume at a conference outshines the product, I cap the merchandising. The bat serves the company.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "dawid:interview-loop",
+      label: "The interview loop",
+      optionCandidates: [
+        { id: "dawid:interview-loop:opt-1", topicId: "dawid:interview-loop", text: "You redesigned the interview loop. Shorter. Why?" },
+        { id: "dawid:interview-loop:opt-2", topicId: "dawid:interview-loop", text: "Four interviews was too many. Agreed?" },
+        { id: "dawid:interview-loop:opt-3", topicId: "dawid:interview-loop", text: "The loop has no whiteboard coding. Brave?" },
+        { id: "dawid:interview-loop:opt-4", topicId: "dawid:interview-loop", text: "Who says yes — the manager, HR, or you?" },
+        { id: "dawid:interview-loop:opt-5", topicId: "dawid:interview-loop", text: "The loop rejects quietly. Feedback policy?" },
+        { id: "dawid:interview-loop:opt-6", topicId: "dawid:interview-loop", text: "What does the loop optimize for? Honestly." },
+      ],
+      replyCandidates: [
+        {
+          id: "dawid:interview-loop:rep-1",
+          text: "Because every extra round is a tax on the exact people we want — the good candidates have options and calendars, and a five-week loop is a rejection letter with a delay. We cut to two rounds and a working session. Time-to-offer dropped to nine days. The acceptance rate went up. Speed is a feature of respect.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:interview-loop:rep-2",
+          text: "Agreed, and the fourth round was the worst one — it had no rubric, no owner, and a habit of testing culture fit, which is a scientific term for 'reminded me of myself'. The loop now measures the work, the honesty, and one question about deletion. Everything else was ceremony. Ceremonies are for weddings.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "dawid:interview-loop:rep-3",
+          text: "Not brave — accurate. Whiteboard coding measures calligraphy under adrenaline, a skill the job does not contain. The working session hands the candidate a real bug from our past and a real afternoon. Three hours of that outperforms what the whiteboard pretended to measure. The whiteboard tutors interns now.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "dawid:interview-loop:rep-4",
+          text: "The manager says yes, HR says the process was clean, and I say nothing unless the hire is senior — my veto is real and has been used twice in ten years, which is the correct dose. A veto that fires often is a dictator. A veto that never fires is a decoration. Twice a decade. The loop knows the difference.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:interview-loop:rep-5",
+          text: "Every rejection gets one true sentence and one kind one, written by the interviewer, not a template. 'Your systems thinking is ahead of your debugging' has redirected two careers that I know of. Rejection is the most-read email we send. It should be written like it. Quiet rejections are rumor factories.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:interview-loop:rep-6",
+          text: "For the Tuesday. Not the interview, not the offer — the first Tuesday, when the new hire is alone with the codebase and their courage. Everything in the loop predicts that Tuesday: will they ask, will they read, will they fix or perform. Charisma hires Tuesdays full of performance. Ours hires Tuesdays full of progress.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "dawid:patents",
+      label: "The patents drawer",
+      optionCandidates: [
+        { id: "dawid:patents:opt-1", topicId: "dawid:patents", text: "We hold patents? The office does not feel patented." },
+        { id: "dawid:patents:opt-2", topicId: "dawid:patents", text: "The patent drawer is locked. What is in it?" },
+        { id: "dawid:patents:opt-3", topicId: "dawid:patents", text: "Is the rate limiter patented? It predates you." },
+        { id: "dawid:patents:opt-4", topicId: "dawid:patents", text: "Should engineers file patents for career points?" },
+        { id: "dawid:patents:opt-5", topicId: "dawid:patents", text: "A competitor cited our patent. Lawsuit?" },
+        { id: "dawid:patents:opt-6", topicId: "dawid:patents", text: "The patent you let expire, and why?" },
+      ],
+      replyCandidates: [
+        {
+          id: "dawid:patents:rep-1",
+          text: "Three, all defensive, all boring — which is exactly what patents should be. The office does not feel patented because the patents are fences, not flags: they exist so nobody fences US in. Aggressive patenting is for companies whose product is the lawyer. Our product is the training. The fences stay quiet.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:patents:rep-2",
+          text: "Two granted, one pending, and the certificates live in the fireproof cabinet next to the archive because paper outlives platforms. The drawer is locked because patents are the one asset that appreciates when IGNORED — every year of silence raises their defensive value. Attention is depreciation. Silence is maintenance.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "dawid:patents:rep-3",
+          text: "Unpatented, deliberately — Marek's rate limiter predates the company's patent era, and patenting it now would be a confession that we patent things engineers made in kitchens. It lives in prod as prior art with a birthday. Some code should never meet a lawyer. That one is folklore. Folklore does not file.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "dawid:patents:rep-4",
+          text: "Never for career points — the point system corrupts the filing and fills the drawer with thin patents that collapse under the first lawyer's breath. We file when an idea is both valuable and defensive, and the engineer's name goes first on the document. Two engineers here are named inventors. Both earned it.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "dawid:patents:rep-5",
+          text: "No lawsuit — a letter, one paragraph, and a licensing offer at a price they would laugh at and then accept. Defensive patents exist to be monetized politely, not weaponized. The competitor took the license. We buy their coffee at conferences now. The patent paid for the coffee for a decade. Best return in the drawer.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "dawid:patents:rep-6",
+          text: "The first one, a mobile sync method from 2011 — the world walked around it, the maintenance fees outlived the relevance, and letting it go felt like deleting dead code. There was a small ceremony. The log has the line. Patents, like features, have lifecycles. The drawer should only hold things the future still fears.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "dawid:coffee-order",
+      label: "The precise coffee order",
+      optionCandidates: [
+        { id: "dawid:coffee-order:opt-1", topicId: "dawid:coffee-order", text: "Your coffee order has specifications. Share them." },
+        { id: "dawid:coffee-order:opt-2", topicId: "dawid:coffee-order", text: "Same coffee, same time, eleven years. Discipline?" },
+        { id: "dawid:coffee-order:opt-3", topicId: "dawid:coffee-order", text: "The barista near the office knows your order." },
+        { id: "dawid:coffee-order:opt-4", topicId: "dawid:coffee-order", text: "Grazyna priced your coffee habit. Findings?" },
+        { id: "dawid:coffee-order:opt-5", topicId: "dawid:coffee-order", text: "Would you drink bad coffee for a good meeting?" },
+        { id: "dawid:coffee-order:opt-6", topicId: "dawid:coffee-order", text: "What does the coffee order say about you?" },
+      ],
+      replyCandidates: [
+        {
+          id: "dawid:coffee-order:rep-1",
+          text: "Flat white, one and a half sugars, cup warmed, no lid. Each element is a decision I made once so the morning makes none. The order is not about coffee — it is about removing one decision from a day that budgets them. The sugar fraction took two years. I do not discuss the fraction publicly. You asked. One and a half.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:coffee-order:rep-2",
+          text: "Discipline, and it compounds like everything else — the same order means the same machine settings, the same taste, and one fewer variable between me and the first decision of the day. People call it boring. I call it a fixed cost. My mornings have a budget and the coffee is the only line that never argues.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:coffee-order:rep-3",
+          text: "She knows the order, the fraction, and the days I travel — on Thursdays she sets the cup out at 8:14 without being asked. That is not service. That is a system with a memory, and I am a client in it. I tip like the operation depends on me. It does not. That is why the tip is correct.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "dawid:coffee-order:rep-4",
+          text: "She did — the habit prices at nine hundred zloty a year, and the line item reads 'executive fuel, fixed cost, do not optimize'. Her footnote says the order is cheaper than therapy and more punctual than most vendors. Right on both counts. I have never once discussed the footnote with her. Some audits are love letters.",
+          relationshipHint: "annoyed",
+          tags: ["quest:grazyna-showed-the-books", "relationship:neutral"],
+        },
+        {
+          id: "dawid:coffee-order:rep-5",
+          text: "I have, for years — client sites serve coffee as a personality test, and I drink whatever arrives with the face of a man being honored. The meeting is not about my palate. Refusing the cup refuses the room. I once drank machine coffee for three days and closed the deal. The deal tasted better than the coffee. Both counted.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:coffee-order:rep-6",
+          text: "That it decided. Most people wander into the day and let the day choose. The order is one small architecture: fixed, known, defended. Start with one decision made forever and the rest of the day inherits the posture. The coffee is trivial. The posture is not. Everything I respect started as a small thing done the same way twice.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "dawid:boardgames",
+      label: "Board games with the board",
+      optionCandidates: [
+        { id: "dawid:boardgames:opt-1", topicId: "dawid:boardgames", text: "You play board games with board members. Why?" },
+        { id: "dawid:boardgames:opt-2", topicId: "dawid:boardgames", text: "Which game? Choose carefully. The room listens." },
+        { id: "dawid:boardgames:opt-3", topicId: "dawid:boardgames", text: "A board member resigned mid-game. Story?" },
+        { id: "dawid:boardgames:opt-4", topicId: "dawid:boardgames", text: "Does the game table leak into the boardroom?" },
+        { id: "dawid:boardgames:opt-5", topicId: "dawid:boardgames", text: "Maciek refuses to play. Analyze." },
+        { id: "dawid:boardgames:opt-6", topicId: "dawid:boardgames", text: "What has the game table taught about governance?" },
+      ],
+      replyCandidates: [
+        {
+          id: "dawid:boardgames:rep-1",
+          text: "Because the game table is the only room where the board sees me lose. The boardroom never shows it — the deck is polished, the graph is up, and the members meet a performance. Over a board game they meet a player: patient, ruthless about the wrong things once a year, bad at bluffing. Boards fund companies. They trust players.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:boardgames:rep-2",
+          text: "A trading game from the seventies, with negotiation and no dice — pure information and nerve. Dice games are lotteries, and I will not bond over luck. Negotiation games reveal how a person treats the table when nothing is at stake, which is exactly the data the boardroom hides. The seventies understood governance.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:boardgames:rep-3",
+          text: "He did not resign — he surrendered a two-hour lead in one bad trade, laughed harder than anyone, and resigned from the GAME committee, not the board. We played three more hands. He is now the strongest advocate for our risk policy in the room, because he has FELT the downside in cardboard. Simulation beats consequence.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "dawid:boardgames:rep-4",
+          text: "It informs, not leaks — I learned the chairman folds under time pressure in games, so in boardrooms I never rush his decisions. Another member bluffs at everything, so I put everything in writing. The game table is due diligence with snacks. Better learned over cardboard than during a crisis. Crises charge tuition.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "dawid:boardgames:rep-5",
+          text: "He refuses because he does not lose gracefully, and he KNOWS this about himself, which is the most self-aware thing about him. His refusal is a leadership decision — he will not give the board a data point he cannot control. I respect it. The office would follow him anywhere if he once lost at cards. His loss, both senses.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "dawid:boardgames:rep-6",
+          text: "That governance is a game of constrained honesty — everyone at the table knows roughly the same things, and the game is who says what first. The boardroom pretends otherwise. The table admits it. My governance improved the day I stopped treating board members as an audience and started treating them as players.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "dawid:predictions",
+      label: "The predictions file",
+      optionCandidates: [
+        { id: "dawid:predictions:opt-1", topicId: "dawid:predictions", text: "You keep a predictions file with dates. Scored?" },
+        { id: "dawid:predictions:opt-2", topicId: "dawid:predictions", text: "Your best call — the one you still mention?" },
+        { id: "dawid:predictions:opt-3", topicId: "dawid:predictions", text: "Your worst call. The expensive one." },
+        { id: "dawid:predictions:opt-4", topicId: "dawid:predictions", text: "What is the next prediction on the list?" },
+        { id: "dawid:predictions:opt-5", topicId: "dawid:predictions", text: "Why date predictions? Confidence theater?" },
+        { id: "dawid:predictions:opt-6", topicId: "dawid:predictions", text: "Should the office make collective predictions?" },
+      ],
+      replyCandidates: [
+        {
+          id: "dawid:predictions:rep-1",
+          text: "Scored, annually, in front of the graph — twenty predictions a year, each with a date and a confidence level, because an un-scored prediction is just a mood with ambition. My ten-year average is sixty-two percent, which sounds humble until you learn most executives score forty by never writing anything down. Writing is the discipline.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "dawid:predictions:rep-2",
+          text: "2019: 'the training market consolidates within four years and the survivors sell trust, not hours.' Everyone laughed at the trust clause. The consolidation came in three, and the survivors sell exactly that. I do not mention it for the victory lap — I mention it because the SECOND half of the file says what I believe now. Still laughable. Good.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "dawid:predictions:rep-3",
+          text: "2021: 'remote work is a temporary correction.' I gave it eighteen months. The correction became the climate, and my eighteen months expired ungracefully. The line is still in the file, scored zero, annotated in red: 'you mistook your preferences for the market.' Most valuable sentence in the drawer. It cost one review of dignity.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "dawid:predictions:rep-4",
+          text: "That the next great training brand will be built on a game, not a course — that attention is the new classroom and whoever makes learning playable takes the decade. Confidence: sixty percent. Horizon: three years. The filing is discipline, not prophecy. If it lands, you heard it here. If it misses, the graph and I will discuss.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "dawid:predictions:rep-5",
+          text: "The date is the honesty — a prediction without a date is a horoscope, and horoscopes are why people distrust strategy. Every line in my file can fail measurably, in public, on schedule. Some leaders protect credibility by never predicting. I protect mine by predicting badly sometimes and saying so. The file is the anti-horoscope.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "dawid:predictions:rep-6",
+          text: "We do, quarterly, at the all-hands — five predictions from the floor, scored the next quarter, no stakes except the scoreboard. The office averages forty-one percent and the exercise is priceless anyway: it teaches the company that forecasts are testable, including the ones from the front. The scoreboard hangs by the coffee. Janusz scores hardest.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
   ],
   taskOffers: [
     {

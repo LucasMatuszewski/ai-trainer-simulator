@@ -788,6 +788,602 @@ export const JANUSZ_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "janusz:keys",
+      label: "The key hierarchy",
+      optionCandidates: [
+        { id: "janusz:keys:opt-1", topicId: "janusz:keys", text: "How many keys does one janitor need?" },
+        { id: "janusz:keys:opt-2", topicId: "janusz:keys", text: "There is a key that opens nothing. Explain." },
+        { id: "janusz:keys:opt-3", topicId: "janusz:keys", text: "The master key weighs more than the others." },
+        { id: "janusz:keys:opt-4", topicId: "janusz:keys", text: "Who has keys to the closet besides you?" },
+        { id: "janusz:keys:opt-5", topicId: "janusz:keys", text: "The server room key has a red fob. Why?" },
+        { id: "janusz:keys:opt-6", topicId: "janusz:keys", text: "Could the office go keyless? Badge readers?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:keys:rep-1",
+          text: "Fourteen, and each one earns its weight. The rest of the ring is history — keys to doors the renovation removed, a filing cabinet nobody owns, and the bicycle cage from a company that shared this floor in 2015. You do not throw away a key. You retire it to the hook. The hook has order.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:keys:rep-2",
+          text: "It is the unknown. Every building has one lock nobody can name, and the key for it arrives with the building and outlives the staff. I keep it to remind myself that a building keeps secrets even from the man who sweeps it. Every few years, a door turns out to exist. The key was ready.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "janusz:keys:rep-3",
+          text: "It should — the master is brass with a steel core and twenty-two years of turning. Weight is memory. That key has opened this building through a flood, three CEOs, and one night I do not discuss. The others are keys. The master is tenure. You can hear the difference in the lock.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:keys:rep-4",
+          text: "Marek, for the equipment. Grazyna, for nothing, but the lock does not know that. And Renata holds the emergency key, which is a different thing from a key — it has a rule attached: use it, then call me, in that order. Emergency keys are promises. The others are permissions.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:keys:rep-5",
+          text: "Red fob means 'alarm inside'. The room arms itself at eight, and the fob is the memory aid for the one key that bites. Colors on keys are not decoration, they are warnings — green is harmless, blue is the roof, red is the room where mistakes get expensive. I did not invent the system. I obey it.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:keys:rep-6",
+          text: "A badge can be revoked by a spreadsheet and a key can only be taken from a hand. That difference matters when the power fails and the person holding the door is the one who fixes the power. Keyless is fine for the front. The basement stays brass. Some doors should know who is asking.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "janusz:recycling",
+      label: "The recycling regime",
+      optionCandidates: [
+        { id: "janusz:recycling:opt-1", topicId: "janusz:recycling", text: "The recycling bins have more rules than git. Help?" },
+        { id: "janusz:recycling:opt-2", topicId: "janusz:recycling", text: "Someone put coffee cups in the paper bin. Crime?" },
+        { id: "janusz:recycling:opt-3", topicId: "janusz:recycling", text: "Where do the robot's dust bags go?" },
+        { id: "janusz:recycling:opt-4", topicId: "janusz:recycling", text: "Is the sorting actually checked, or theater?" },
+        { id: "janusz:recycling:opt-5", topicId: "janusz:recycling", text: "Grazyna charges departments for wrong bins?" },
+        { id: "janusz:recycling:opt-6", topicId: "janusz:recycling", text: "What happens to the shredded paper mountain?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:recycling:rep-1",
+          text: "Five bins, five laws, one sorting table by the window. The rules feel like bureaucracy until you see the invoice from the company that charges by contamination. The table is where the office learns: one sheet, one look, one correction. I correct with silence and a raised eyebrow. It works.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:recycling:rep-2",
+          text: "Not a crime — a Tuesday. Coffee cups are lined with plastic, which makes them liars in the paper bin. I fish them out, I leave one clean cup on the table as a receipt, and by the third week people learn. Nobody has ever repeated it after the receipt appears. The cup does the teaching.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:recycling:rep-3",
+          text: "Zdzislaw's dust goes with the general waste, but the bags are emptied into the compactor room, because a robot's dust is the building's autobiography — conference badge shreds, one earring, and last spring a milk tooth, which I did not ask about. The bags are inventoried. Not by me. By curiosity.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:recycling:rep-4",
+          text: "Checked, photographed, and archived — the collection company sends a monthly contamination score and Grazyna reads it like a stock report. We sit at four percent, which is excellent, and I intend to keep it there. The score goes on the closet door. Shame, gently applied, is infrastructure.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "janusz:recycling:rep-5",
+          text: "She does, five zloty per incident, and it is the fairest tax in the building because it is the only one you can see the reason for. The money buys the sorting table's replacement bags. Self-funding justice. She invented it after the cardboard winter of 2021. First Grazyna form I ever signed smiling.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:recycling:rep-6",
+          text: "Twice a year, to the secure shredding van, where it is pulped and reborn as the next year's paper towels. The mountain is the only document that truly dies here. Everything else survives in a folder. The shredder is mercy. I run it on Fridays, for the sound and the finality.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "janusz:pigeon",
+      label: "The pigeon incident",
+      optionCandidates: [
+        { id: "janusz:pigeon:opt-1", topicId: "janusz:pigeon", text: "There is a pigeon in the meeting room. Again?" },
+        { id: "janusz:pigeon:opt-2", topicId: "janusz:pigeon", text: "How does a pigeon even get in?" },
+        { id: "janusz:pigeon:opt-3", topicId: "janusz:pigeon", text: "The pigeon has a name. Official or not?" },
+        { id: "janusz:pigeon:opt-4", topicId: "janusz:pigeon", text: "Who cleans after the pigeon leaves?" },
+        { id: "janusz:pigeon:opt-5", topicId: "janusz:pigeon", text: "Renata wants a bird deterrent. Options?" },
+        { id: "janusz:pigeon:opt-6", topicId: "janusz:pigeon", text: "Did the pigeon audit the standup too?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:pigeon:rep-1",
+          text: "Fourth time this year, same bird, same window. The meeting room is the calmest space in the building, and animals know it. I will open the windows, dim the lights, and leave the room. A pigeon cannot resist an open window and cannot tolerate an audience. The retreat is the capture.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:pigeon:rep-2",
+          text: "Through the loading door when the delivery holds it too long, then up the stairwell, which is a wind tunnel with rest stops. The building has two entrances and the pigeon uses the one without a door policy. Everything enters by the route that is most convenient and least supervised. Offices too.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:pigeon:rep-3",
+          text: "The office calls him Stanislaw. I call him 'the recurring item'. He is the only visitor who attends without a badge, leaves without a review, and has never once blocked the printer. If he filed a complaint it would be the most reasonable one in the building's history. He does not file. He arrives.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:pigeon:rep-4",
+          text: "Me, with the equipment I keep for exactly this, because this office has a pigeon frequency and I respect patterns. The kit lives under the sink: gloves, cloths, one lemon spray that makes the place presentable and philosophical. After Stanislaw leaves, the room smells like citrus and lessons.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:pigeon:rep-5",
+          text: "Options: nets, which catch cables; spikes, which catch pigeons and dignity; or the owl, which is plastic and fooled nobody including me. The real deterrent is the door discipline, which is free and human. I told her: fix the delivery habit, and Stanislaw becomes a legend instead of a line item.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "janusz:pigeon:rep-6",
+          text: "He sat through one, on the windowsill, and left at the forecasting — I noted the timing but I will not build a theory on one bird. The office built the theory FOR me. There is a chart. Marek made it. Stanislaw's exits now track Przemek's optimism within four percent. I neither confirm nor deny.",
+          relationshipHint: "delighted",
+          tags: ["quest:burek-standup-observed", "relationship:neutral"],
+        },
+      ],
+    },
+    {
+      id: "janusz:roof",
+      label: "The roof",
+      optionCandidates: [
+        { id: "janusz:roof:opt-1", topicId: "janusz:roof", text: "Is the roof accessible or legendary?" },
+        { id: "janusz:roof:opt-2", topicId: "janusz:roof", text: "What is actually up there besides gravel?" },
+        { id: "janusz:roof:opt-3", topicId: "janusz:roof", text: "The roof drains — yours or the drains' problem?" },
+        { id: "janusz:roof:opt-4", topicId: "janusz:roof", text: "Marek wants an antenna on the roof. Verdict?" },
+        { id: "janusz:roof:opt-5", topicId: "janusz:roof", text: "Who is allowed up there? Officially?" },
+        { id: "janusz:roof:opt-6", topicId: "janusz:roof", text: "Is it true the flood was visible from the roof?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:roof:rep-1",
+          text: "Accessible to me and legendary to everyone else, which is the correct ratio. The blue key opens it, the blue key stays on the ring, and the ring stays on my belt. The roof is not a place. It is a responsibility with a view. Everyone wants the view. The responsibility is the price of admission.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:roof:rep-2",
+          text: "Gravel, the antenna mount from 2008, the ventilation nest that sounds like a choir, one garden chair of unknown origin, and the best view of the parking lot in the building. The chair has been there eleven years. I have never moved it. Some questions are structural.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:roof:rep-3",
+          text: "Mine, and that is the answer that keeps the building dry. The roof drains are the first line and the closet drains are the last, and I walk the first line every autumn like a general walking a shore. Leaves are the enemy. One gutter, one hour, one ladder. The flood taught me the arithmetic.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:roof:rep-4",
+          text: "Approved, on conditions: no drilling into the membrane, his hardware, and I hold the ladder. Marek at height is careful the way he is careful with prod — completely, silently, and with a checklist. The antenna went up in spring. The radio is better. The membrane held. Nobody thanked the ladder.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:roof:rep-5",
+          text: "Officially, me, Marek when the antenna needs him, and the inspector once a year. Unofficially, in the office mythology, everyone who has ever needed to think. I find coffee cups up there. I collect them. I do not ask. The roof hears things. That is what roofs are for, besides drainage.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "janusz:roof:rep-6",
+          text: "True — from the roof you could see the water find the parking lot and stop, like it knew the plan. I checked the drains from up there that night, at two, in the rain, and came down knowing the closet would hold. The roof is where the building tells you the truth early. That is why I go up.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "janusz:weather-sense",
+      label: "Reading the weather",
+      optionCandidates: [
+        { id: "janusz:weather-sense:opt-1", topicId: "janusz:weather-sense", text: "You check the forecast before anyone arrives. Why?" },
+        { id: "janusz:weather-sense:opt-2", topicId: "janusz:weather-sense", text: "The barometer in the closet actually works?" },
+        { id: "janusz:weather-sense:opt-3", topicId: "janusz:weather-sense", text: "What does the building do before a storm?" },
+        { id: "janusz:weather-sense:opt-4", topicId: "janusz:weather-sense", text: "Do you prepare the drains for every rain?" },
+        { id: "janusz:weather-sense:opt-5", topicId: "janusz:weather-sense", text: "The storm last month — what did you see coming?" },
+        { id: "janusz:weather-sense:opt-6", topicId: "janusz:weather-sense", text: "Climate changing — does the building feel it?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:weather-sense:rep-1",
+          text: "The forecast is the day's terrain. Rain means mats at every door and the gutters walked twice. Wind means the parking lot gets swept twice. Frost means the pipes get a visit at five. The weather is not small talk in this job. It is the schedule wearing clouds.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:weather-sense:rep-2",
+          text: "It is older than the flood and more honest than the app. The app says rain. The barometer says HOW the rain will arrive — slow, or with an opinion. I keep both. The phone for the office's benefit, the barometer for mine. The barometer has never once needed a software update.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:weather-sense:rep-3",
+          text: "The gutters gurgle in a different key, the doors swell and catch, and Burek refuses the far corridor. Animals and buildings prepare. I watch the building prepare, and I prepare faster. The day the building and the forecast disagree, I trust the building. It lives here.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:weather-sense:rep-4",
+          text: "Every rain worth naming, and the autumn leaves get swept toward the grates like customers toward a door. Prevention is ten minutes with a broom versus ten hours with a mop. I learned the ratio in 2019, at two in the morning, holding a mop that was losing. Never again the losing mop.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:weather-sense:rep-5",
+          text: "The barometer dropped at noon, the gulls came inland at three, and the gutters were cleared by four. The storm arrived at nine and did nothing, because everything that could be done had been. The best weather work is invisible. The storm is still mentioned. My part is not. That is correct.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "janusz:weather-sense:rep-6",
+          text: "The building feels it in the pipes — heavier rain, faster, and the drains get less warning between dry and drowned. So I adjusted: the autumn walk is now twice, and the map got two new arrows. Buildings do not have opinions. They have symptoms. My job is to read them early. The reading is changing.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "janusz:radio",
+      label: "The back-room radio",
+      optionCandidates: [
+        { id: "janusz:radio:opt-1", topicId: "janusz:radio", text: "There is a radio in the closet. Since when?" },
+        { id: "janusz:radio:opt-2", topicId: "janusz:radio", text: "What station does a building listen to?" },
+        { id: "janusz:radio:opt-3", topicId: "janusz:radio", text: "The radio stayed on during the flood. True?" },
+        { id: "janusz:radio:opt-4", topicId: "janusz:radio", text: "Marek offered you a smart speaker. Outcome?" },
+        { id: "janusz:radio:opt-5", topicId: "janusz:radio", text: "Does the volume mean anything? A code?" },
+        { id: "janusz:radio:opt-6", topicId: "janusz:radio", text: "The radio was silent on Monday. Concern?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:radio:rep-1",
+          text: "Since 1998, and it has outlived four tape decks, three office managers, and every management philosophy since. It sits on the shelf above the dehumidifier and it has one job: to be the sound the building makes when it is alone with me. It is not entertainment. It is company.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:radio:rep-2",
+          text: "The talk station, quietly. News at the hour, conversation between. Music makes me hum, and humming is for people with lighter jobs. Talk keeps the mind working the hands. The radio and I disagree about politics and agree about the weather, which is the correct arrangement for coworkers.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:radio:rep-3",
+          text: "True, and the batteries died at three and it stopped mid-sentence, and that was the loudest moment of the night. I put fresh batteries in at dawn and let it finish the sentence that had been interrupted by a flood. Nobody knows that story. Now two people know. Keep it with the drain map.",
+          relationshipHint: "delighted",
+          tags: ["quest:janusz-told-the-flood"],
+        },
+        {
+          id: "janusz:radio:rep-4",
+          text: "He offered, I listened, the speaker asked me to create an account. The radio has never asked me for anything but batteries and the occasional aerial adjustment. Some devices earn their shelf by needing nothing. The speaker went to the training room. I hear it there sometimes. It sounds lonely.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "janusz:radio:rep-5",
+          text: "Low means normal day. Off means the closet is occupied by someone who should not hear my commentary. Loud, briefly, means a goal for the home team — Zdzislaw does not judge, and the closet deserves one celebration per season. The building knows the code. The building keeps it.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:radio:rep-6",
+          text: "Batteries, or the aerial shifted in the wind, or the station was doing its silent maintenance hour. I checked all three by lunch. It was the aerial. Two degrees to the left and the world came back. Everything in this building is fine until it is two degrees off. That is the whole trade.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "janusz:soup",
+      label: "The soup ritual",
+      optionCandidates: [
+        { id: "janusz:soup:opt-1", topicId: "janusz:soup", text: "You eat the same soup every day. Respect or ritual?" },
+        { id: "janusz:soup:opt-2", topicId: "janusz:soup", text: "The kitchen at noon is yours. Claim or treaty?" },
+        { id: "janusz:soup:opt-3", topicId: "janusz:soup", text: "Thermos or bowl? This matters to the office." },
+        { id: "janusz:soup:opt-4", topicId: "janusz:soup", text: "What is in the soup? The office has theories." },
+        { id: "janusz:soup:opt-5", topicId: "janusz:soup", text: "Someone microwaved fish at YOUR soup time." },
+        { id: "janusz:soup:opt-6", topicId: "janusz:soup", text: "Will you ever eat in the meeting room like a boss?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:soup:rep-1",
+          text: "Ritual, and rituals are how a body stays honest for eleven years of five am. Same soup, same bench, same twelve minutes. The doctors call it routine. The building calls it the sound of a man who will be back tomorrow. Both are correct. The soup is just soup. The twelve minutes are not.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:soup:rep-2",
+          text: "Treaty, unwritten, older than most staff. The kettle is for everyone, the counter is for everyone, and the corner table at noon is the maintenance window — I eat, the kitchen rests, and the fridge gets its audit. Anyone can sit. Nobody does. The treaty holds by mutual respect and one eyebrow.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:soup:rep-3",
+          text: "Thermos in winter, bowl in summer, and the office has SEEN me switch, which is how they know the seasons changed. The thermos is for days the closet cannot be left. The bowl is for days it can. The choice is a weather report. The office reads my lunch the way sailors read water.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:soup:rep-4",
+          text: "Vegetable, whatever the market had, made on Sunday in a pot that predates the robots. The theories — seven kinds, a family recipe, diplomacy fuel — are all wrong and all welcome. The truth is boring. The truth is: soup travels well, heats evenly, and never once interrupted a repair.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:soup:rep-5",
+          text: "It happened, once, in 2022. I waited. The fish finished. Then I opened every window and cleaned the microwave to surgical standards, and the office understood the message without a word. There has been no fish since. The microwave is not a weapon. It is a shared instrument. Now it is also mine.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "janusz:soup:rep-6",
+          text: "The meeting room is for meetings and the bench is for soup. A boss eats at a desk and reads email with his spoon. I eat where the floor is honest and the day is half done. The bench has heard more of this building's truth than any meeting room. Titles change tables. I am not interested.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "janusz:elevator",
+      label: "The elevator",
+      optionCandidates: [
+        { id: "janusz:elevator:opt-1", topicId: "janusz:elevator", text: "The elevator skips floor two. Superstition or fix?" },
+        { id: "janusz:elevator:opt-2", topicId: "janusz:elevator", text: "It makes that sound on the third floor only." },
+        { id: "janusz:elevator:opt-3", topicId: "janusz:elevator", text: "The mirror in the elevator has a crack. Story?" },
+        { id: "janusz:elevator:opt-4", topicId: "janusz:elevator", text: "Janusz, when was its last inspection, honestly?" },
+        { id: "janusz:elevator:opt-5", topicId: "janusz:elevator", text: "Stairs or elevator for two floors? Philosophy?" },
+        { id: "janusz:elevator:opt-6", topicId: "janusz:elevator", text: "Could you fix the elevator if it stopped?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:elevator:rep-1",
+          text: "Fix, and an old one — the panel was replaced in 2016 and floor two's button never learned its job properly. I reported it. The company said 'cosmetic'. The building and I disagree about cosmetic. Now the button gets pressed twice, once for the office and once for the panel's feelings.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:elevator:rep-2",
+          text: "The counterweight passes a bracket on three, and the bracket is half a millimeter proud. That sound is the building clearing its throat. I have asked three engineers about it. Two said tolerance. One said character. I side with the third. Everything that old that still works has earned a sound.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:elevator:rep-3",
+          text: "2009, a delivery trolley, and a courier who panic-reversed into it with his shoulder. The crack runs diagonal, like a scar that has decided to stay. I reported it, the mirror was never replaced, and now candidates see it and say 'this place has history'. The crack does recruitment. I let it.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:elevator:rep-4",
+          text: "March, and the certificate is on the wall by the buttons where nobody reads it, which is correct — you read certificates AFTER the elevator works, not before. I ride it daily with the confidence of a man who knows the inspector's coffee order. Trust, but with paperwork. That is the modern building.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:elevator:rep-5",
+          text: "Two floors, stairs, always — the elevator is for floors, tools, and people having a day. The stairs are where the office says things it would not say in a meeting. I take the stairs and I hear everything. The elevator is a machine. The staircase is a confessional with better lighting.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:elevator:rep-6",
+          text: "Between floors, yes — there is a manual release and a crank, and one Tuesday in 2021 I walked Zosia out through the third floor doors with the crank and a flashlight. She now takes the stairs at any hint of noise. The machine and I understand each other. I fix what I understand.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "janusz:one-week-off",
+      label: "The one week off",
+      optionCandidates: [
+        { id: "janusz:one-week-off:opt-1", topicId: "janusz:one-week-off", text: "You take one week off a year. What happens here?" },
+        { id: "janusz:one-week-off:opt-2", topicId: "janusz:one-week-off", text: "Who holds the keys when you are gone?" },
+        { id: "janusz:one-week-off:opt-3", topicId: "janusz:one-week-off", text: "Does the building behave while you are away?" },
+        { id: "janusz:one-week-off:opt-4", topicId: "janusz:one-week-off", text: "Do you check messages? Be honest." },
+        { id: "janusz:one-week-off:opt-5", topicId: "janusz:one-week-off", text: "Where does a man like you even go?" },
+        { id: "janusz:one-week-off:opt-6", topicId: "janusz:one-week-off", text: "What do you come back to every year?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:one-week-off:rep-1",
+          text: "The same experiment, every year: the building runs the experiment on itself. Marek holds the pager, Renata holds the floor, and the robots follow the schedule I wrote them in September. The week is a test of everything I built, graded by whether the phone stays quiet. It never fully passes. It gets closer.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:one-week-off:rep-2",
+          text: "Marek, the emergency key, and one page of instructions with a map of what can wait. The page has three columns: must, should, and never. The never column has one line: 'the closet door stays shut'. He has held the keys twice. The never column has held. That is succession in miniature.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:one-week-off:rep-3",
+          text: "It misbehaves in small, familiar ways — a gutter, a door, one robot with opinions. The building misses me the way a ship misses its engineer: not dramatically, but with a list to one side. I come back, I read the log, and I fix the list. The log is always shorter than my worry. That is the system working.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:one-week-off:rep-4",
+          text: "First two days, no. Then one call to Marek 'about the antenna', which is about the antenna but also about the closet. I will not pretend I do not think about the building at the lake. I think about it fondly, like a man thinks about a dog that can feed itself. Mostly.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "janusz:one-week-off:rep-5",
+          text: "A lake, a cabin, and a lake again — water without pipes, which is the only water I trust on holiday. My brother holds the other chair. We say little. The lake says less. After a year of listening to a building, silence with a view is the only luxury I have ever wanted. It is also free, which Grazyna respects.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:one-week-off:rep-6",
+          text: "A dry floor, a warm hallway, and one note from Renata pinned by the kettle listing everything that survived me. The list gets shorter every year — this time it was one gutter and a mug. I read the list at the bench, with the soup, then take off my coat and go back to work. It is a good ritual.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "janusz:lost-found",
+      label: "Lost and found",
+      optionCandidates: [
+        { id: "janusz:lost-found:opt-1", topicId: "janusz:lost-found", text: "The lost and found is a drawer? A system?" },
+        { id: "janusz:lost-found:opt-2", topicId: "janusz:lost-found", text: "The wedding ring you found — ever claimed?" },
+        { id: "janusz:lost-found:opt-3", topicId: "janusz:lost-found", text: "What sits in the drawer the longest?" },
+        { id: "janusz:lost-found:opt-4", topicId: "janusz:lost-found", text: "Can I look in the box for my missing cable?" },
+        { id: "janusz:lost-found:opt-5", topicId: "janusz:lost-found", text: "Is there anything you never gave back?" },
+        { id: "janusz:lost-found:opt-6", topicId: "janusz:lost-found", text: "Why does lost property end with you?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:lost-found:rep-1",
+          text: "A drawer with a ledger, because a drawer without a ledger is a burglary with extra steps. Every item gets a date, a location, and a description in my hand. Twelve years of entries. The drawer is the most honest department in the company. Nothing in it lies about where it was found.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:lost-found:rep-2",
+          text: "Two years, then the owner came from another city, looked in the ledger, and said 'you wrote it down'. I did. She cried, I made tea, the kettle behaved. The ring went home and the ledger entry got a red line, which is how the drawer says goodbye. The drawer has better manners than most email.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "janusz:lost-found:rep-3",
+          text: "One glove, left-handed, six winters. Nobody claims a single glove — grief for one glove is too small for anyone to carry, so I carry it. The glove stays. It is not lost anymore. It is a resident. The drawer knows the difference, and so do I, and that is all the philosophy a glove needs.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:lost-found:rep-4",
+          text: "Look, describe, and sign — the ledger wants your name next to the recovery, because recovering your own property should leave a trace too. The cables live in the second tray, sorted by connector, because chaos in a drawer multiplies. Your cable is there. They are always there. The drawer is patient.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:lost-found:rep-5",
+          text: "Nothing — the one exception was a letter, unsent, found in a coat pocket. I read the first line for sorting purposes and mailed it after two years when the coat came back for its owner. Some things are lost on purpose. The drawer respects that. It was the closest I have come to editing the archive.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:lost-found:rep-6",
+          text: "Because I am here at five am when the cleaning happens, and lost is just misplaced with a timeline. The office hands things to the person who finds things. I did not volunteer. I was volunteered by the floor plan. The drawer came with the closet. The closet came with the job. The job came with the eyes.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "janusz:suppliers",
+      label: "The suppliers",
+      optionCandidates: [
+        { id: "janusz:suppliers:opt-1", topicId: "janusz:suppliers", text: "The cleaning supplier knows you by name. How?" },
+        { id: "janusz:suppliers:opt-2", topicId: "janusz:suppliers", text: "Grazyna switched the paper supplier. Consequences?" },
+        { id: "janusz:suppliers:opt-3", topicId: "janusz:suppliers", text: "Do you negotiate with the suppliers yourself?" },
+        { id: "janusz:suppliers:opt-4", topicId: "janusz:suppliers", text: "The delivery holds the door for the pigeon. Fix?" },
+        { id: "janusz:suppliers:opt-5", topicId: "janusz:suppliers", text: "What do you refuse to buy cheap?" },
+        { id: "janusz:suppliers:opt-6", topicId: "janusz:suppliers", text: "The chemical order was wrong twice this year." },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:suppliers:rep-1",
+          text: "Twenty years of orders makes a friendship with paperwork — Bogdan at the depot knows my voice, my building, and my opinions about mop heads. He once held a delivery during the flood week without a form. The next year I ordered double. That is how supplier loyalty actually works. Not contracts. Floods.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:suppliers:rep-2",
+          text: "Two months of complaints, then everyone forgot the old paper existed. People do not hate change. They hate the FIRST WEEK of change. The new paper is thinner and the dispensers were adjusted to compensate, by me, on a Sunday, with a screwdriver and a grievance. The grievance retired. The dispensers hold.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:suppliers:rep-3",
+          text: "The small ones, yes — the big contracts are Grazyna's territory and I would not wander in there without a map. But the hardware store knows me, the electrical wholesaler knows me, and my word is my purchase order down there. Small suppliers run on handshakes. I keep my handshakes warm.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:suppliers:rep-4",
+          text: "The fix is a wedge, a sign, and a conversation with the driver, in that order. Wedges fail, signs fail, the driver holds. He now props the door with his foot and scans the threshold like a man guarding a border. The pigeon still gets in twice a year. Perfection is not on offer. Management is.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "janusz:suppliers:rep-5",
+          text: "Mops, rope, and door hardware. Cheap mops shed, cheap rope shrinks, and cheap hinges announce every departure to the whole floor. The building holds people's working lives together at the edges. The edges are not the place for savings. Grazyna has learned this. It took four invoices and one hinge.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "janusz:suppliers:rep-6",
+          text: "It was, and I caught it before it caught the floors — wrong chemical on wax is a mistake you pay for in weeks, not minutes. I now check the order against the sheet, twice, and the supplier sends photos before shipping. The photos are new. The mistake is gone. That is how systems grow: one scar each.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "janusz:snow",
+      label: "Snow duty",
+      optionCandidates: [
+        { id: "janusz:snow:opt-1", topicId: "janusz:snow", text: "Snow is coming. What does Janusz actually do?" },
+        { id: "janusz:snow:opt-2", topicId: "janusz:snow", text: "The salt trail you lay has a pattern. Explain." },
+        { id: "janusz:snow:opt-3", topicId: "janusz:snow", text: "Who shovels the parking lot at five am?" },
+        { id: "janusz:snow:opt-4", topicId: "janusz:snow", text: "The snow day — does the office close or crawl?" },
+        { id: "janusz:snow:opt-5", topicId: "janusz:snow", text: "Burek in snow. Report." },
+        { id: "janusz:snow:opt-6", topicId: "janusz:snow", text: "What is the worst winter this building gave you?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:snow:rep-1",
+          text: "Everything the night before, so the morning is arithmetic — grit in the hoppers, mats out, the shovel by the side door, and the pipes walked. Snow punishes preparation debt. This building carries none. By six the paths exist. By seven the office believes it snowed politely.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:snow:rep-2",
+          text: "The pattern is the shortest dry line between every entrance and the kettle, plus one loop for the smokers and one straight run for the couriers. People follow paths that respect their purpose. I have watched the salt trail steer this office for nine winters. Architecture by calcium.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:snow:rep-3",
+          text: "Me, at five, with the big shovel and the small rage. The lot takes forty minutes and the plow takes it back in ten when the city comes through too fast, so I shape the piles as walls. Marek brings coffee at five thirty in winter. He has never once been asked. That is the whole story of this office.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "janusz:snow:rep-4",
+          text: "It crawls, and the crawlers are the best people — the ones who come in snow are the ones who fix things quietly. The office never closes; it thins. Renata makes the big pot of tea, the robots run their routes, and the day becomes a maintenance day by accident. Snow days are the building's spa.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:snow:rep-5",
+          text: "He supervises from the window at first, then patrols the salt trail like an inspector, then eats a modest amount of it. The audit continues in all weathers. I keep a towel by the side door for the return. His paw prints on the fresh snow are the only thing in this lot I do not sweep.",
+          relationshipHint: "neutral",
+          tags: ["quest:burek-fed", "relationship:neutral"],
+        },
+        {
+          id: "janusz:snow:rep-6",
+          text: "2010, when the roof load was real and I was up there with a broom at four am, pushing snow over the edge like a man salting the earth. The building groaned once and settled. I stayed until dawn. That winter taught me the roof is not a view. It is a debt. I have swept it every heavy snow since.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "janusz:superstition",
+      label: "Building superstitions",
+      optionCandidates: [
+        { id: "janusz:superstition:opt-1", topicId: "janusz:superstition", text: "Any superstitions after twenty years here?" },
+        { id: "janusz:superstition:opt-2", topicId: "janusz:superstition", text: "The floor that squeaks before rain. Really?" },
+        { id: "janusz:superstition:opt-3", topicId: "janusz:superstition", text: "Why does everyone touch the door frame before demos?" },
+        { id: "janusz:superstition:opt-4", topicId: "janusz:superstition", text: "You have rituals too. Admit one." },
+        { id: "janusz:superstition:opt-5", topicId: "janusz:superstition", text: "The office believes the closet hums luck. Verdict?" },
+        { id: "janusz:superstition:opt-6", topicId: "janusz:superstition", text: "Which superstition would you kill if you could?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:superstition:rep-1",
+          text: "Not superstitions. Observations with repetition. The building does the same things in the same order before the same events, and a man who sweeps for twenty years starts keeping score. Call it superstition if it helps. I call it the building's handwriting. I read it every morning.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:superstition:rep-2",
+          text: "The board by the kitchen swells two hours before weather arrives, every time, and it has never once been wrong in a decade. The forecast apps agree with it eventually. The board is just honest about being wood. Wood does not perform. It reports. I have a soft spot for honest materials.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:superstition:rep-3",
+          text: "Because in 2018 Bartek touched the frame before the biggest pitch of the year, the pitch landed, and now forty professionals perform structural maintenance on the doorway before every client call. It is nonsense. It is also free. The frame has never once failed us. I re-tighten the screws on Sundays.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral", "period:morning"],
+        },
+        {
+          id: "janusz:superstition:rep-4",
+          text: "The kettle gets its water filled the night before, even when nobody will use it until six. There is no reason. There is no reward. But if I skip it, the morning starts wrong by one degree, and one degree is where buildings keep their secrets. That is not superstition. That is payments to the future.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "janusz:superstition:rep-5",
+          text: "The hum is the dehumidifier at its happy frequency, and the office turned it into a charm. Fine by me — a team that believes the closet is lucky keeps the closet's door respected, which keeps the closet's equipment safe. Superstition is just maintenance wearing a costume. I approve of costumes.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:superstition:rep-6",
+          text: "None. Every ritual in this office, even the silly ones, points at something true — care the floor, respect the closet, touch the frame. The silliest superstition here is a memory of something real that nobody wrote down. I would sooner sweep them into a ledger than kill them. Preservation first.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
   ],
   taskOffers: [
     {
