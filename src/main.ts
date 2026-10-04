@@ -2171,6 +2171,13 @@ declare global {
       setSensitivity: (radPerPixel: number) => void;
       getSensitivity: () => number;
       getSceneObjects: () => { keys: string[]; hasPlayerGroup: boolean } | null;
+      /** C-78 REVISE v1 QA hook: authored deep conversations in flight. */
+      getDeepConversations: () => readonly {
+        a: string; b: string; scriptId: string; phase: string;
+        lineIndex: number; totalCount: number;
+      }[];
+      /** C-46 chatter views, for the same QA surface. */
+      getChatter: () => readonly { a: string; b: string; responseIn: number; starterLine: string }[];
       inspectNpcs: () => Array<{
         npcId: string;
         position: { x: number; z: number };
@@ -2255,6 +2262,10 @@ window.__aitrainer = {
     return { keys: Object.keys(sceneObjects), hasPlayerGroup: false };
   },
   getScreen: () => screen,
+  // C-78 REVISE v1 QA hook: the authored deep conversations in flight
+  // (plain data - no three.js objects cross the console boundary).
+  getDeepConversations: () => sceneObjects?.npcController.getActiveDeepConversations() ?? [],
+  getChatter: () => sceneObjects?.npcController.getActiveConversations() ?? [],
   setSensitivity: (radPerPixel: number): void => {
     setMouseSensitivity(radPerPixel);
     // eslint-disable-next-line no-console
