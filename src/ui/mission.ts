@@ -449,15 +449,17 @@ export function mountMissionUi(root: HTMLElement, deps: MissionUiDeps = {}): Mis
     // The panel shows the authored question the moment the pick
     // settles; without a steerer this branch never runs.
     renderSpeech();
-    if (snap.question !== null) askedQuestionIds.add(snap.question.questionId);
     const pick = await steerer.pickQuestion(request).catch(() => null);
-    // Closure-verdict fix: record the STEERED id too — the pick replaces
-    // the authored question on screen, so it is consumed either way.
-    if (pick !== null && !pick.fallback && pick.questionId !== null) {
-      askedQuestionIds.add(pick.questionId);
-    }
+    // Closure verdict Medium 5: a STALE run (mission closed/reopened
+    // while the pick was in flight) must not mutate the NEXT run's
+    // shared asked-set - bail before any bookkeeping.
     if (token !== runToken || runtime === null) return;
     const afterPick = runtime.snapshot();
+    // The steered pick counts as asked ONLY when the runtime actually
+    // applied it; an unapplied pick (wrong phase, already answered,
+    // unknown id) leaves the authored question standing, and THAT is
+    // the single id the runtime consumed.
+    let appliedSteered = false;
     if (
       pick !== null &&
       !pick.fallback &&
@@ -466,10 +468,17 @@ export function mountMissionUi(root: HTMLElement, deps: MissionUiDeps = {}): Mis
       afterPick.question !== null &&
       afterPick.question.answeredOptionId === null
     ) {
-      runtime.steerQuestionPick(pick.questionId);
-      adjustments = null;
-      adjustmentsQuestionId = null;
-      renderSpeech();
+      appliedSteered = runtime.steerQuestionPick(pick.questionId);
+      if (appliedSteered) {
+        adjustments = null;
+        adjustmentsQuestionId = null;
+        renderSpeech();
+      }
+    }
+    if (appliedSteered && pick !== null && pick.questionId !== null) {
+      askedQuestionIds.add(pick.questionId);
+    } else if (afterPick.question !== null) {
+      askedQuestionIds.add(afterPick.question.questionId);
     }
 
     // Pre-judge every visible option so the click applies instantly.
