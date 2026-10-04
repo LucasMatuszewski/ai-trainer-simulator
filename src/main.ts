@@ -73,7 +73,6 @@ import { dialoguePoolFor, registerNpcDialoguePools } from "./content/npc-content
 import { mountJevSettings } from "./ui/jev-settings";
 import { mountMissionUi, type MissionUiHandle } from "./ui/mission";
 import { createMissionWrapper, type MissionSteerer } from "./jev/mission-wrapper";
-import { missionResultActions } from "./game/mission";
 import {
   createDefaultDecisionHooks,
   jevDecisionHooks,
@@ -1571,11 +1570,10 @@ function openDialogueWith(npc: NPC): void {
   const onboardingGate: Partial<Record<NpcId, string>> = {
     renata: "renata-tut-finished",
     bartek: "got-acme-contract",
-    // Dawid: v2 flavor opens after the first meeting. The ARC beats
-    // (give-task -> performance-review) stay in his legacy trees — the
-    // v2 pool's one-pager task uses its own flag (dawid-graph-memo), so
-    // it can never skip or collide with an arc beat (closure verdict).
-    dawid: "ceo-met",
+    // Dawid: the FULL arc (first-meeting -> give-task -> performance-
+    // review -> fireside) runs in legacy trees before v2 opens. The
+    // v2 pool is the post-arc free-conversation layer.
+    dawid: "ceo-reviewed",
   };
   const requiredFlag = onboardingGate[npc.id];
   const v2Allowed =
@@ -1634,9 +1632,15 @@ function openDebugMinigame(): void {
         isCompleted: (mission) =>
           game.get().flags[mission.completionFlag] === true,
         applyResult: (mission, result) => {
-          for (const action of missionResultActions(mission, result)) {
-            game.dispatch(action);
-          }
+          if (!result.payoutApplied) return;
+          // CR fix: ONE atomic dispatch — flag + rewards land in a single
+          // save (closure-verdict medium 7).
+          game.dispatch({
+            type: "mission-complete",
+            completionFlag: mission.completionFlag,
+            cash: result.cashReward,
+            credibilityDelta: result.credibilityDelta,
+          });
         },
       });
     }
