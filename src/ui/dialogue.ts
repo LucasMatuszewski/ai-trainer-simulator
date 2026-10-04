@@ -21,7 +21,7 @@ import {
   type ReplyCandidate,
   type TaskOffer,
 } from "../content/dialogue-schema";
-import { BUCKET_DELTAS } from "../game/social";
+import { BUCKET_DELTAS, band as socialBand } from "../game/social";
 import type { DialogueSteererHandle } from "../jev/dialogue-wrapper";
 import { dialoguePoolFor, v2MemoryFor } from "../content/npc-content/dialogue-pools";
 
@@ -629,6 +629,35 @@ wireActionButtons(container!);
     };
     setMemory(npc.id, { lastTopic: turn.topicId });
     renderV2();
+    steerCurrentTurn();
+  }
+
+  /**
+   * Judge the current turn in the background. The authored fallback is
+   * already on screen, so a slow/failed judgment can never block or blank
+   * the panel (AC-10/11) — a landing curation merely reorders options for
+   * the NEXT render (the click handler reads the same memo-backed order,
+   * so render and clicks are always in sync). The session token fences
+   * stale answers after a close/reopen (WS4 verdict).
+   */
+  function steerCurrentTurn(): void {
+    if (v2 === null || v2.steerer === null) return;
+    const steerer = v2.steerer;
+    const steerSession = steerer.currentSession();
+    void steerer
+      .steerTurn({
+        npcId: v2.npc.id,
+        topicId: v2.turn.topicId,
+        options: v2.turn.options.filter((entry) => !entry.isExit).map((entry) => entry.option),
+        replies: v2.turn.replyCandidates,
+        usedOptionIds: v2UsedOptionIds(),
+        usedReplyIds: [...v2.memory.usedReplyIds],
+        facts: { "relationship.band": socialBand(game.get().npcRelationships[v2.npc.id] ?? 20) },
+      })
+      .then(() => {
+        if (v2 !== null && steerSession === steerer.currentSession()) renderV2();
+      })
+      .catch(() => undefined);
   }
 
   function renderV2(): void {

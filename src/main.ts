@@ -2117,6 +2117,27 @@ function frame(): void {
           lastPurposefulId = craving;
         }
       }
+      // AC-22 (CR): arrival detection — when a tripped NPC reaches the
+      // point, reserve + activate + the positional-audio sfx fire; the
+      // caffeine refill settles through onActionCompleted. The NPC
+      // returns to its desk via the existing schedule override clear.
+      for (const [npcId, pointId] of pendingNpcTrips) {
+        const npcObject = sceneObjects?.npcObjects?.[npcId];
+        const def = INTERACTION_POINT_DEFS.find((d) => d.id === pointId);
+        if (!npcObject || !def || !npcObject.visible) {
+          pendingNpcTrips.delete(npcId);
+          continue;
+        }
+        const dist = Math.hypot(
+          npcObject.position.x - def.position.x,
+          npcObject.position.z - def.position.z,
+        );
+        if (dist < 1.4) {
+          const used = usePoint(pointId, npcId);
+          if (used.ok) activateAction(used.actionId);
+          pendingNpcTrips.delete(npcId);
+        }
+      }
     }
   }
   jevStrictCheck();
