@@ -480,10 +480,12 @@ window.addEventListener("keydown", (e) => {
   );
   if (
     (e.code === "KeyE" || e.key.toLowerCase() === "e") &&
+    !e.repeat &&
     screen === "office" &&
     !dialogue?.isOpen() &&
     !helpModal?.isOpen() &&
     !endDayModal?.isOpen() &&
+    !webmcpModal?.isOpen() &&
     missionUi?.isOpen() !== true &&
     !eIsTextEntry
   ) {
@@ -512,7 +514,8 @@ window.addEventListener("keydown", (e) => {
       screen === "office" &&
       !dialogue?.isOpen() &&
       !helpModal?.isOpen() &&
-      !endDayModal?.isOpen()
+      !endDayModal?.isOpen() &&
+      missionUi?.isOpen() !== true
     ) {
       e.preventDefault();
       endDayModal?.open();
@@ -1412,6 +1415,12 @@ function endDay(dayAlreadyAdvanced = false): void {
   if (dialogue?.isOpen()) {
     dialogue.close();
   }
+  // Closure verdict Critical 1: the SAME orphaning applies to an open
+  // mission - the summary removes its DOM while `wrap` stays non-null,
+  // `isOpen()` stays true, and the clock gate (missionOpen) plus the
+  // computer entry guard block the ENTIRE next day. Close it here so
+  // the runtime + DOM go down together no matter how the day ends.
+  missionUi?.close();
   // C-52: ending the day must END the day. Advance the calendar to the
   // next morning (skipping the remaining periods - their random events
   // are not fired, the day is over) before running the tick, so the
