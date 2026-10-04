@@ -1365,6 +1365,639 @@ export const ZOSIA_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "zosia:calendars",
+      label: "The calendar color regime",
+      optionCandidates: [
+        { id: "zosia:calendars:opt-1", topicId: "zosia:calendars", text: "Why is my calendar one giant wall of color?" },
+        { id: "zosia:calendars:opt-2", topicId: "zosia:calendars", text: "I booked a focus block and it got declined." },
+        { id: "zosia:calendars:opt-3", topicId: "zosia:calendars", text: "What does a yellow holding event mean?" },
+        { id: "zosia:calendars:opt-4", topicId: "zosia:calendars", text: "Can I make my one-on-one recurring?" },
+        { id: "zosia:calendars:opt-5", topicId: "zosia:calendars", text: "Dawid's calendar has a slot labeled 'nothing'." },
+        { id: "zosia:calendars:opt-6", topicId: "zosia:calendars", text: "The room is double-booked and both parties are me." },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:calendars:rep-1",
+          text: "That is not a wall of color, that is an operating system rendered visible. Green is real work, blue is maintenance, orange is meetings I attend so others do not have to. You were added to three greens this quarter. The calendar understands promotion before HR does.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:calendars:rep-2",
+          text: "Then someone needed the room more than you needed the illusion of it. Focus blocks are a request, not a force field. The trick is naming: 'deep work' gets declined, 'interview prep' does not. Words are permissions. Choose yours like passwords.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:calendars:rep-3",
+          text: "Yellow holding means I am protecting a slot without admitting a topic exists. It is diplomatic immunity for time. When the topic matures, the yellow turns green. When it dies, the yellow dies quietly, unmourned, like most initiatives.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:calendars:rep-4",
+          text: "Yes, and make it Tuesday so it survives Monday chaos and Thursday panic. A recurring one-on-one is the only appointment that defends itself. I have series from 2019 still holding walls like loyal soldiers. Promote yours today.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:calendars:rep-5",
+          text: "That slot is his actual thinking time and the label is the most honest thing in this building. 'Nothing' has produced half the roadmap. I defend it the way Grazyna defends decimals — reflexively, and without apology.",
+          relationshipHint: "neutral",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "zosia:calendars:rep-6",
+          text: "Then you are negotiating with yourself, which is the hardest negotiation there is. Accept one instance, decline the other, and you signal compromise at zero cost. This is what I do at family dinners, at scale.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "zosia:fridge-rules",
+      label: "The fridge accord",
+      optionCandidates: [
+        { id: "zosia:fridge-rules:opt-1", topicId: "zosia:fridge-rules", text: "There is a labeled yogurt that is a week old." },
+        { id: "zosia:fridge-rules:opt-2", topicId: "zosia:fridge-rules", text: "Who enforces the fridge rules, legally speaking?" },
+        { id: "zosia:fridge-rules:opt-3", topicId: "zosia:fridge-rules", text: "Can I leave a birthday cake in the fridge overnight?" },
+        { id: "zosia:fridge-rules:opt-4", topicId: "zosia:fridge-rules", text: "Someone's leftovers have achieved sentience." },
+        { id: "zosia:fridge-rules:opt-5", topicId: "zosia:fridge-rules", text: "The Friday cleanout happened on Wednesday again." },
+        { id: "zosia:fridge-rules:opt-6", topicId: "zosia:fridge-rules", text: "My lunch has a neighbor leaking onto it." },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:fridge-rules:rep-1",
+          text: "That yogurt has been formally abandoned. By the accord, Friday noon it becomes office property, and by experience it becomes a biohazard by three. Do not touch it. The yogurt has more seniority than you and the drama is not worth it.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:fridge-rules:rep-2",
+          text: "I do, through the accord, and the accord is iron: label it, date it, lose it on Friday. We wrote it after the 2022 tuna incident, which I will not describe on a full stomach. Kasia keeps a copy in the handbook. The handbook keeps a copy in spirit.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:fridge-rules:rep-3",
+          text: "Cake gets diplomatic status — it bypasses labels entirely and is guarded by collective interest. I have seen this office steal a sandwich from its owner and defend a stranger's cake all night. The fridge reveals our true values. Ours are dessert-shaped.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:fridge-rules:rep-4",
+          text: "Then it graduates to the trash with full honors and no questions, because the accord says nobody interrogates a leftovers departure. Janusz executes quietly. He has removed things from that fridge that legally should have been reported.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:fridge-rules:rep-5",
+          text: "Janusz moves it when the week gets crowded, and honestly the cleanout is a state of mind. The accord lives in our hearts now. The fridge is just where we keep the evidence.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:fridge-rules:rep-6",
+          text: "Then deploy the barrier shelf — top is drinks, middle is solid food, bottom is chaos. The system has held since 2023 and it will hold today. If your lunch dies, the office buys you a new one. That is not in the accord. That is just what we do.",
+          relationshipHint: "pleased",
+          tags: ["period:lunch"],
+        },
+      ],
+    },
+    {
+      id: "zosia:focus-wednesday",
+      label: "No-meeting Wednesday",
+      optionCandidates: [
+        { id: "zosia:focus-wednesday:opt-1", topicId: "zosia:focus-wednesday", text: "Is Wednesday really meeting-free now?" },
+        { id: "zosia:focus-wednesday:opt-2", topicId: "zosia:focus-wednesday", text: "Maciek booked a workshop on Wednesday. Again." },
+        { id: "zosia:focus-wednesday:opt-3", topicId: "zosia:focus-wednesday", text: "What am I supposed to do with a quiet Wednesday?" },
+        { id: "zosia:focus-wednesday:opt-4", topicId: "zosia:focus-wednesday", text: "The clients do not respect focus Wednesday." },
+        { id: "zosia:focus-wednesday:opt-5", topicId: "zosia:focus-wednesday", text: "Focus Wednesday made my Tuesday worse." },
+        { id: "zosia:focus-wednesday:opt-6", topicId: "zosia:focus-wednesday", text: "Can focus Wednesday become focus week?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:focus-wednesday:rep-1",
+          text: "It is policy, aspiration, and a weather condition — in that order. Officially no internal meetings; unofficially the calendar fills anyway, and by Wednesday noon it looks like every other day. But the morning holds. Nobody has ever booked over a Wednesday morning. That hour is sacred and slightly damp.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:focus-wednesday:rep-2",
+          text: "He did, and I allow it, because the CTO breaking his own focus policy is content for the retro. The rule has a grandfather clause for men with slides. We forgive it publicly and note it privately. The notes are a genre.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:focus-wednesday:rep-3",
+          text: "You finish the thing that has been whispering to you for a month. Focus Wednesday is where side projects go to become real, where docs get written, and where someone brave fixes the printer. Use it or it gets audited. I am joking. Mostly.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:focus-wednesday:rep-4",
+          text: "They do not, which is why it applies to internal only — a client emergency outranks any policy we have, including gravity. But after two quiet Wednesdays the clients calmed down anyway. Peace is contagious, like yawning or panic.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:focus-wednesday:rep-5",
+          text: "Good. That means the meetings moved, not vanished, and Tuesday now carries the weight Wednesday refused. Scheduling is hydraulics. I would rather Tuesday hurt on purpose than Wednesday pretend to be free.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:focus-wednesday:rep-6",
+          text: "Then Wednesday would quietly become Thursday, and by Friday we would have invented a weekend for clients only. One day is the dose. This office can hold one honest day a week. Two days is a retreat, and retreats need a bus.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "zosia:townhall",
+      label: "The quarterly town hall",
+      optionCandidates: [
+        { id: "zosia:townhall:opt-1", topicId: "zosia:townhall", text: "Nobody asks questions in the town hall." },
+        { id: "zosia:townhall:opt-2", topicId: "zosia:townhall", text: "The anonymous Q&A tool got forty snarky questions." },
+        { id: "zosia:townhall:opt-3", topicId: "zosia:townhall", text: "Why is the town hall on Friday at four?" },
+        { id: "zosia:townhall:opt-4", topicId: "zosia:townhall", text: "Dawid's update was one slide. One." },
+        { id: "zosia:townhall:opt-5", topicId: "zosia:townhall", text: "Can I skip the town hall this quarter?" },
+        { id: "zosia:townhall:opt-6", topicId: "zosia:townhall", text: "Who writes your town hall script?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:townhall:rep-1",
+          text: "Nobody asks questions in ANY town hall; they ask them in the kitchen afterward, which is where I go, which makes the town hall the warm-up act for my kitchen tour. The tool exists so questions arrive typed and slightly braver.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:townhall:rep-2",
+          text: "Forty snarky questions means forty people paid attention, which is forty more than most companies get. I answer the three meanest with total sincerity and the room flips. Snark is just sincerity wearing armor. Take the armor, keep the person.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:townhall:rep-3",
+          text: "Because Friday at four means nobody schedules over it, and the honest questions come out when the week is already dead. Also the cookies arrive at four fifteen. Attendance is not mandatory but the cookies are load-bearing.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:townhall:rep-4",
+          text: "One slide is a power move and I let him keep it. The slide says three numbers and the numbers are always true, which distinguishes him from every keynote speaker I have flown anywhere. The board gets forty slides. The staff gets the truth. That is the correct direction.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:townhall:rep-5",
+          text: "You can, once, quietly, and nobody will chase you — but the town hall is where the quarter gets its official version, and you want to hear the official version live so you can calibrate the real one. Come for the cookies. Stay for the calibration.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:townhall:rep-6",
+          text: "Me, on Tuesday nights, with one eye on the metrics and one on the door. The script has three beats: one win, one problem, one promise. Everything else is delivery. Eleven years of management and the material is quarterly numbers.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "zosia:announcements",
+      label: "The all-staff email voice",
+      optionCandidates: [
+        { id: "zosia:announcements:opt-1", topicId: "zosia:announcements", text: "Your announcement emails read like poetry." },
+        { id: "zosia:announcements:opt-2", topicId: "zosia:announcements", text: "How do you write an announcement nobody panics at?" },
+        { id: "zosia:announcements:opt-3", topicId: "zosia:announcements", text: "The subject line said 'a change'. A CHANGE?" },
+        { id: "zosia:announcements:opt-4", topicId: "zosia:announcements", text: "Why do announcements always land at 16:58?" },
+        { id: "zosia:announcements:opt-5", topicId: "zosia:announcements", text: "I heard about the rebrand from the announcement. Rude." },
+        { id: "zosia:announcements:opt-6", topicId: "zosia:announcements", text: "Teach me to write announcements." },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:announcements:rep-1",
+          text: "Announcements are the only writing this company does for the entire building as an audience, so they get my full craft. Subject under six words, first sentence does the news, last sentence does the kindness. The middle is where the tone lives.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:announcements:rep-2",
+          text: "You say the thing, you say what it means for Tuesday, and you say when the next update comes. Panic is just a vacuum with good wifi. Three sentences and the vacuum closes. I have announced rebrands, freezes, and one flood with this method.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:announcements:rep-3",
+          text: "The phrase 'a change' was a compromise between 'restructure' and 'nothing is wrong', and it pleased nobody, which is how you know it was a compromise. I regret it to this day and to the day it caused. Never again will a subject line carry suspense.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:announcements:rep-4",
+          text: "Because sixteen fifty-eight is after the day can spiral and before anyone's evening belongs to me. Timing is half the message. The same sentence at nine am is a crisis; at sixteen fifty-eight it is a newsletter.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:announcements:rep-5",
+          text: "The announcement went to everyone simultaneously, which means you were first-row, not last to know. Rumors are how you find out second. An announcement is how you find out at the same time as the CFO, which is the best anyone gets here.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "zosia:announcements:rep-6",
+          text: "Rule one: verbs over adjectives. Rule two: numbers beat vibes. Rule three: name the date or there is no announcement, there is a mood. Follow the three rules and you too can move one hundred and four inboxes with a paragraph.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "zosia:room-names",
+      label: "The meeting room names",
+      optionCandidates: [
+        { id: "zosia:room-names:opt-1", topicId: "zosia:room-names", text: "Why is the small meeting room called Momentum?" },
+        { id: "zosia:room-names:opt-2", topicId: "zosia:room-names", text: "Who named the meeting rooms?" },
+        { id: "zosia:room-names:opt-3", topicId: "zosia:room-names", text: "The new room has no name and it is unsettling." },
+        { id: "zosia:room-names:opt-4", topicId: "zosia:room-names", text: "Can we name a room after Burek?" },
+        { id: "zosia:room-names:opt-5", topicId: "zosia:room-names", text: "The room names have nothing to do with rooms." },
+        { id: "zosia:room-names:opt-6", topicId: "zosia:room-names", text: "What was the meeting room naming contest like?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:room-names:rep-1",
+          text: "Because Momentum is what happens in it — it is the smallest room and the only one where decisions actually occur. The big rooms host discussion; Momentum hosts signatures. The name is a promise and the room keeps it, mostly.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:room-names:rep-2",
+          text: "A committee, which is the honest answer, and the committee took three weeks to produce names a brave intern could have written in an afternoon. The names survived because renaming is a cost nobody wants to pay. Names outlive their creators here.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:room-names:rep-3",
+          text: "Then it stays unnamed until something happens in it worth naming. That is the rule the committee never wrote down: rooms earn their names. The glass room was named after an incident. The kitchen was almost named after Grazyna. She declined in writing.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:room-names:rep-4",
+          text: "There is a proposal, a folder, and eleven pages of support, and I am holding it until morale needs a win. When it passes, the room gets a water bowl and a plaque. Burek will not understand and will nap in it anyway, which is exactly right.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:room-names:rep-5",
+          text: "They are not room names, they are values with addresses. Momentum, Alignment, The Graph — you are literally booked into the culture. Some people find it dystopian. I find it efficient. The office tours love it either way, and the tours are a metric.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:room-names:rep-6",
+          text: "It was 2021: four rooms, nine hundred sticky notes, one afternoon. Half the winners were jokes. That contest produced more genuine engagement than any survey I have run since, and I have run surveys ABOUT the contest. Democracy works once per office.",
+          relationshipHint: "pleased",
+          tags: ["quest:zosia-opened-up"],
+        },
+      ],
+    },
+    {
+      id: "zosia:snack-rotation",
+      label: "The snack rotation",
+      optionCandidates: [
+        { id: "zosia:snack-rotation:opt-1", topicId: "zosia:snack-rotation", text: "The snack basket only has rice cakes again." },
+        { id: "zosia:snack-rotation:opt-2", topicId: "zosia:snack-rotation", text: "Who decides the snack rotation?" },
+        { id: "zosia:snack-rotation:opt-3", topicId: "zosia:snack-rotation", text: "Can we vote the rice cakes out?" },
+        { id: "zosia:snack-rotation:opt-4", topicId: "zosia:snack-rotation", text: "Grazyna cut the snack budget by a third." },
+        { id: "zosia:snack-rotation:opt-5", topicId: "zosia:snack-rotation", text: "The good snacks disappear by ten am." },
+        { id: "zosia:snack-rotation:opt-6", topicId: "zosia:snack-rotation", text: "Is the snack rotation a motivation tool?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:snack-rotation:rep-1",
+          text: "The rice cakes are what remains after Tuesday, and Tuesday is what happens when the vote goes to the loudest. Rice cakes are this office's official punishment snack. They exist so the lesson 'snacks have consequences' stays taught.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:snack-rotation:rep-2",
+          text: "A monthly vote I run with the gravity of a national election. Nomination, campaign, ballot, and one spoiled vote every month that just says 'more espresso'. Democracy is expensive, but the alternative is someone buying what THEY like, and we had that regime in 2021. Dark times.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:snack-rotation:rep-3",
+          text: "You cannot vote out a snack, only deprioritize it, because the supplier sells bundles. But campaign hard enough and rice cakes sink to the bottom slot, where they wait, patient and terrible, for their turn. Everything returns. That is rotation.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:snack-rotation:rep-4",
+          text: "She did, and then quietly restored it when I showed her the coffee spend per exit interview. Grazyna does not love snacks, but she loves arithmetic, and the arithmetic loves snacks. Never fight her. Bring her a spreadsheet with a sad number in it.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:snack-rotation:rep-5",
+          text: "The ten am disappearance is the purest data this office produces — it tells me exactly who is actually here. I have considered charging for the good ones at ten oh five as a revenue stream. The idea dies in committee every quarter. Beautiful idea.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:snack-rotation:rep-6",
+          text: "Everything is a motivation tool if you are honest about management, but the snacks specifically are a retention program with crumbs. The morning basket is a promise: the day starts and there is something in it for you. Cheap promise. Kept daily. That is the whole trick.",
+          relationshipHint: "neutral",
+          tags: ["period:morning", "relationship:neutral"],
+        },
+      ],
+    },
+    {
+      id: "zosia:mediation",
+      label: "Conflict mediation",
+      optionCandidates: [
+        { id: "zosia:mediation:opt-1", topicId: "zosia:mediation", text: "Tomek and Przemek are feuding again." },
+        { id: "zosia:mediation:opt-2", topicId: "zosia:mediation", text: "How do you mediate without taking sides?" },
+        { id: "zosia:mediation:opt-3", topicId: "zosia:mediation", text: "Marek insulted someone's code at the standup." },
+        { id: "zosia:mediation:opt-4", topicId: "zosia:mediation", text: "Two people want the same desk by the window." },
+        { id: "zosia:mediation:opt-5", topicId: "zosia:mediation", text: "Can you mediate a dispute about the dishwasher?" },
+        { id: "zosia:mediation:opt-6", topicId: "zosia:mediation", text: "I got drafted into someone else's conflict." },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:mediation:rep-1",
+          text: "Their feud is load-bearing — it has run since 2022 and neither has called in sick over it. I mediate quarterly, I do not solve it, because solving it would remove the only friction that makes their standups honest. Some conflicts are infrastructure.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:mediation:rep-2",
+          text: "You take sides on the PROCESS, never the people. 'You both deserve an answer by Friday' is a side, and it is the only safe one. Pick a person and you inherit their enemies. Pick the process. The process has no enemies. The process has snacks.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:mediation:rep-3",
+          text: "Marek's reviews are weather — loud, brief, and gone by lunch. The person he insulted got a coffee from him by ten, which is his entire apology vocabulary. I let it play. Interrupting a Marek apology mid-brew would be cruelty.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:mediation:rep-4",
+          text: "Then they share it on alternating days and discover they hate each other's plant choices, which is how friendships actually start. Hot-desking resolved more feuds here than any offsite. Proximity is a solvent. Use it.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:mediation:rep-5",
+          text: "Yes, and I have done it twice. The dishwasher is never about the dishwasher; it is about who feels unseen. I run the cycle at night now, which removed the dispute and one job. Management is mostly removing stages where people can be hurt by cutlery.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:mediation:rep-6",
+          text: "Then hand it back gently — 'I care about you both and this is yours to resolve' — and notify me so I can sit nearby looking available. Half of mediation is being in the room. The other half is cookies. I keep both stocked.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "zosia:burnout-watch",
+      label: "The burnout watch",
+      optionCandidates: [
+        { id: "zosia:burnout-watch:opt-1", topicId: "zosia:burnout-watch", text: "How do you spot burnout before it lands?" },
+        { id: "zosia:burnout-watch:opt-2", topicId: "zosia:burnout-watch", text: "I think Pawel is running on fumes." },
+        { id: "zosia:burnout-watch:opt-3", topicId: "zosia:burnout-watch", text: "Is the burnout watch a spreadsheet?" },
+        { id: "zosia:burnout-watch:opt-4", topicId: "zosia:burnout-watch", text: "You watch us. That is slightly sinister." },
+        { id: "zosia:burnout-watch:opt-5", topicId: "zosia:burnout-watch", text: "What do you do when someone tips over?" },
+        { id: "zosia:burnout-watch:opt-6", topicId: "zosia:burnout-watch", text: "Am I on the burnout list?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:burnout-watch:rep-1",
+          text: "Not by the hours — by the jokes. Burnout arrives when someone stops making the funny reply in standup and starts making the efficient one. The jokes are the canary. I have been reading this room for eleven years and I have never once needed a dashboard.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:burnout-watch:rep-2",
+          text: "Then he gets a Friday afternoon that does not exist on any calendar, and I will deny arranging it. Pawel runs hot because everything is new and he thinks rest is a permission. It is not. It is a policy. I wrote it down and everything.",
+          relationshipHint: "neutral",
+          tags: ["stats:low-caffeine"],
+        },
+        {
+          id: "zosia:burnout-watch:rep-3",
+          text: "It is a spreadsheet the way the blazer is a jacket — technically, and missing the point. The sheet has three columns I never share: sleep signals, snack signals, and sarcasm decline. The sarcasm index is the most advanced burnout metric in the industry and I invented it by accident.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:burnout-watch:rep-4",
+          text: "I watch the way a lighthouse watches — permanently, impersonally, and so you can stop navigating by fear. The alternative is noticing when the error logs do. Everyone prefers the lighthouse. The lighthouse also brings snacks.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:burnout-watch:rep-5",
+          text: "Then the quarter gets quietly renegotiated around them. A deadline moves, a client gets a junior with better energy, and the person wakes up one Monday with room to breathe and no memo explaining why. The best interventions are invisible. Mine have a perfect record and no paper trail.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:burnout-watch:rep-6",
+          text: "Everyone is on the burnout list; it is sorted by current risk and you sit in the calm middle, which is where I like my people. If you ever tip, I will know before you do, and the calendar will simply grow a gap. That is the service. That is the whole job.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "period:evening"],
+        },
+      ],
+    },
+    {
+      id: "zosia:summer-intake",
+      label: "The summer intake",
+      optionCandidates: [
+        { id: "zosia:summer-intake:opt-1", topicId: "zosia:summer-intake", text: "The summer interns start on Monday. Ready?" },
+        { id: "zosia:summer-intake:opt-2", topicId: "zosia:summer-intake", text: "Who mentors the summer intake?" },
+        { id: "zosia:summer-intake:opt-3", topicId: "zosia:summer-intake", text: "The interns requested a mentor named Burek." },
+        { id: "zosia:summer-intake:opt-4", topicId: "zosia:summer-intake", text: "Last year's intern now runs a team somewhere." },
+        { id: "zosia:summer-intake:opt-5", topicId: "zosia:summer-intake", text: "Three interns, two desks, one window. Math?" },
+        { id: "zosia:summer-intake:opt-6", topicId: "zosia:summer-intake", text: "Should interns attend the town hall?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:summer-intake:rep-1",
+          text: "Ready is a strong word — badges printed, desks assigned, one welcome deck polished since June. On day one they are terrified and brilliant and one of them will fix something we tolerated for years. I love the intake. It is the office's birthday.",
+          relationshipHint: "pleased",
+          tags: ["period:morning"],
+        },
+        {
+          id: "zosia:summer-intake:rep-2",
+          text: "Whoever survived last year's intake, which is how succession actually works here. Pawel is graduating from mentee to mentor this summer, which is either beautiful or an ouroboros. We will know by August.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:summer-intake:rep-3",
+          text: "Burek is already on the mentor list — morale lead, zero code review, perfect attendance. The interns will learn more from watching who feeds the dog than from any onboarding doc. Character analysis via Burek. I should put it in the deck.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:summer-intake:rep-4",
+          text: "She does, and she sends us a card every December with her team's numbers on it, the only KPI report I have ever framed. The intake is a slow export business: we raise seniors for the whole city and keep the fees at zero. Somebody should study us.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:summer-intake:rep-5",
+          text: "The interns rotate desks on a schedule Marek calls 'the carousel', and the window seat is earned by Friday demo quality. Fairness through rotation is my entire philosophy expressed as furniture.",
+          relationshipHint: "pleased",
+          tags: ["period:afternoon"],
+        },
+        {
+          id: "zosia:summer-intake:rep-6",
+          text: "They attend, they sit in front, and one of them asks the question everyone else was hiding from, every single time. Interns are the town hall's immune system. I seat them where the microphone reaches. Democracy needs fresh blood and no fear.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "zosia:papercuts",
+      label: "The papercut list",
+      optionCandidates: [
+        { id: "zosia:papercuts:opt-1", topicId: "zosia:papercuts", text: "The door hinge squeaks in a sad way." },
+        { id: "zosia:papercuts:opt-2", topicId: "zosia:papercuts", text: "What is the papercut list exactly?" },
+        { id: "zosia:papercuts:opt-3", topicId: "zosia:papercuts", text: "My papercut has been on the list since spring." },
+        { id: "zosia:papercuts:opt-4", topicId: "zosia:papercuts", text: "Can I just fix a papercut myself?" },
+        { id: "zosia:papercuts:opt-5", topicId: "zosia:papercuts", text: "The papercut list is longer than the roadmap." },
+        { id: "zosia:papercuts:opt-6", topicId: "zosia:papercuts", text: "Who owns the papercut list?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:papercuts:rep-1",
+          text: "The hinge has been listed since spring, right between 'the third chair wobbles' and 'the kitchen light hums in B flat'. Janusz oils it on a quiet Thursday. The list always wins eventually. The list is patient in a way budgets are not.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:papercuts:rep-2",
+          text: "It is the public ledger of tiny wrongs — squeaks, flickers, mislabeled cables, one drawer that opens into destiny. Each item is five minutes of work and five months of waiting, and clearing ten of them does more for morale than any pizza. Papercuts are culture at high resolution.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:papercuts:rep-3",
+          text: "Then it has seniority and allies by now — bring it to me and I will bump it above the squeaky hinge, which on that list is a promotion. Papercuts age like cheese. Yours is due.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:papercuts:rep-4",
+          text: "Yes, and you become a legend. The list has a column called 'fixed by' and the names in it are the closest thing this office has to an honors list. Someone fixed the kettle wobble in 2023 and people still buy him coffee for it. Small repairs, big reputations.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:papercuts:rep-5",
+          text: "It always is, and it should be — the roadmap is what we dream and the papercut list is what we trip on. One is strategy, the other is gravity. I fund gravity first because gravity does not negotiate.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:papercuts:rep-6",
+          text: "I do, which surprises people who assume it belongs to Janusz. Janusz executes; I curate. Every Friday I read the list top to bottom with a coffee, like a horoscope written by the building. Some weeks it is the most honest document in my inbox.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral", "period:afternoon"],
+        },
+      ],
+    },
+    {
+      id: "zosia:charity-drive",
+      label: "The charity drive",
+      optionCandidates: [
+        { id: "zosia:charity-drive:opt-1", topicId: "zosia:charity-drive", text: "Is the charity drive happening this month?" },
+        { id: "zosia:charity-drive:opt-2", topicId: "zosia:charity-drive", text: "The donation thermometer poster is stuck at forty percent." },
+        { id: "zosia:charity-drive:opt-3", topicId: "zosia:charity-drive", text: "Przemek turned the charity drive into a competition." },
+        { id: "zosia:charity-drive:opt-4", topicId: "zosia:charity-drive", text: "Can we donate time instead of money?" },
+        { id: "zosia:charity-drive:opt-5", topicId: "zosia:charity-drive", text: "Who counts the charity drive money?" },
+        { id: "zosia:charity-drive:opt-6", topicId: "zosia:charity-drive", text: "The charity jar has a padlock now." },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:charity-drive:rep-1",
+          text: "It is happening, quietly, with a jar at reception and zero all-staff emails, because guilt is a terrible fundraising strategy. Renata runs the jar, I run the match, and the company doubles whatever lands by the last Friday. Generosity with matching funds. That is my love language.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:charity-drive:rep-2",
+          text: "The thermometer is decorative — the real number lives in Renata's notebook and moves in private. I let the poster stall so the final week has drama. Fundraising is theater with a receipt at the end, and the receipt is the good part.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:charity-drive:rep-3",
+          text: "He does, every year, with leaderboards and a trophy he bought himself, and honestly it works. The year he made it sales versus engineering, donations doubled and one bridge got burned. Net positive. The trophy lives in his car, which feels correct.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:charity-drive:rep-4",
+          text: "Time is the premium currency — an afternoon at the shelter beats any payroll deduction, and the stories come back to the kitchen where they multiply. I log hours in the same sheet as money at a rate Grazyna audited and approved. She approved it FAST. Suspiciously fast.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:charity-drive:rep-5",
+          text: "Grazyna counts, which means the count is beyond suspicion and slightly terrifying. She once found a twenty-zloty surplus and traced it to a client who donated twice out of enthusiasm. The client got a thank you note. The note got framed.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:charity-drive:rep-6",
+          text: "The padlock arrived the year Przemek borrowed the jar for a sales demo and returned it heavier. Now only Renata and Grazyna hold the combination, and frankly the ceremony around it raised more than the jar did. Security theater for a good cause. I allow it.",
+          relationshipHint: "delighted",
+          tags: ["quest:got-acme-contract"],
+        },
+      ],
+    },
+    {
+      id: "zosia:suggestion-box",
+      label: "The suggestion box",
+      optionCandidates: [
+        { id: "zosia:suggestion-box:opt-1", topicId: "zosia:suggestion-box", text: "Does anyone actually read the suggestion box?" },
+        { id: "zosia:suggestion-box:opt-2", topicId: "zosia:suggestion-box", text: "I left a suggestion and it happened. Witchcraft?" },
+        { id: "zosia:suggestion-box:opt-3", topicId: "zosia:suggestion-box", text: "Half the suggestions are about the printer." },
+        { id: "zosia:suggestion-box:opt-4", topicId: "zosia:suggestion-box", text: "Are suggestions truly anonymous?" },
+        { id: "zosia:suggestion-box:opt-5", topicId: "zosia:suggestion-box", text: "Someone suggested firing management. Bold." },
+        { id: "zosia:suggestion-box:opt-6", topicId: "zosia:suggestion-box", text: "Why is the suggestion box locked?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:suggestion-box:rep-1",
+          text: "I read it every Friday with a coffee, top to bottom, and I have done it since 2019. It is the only feedback channel in this building with a perfect honesty record. Surveys get what people think I want. The box gets the truth, usually in angry capital letters.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:suggestion-box:rep-2",
+          text: "Not witchcraft — process. The box feeds a list, the list feeds a Friday, and Friday feeds a decision. Your suggestion will happen by quarter's end or it will earn a written reason why not. The box answers. That is why it works.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:suggestion-box:rep-3",
+          text: "The printer gets forty percent of the suggestions and deserves every one. It is the only office appliance with a personality cult and a grievance file. I forward the printer suggestions to the printer, spiritually. Nothing changes. The ritual holds us together.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:suggestion-box:rep-4",
+          text: "Truly — no cameras, no handwriting analysis, and I have never once tried, which a skeptic in 2021 did not believe and left anyway. Her suggestions still arrive, mailed from her new job, unsigned. The box outlives us all.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:suggestion-box:rep-5",
+          text: "That one I framed and hung in my office, because it is the funniest and most honest feedback this company has produced. My written answer was 'working on it' and the room laughed for a week. You cannot buy that kind of engagement.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:suggestion-box:rep-6",
+          text: "The lock is for the charity jar next to it, but the visual confusion generates a steady stream of complaints about suggestion security, which generates engagement with the suggestion system. I have decided this is fine. The system runs on confusion.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+      ],
+    },
+    {
+      id: "zosia:appreciation-wall",
+      label: "The appreciation wall",
+      optionCandidates: [
+        { id: "zosia:appreciation-wall:opt-1", topicId: "zosia:appreciation-wall", text: "The appreciation wall is out of sticky notes." },
+        { id: "zosia:appreciation-wall:opt-2", topicId: "zosia:appreciation-wall", text: "Someone wrote 'nice ceiling' on the appreciation wall." },
+        { id: "zosia:appreciation-wall:opt-3", topicId: "zosia:appreciation-wall", text: "Is the appreciation wall mandatory gratitude?" },
+        { id: "zosia:appreciation-wall:opt-4", topicId: "zosia:appreciation-wall", text: "My name is on the wall and I did nothing." },
+        { id: "zosia:appreciation-wall:opt-5", topicId: "zosia:appreciation-wall", text: "The wall is full. What happens now?" },
+        { id: "zosia:appreciation-wall:opt-6", topicId: "zosia:appreciation-wall", text: "Who audits the appreciation wall?" },
+      ],
+      replyCandidates: [
+        {
+          id: "zosia:appreciation-wall:rep-1",
+          text: "A wall out of notes is a national emergency, and there is a refill budget line Grazyna approved under 'culture consumables'. The phrase is in the ledger forever. Take two pads from my desk. The wall does not close. The wall has never closed.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "zosia:appreciation-wall:rep-2",
+          text: "'Nice ceiling' is my favorite note ever posted, because it proves people read the wall top to bottom and gratitude got weird in a good way. I will not remove it. When the wall is photographed for the culture page, the ceiling note is centered.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "zosia:appreciation-wall:rep-3",
+          text: "Mandatory gratitude is an oxymoron and I want that on a poster. The wall is radically optional, which is why it works — nobody has ever been asked to post, and yet it fills weekly. You cannot schedule sincerity. You can only stock the sticky notes and believe.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "zosia:appreciation-wall:rep-4",
+          text: "Then someone saw you do the thing you think is invisible — the quiet fix, the stayed-late, the taught-Pawel-patience. The wall sees more than the roadmap ever did. Take the note home or leave it up. Leaving it up is braver.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "zosia:appreciation-wall:rep-5",
+          text: "Then we start a second panel and retire the oldest notes into a folder marked 'evidence of civilization'. The first panel is archived by date, like tree rings. Future historians will know exactly which Tuesday we fixed the coffee machine.",
+          relationshipHint: "pleased",
+          tags: ["period:afternoon"],
+        },
+        {
+          id: "zosia:appreciation-wall:rep-6",
+          text: "Nobody audits it, which is the point — it is the only surface in this office that answers to no metric, no budget, and no committee. I guard it the way Dawid guards the cap table. Some things are valuable BECAUSE nobody measures them. Do not quote me in the metrics meeting.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "quest:zosia-opened-up"],
+        },
+      ],
+    },
   ],
   taskOffers: [
     {

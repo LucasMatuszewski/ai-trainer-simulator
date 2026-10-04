@@ -1390,6 +1390,648 @@ export const PRZEMEK_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "przemek:voicemail",
+      label: "The voicemail art",
+      optionCandidates: [
+        { id: "przemek:voicemail:opt-1", topicId: "przemek:voicemail", text: "Your voicemail greeting is forty seconds long." },
+        { id: "przemek:voicemail:opt-2", topicId: "przemek:voicemail", text: "Do you actually leave voicemails in 2026?" },
+        { id: "przemek:voicemail:opt-3", topicId: "przemek:voicemail", text: "Kasia says your voicemails are 'audible cologne'." },
+        { id: "przemek:voicemail:opt-4", topicId: "przemek:voicemail", text: "You once closed a deal BY voicemail?" },
+        { id: "przemek:voicemail:opt-5", topicId: "przemek:voicemail", text: "Marek's voicemail is just a beep. React." },
+        { id: "przemek:voicemail:opt-6", topicId: "przemek:voicemail", text: "Teach me the voicemail formula." },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:voicemail:rep-1",
+          text: "Forty seconds of pure anticipation, my friend! Name, number, ONE tease — 'I have an idea about your Q4, call me before Thursday'. You never give the idea away on the machine. The voicemail is not a message. The voicemail is a movie trailer. Twenty years of trailers, my friend, and the box office is MY PHONE NUMBER.",
+          relationshipHint: "pleased",
+          tags: ["period:morning", "relationship:neutral"],
+        },
+        {
+          id: "przemek:voicemail:rep-2",
+          text: "ALWAYS. Texts are for dentist confirmations, my friend. A voicemail says: I used my VOICE, I spent TIME, I believed in this call enough to leave evidence. Executives under forty delete texts. Executives over forty replay voicemails. I am playing BOTH generational markets with one button. It is called full-spectrum outreach. You heard it here.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:voicemail:rep-3",
+          text: "Audible COLOGNE! I framed the compliment, my friend! She meant it as a warning — too much presence for one channel — but think about what cologne DOES: it arrives before you, it lingers after you, and the right amount makes people lean IN. The right amount! We are calibrating, Kasia and me. She says one sentence max. I say one sentence and a promise. Progress, my friend.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "przemek:voicemail:rep-4",
+          text: "Two thousand eighteen, industrial client, eleven voicemails over five weeks — each one a CHAPTER, my friend, like a radio novel. Week one: the problem. Week three: the cost of the problem, with a number. Week five: 'I will stop calling on Friday.' He called THURSDAY. Eleven voicemails, one signature. The man told me later he forwarded chapter six to his wife.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:voicemail:rep-5",
+          text: "A BEEP, my friend! No name, no number, no tease! That is not a voicemail, that is a VACANCY! I left him a message once and got his beep, and the beep got my business because I called BACK out of professional respect for the emptiness. Marek and I have an arrangement now: his beep, my voice. The yin and the yang of the office phone system. Do not tell him I said yang.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "przemek:voicemail:rep-6",
+          text: "Three beats, my friend! Beat one: WHO and WHY, eight seconds, no warm-up — the weather is free everywhere. Beat two: the tease, one specific thing — 'the number on your training spend' beats 'some ideas', ALWAYS the number. Beat three: the deadline, soft but real — 'before Thursday' gives the calendar a handle. Total: twenty seconds.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "przemek:slow-quarter",
+      label: "The slow quarter",
+      optionCandidates: [
+        { id: "przemek:slow-quarter:opt-1", topicId: "przemek:slow-quarter", text: "Q3 is slow. Even for you." },
+        { id: "przemek:slow-quarter:opt-2", topicId: "przemek:slow-quarter", text: "What do you actually DO in a slow quarter?" },
+        { id: "przemek:slow-quarter:opt-3", topicId: "przemek:slow-quarter", text: "Grazyna's forecast for Q3 has no optimism in it." },
+        { id: "przemek:slow-quarter:opt-4", topicId: "przemek:slow-quarter", text: "Zosia cut the Q3 travel budget." },
+        { id: "przemek:slow-quarter:opt-5", topicId: "przemek:slow-quarter", text: "You called Q3 'the oven' in the meeting." },
+        { id: "przemek:slow-quarter:opt-6", topicId: "przemek:slow-quarter", text: "How do you keep the team warm in a slow quarter?" },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:slow-quarter:rep-1",
+          text: "Q3 is slow for EVERYONE, my friend — the country is at the sea, the decision-makers are checking email from a towel, and the budgets hibernate. This is not a crisis, this is CLIMATE. You do not fight the oven. You prep the feast that cooks IN the oven. My pipeline in August feeds my commission in October.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:slow-quarter:rep-2",
+          text: "FARMING, my friend! Slow quarters are for planting — I call every client who went quiet, I visit the ones who said 'maybe next year' LAST year, and I write forty thank-you notes to people who did NOT buy, because they will remember who stayed polite in the famine. The slow quarter is a gift of TIME. Everyone else spends it staring at dashboards.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:slow-quarter:rep-3",
+          text: "Grazyna's forecast is a work of ART, my friend — every number hand-chiseled from the granite of last year, zero dreams, zero fear. And here is the beautiful part: she is ALWAYS right by five percent, which means her pessimism is worth EXACTLY one optimism. I read her forecast before I set my own targets — my target is her number plus the difference between us.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "przemek:slow-quarter:rep-4",
+          text: "She cut the budget and she was RIGHT, my friend — do not tell her I agreed, tell everyone I fought. In a slow quarter, travel is a cost with no audience; the client is at the sea, the hotel is empty, and the demo dies on a laptop in an empty conference room. I took that trip ONCE, in 2019. Presented a two-hour workshop to one intern and a plant. The plant green-lit nothing.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "przemek:slow-quarter:rep-5",
+          text: "The OVEN, yes! Because Q3 is where salespeople go to bake — the heat is on, the results are slow, and everyone opens the door every five minutes and ruins the bread. The oven metaphor is now OFFICIAL, my friend — Zosia used it in the town hall, Maciek put it on a slide, and Grazyna wrote 'see: oven' in her forecast notes. I have contributed to the company vocabulary.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:slow-quarter:rep-6",
+          text: "With STORIES, my friend — real ones. Every Monday in a slow quarter I tell the team about the deal that almost died and did not, the client who came back after two years, the worst Q3 of my life and the October that paid for my car. Slow quarters are FEAR with a calendar, and fear dies in the presence of specific stories. Numbers do not inspire anyone.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "przemek:ninety-slides",
+      label: "The ninety-slide deck",
+      optionCandidates: [
+        { id: "przemek:ninety-slides:opt-1", topicId: "przemek:ninety-slides", text: "Your deck has ninety slides. The meeting is one hour." },
+        { id: "przemek:ninety-slides:opt-2", topicId: "przemek:ninety-slides", text: "Do you present all ninety? Every time?" },
+        { id: "przemek:ninety-slides:opt-3", topicId: "przemek:ninety-slides", text: "Slide forty-one is just the word TRUST." },
+        { id: "przemek:ninety-slides:opt-4", topicId: "przemek:ninety-slides", text: "Tomek offered to convert your deck to one page." },
+        { id: "przemek:ninety-slides:opt-5", topicId: "przemek:ninety-slides", text: "Zosia asks for the 'short version'. What IS it?" },
+        { id: "przemek:ninety-slides:opt-6", topicId: "przemek:ninety-slides", text: "Where did the ninety-slide deck come from?" },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:ninety-slides:rep-1",
+          text: "Ninety slides, one hour, PERFECT math, my friend — because I present TWELVE and the client asks to see the rest! The deck is not a presentation. The deck is PROOF OF PREPARATION. When they see ninety slides, they know the other guy brought eleven. The eleven-slide man is answering questions. The ninety-slide man is CHOOSING which questions get asked.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:ninety-slides:rep-2",
+          text: "Never all ninety, my friend — that is the AMATEUR reading of the deck. The deck is a menu, and I am the waiter. The client says 'pricing' and I slide-jump to sixty. The client says 'but our team is special' and we are at seventy-two, the testimonials of special teams. Reading the room is choosing the route through the deck in real time.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:ninety-slides:rep-3",
+          text: "Slide forty-one is the HEART of the deck, my friend — one word, thirty seconds of silence, and the room does the rest. You know what happens in that silence? THEY start selling it to THEMSELVES. 'Trust. Yes. We need trust. Who gives trust? WE give trust. Who receives it?' By the time I speak again, the deal has been made and I did not make it — the SILENCE made it.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:ninety-slides:rep-4",
+          text: "Tomek offered ONE PAGE and I love the boy, my friend, but he confuses the deck with the DELIVERY. His one page is beautiful — I keep it in the car, I truly do — but the one page is for ME, in the car, before I walk in. The ninety slides are for THEM, in the room, watching the size of my preparation. Different tools, different jobs! His page wins arguments.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "przemek:ninety-slides:rep-5",
+          text: "The short version is slide forty-one, my friend! TRUST! She rolls her eyes, I hold up one finger, and we both laugh because we BOTH know she has watched that single slide close more deals than the other eighty-nine combined. Zosia asks for the short version the way people ask a jazz musician for the hit — she wants to see if I still have it. I always still have it.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "przemek:ninety-slides:rep-6",
+          text: "Nineteen ninety-four, my friend, cassette era — I inherited it from my first sales manager, a legend named Stefan who said 'build the deck you wish existed when YOU were the confused client'. Every year I add slides, never delete. Stefan's originals are slides one through twenty, and slide forty-one — TRUST — is his, untouched, in his font. Stefan passed in twenty nineteen.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "przemek:swag-bags",
+      label: "The swag bags",
+      optionCandidates: [
+        { id: "przemek:swag-bags:opt-1", topicId: "przemek:swag-bags", text: "The conference swag bags have your face on them." },
+        { id: "przemek:swag-bags:opt-2", topicId: "przemek:swag-bags", text: "How much does a swag bag cost per lead?" },
+        { id: "przemek:swag-bags:opt-3", topicId: "przemek:swag-bags", text: "Grazyna saw the swag invoice and blinked twice." },
+        { id: "przemek:swag-bags:opt-4", topicId: "przemek:swag-bags", text: "The tote bags ended up at the market stall." },
+        { id: "przemek:swag-bags:opt-5", topicId: "przemek:swag-bags", text: "Klaudia says swag is 'content you can hold'." },
+        { id: "przemek:swag-bags:opt-6", topicId: "przemek:swag-bags", text: "Best swag item you ever gave away?" },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:swag-bags:rep-1",
+          text: "My FACE, my friend, on the smaller items — the big items carry the LOGO, because there is confident and there is CARGO. The face goes on the sticker, the sticker goes on the laptop, and every meeting for a year, some client looks at a face that says 'Przemek is thinking about your training needs'. THAT, my friend, is called ambient presence. The face works while I sleep.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:swag-bags:rep-2",
+          text: "Per lead, the bag is nothing, my friend — the bag is the ENVELOPE. The cost per lead is the CONTENTS doing their job: one good pen at forty groszy outlives three bad pens and gets BORROWED, and a borrowed pen is a pen with your logo in someone else's meeting. The bag is arithmetic, my friend. Cheap pens are expensive. Good pens are an annuity. I buy annuities by the crate.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:swag-bags:rep-3",
+          text: "Blinked TWICE, which in Grazyna is a full paragraph! Then she asked the killer question — 'what is the cost per retained impression?' — and my friend, I had the answer READY, because I have run that math since two thousand eleven. She approved the invoice with one word: 'adequate'. From Grazyna, adequate is a standing ovation.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "przemek:swag-bags:rep-4",
+          text: "The overprint totes went to Grazyna's market stall, my friend, and here is the beautiful part — her candle customers are EXACTLY the demographic that runs training budgets! Teachers, nurses, librarians! The bags carried candles out and referrals BACK. She reports — she will deny the word 'reports' — that three stall customers booked corporate demos.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "przemek:swag-bags:rep-5",
+          text: "Content you can HOLD — she is right, my friend, and I have upgraded my entire philosophy because of that one sentence! The bag is a POST in physical space! When the client's kid carries our tote to school, that is an impression with a HEARTBEAT. Klaudia now films the unboxing and the bag performs online AND offline. Two channels, one tote.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "przemek:swag-bags:rep-6",
+          text: "Two thousand sixteen, my friend — theRubber DUCK, before it was fashionable! A stress duck with a tiny tie, because 'every deal needs someone to squeeze'. Clients kept them on DESKS for YEARS. I have walked into meetings a decade later and the duck is STILL THERE, wearing its tiny tie, watching over the account like a guardian.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "przemek:power-breakfast",
+      label: "The power breakfast",
+      optionCandidates: [
+        { id: "przemek:power-breakfast:opt-1", topicId: "przemek:power-breakfast", text: "Breakfast meetings? At 7am? Really?" },
+        { id: "przemek:power-breakfast:opt-2", topicId: "przemek:power-breakfast", text: "Who pays at a power breakfast?" },
+        { id: "przemek:power-breakfast:opt-3", topicId: "przemek:power-breakfast", text: "Zosia calls your breakfast spot 'the second office'." },
+        { id: "przemek:power-breakfast:opt-4", topicId: "przemek:power-breakfast", text: "Maciek joined one breakfast and closed a deal mid-omelette." },
+        { id: "przemek:power-breakfast:opt-5", topicId: "przemek:power-breakfast", text: "The waiter knows your order AND your pipeline." },
+        { id: "przemek:power-breakfast:opt-6", topicId: "przemek:power-breakfast", text: "Teach me the power breakfast." },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:power-breakfast:rep-1",
+          text: "Seven am, my friend, because the decision-maker's phone does not ring until nine and his CALENDAR does not own him until ten! At seven I have the whole man — rested, caffeinated, honest. Nobody lies convincingly before nine, my friend. The morning man tells you the TRUE budget. By lunch he is a lawyer. I only want the morning man.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:power-breakfast:rep-2",
+          text: "I pay, ALWAYS, my friend — and I pay visibly, with the card that has my name facing UP. The breakfast is not a meal, it is a DEMONSTRATION: I feed you before you owe me anything. Fifty zloty of eggs buys a psychological mortgage on the whole meeting. And here is the secret — when the client REACHES for the check, let him win one time out of five.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:power-breakfast:rep-3",
+          text: "The second office, and she is RIGHT, my friend — the waitress there knows more about my pipeline than the CRM! Zosia said it at a town hall and now the SPOT puts my meetings in THEIR reservation book under 'Przemek's office'. I have an office with BETTER coffee than ours and no meeting culture whatsoever.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "przemek:power-breakfast:rep-4",
+          text: "Mid-OMLETTE, my friend, closed it before the plate arrived! I brought Maciek to SHOW him my process, and the client asked one technical question and Maciek answered for NINE MINUTES with such beauty that the client signed on the napkin — the ACTUAL napkin, which Maciek kept, which is now in his plaque drawer next to the awards he hides! The napkin is a company artifact! The.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "przemek:power-breakfast:rep-5",
+          text: "He knows the order AND the pipeline, my friend, because for six years I have processed deals out loud at table four! Marek the waiter — no relation to OUR Marek, the universe is not that cruel — knows which accounts are warm, which are 'the sea in August', and which ones I lost.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:power-breakfast:rep-6",
+          text: "Three rules, my friend! Rule one: book the SAME table every time — territory is trust, and the client should feel like a REGULAR before he is a client. Rule two: order FIRST, decisively — a man who knows his order is a man who knows his numbers.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "przemek:eye-contact",
+      label: "The eye-contact doctrine",
+      optionCandidates: [
+        { id: "przemek:eye-contact:opt-1", topicId: "przemek:eye-contact", text: "You hold eye contact a beat too long. Method?" },
+        { id: "przemek:eye-contact:opt-2", topicId: "przemek:eye-contact", text: "You trained the whole sales team in eye contact?" },
+        { id: "przemek:eye-contact:opt-3", topicId: "przemek:eye-contact", text: "Kasia says your eye contact is 'a handshake with eyes'." },
+        { id: "przemek:eye-contact:opt-4", topicId: "przemek:eye-contact", text: "Marek defeated you. He did not blink once." },
+        { id: "przemek:eye-contact:opt-5", topicId: "przemek:eye-contact", text: "Dawid's eye contact is two seconds and total. Study it?" },
+        { id: "przemek:eye-contact:opt-6", topicId: "przemek:eye-contact", text: "Teach me eye contact without being weird." },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:eye-contact:rep-1",
+          text: "One beat PAST comfortable, my friend, because comfortable is where trust is BORN! Everyone breaks eye contact at the moment of the ask — watch for it, it is a LAW of nature. The one who holds past the ask controls the deal. I do not stare, I PRESENCE. There is a difference and the difference is warmth in the eyebrows. Staring is eye contact without love, my friend.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:eye-contact:rep-2",
+          text: "I did, my friend, one workshop, ninety minutes, and the closing rate went up eleven percent — I have the numbers, Grazyna has the numbers, the NUMBERS have the numbers! The exercise was simple: sixty seconds of silent eye contact in pairs.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:eye-contact:rep-3",
+          text: "A handshake with EYES — Kasia saw it in one meeting and put it in HR training materials, my friend, I have SEEN the slide! The slide has my FACE and one arrow pointing at my eyes with the word 'here'! I am in the official onboarding of this company as an EYEBROW EXAMPLE.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral", "period:afternoon"],
+        },
+        {
+          id: "przemek:eye-contact:rep-4",
+          text: "DEFEATED, my friend, and I am still processing it! Ninety seconds across the server room door and the man did not blink, did not smile, did not FLINCH — his eyes were two server status lights set to 'all systems nominal'! I broke first, I admit it, and he said one word: 'coffee?' My friend, I have met ministers, CEOs, one actual celebrity chef — Marek's gaze is the FINAL.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "przemek:eye-contact:rep-5",
+          text: "Two seconds of TOTAL attention and then he looks at the numbers — my friend, that is not less eye contact, that is EYE CONTACT WITH A DESTINATION! The amateur holds eyes forever with nowhere to go.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "przemek:eye-contact:rep-6",
+          text: "The trick is the TRIANGLE, my friend — left eye, right eye, and one honest beat on the bridge of the nose! Nobody can tell nose from eyes, but the triangle SOFTENS the gaze, my friend! Five seconds on the triangle, then ONE natural glance away — you glance away FIRST but you come BACK, my friend, and the coming back is everything! The glance says 'I am normal'.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "przemek:client-baskets",
+      label: "The client baskets",
+      optionCandidates: [
+        { id: "przemek:client-baskets:opt-1", topicId: "przemek:client-baskets", text: "You sent a client a gift basket with a retro cassette in it?" },
+        { id: "przemek:client-baskets:opt-2", topicId: "przemek:client-baskets", text: "What is IN a classic Przemek basket?" },
+        { id: "przemek:client-baskets:opt-3", topicId: "przemek:client-baskets", text: "Grazyna categorizes baskets as what, exactly?" },
+        { id: "przemek:client-baskets:opt-4", topicId: "przemek:client-baskets", text: "One basket went to the wrong company. Story?" },
+        { id: "przemek:client-baskets:opt-5", topicId: "przemek:client-baskets", text: "Kasia flagged a basket for compliance." },
+        { id: "przemek:client-baskets:opt-6", topicId: "przemek:client-baskets", text: "Do baskets work, or is it all theater?" },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:client-baskets:rep-1",
+          text: "The CASSETTE, my friend, because the client told me at a conference that his first sales job used a cassette course — SAME course as mine, nineteen ninety-four, the Stefan tapes! I found one at a flea market, my friend, THREE zloty, and I put it in his birthday basket with a note: 'the course that started two dynasties'. The man FRAMED it.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:client-baskets:rep-2",
+          text: "The architecture is SACRED, my friend! Bottom layer: local, edible, unbranded — honey, bread, never a logo on the honey, the honey is INNOCENT. Middle layer: one personal item, researched, one of a kind — the cassette, a book with a note, a photo from the conference where they spoke. Top layer: one company item, SMALL, tasteful, a pen at most.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:client-baskets:rep-3",
+          text: "'Client relations, non-monetary, goodwill category', my friend, which is the most romantic thing an accountant has ever said to me! She has a CODE for the baskets! Basket code! And once a year she audits the basket ledger — the LEDGER exists, my friend, I have seen it, every basket since two thousand fifteen with recipient, contents, and a column called 'sentiment yield'.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "przemek:client-baskets:rep-4",
+          text: "Two companies, ONE office building, my friend — basket meant for Industrial A delivered to Industrial B, their COMPETITOR! I panicked for one full minute, then I put on the good shoes and walked over to B personally. 'This basket was for your neighbor, but you know what? Your neighbor and I have history. YOU and I have an opportunity.' My friend. I signed B six months later.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:client-baskets:rep-5",
+          text: "She flagged the WINE, my friend — a government client, gift limit, compliance, the whole elegant machine! And Kasia was RIGHT and I was TECHNICALLY creative, and the basket went out with the wine replaced by... are you ready...",
+          relationshipHint: "annoyed",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "przemek:client-baskets:rep-6",
+          text: "My friend, let me tell you what theater DOES — it books the sequel! The basket does not close deals, TRUE. The basket buys the SECOND meeting, and the second meeting is where deals LIVE! Every man can send an invoice.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "przemek:cassette-course",
+      label: "The cassette course",
+      optionCandidates: [
+        { id: "przemek:cassette-course:opt-1", topicId: "przemek:cassette-course", text: "Is it true you learned sales from cassette tapes?" },
+        { id: "przemek:cassette-course:opt-2", topicId: "przemek:cassette-course", text: "The Stefan tapes — do you still listen to them?" },
+        { id: "przemek:cassette-course:opt-3", topicId: "przemek:cassette-course", text: "Pawel asked what a cassette is. Feelings?" },
+        { id: "przemek:cassette-course:opt-4", topicId: "przemek:cassette-course", text: "You quoted Stefan in the sales meeting and it landed." },
+        { id: "przemek:cassette-course:opt-5", topicId: "przemek:cassette-course", text: "Tomek says the tapes are 'outdated heuristics'." },
+        { id: "przemek:cassette-course:opt-6", topicId: "przemek:cassette-course", text: "Would the course work on young sellers today?" },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:cassette-course:rep-1",
+          text: "TWELVE cassettes, my friend, 'Selling Is Serving' by the legendary Stefan Malinowski, nineteen ninety-four! I played them in my FIRST CAR, a Fiat that only had a cassette player and dreams! Side A of tape seven taught me the alternate close and I have USED it, my friend, THOUSANDS of times! Stefan's voice is in my head rent-free and the rent he pays ME is commission.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:cassette-course:rep-2",
+          text: "Every January, my friend, tape one, side A, in the car, first Monday of the year — it is a RELIGIOUS observance! 'Prospects are people who have not heard your reason yet.' Nineteen words, my friend, and the whole industry is still trying to say it better! I have heard podcasts, seminars, one AI-generated course that I listened to OUT OF RESPECT — nothing has the SOUL of.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:cassette-course:rep-3",
+          text: "He asked what a cassette IS, my friend, and I did not cry, I PERSPIRED WITH HISTORY! I brought him one, I showed him the pencil trick — you wind it with a PENCIL, my friend, manual loading, the ORIGINAL technology restoration! The boy was FASCINATED, he filmed it, he called it 'analog maintenance ritual' which is the most Tomek sentence ever spoken! Now there are two people.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "przemek:cassette-course:rep-4",
+          text: "I quoted 'the client who explains their budget is BUYING, the client who defends it is ALREADY sold' — and the room went QUIET, my friend, because the client had JUST defended the budget and everyone knew it! Zosia wrote it on the whiteboard! TOMEK nodded, and Tomek nodding is the Nobel Prize of this office! Stefan's words, thirty years old, landing in a meeting with a.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "przemek:cassette-course:rep-5",
+          text: "'Outdated heuristics', my friend, and I have been SAVORING the insult for a week! It is the most beautiful thing anyone has called my tapes! I said: Tomek, my friend, EVERY method is a heuristic — your tests are heuristics, Marek's monitoring is a heuristic, LIFE is heuristics all the way down! The difference is MY heuristics have been field-tested by THIRTY YEARS of human.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:cassette-course:rep-6",
+          text: "The course is HUMAN NATURE, my friend, and human nature ships without patches! Side A would work TOMORROW — the core is: listen twice as long as you talk, find the REAL budget under the stated one, and make the client feel BRILLIANT for buying! Tell me what app has improved on THAT! I would modernize the DELIVERY — PodRaczekStefana, my friend, a podcast, Klaudia produces, I.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "przemek:rescue-calls",
+      label: "The rescue calls",
+      optionCandidates: [
+        { id: "przemek:rescue-calls:opt-1", topicId: "przemek:rescue-calls", text: "Kasia said you 'rescued' her client meeting?" },
+        { id: "przemek:rescue-calls:opt-2", topicId: "przemek:rescue-calls", text: "What is your rescue rate, honestly?" },
+        { id: "przemek:rescue-calls:opt-3", topicId: "przemek:rescue-calls", text: "You rescued a deal Tomek had already offended." },
+        { id: "przemek:rescue-calls:opt-4", topicId: "przemek:rescue-calls", text: "Zosia calls rescues 'relationship debt collection'." },
+        { id: "przemek:rescue-calls:opt-5", topicId: "przemek:rescue-calls", text: "Has a rescue ever failed? Completely?" },
+        { id: "przemek:rescue-calls:opt-6", topicId: "przemek:rescue-calls", text: "Teach me the rescue call." },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:rescue-calls:rep-1",
+          text: "RESCUED, and I want to be humble, my friend, but humility does not have a phone plan! Kasia had a client going cold — one missed renewal, one unanswered email — and I called the man and talked about his DAUGHTER'S WEDDING for nine minutes because I REMEMBERED it from a conference in twenty twenty-two! Renewal signed that afternoon! The CRM stores data, my friend.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:rescue-calls:rep-2",
+          text: "Rescue rate: seven of ten, my friend, and I will show you the notebook — the RESCUE NOTEBOOK, blue cover, every attempt since two thousand nine! The three failures get MORE pages than the seven wins, my friend, because the failures have LESSONS and the wins have only CONFETTI! Seven of ten, documented, and Grazyna has verified the math, which means the seven is not a story —.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "przemek:rescue-calls:rep-3",
+          text: "Tomek told the client his onboarding plan was 'structurally romantic', my friend — STRUCTURALLY ROMANTIC! — and the room went to ICE! I drove there through the RAIN, and here is what I did NOT do: I did not apologize for Tomek! I said 'you hired the most honest man in Polish software, and you almost fired him for it — imagine what he will catch in year two'! My friend, they.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "przemek:rescue-calls:rep-4",
+          text: "'Relationship debt collection' — she said it at the retreat and the whole team laughed and I want you to know, my friend, I did NOT laugh, because she is RIGHT! Every relationship I have built for twenty years is an ACCOUNT, and the rescue call is a WITHDRAWAL — but here is my amendment to her theory: I make DEPOSITS the client does not see! The birthday call with no agenda!.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "przemek:rescue-calls:rep-5",
+          text: "Once, my friend, twenty nineteen, and I will tell you exactly why: I rescued the RELATIONSHIP when the rescue needed to be a TECHNICAL fix! The client did not leave because of feelings — he left because the product broke twice and Marek needed three weeks he did not get! I did everything right, my friend — the calls, the warmth, the BASKET — and the man still left, and he.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "przemek:rescue-calls:rep-6",
+          text: "Rule one: you call the PERSON, not the problem — the problem has a ticket number, the person has a NAME, use it twice, three times max, more becomes theater! Rule two: you arrive with ONE fact they forgot they told you — a detail from months ago, my friend, because nothing says 'you matter' like PROOF you were listening in March! Rule three: you name the problem BEFORE they.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "przemek:shoebox-era",
+      label: "The shoebox era",
+      optionCandidates: [
+        { id: "przemek:shoebox-era:opt-1", topicId: "przemek:shoebox-era", text: "Did this company really start in a shoebox?" },
+        { id: "przemek:shoebox-era:opt-2", topicId: "przemek:shoebox-era", text: "The first invoice was written on what, exactly?" },
+        { id: "przemek:shoebox-era:opt-3", topicId: "przemek:shoebox-era", text: "Grazyna keeps the shoebox in a safe now?" },
+        { id: "przemek:shoebox-era:opt-4", topicId: "przemek:shoebox-era", text: "Dawid says the shoebox story is 'eighty percent true'." },
+        { id: "przemek:shoebox-era:opt-5", topicId: "przemek:shoebox-era", text: "Zosia wants the shoebox in the museum corner." },
+        { id: "przemek:shoebox-era:opt-6", topicId: "przemek:shoebox-era", text: "What would you tell the shoebox-era team?" },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:shoebox-era:rep-1",
+          text: "A SHOEBOX, my friend, and I will defend the detail with my LIFE — it held the receipts of the first six months! Dawid did the courses, I did the phones, and the shoebox lived on MY desk because I had the only desk with a LOCK, which was a filing cabinet I shared with a photocopier! The company's entire financial history, my friend, in a box that once held running shoes,.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:shoebox-era:rep-2",
+          text: "A RECEIPT BOOK, my friend, from the kiosk — carbon copy, three languages of mistakes on every page! Invoice number one: one thousand two hundred zloty, a workshop for a fishermen's cooperative, PAID IN CASH, and I carried it home in my inside pocket like a ORGAN! The receipt book is IN the shoebox, my friend, page one, carbon and all! Two thousand eighteen, Grazyna found it,.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:shoebox-era:rep-3",
+          text: "In a SAFE, my friend, with a note that says 'do not open before my retirement' — HER retirement, not the company's! I asked her once what the note means and she said 'the box appreciates' and refused to elaborate, which from Grazyna is a LOVE LETTER! She tracks it at one zloty in the books — sentimental value, unaudited — but we BOTH know what is in that box: page one of.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "przemek:shoebox-era:rep-4",
+          text: "Eighty percent TRUE, and I have spent YEARS hunting the twenty, my friend! I say the box was leather. He says cardboard. I say we started in November. He says October. I say the photocopier was OURS. He says 'the photocopier was a rental, Przemek, there is a RENTAL AGREEMENT'. There is a rental agreement, my friend. I have seen it.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "przemek:shoebox-era:rep-5",
+          text: "The museum corner, my friend, and I am RESISTING — respectfully, lovingly, with flowers! The shoebox does not belong under GLASS, it belongs in a SAFE where it gathers DIGNITY! Once you put your origin under glass, my friend, the story stops working for a living and starts working as a DECORATION! Zosia means well — she wants the new hires to see it! And I say: the new hires.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "przemek:shoebox-era:rep-6",
+          text: "Three things, my friend, and I say them every year at the January breakfast anyway! One: you were RIGHT to answer every phone call, even the ones at midnight, especially those! Two: the photocopier was not ours and we never once pretended it was, and clients RESPECTED that — sell what you HAVE, my friend, never the copier! Three: enjoy the shoebox, because the shoebox is the.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "przemek:rain-calls",
+      label: "The rain calls",
+      optionCandidates: [
+        { id: "przemek:rain-calls:opt-1", topicId: "przemek:rain-calls", text: "You take sales calls outside in the rain?" },
+        { id: "przemek:rain-calls:opt-2", topicId: "przemek:rain-calls", text: "The client asked about the rain sound. Did it help?" },
+        { id: "przemek:rain-calls:opt-3", topicId: "przemek:rain-calls", text: "Klaudia filmed you on a rain call. Content gold?" },
+        { id: "przemek:rain-calls:opt-4", topicId: "przemek:rain-calls", text: "Janusz watches you from the door when it rains." },
+        { id: "przemek:rain-calls:opt-5", topicId: "przemek:rain-calls", text: "Is it a ritual or do you just like rain?" },
+        { id: "przemek:rain-calls:opt-6", topicId: "przemek:rain-calls", text: "What is the best deal you closed in the rain?" },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:rain-calls:rep-1",
+          text: "The RAIN, my friend, is the last honest sound in business! Every office call has walls in it — the client hears the FEAR in the drywall! But a rain call, my friend, a rain call says: this man stepped OUTSIDE for me! The elements are INVOLVED! Clients cannot resist a man with weather in his voice — it is nature's sound mixing, FREE of charge, and it cannot be faked by an app!.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:rain-calls:rep-2",
+          text: "It HELPED, my friend, it helped ENORMOUSLY — the client said 'you sound like the world is happening around you', and that, my friend, is a REVIEW! A five-star review from the WEATHER itself! He signed in April, and every renewal since, he opens with 'still taking calls in the rain?' — my friend, that is not small talk, that is BRAND! I have been rebranding as THE MAN IN THE.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "przemek:rain-calls:rep-3",
+          text: "GOLD, my friend, PURE gold — the video is me, drenched, good shoes ruined, saying 'the forecast said no and the client said yes' and it did NUMBERS! Klaudia added subtitles and a SLOW ZOOM and the sales world REBLOGGED it! Two competitors' reps asked me on LinkedIn if the rain technique is trainable! It is NOT trainable, my friend, it is BELIEVABLE — but I sold them a.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "przemek:rain-calls:rep-4",
+          text: "He does, my friend, and I have EARNED that watch! Twenty years ago he told me one thing at that door: 'the roof drains left, so stand right.' That is it! One sentence, my friend, and I have stood RIGHT ever since, and I have NEVER once had a call dropped to water damage while Janusz watches! Every rain call, I look up mid-pitch and give him the NOD, and he gives it back, and.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "przemek:rain-calls:rep-5",
+          text: "It is STRATEGY, my friend, wearing a ritual's clothing! Think about it: the office has GLASS WALLS, my friend, and everyone inside can see the man taking a call in the RAIN and still smiling! That is ADVERTISING! The team thinks 'Przemek loves the rain' — WRONG, my friend, Przemek loves what the team THINKS when they see Przemek in the rain! It says: the weather does not.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:rain-calls:rep-6",
+          text: "Two thousand twenty, my friend, the HARVEST of rain calls — a logistics client, forty minutes, HORIZONTAL rain, and I closed their whole training program standing under the fire escape with one dry shoulder! The man said 'if this is how you treat a phone call, I want to see what you do with a classroom' — SIGNED, my friend, on the strength of WATER! That renewal is still.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "przemek:heir",
+      label: "The heir",
+      optionCandidates: [
+        { id: "przemek:heir:opt-1", topicId: "przemek:heir", text: "Your son visited the office again. The Dynasty?" },
+        { id: "przemek:heir:opt-2", topicId: "przemek:heir", text: "Does the boy actually want the sales life?" },
+        { id: "przemek:heir:opt-3", topicId: "przemek:heir", text: "He corrected your pitch technique. Publicly." },
+        { id: "przemek:heir:opt-4", topicId: "przemek:heir", text: "Zosia offered him a summer internship." },
+        { id: "przemek:heir:opt-5", topicId: "przemek:heir", text: "You named your best sales technique after him?" },
+        { id: "przemek:heir:opt-6", topicId: "przemek:heir", text: "What if he chooses something else entirely?" },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:heir:rep-1",
+          text: "THE DYNASTY VISITS, my friend, and the boy works the ROOM — he shook Dawid's hand with two seconds of eye contact, he asked Kasia about the referral pipeline, and he fixed the coffee machine's cup placement, which I have been telling Janusz about for a YEAR! He is nineteen, my friend, and the receptionist asked if he is 'in sales already' — he said 'I am in OBSERVATION,.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:heir:rep-2",
+          text: "Here is the truth, my friend, and it stays here: I do not know, and I am NOT pushing! A salesman who pushes his own son — the irony would close me as a client! I put the tapes in his car ONE time, side A only, and I said NOTHING! Three weeks later he asked a question about objection handling at DINNER, casually, like a spy! The dynasty plants SEEDS, my friend, it does not.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:heir:rep-3",
+          text: "He said — in FRONT of the client — 'Dad, your tease is too long, give them the number by second eight'! My own BLOOD, my friend, performing a LIVE AUDIT of the dynasty's technique! And here is what I did, and I want you to learn from this: I gave him the FLOOR! 'The boy is right, my friends — second eight!' I gave the number at second eight and the client SIGNED, and the.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "przemek:heir:rep-4",
+          text: "A summer INTERNSHIP, my friend, at the company of the BLAZER — and I said YES before she finished the sentence, and then we negotiated the TERMS like two nations! My condition: he does NOT start in sales! Sales is the FAMILY CRAFT, he will get it at HOME! He starts in LOGISTICS, my friend, with the schedules and the rooms and the coffee math — because Stefan said 'a seller.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "przemek:heir:rep-5",
+          text: "The 'Second Eight', my friend — the close where you give the number at second eight instead of second twenty! HIS technique, born from his ONE piece of feedback, and now the WHOLE TEAM uses it! There is a slide in my deck — slide eighty-eight, my friend, the symmetry is NOT an accident — that says 'The Second Eight: credit P.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:heir:rep-6",
+          text: "Then he chooses it, my friend, and the dynasty SURVIVES anyway — because the dynasty was never about SALES! The dynasty is about walking in the door like the room is glad to see you, my friend! That works in RESTAURANTS, that works in CLASSROOMS, that works in the SPACE PROGRAM if the boy decides rockets need CHARISMA! Stefan taught me the craft.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "przemek:free-trial",
+      label: "The free trial doctrine",
+      optionCandidates: [
+        { id: "przemek:free-trial:opt-1", topicId: "przemek:free-trial", text: "You gave a client a free month again? Strategy?" },
+        { id: "przemek:free-trial:opt-2", topicId: "przemek:free-trial", text: "Grazyna says trials are 'unrecorded revenue'. Fight back?" },
+        { id: "przemek:free-trial:opt-3", topicId: "przemek:free-trial", text: "The trial-to-paid conversion is what, seventy percent?" },
+        { id: "przemek:free-trial:opt-4", topicId: "przemek:free-trial", text: "Tomek says free devalues the product. Pushback?" },
+        { id: "przemek:free-trial:opt-5", topicId: "przemek:free-trial", text: "One client has been on trial for two years. HOW?" },
+        { id: "przemek:free-trial:opt-6", topicId: "przemek:free-trial", text: "Teach me the free trial close." },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:free-trial:rep-1",
+          text: "Strategy, my friend, and it is OLDER than the phrase 'freemium' — Stefan called it 'the taste before the meal'! You never sell the meal to a man who has never SMELLED it! One free month, and here is the key, my friend: the month is FULL SERVICE — real trainer, real support, real Marek on standby! The trial is not a sample of the product! The trial is a sample of the.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:free-trial:rep-2",
+          text: "She says 'unrecorded revenue', I say 'recorded trust', my friend, and we have had this debate at every quarter close for NINE YEARS — it is our RITUAL! And here is my evidence, which I present every year and she grudgingly initials every year: ninety percent of my trials convert WITHIN TWO QUARTERS, and the lifetime value of a trial-convert is DOUBLE the cold close! The.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "przemek:free-trial:rep-3",
+          text: "Seventy-one percent, my friend, and I will tell you the ENGINE of that number: the mid-trial visit! Day ten, I show up IN PERSON, not to sell — to ask 'what has surprised you?' And the client, my friend,SELLS TO HIMSELF out loud! He lists the wins with his own mouth in his own office in front of his own people! By day thirty the trial is not a trial, it is a REFERENDUM, and.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:free-trial:rep-4",
+          text: "Tomek says free devalues the product and Tomek is describing GROCERIES, my friend! Software training is not a CUCUMBER — you cannot taste-travel it! The free month does not devalue the product, it PREVENTS the wrong client — the man who will not pay after a free month was never going to pay AFTER PAYING EITHER, my friend, he was going to be a REFUND with a meeting! The trial.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "przemek:free-trial:rep-5",
+          text: "Two YEARS on trial, my friend, and I will confess the beautiful failure: I keep RENEWING the free month because the man is the LIBRARIAN of a teachers' cooperative and every year he sends me two NEW referrals before I can invoice him! Two referrals a year, my friend, at full price, for ZERO zloty of subscription! I did this math with Grazyna — the librarian is our single.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "przemek:free-trial:rep-6",
+          text: "The close is at DAY TWENTY-FIVE, my friend, never day thirty — day thirty is the deadline and deadlines make men lawyers! Day twenty-five I call and I do not ask 'will you buy' — I ask 'what should we set up FIRST when we start properly?' THE ASSUMPTION CLOSE, my friend, Stefan's crown jewel! And if the man hesitates — if there is ONE gram of hesitation — I extend the trial.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "przemek:fax",
+      label: "The fax machine",
+      optionCandidates: [
+        { id: "przemek:fax:opt-1", topicId: "przemek:fax", text: "There is a fax machine in your office. In 2026." },
+        { id: "przemek:fax:opt-2", topicId: "przemek:fax", text: "You sent a fax to close a deal? Recently?" },
+        { id: "przemek:fax:opt-3", topicId: "przemek:fax", text: "Marek wants to unplug it. Standoff?" },
+        { id: "przemek:fax:opt-4", topicId: "przemek:fax", text: "The fax number is still on your business cards." },
+        { id: "przemek:fax:opt-5", topicId: "przemek:fax", text: "Tomek called it 'a dead protocol with a dial tone'." },
+        { id: "przemek:fax:opt-6", topicId: "przemek:fax", text: "When the fax finally dies, what happens?" },
+      ],
+      replyCandidates: [
+        {
+          id: "przemek:fax:rep-1",
+          text: "That is STANISLAW, my friend, the fax machine, twenty-six years of service, and he has a NAME because machines that WORK get NAMES — Janusz taught me that rule and Janusz is the Pope of this parish! Stanislaw has closed deals in three decades, my friend, and he has a RHYTHM when a signed contract comes through — the whir, the pause, the SLIDE — that is the sound of money.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:fax:rep-2",
+          text: "MARCH, my friend, THIS YEAR — a municipal client, the procurement office of a small town, and their system does not accept PDF signatures from vendors they have not 'processed in person'! Every competitor sent emails into the void, my friend! I sent a FAX — cover letter, handwriting, the good pen — and the clerk later told me mine was 'the only application that felt like it.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "przemek:fax:rep-3",
+          text: "The STANDOFF, my friend, is going beautifully — Marek has 'planning to unplug it' on his board since twenty twenty-two and Stanislaw remains PLUGGED, and every quarter Marek walks past, glares, and REPRICES the threat! And here is the beautiful part: the one time Marek NEEDS a fax — the hardware vendor, the ancient RMA system, two years ago — whose office does he come to?.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "przemek:fax:rep-4",
+          text: "It IS, my friend, and that is ADVERTISING — the fax number on a modern card says 'this man has SURVIVED things'! Young clients think it is IRONIC, my friend, and irony is a DOOR! Old clients think it is RESPECT, my friend, and respect is a CHAIR! Two generations, one card, and every single person who calls the fax number gets...",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "przemek:fax:rep-5",
+          text: "'A dead protocol with a dial tone', my friend — POETRY! I had it framed, I offered to put it ON the fax, and Tomek fled the room, which is the highest compliment a Tomek can pay! But here is my rebuttal, which I have delivered with LOVE: the protocol is dead, TRUE — but Stanislaw does not run a protocol, my friend, he runs a RITUAL! A ritual is a dead protocol that people.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "przemek:fax:rep-6",
+          text: "Stanislaw does not DIE, my friend — but IF, IF the toner finally ascends, we do not throw him out like a common PRINTER! Janusz has ALREADY picked the spot — the closet, next to the retired percolator, in the machinery VALHALLA where this company keeps its heroes! And every year after, at the January breakfast, I tell the new salespeople about the machine that closed the.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
   ],
   taskOffers: [
     {

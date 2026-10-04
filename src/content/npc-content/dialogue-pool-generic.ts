@@ -635,6 +635,323 @@ export const GENERIC_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "generic:desk-snacks",
+      label: "Desk snacks",
+      optionCandidates: [
+        { id: "generic:desk-snacks:opt-1", topicId: "generic:desk-snacks", text: "What is in your desk drawer right now?" },
+        { id: "generic:desk-snacks:opt-2", topicId: "generic:desk-snacks", text: "The office has opinions about desk snacks?" },
+        { id: "generic:desk-snacks:opt-3", topicId: "generic:desk-snacks", text: "Emergency snacks versus daily snacks — distinction?" },
+        { id: "generic:desk-snacks:opt-4", topicId: "generic:desk-snacks", text: "Someone's desk smells like a whole bakery." },
+        { id: "generic:desk-snacks:opt-5", topicId: "generic:desk-snacks", text: "Burek has mapped every snack drawer?" },
+        { id: "generic:desk-snacks:opt-6", topicId: "generic:desk-snacks", text: "What snack says a lot about a person?" },
+      ],
+      replyCandidates: [
+        {
+          id: "generic:desk-snacks:rep-1",
+          text: "Two granola bars of unknown vintage, an emergency chocolate behind the notebooks, and something crunch I no longer remember buying. The drawer is less a pantry than a geological record of my afternoons. Every office desk has one. Some are just better at hiding the strata.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "generic:desk-snacks:rep-2",
+          text: "The office has three: loud packaging is a Tuesday problem, strong smells migrate to the meeting room, and whatever you hoard, label it or lose it. The rules are unwritten, universally enforced, and rehearsed on every new hire by the third day. Culture is mostly snack etiquette with better fonts.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "generic:desk-snacks:rep-3",
+          text: "Daily snacks are fuel. Emergency snacks are CURRENCY. You do not eat the emergency chocolate on a Tuesday — you save it for the day the printer wins, and when that day comes you share it, because emergency snacks only work if the office knows you have them. It is economics. Tiny, foil-wrapped economics.",
+          relationshipHint: "delighted",
+          tags: ["period:afternoon", "relationship:neutral"],
+        },
+        {
+          id: "generic:desk-snacks:rep-4",
+          text: "That is not a snack drawer, that is a bakery franchise, and the whole floor browses it with their noses at eleven. The owner says nothing and shares everything, which is either generosity or strategy, and after three years I have decided the distinction does not matter. The crumbs are real either way.",
+          relationshipHint: "pleased",
+          tags: ["period:morning"],
+        },
+        {
+          id: "generic:desk-snacks:rep-5",
+          text: "Mapped, ranked, and patrolled. He appeared at my drawer the day I stocked it and gave me one look that said the audit found me satisfactory. The dog knows where everything is before the owners do. Half the office has started leaving the bottom drawer slightly open on his visiting days. That is not kindness. That is tribute.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "generic:desk-snacks:rep-6",
+          text: "Tell me the snack and I will tell you the work style. Desk almonds: plans ahead, judges quietly. Hidden gummy bears: fun with confidentiality settings. A drawer of identical soups: braced for anything, probably correct. The snack is never just a snack. It is a tiny autobiography in foil.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "generic:meeting-survival",
+      label: "Meeting survival",
+      optionCandidates: [
+        { id: "generic:meeting-survival:opt-1", topicId: "generic:meeting-survival", text: "How do you survive a meeting that should be an email?" },
+        { id: "generic:meeting-survival:opt-2", topicId: "generic:meeting-survival", text: "Best seat in a meeting for staying awake?" },
+        { id: "generic:meeting-survival:opt-3", topicId: "generic:meeting-survival", text: "The nodding technique — real or rude?" },
+        { id: "generic:meeting-survival:opt-4", topicId: "generic:meeting-survival", text: "One useful question wakes a whole meeting up." },
+        { id: "generic:meeting-survival:opt-5", topicId: "generic:meeting-survival", text: "The meeting ran long and lunch is gone. Grief?" },
+        { id: "generic:meeting-survival:opt-6", topicId: "generic:meeting-survival", text: "When is a meeting actually worth attending?" },
+      ],
+      replyCandidates: [
+        {
+          id: "generic:meeting-survival:rep-1",
+          text: "You make it useful from the inside — take the notes nobody wants to take, and suddenly you are the most important person in the room. The note-taker controls the recap, and the recap is the only part of the meeting that survives. Every email meeting has one survivor. Be the survivor.",
+          relationshipHint: "pleased",
+          tags: ["period:morning"],
+        },
+        {
+          id: "generic:meeting-survival:rep-2",
+          text: "Near the front, off-center, visible but not addressable. The back rows get called on, the front-center gets eye contact, but the front-corner gets proximity benefits with none of the exposure. Close enough to look engaged, angled enough to think freely. It is the diplomatic seat and it is always open.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "generic:meeting-survival:rep-3",
+          text: "Real, and it is a craft. The slow triple-nod says 'continue, this is being absorbed'. The single firm nod says 'point received, we may move on'. What is rude is the empty nod — the one with nobody home. People can tell. Nod like the sentence matters or do not nod at all. The face is part of the meeting's infrastructure.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "generic:meeting-survival:rep-4",
+          text: "'What would make us cancel this?' Works every time. The room wakes up because nobody has permission to say the obvious until someone asks. Half the time the answer is nothing and the meeting earns its keep. The other half of the time you just saved nine people an hour. Either way, you ate first.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "generic:meeting-survival:rep-5",
+          text: "Not grief — arithmetic. The meeting cost an hour and a lunch. The fix is never working through it; the fix is the drawer, the stash, the emergency ration network this office pretends not to have. Somebody always has crackers. Somebody always has the good chocolate. Hunger builds the only mutual aid that never needs a policy.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "generic:meeting-survival:rep-6",
+          text: "When a decision needs witnesses. Documents inform, calls align, but decisions need a room full of people who cannot later say they were not there. If nobody will have to live with a shared consequence, send the email. If everyone has to carry it together, book the room and buy the good coffee. The coffee is half the attendance.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "generic:plant-duty",
+      label: "Plant duty",
+      optionCandidates: [
+        { id: "generic:plant-duty:opt-1", topicId: "generic:plant-duty", text: "Whose turn is it to water the office plants?" },
+        { id: "generic:plant-duty:opt-2", topicId: "generic:plant-duty", text: "I overwatered the fern. How bad is it?" },
+        { id: "generic:plant-duty:opt-3", topicId: "generic:plant-duty", text: "The plants near the window are thriving. Why?" },
+        { id: "generic:plant-duty:opt-4", topicId: "generic:plant-duty", text: "A plant died on my watch. Am I cursed?" },
+        { id: "generic:plant-duty:opt-5", topicId: "generic:plant-duty", text: "Janusz has a plant rotation chart, apparently?" },
+        { id: "generic:plant-duty:opt-6", topicId: "generic:plant-duty", text: "What do office plants actually give us?" },
+      ],
+      replyCandidates: [
+        {
+          id: "generic:plant-duty:rep-1",
+          text: "Nobody's and everyone's, which is how the plants survive us. Janusz does the real schedule, the rest of us perform guilt-watering when we remember. The system is: he tends, we admire, and every few weeks someone becomes devoted for a month before life reasserts itself. The plants are zen about the cycle. They have seen worse.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "generic:plant-duty:rep-2",
+          text: "Recoverable. Ferns forgive with drainage — tip the water out, skip a week, speak softly. The overwatering instinct is love with a heavy hand, and the fern knows the difference. The office plant rule is the same as the office coffee rule: less than you think, more often than you remember. Adjust and be forgiven.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "generic:plant-duty:rep-3",
+          text: "Light, mostly, and the glass wall — but also the traffic. Window plants get looked at. Looked-at plants get watered, turned, and defended from the vacuum. Thriving is ten percent biology and ninety percent witnesses. The corner plants by the printer live rough. Nobody makes eye contact with the printer.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "generic:plant-duty:rep-4",
+          text: "Not cursed — experienced. Everyone kills their first office plant, usually with kindness, sometimes with a holiday. Janusz will not judge you; he will hand you the next one and say 'this one is tougher'. That is the whole onboarding. The dead one goes to the compost with honors. The survivor becomes yours. That is how plant people are made.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "generic:plant-duty:rep-5",
+          text: "He does — names, dates, and a small symbol for temperament. There is even a column for 'likes chat', which is real, because the plants by the kitchen get talked at and grow accordingly. The chart is taped inside his closet door. It is the most detailed document in this building and the only one nobody argues with.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "generic:plant-duty:rep-6",
+          text: "Proof of time passing. A screen never changes and a plant never stops — new leaf, dropped leaf, the slow lean toward the window. You can read the quarter in a plant the way you cannot read it in a dashboard. Offices need one living thing that does not report status. The plants just do status, quietly, in green.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "generic:friday-curve",
+      label: "The Friday curve",
+      optionCandidates: [
+        { id: "generic:friday-curve:opt-1", topicId: "generic:friday-curve", text: "Why does Friday afternoon move so fast?" },
+        { id: "generic:friday-curve:opt-2", topicId: "generic:friday-curve", text: "The last-hour deploy — brave or cursed?" },
+        { id: "generic:friday-curve:opt-3", topicId: "generic:friday-curve", text: "Friday cleanup ritual — is that a real thing?" },
+        { id: "generic:friday-curve:opt-4", topicId: "generic:friday-curve", text: "Zosia's Friday cookie tin is strategic?" },
+        { id: "generic:friday-curve:opt-5", topicId: "generic:friday-curve", text: "Monday-you versus Friday-you — different people?" },
+        { id: "generic:friday-curve:opt-6", topicId: "generic:friday-curve", text: "What is the perfect Friday afternoon?" },
+      ],
+      replyCandidates: [
+        {
+          id: "generic:friday-curve:rep-1",
+          text: "Because the week finally fits. By Friday afternoon you know what the week was about, the noise has settled, and the tasks left are the ones that fit your hands exactly. Monday is ten hours long. Friday afternoon is forty minutes with good lighting. Time does not speed up. You just stop fighting it.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "generic:friday-curve:rep-2",
+          text: "Cursed, obviously, and every office has its Friday-deploy ghost story to prove it. The rule of thumb everyone learns once: if the world cannot wait until Monday, it was not ready on Friday. Marek enforces this with his eyes. The brave still exist. We keep their names by the coffee machine, like a memorial.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "generic:friday-curve:rep-3",
+          text: "Real and load-bearing. Desk cleared, Monday's first task written on a sticky note, plants checked, one small fix done so the week ends on a closed loop. It takes fifteen minutes and it is the difference between arriving Monday as a stranger or as a resident. The ritual is quiet. The ritual is why Monday feels less like a wall.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "generic:friday-curve:rep-4",
+          text: "Completely. The cookies appear at four, morale does its little graph, and the week's last argument dissolves in sugar. She would call it culture infrastructure and she would be right. Every office has a heartbeat and ours runs on flour, timing, and a manager who knows that people walk into Monday remembering how Friday ended.",
+          relationshipHint: "delighted",
+          tags: ["period:afternoon", "relationship:warm"],
+        },
+        {
+          id: "generic:friday-curve:rep-5",
+          text: "Different people who owe each other favors. Friday-you leaves the note, the clean desk, the parked question — and Monday-you arrives rich from it. Every good Monday is actually a Friday that planned ahead. The week is not five days. It is two people passing one baton, over and over, forever.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "generic:friday-curve:rep-6",
+          text: "One closed loop, one open question left in good condition, the cookie tin at four, and a walk out at five with the weekend intact. No heroics, no inbox zero — those are fantasies. Just an office winding down like a good clock, everyone leaving a little better than the week found them. The perfect Friday is the one nobody talks about on Monday.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "generic:monday-mood",
+      label: "The Monday mood",
+      optionCandidates: [
+        { id: "generic:monday-mood:opt-1", topicId: "generic:monday-mood", text: "Is Monday actually worse or just branded badly?" },
+        { id: "generic:monday-mood:opt-2", topicId: "generic:monday-mood", text: "The Monday standup is the week's hardest meeting?" },
+        { id: "generic:monday-mood:opt-3", topicId: "generic:monday-mood", text: "Coffee before speaking on Mondays — office law?" },
+        { id: "generic:monday-mood:opt-4", topicId: "generic:monday-mood", text: "One person is always sunny on Monday. How?" },
+        { id: "generic:monday-mood:opt-5", topicId: "generic:monday-mood", text: "The Monday flood of emails — triage order?" },
+        { id: "generic:monday-mood:opt-6", topicId: "generic:monday-mood", text: "How do you make Monday softer?" },
+      ],
+      replyCandidates: [
+        {
+          id: "generic:monday-mood:rep-1",
+          text: "Branded badly. Monday is just Tuesday with worse press. The weekend hands you a slower heart rate and the office hands you a full queue, and the collision feels personal when it is purely scheduled. By 10:30 every Monday is any other day wearing the same shirt. The brand wears off. It always does.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "generic:monday-mood:rep-2",
+          text: "It is the week's draft, not its exam. Whoever runs it sets the tone — fifteen minutes, one pass, no mysteries. A Monday standup that runs long poisons four days. A Monday standup that ends with the room exhaling quietly prints money for the rest of the week. The meeting is small. The tone is enormous.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "generic:monday-mood:rep-3",
+          text: "Law, unwritten, absolute. The first hour of Monday is a warm-up lap and nobody is required to perform sentence assembly before the cup is drained. Even Dawid gives the coffee a moment. The office runs on a lot of policies nobody wrote down, and this one has the deepest enforcement: self-interest, universal.",
+          relationshipHint: "pleased",
+          tags: ["period:morning"],
+        },
+        {
+          id: "generic:monday-mood:rep-4",
+          text: "Either they love the work, or they front-load the week so hard on Sunday that Monday arrives pre-conquered. Both are legal. The sunny ones are useful, too — a room of Monday grumbles needs exactly one person who behaves like the week is a gift. The grumbles soften out of sheer social physics. Use them. Do not become them. Nobody can sustain it.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "generic:monday-mood:rep-5",
+          text: "People first, fires second, paper third. The email that says 'do you have a minute' outranks the newsletter. The flag from the weekend monitoring outranks the archive. Everything sent between Friday 5 and Monday 7 gets read by a calmer version of you at 10:00. Triage is just being kind to the person you were on Friday night.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "generic:monday-mood:rep-6",
+          text: "Leave one open loop from Friday — something small, pleasant, and finishable in ten minutes. Monday-you walks into a win instead of a wall, and momentum is the only currency the morning accepts. Nobody can make Monday short. Anyone can make Monday start with a done thing. The trick is played on yourself, and it works forever.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "generic:cardigan-season",
+      label: "Cardigan season",
+      optionCandidates: [
+        { id: "generic:cardigan-season:opt-1", topicId: "generic:cardigan-season", text: "Cardigan season opened overnight. Officially?" },
+        { id: "generic:cardigan-season:opt-2", topicId: "generic:cardigan-season", text: "The office heating versus the cardigan army?" },
+        { id: "generic:cardigan-season:opt-3", topicId: "generic:cardigan-season", text: "Cardigan hierarchy — is there one?" },
+        { id: "generic:cardigan-season:opt-4", topicId: "generic:cardigan-season", text: "Janusz holds the thermostat like a vault?" },
+        { id: "generic:cardigan-season:opt-5", topicId: "generic:cardigan-season", text: "The one cardigan everyone borrows?" },
+        { id: "generic:cardigan-season:opt-6", topicId: "generic:cardigan-season", text: "What does cardigan season do to the office?" },
+      ],
+      replyCandidates: [
+        {
+          id: "generic:cardigan-season:rep-1",
+          text: "Officially it opens with the first cold handle on the door and closes when someone risks short sleeves in April. Nobody declares it. One morning half the office arrives in wool and the season simply exists, like fog. The transition is my favorite day of the year — the whole office quietly agrees to be cozy at the same time.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "generic:cardigan-season:rep-2",
+          text: "The eternal war. The heating serves one number; the humans span ten microclimates. The cardigan army is the peace treaty — instead of fighting the thermostat, we dress for our personal weather. Every office that argues about temperature is one cardigan drawer away from world peace. The drawer is the diplomacy.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "generic:cardigan-season:rep-3",
+          text: "There is, and nobody wrote it down. Founders' hoodies at the top, then senior cardigans with elbow patches — tenure you can see — then the rotating fashion knits, and at the bottom, worn with total pride, the company hoodie from a conference nobody attended. Rank is real. Comfort outranks it. The hierarchy is warm and self-aware.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "generic:cardigan-season:rep-4",
+          text: "Like the crown jewels. The thermostat has a cover, the cover has a note, and the note says ask. Which sounds tyrannical until you learn the alternative: eleven people with eleven settings turning the office into weather. Janusz runs one temperature, perfectly, for twenty years. That is not control. That is climate governance.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "generic:cardigan-season:rep-5",
+          text: "The gray one on the coat rack, origin unknown, fits everyone, warms everyone. It has been borrowed for years and returns without being chased. It is the office's communal garment and it has absorbed so many shoulders it has basically achieved tenure. If the gray cardigan could talk it would know every secret in this building.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "generic:cardigan-season:rep-6",
+          text: "It slows the office down in the good way. Summer is sprints and cold coffee. Cardigan season is longer thoughts, warmer meetings, and the kettle working a shift. Deadlines do not care what month it is, but people do — and people in wool are people with patience. The whole building lowers its voice a notch. Cozy is a productivity setting.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "generic:afternoon-wall",
+      label: "The afternoon wall",
+      optionCandidates: [
+        { id: "generic:afternoon-wall:opt-1", topicId: "generic:afternoon-wall", text: "The 15:00 energy wall is real, right?" },
+        { id: "generic:afternoon-wall:opt-2", topicId: "generic:afternoon-wall", text: "Coffee at three — help or delay?" },
+        { id: "generic:afternoon-wall:opt-3", topicId: "generic:afternoon-wall", text: "Why is the corridor quietest at three?" },
+        { id: "generic:afternoon-wall:opt-4", topicId: "generic:afternoon-wall", text: "The wall hit during an important call. Salvage?" },
+        { id: "generic:afternoon-wall:opt-5", topicId: "generic:afternoon-wall", text: "Some people peak at 3pm. Species?" },
+        { id: "generic:afternoon-wall:opt-6", topicId: "generic:afternoon-wall", text: "What work is three pm actually good for?" },
+      ],
+      replyCandidates: [
+        {
+          id: "generic:afternoon-wall:rep-1",
+          text: "Real, scheduled, and survivable. The body takes its break between the morning's caffeine and the evening's second wind, and the office pretends not to notice. The mistake is fighting it with meetings. Three o'clock is for the tasks your hands can do while your brain reboots. Every veteran schedules accordingly and says nothing.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "generic:afternoon-wall:rep-2",
+          text: "Delay, for most, help for the few. Three o'clock coffee is a four-thirty debt, and the four-thirty crash arrives right when the last real work of the day wants doing. The honest cure is the walk — two laps of the block, ten minutes, cheaper than any stimulant and it actually works. But tell that to the kettle line. The kettle line knows what it wants.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "generic:afternoon-wall:rep-3",
+          text: "Because the whole floor hit the wall at once and everyone is quietly reboiling water, staring out windows, and type-typing one word per minute. It is not quiet. It is synchronized standby. Janusz calls three o'clock 'the office blinking' — the whole building resting its eyes at the same time. He is not wrong. He is never wrong about the building.",
+          relationshipHint: "pleased",
+          tags: ["period:afternoon"],
+        },
+        {
+          id: "generic:afternoon-wall:rep-4",
+          text: "Stand up. Say it out loud — 'let me grab two minutes before we decide'. Nobody has ever lost a deal by being human at three pm; they lose deals by pretending to be a machine and agreeing to something written by the wall. Water, window, ten breaths, back in. The wall passes. The call respects the honesty. Deals survive honesty. They do not survive nodding while absent.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "generic:afternoon-wall:rep-5",
+          text: "There are people whose chemistry peaks exactly when ours dips, and they own those hours like real estate. Every office has one — arriving from lunch like the day is starting, cheerful, terrifying. They are not better than us. They are differently wound. The office works because the peaks take shifts. Someone is always at the wheel.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "generic:afternoon-wall:rep-6",
+          text: "The merciful work. Filing, tidying, labeling, the inbox archaeology, updating the docs nobody thanks you for. Three pm is when the office's quiet maintenance gets done, and the maintenance is why the rest of the week works. Mornings make the noise. The wall hours clean up after it. Both shifts are honorable. Only one gets cookies.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
   ],
   taskOffers: [],
 };

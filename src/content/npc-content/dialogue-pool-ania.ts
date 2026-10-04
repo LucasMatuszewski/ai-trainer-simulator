@@ -1385,6 +1385,648 @@ export const ANIA_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "ania:podcast",
+      label: "The company podcast",
+      optionCandidates: [
+        { id: "ania:podcast:opt-1", topicId: "ania:podcast", text: "The podcast has eleven episodes. How many listeners?" },
+        { id: "ania:podcast:opt-2", topicId: "ania:podcast", text: "Who is the podcast even for?" },
+        { id: "ania:podcast:opt-3", topicId: "ania:podcast", text: "Dawid's episode was forty minutes of silence." },
+        { id: "ania:podcast:opt-4", topicId: "ania:podcast", text: "Klaudia wants to co-host an episode." },
+        { id: "ania:podcast:opt-5", topicId: "ania:podcast", text: "The podcast intro jingle costs more than the mic." },
+        { id: "ania:podcast:opt-6", topicId: "ania:podcast", text: "Should the podcast die with dignity?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:podcast:rep-1",
+          text: "Forty-one monthly listeners, and before you say anything: ELEVEN of them are clients, three are competitors taking notes, and one is my mother, who listens at full volume on a bus and reports my tone. Forty-one is not an audience, it is a congregation, and congregations are worth more than crowds. The metrics say pivot. The metrics have never had a mother on a bus.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:podcast:rep-2",
+          text: "The podcast is for the hires we have not made yet — it is the company's voice sample. Candidates binge it before interviews and arrive knowing our jokes. That is not content, that is PRE-WARMING. Eleven episodes is a body of work. The body says: these people are real, occasionally funny, and one of them breathes into the mic. We are working on the breathing.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:podcast:rep-3",
+          text: "Forty minutes and every silence was a DECISION. Dawid does not do filler — if he is not talking, the graph of the conversation is flat by design. It is the least downloaded and most respected episode. A client quoted the silence in a meeting. The silence QUOTED WELL. We have released nothing since that can compete with nothing.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:podcast:rep-4",
+          text: "She does, and the chemistry is real — her pace, my filter, one microphone between us like a custody arrangement. I said yes on the condition that nobody says 'synergy' unprompted. She has already broken the condition in her head, I can tell. The episode will perform. It will perform so hard. The ring light is booked.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:podcast:rep-5",
+          text: "The jingle was composed by a man who charges by the note, and it is nine notes long, and each note has a REASON. Grazyna found the invoice and asked what a note costs. I showed her the retention numbers on episodes that open with the jingle. She said 'fine' in the tone of someone paying a ransom. The jingle stays. Nine notes of freedom.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:podcast:rep-6",
+          text: "Never — podcasts do not die, they go dormant and get discovered in three years by a niche that calls it 'ahead of its time'. The archive compounds. Every episode is a small artifact that says 'we were here, we had opinions, one of us said send'. Kill the podcast and you kill the proof. We pivot the FORMAT before we ever kill the feed. This is content doctrine. Write it down.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "ania:ai-copy",
+      label: "The AI copy debate",
+      optionCandidates: [
+        { id: "ania:ai-copy:opt-1", topicId: "ania:ai-copy", text: "Did AI write the last newsletter?" },
+        { id: "ania:ai-copy:opt-2", topicId: "ania:ai-copy", text: "Is using AI for copy cheating?" },
+        { id: "ania:ai-copy:opt-3", topicId: "ania:ai-copy", text: "The AI copy sounds like us. Too much like us." },
+        { id: "ania:ai-copy:opt-4", topicId: "ania:ai-copy", text: "Klaudia's AI captions outperform her real ones." },
+        { id: "ania:ai-copy:opt-5", topicId: "ania:ai-copy", text: "Zosia wants an AI policy for the brand voice." },
+        { id: "ania:ai-copy:opt-6", topicId: "ania:ai-copy", text: "What will you never let AI write?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:ai-copy:rep-1",
+          text: "The AI drafted, I decided — that is the whole pipeline and the whole ethics. It is a very fast intern with no memories. I feed it our voice, it returns forty versions, and I keep the one that sounds like something a human here would say after coffee. The byline says me. The accountability says me. The speed says otherwise, and the speed is a gift I refuse to apologize for.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:ai-copy:rep-2",
+          text: "Cheating is taking credit for work you did not supervise. I supervise every word the way Tomek supervises every line — with a linter and a grudge. The writers who get burned by AI are the ones who pressed send on draft zero. The tool did not betray them. The SEND did. Craft was never typing. Craft was always choosing.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:ai-copy:rep-3",
+          text: "That is the uncanny stage and it passes in two weeks, once you start feeding it failures as well as wins. An AI trained only on our best copy produces our best copy forever, which is a wax museum. I trained it on the typo tweet. The apology. The angry unsubscribe. Now it sounds like a company with weather. The flaw is the fingerprint.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:ai-copy:rep-4",
+          text: "They do, by eleven percent, and she has made peace with it in a way I find moving. Her position: the captions were never the art, the FACE is the art, the captions were admin with a filter. She posts AI drafts with real captions on alternate days like a control group. She is running SCIENCE. On herself.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:ai-copy:rep-5",
+          text: "She wants a policy and I want a paragraph, and the negotiation is beautiful. My draft says 'AI may draft; humans decide; the brand voice is an act of judgment and cannot be delegated'. Her version has bullet points. The paragraph will win. Policy is prose. Bullet points are how you know a lawyer wrote it, and this is a MARKETING document, thankfully.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:ai-copy:rep-6",
+          text: "Apologies, condolences, and anything about the team — the real ones, the hires, the goodbyes. A machine can imitate our voice but it cannot carry our weight, and weight is the entire product in those messages. When Janusz retired-adjacent day comes, that post is mine, written slow, checked twice, no drafts folder involved.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "ania:logo-rounds",
+      label: "The logo revision rounds",
+      optionCandidates: [
+        { id: "ania:logo-rounds:opt-1", topicId: "ania:logo-rounds", text: "The logo is on revision fourteen. Ending soon?" },
+        { id: "ania:logo-rounds:opt-2", topicId: "ania:logo-rounds", text: "Maciek wants the logo bigger again." },
+        { id: "ania:logo-rounds:opt-3", topicId: "ania:logo-rounds", text: "Revision nine was perfect. Why did we move on?" },
+        { id: "ania:logo-rounds:opt-4", topicId: "ania:logo-rounds", text: "The designer quit the group chat again." },
+        { id: "ania:logo-rounds:opt-5", topicId: "ania:logo-rounds", text: "Grazyna asked what the logo costs per revision." },
+        { id: "ania:logo-rounds:opt-6", topicId: "ania:logo-rounds", text: "How do you know when a logo is done?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:logo-rounds:rep-1",
+          text: "Revision fourteen addresses the KERNING, which is the last refuge of a stakeholder who has run out of opinions. Round one was 'make it pop'. Round seven was 'make it trustworthy'. Fourteen is kerning. We are descending through the feedback food chain and at the bottom is done. Two more rounds. The designer has been told 'two more rounds' since round ten. We believe it.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:logo-rounds:rep-2",
+          text: "He does, on every asset, since the dawn of the company. I have a folder called 'logo bigger' containing forty-two emails that all say it in different fonts. The final size is negotiated per placement and my rule is: bigger than comfortable, smaller than angry. Maciek signs off at 'confident'. We have a vocabulary. The vocabulary is load-bearing.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "ania:logo-rounds:rep-3",
+          text: "Nine was perfect and we left it because perfect does not SURVIVE contact with a boardroom. It needed one more meeting to feel earned. The client never trusts the first miracle. Nine had to be improved into essentially itself — revision eleven is nine with better kerning and a story. The story is 'we listened'. We listened to ourselves. The process is the product, sometimes.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:logo-rounds:rep-4",
+          text: "She quits twice per logo and returns once per invoice. It is a rhythm older than our contract and I respect it like a tide. Her agency has a clause: rounds beyond twelve are billed at the 'soul' rate. We hit the soul rate at fourteen. Grazyna approved it with the note 'cheaper than restarting'. The accounting language of love. I frame these things mentally.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:logo-rounds:rep-5",
+          text: "She asked, I answered, and she went quiet in the way that precedes either a veto or a spreadsheet. The spreadsheet arrived: cost per revision, plotted against stakeholder satisfaction, and satisfaction PEAKED at nine. She mailed it to the whole thread with the subject 'data'. The thread went silent. Nine is back on the table. Never argue with an accountant about rounds.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:logo-rounds:rep-6",
+          text: "It is done when the newest stakeholder's note repeats an earlier note — the loop has closed and no new information exists. Round fourteen's note was almost identical to round six's, just angrier. That is the signal. Design does not finish, it exhausts. You ship the version the exhausted room agrees to. Then you delete the folder of shame and never speak of rounds again.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "ania:press-release",
+      label: "The press release",
+      optionCandidates: [
+        { id: "ania:press-release:opt-1", topicId: "ania:press-release", text: "Did any outlet pick up the press release?" },
+        { id: "ania:press-release:opt-2", topicId: "ania:press-release", text: "Why do we still write press releases?" },
+        { id: "ania:press-release:opt-3", topicId: "ania:press-release", text: "The quote in the release is from Zosia. All Zosia." },
+        { id: "ania:press-release:opt-4", topicId: "ania:press-release", text: "One local blog ran it. With typos." },
+        { id: "ania:press-release:opt-5", topicId: "ania:press-release", text: "Maciek wants a national outlet next time." },
+        { id: "ania:press-release:opt-6", topicId: "ania:press-release", text: "Teach me to write a press release." },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:press-release:rep-1",
+          text: "One trade journal ran three paragraphs and cropped our logo, which in this economy is a YES. Press releases are not journalism, they are seed — most vanishes, some sprouts weirdly, and one grows into a call you did not expect in a quarter you needed it. I send them anyway. I send them the way Marek runs backups: not because it works today.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:press-release:rep-2",
+          text: "Because the press release is the company's official memory of its own news. Even if no outlet prints it, the release is the paragraph every future bio, pitch, and award entry is copy-pasted from. It is content compost. You write it once and it feeds forty documents. Nobody teaches this. The release is never wasted. The page views are a rounding error on the truth.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:press-release:rep-3",
+          text: "All Zosia, and I trimmed her quote three times and it grew back twice, like a hedge. The final version has one sentence of her actual voice and one sentence of her strategic voice, and honestly the mix WORKS — the journalist quoted the human half. There is a lesson there and the lesson is: let the manager be a person for exactly one sentence.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:press-release:rep-4",
+          text: "The blog ran it with our company name spelled two ways in one paragraph and I have chosen to find it charming. Their readership is four hundred people who all know someone who knows us. That is not reach, that is a SLIDE RULE of precision marketing. The typos I corrected in the shared doc. Their editor thanked me. I am now their unpaid copy editor. Networking is strange.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:press-release:rep-5",
+          text: "He does, and 'next time' is a word I have learned to translate as 'eventually, when the story is bigger'. National outlets want a national story, and our story is honestly, gorgeously local. I am building him a ladder: trade, then city, then regional, then national, each rung a real clip. He wants to skip the ladder. I let him see the ladder. The ladder always wins.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "ania:press-release:rep-6",
+          text: "First sentence says who, what, and why anyone should care — a journalist should be able to steal it wholesale. One quote maximum, from a human, with a verb. Boilerplate at the bottom does the company's biography so nobody has to improvise it. And the whole thing fits on one page, because pages two are where press releases go to be unfinished. One page. One truth. One quote.",
+          relationshipHint: "pleased",
+          tags: ["quest:ania-webinar-volunteered"],
+        },
+      ],
+    },
+    {
+      id: "ania:sponsorships",
+      label: "The local sponsorships",
+      optionCandidates: [
+        { id: "ania:sponsorships:opt-1", topicId: "ania:sponsorships", text: "We sponsor the local football club now?" },
+        { id: "ania:sponsorships:opt-2", topicId: "ania:sponsorships", text: "Our logo is on the club's third-division jerseys." },
+        { id: "ania:sponsorships:opt-3", topicId: "ania:sponsorships", text: "The club lost nine nil in our jersey." },
+        { id: "ania:sponsorships:opt-4", topicId: "ania:sponsorships", text: "Przemek wants to sponsor a bigger club." },
+        { id: "ania:sponsorships:opt-5", topicId: "ania:sponsorships", text: "The club's chairman wants Bartek to train their staff." },
+        { id: "ania:sponsorships:opt-6", topicId: "ania:sponsorships", text: "How do you measure a sponsorship win?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:sponsorships:rep-1",
+          text: "We sponsor the club, the chess team, and a canoe that races twice a year. The combined cost is one conference booth, and the goodwill is UNBOUNDED. The chess team put our logo on their thinking faces — well, on theirforeheads, via temporary tattoos, which was their idea and my favorite accident in marketing history. Sponsorships are not media buys.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:sponsorships:rep-2",
+          text: "Third division, away kit, chest-level, and the photos are GOLD. Every match, forty men run around for ninety minutes wearing our brand and nobody can buy that at any CPM. The owner's nephew takes pictures from the stands. The nephew has an eye. The nephew is now on my Christmas card list. Marketing at this level is just photography and belief.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:sponsorships:rep-3",
+          text: "Nine nil, and the jersey got MORE screen time than any victory would have bought — slow-motion replays of our logo through every single goal. The club apologized. I sent them a sponsorship RENEWAL. The math of attention is heartless and I am its most sentimental practitioner. Their captain wears our mug to training now. The mug is the pipeline.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:sponsorships:rep-4",
+          text: "He wants first division and I want a canoe, and the canoe is winning on retention. Big clubs charge big and remember you never; small clubs put you on the committee and name a bench after you eventually. I gave Przemek the sponsorship DECK to present so he feels heard. He will present it beautifully and Maciek will ask what the canoe costs and the canoe will win again.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "ania:sponsorships:rep-5",
+          text: "He does, and it is the first sponsorship that wants to PAY US BACK in services, which is the most Wales Move ever — sorry, the most LOCAL move ever. Bartek training their front office in exchange for banner renewal? That is not sponsorship, that is a COOPERATIVE. I have drafted the letter. Bartek has been told. He said 'the lads need CSV skills anyway'. Everyone wins.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:sponsorships:rep-6",
+          text: "Not impressions — INVITATIONS. Did the club invite us to the end-of-season dinner? Did the chairman call before emailing? Do their kids know our name? Sponsorship wins are counted in handshakes per quarter, and yes I have a spreadsheet for it, and yes Grazyna has seen it, and yes she called it 'unauditable' and then smiled. The handshakes compound.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "ania:blog-nobody-reads",
+      label: "The company blog",
+      optionCandidates: [
+        { id: "ania:blog-nobody-reads:opt-1", topicId: "ania:blog-nobody-reads", text: "The blog got fourteen views this month. Victory?" },
+        { id: "ania:blog-nobody-reads:opt-2", topicId: "ania:blog-nobody-reads", text: "Why does the blog persist?" },
+        { id: "ania:blog-nobody-reads:opt-3", topicId: "ania:blog-nobody-reads", text: "Tomek's post about commit messages did well." },
+        { id: "ania:blog-nobody-reads:opt-4", topicId: "ania:blog-nobody-reads", text: "Klaudia says blogs are dead. React." },
+        { id: "ania:blog-nobody-reads:opt-5", topicId: "ania:blog-nobody-reads", text: "Dawid asked what the blog's ROI is." },
+        { id: "ania:blog-nobody-reads:opt-6", topicId: "ania:blog-nobody-reads", text: "Should I write a post for the blog?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:blog-nobody-reads:rep-1",
+          text: "Fourteen views and one of them was a CLIENT who quoted the post in our renewal call. I do not need a thousand strangers. I need the right four hundred and forty, currently at fourteen, growing at the speed of trust. Blogs are slow mail to the future. The future reads at its own pace and it ALWAYS eventually catches up. The archive is patient. So am I.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:blog-nobody-reads:rep-2",
+          text: "Because the blog is the only place the company thinks out loud in full sentences. Social is headlines, the podcast is vibes, but the blog is where an argument gets to be LONG. Every company needs a room where thinking is allowed to be unprofitable for twelve hundred words. The blog is that room.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:blog-nobody-reads:rep-3",
+          text: "It did WELL — three hundred views, which for our blog is a coronation. Engineers write the only posts strangers forward. The lesson I refuse to learn loudly: nobody wants marketing from marketing. They want the person fixing the thing to explain the thing. I have a queue of engineers I am emotionally press-ganging into drafts. Tomek has agreed to a sequel.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:blog-nobody-reads:rep-4",
+          text: "Blogs are dead the way radio is dead — meaning they survived, got weird, and became beloved by exactly the right people. Klaudia's feed is a river; the blog is a well. You do not scroll a well. You RETURN to it. Her last three 'dead' remarks were filmed next to my blog traffic dashboard and the dashboard is TRENDING. I let the footage speak.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:blog-nobody-reads:rep-5",
+          text: "He asked, I showed him one number: the renewal call where the client quoted the blog. Dawid looked at me for a long moment and said 'keep it small'. That is the ROI conversation in this company — one story beats one spreadsheet, provided the storyteller is standing right there with the client still on speed dial. The blog stays small. Small is the strategy.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:blog-nobody-reads:rep-6",
+          text: "Yes — write the thing you explained to someone twice this month. Twice means the explanation has a body and the body belongs on the blog. Do not write about trends, do not write about 'the industry'. Write the answer you gave in the kitchen, cleaned up, with an example. I will edit it kindly and publish it unbossed.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "ania:agency-pitch",
+      label: "The agency pitch",
+      optionCandidates: [
+        { id: "ania:agency-pitch:opt-1", topicId: "ania:agency-pitch", text: "Another agency pitched us. Survived?" },
+        { id: "ania:agency-pitch:opt-2", topicId: "ania:agency-pitch", text: "The agency deck said 'disrupt the disruptors'." },
+        { id: "ania:agency-pitch:opt-3", topicId: "ania:agency-pitch", text: "They presented our own roadmap back to us." },
+        { id: "ania:agency-pitch:opt-4", topicId: "ania:agency-pitch", text: "One agency quoted a retainer bigger than our marketing budget." },
+        { id: "ania:agency-pitch:opt-5", topicId: "ania:agency-pitch", text: "The junior on their team was better than the pitch." },
+        { id: "ania:agency-pitch:opt-6", topicId: "ania:agency-pitch", text: "Why do you sit through pitches at all?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:agency-pitch:rep-1",
+          text: "Survived, refreshed, and quietly armed. I attend pitches the way Dawid attends board meetings — to hear what the market thinks we are worth. The agency said our brand was 'undervalued heritage', which is a compliment, an invoice, and a diagnosis in two words. I declined them. I take the vocabulary. The vocabulary is free. The retainer is not.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:agency-pitch:rep-2",
+          text: "'Disrupt the disruptors' is the sound an industry makes when it has run out of nouns. I have a private bingo card for pitch decks: disruption, synergy, and one slide with a triangle on it. This deck had a TRIANGLE WITH ARROWS. Full house.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "ania:agency-pitch:rep-3",
+          text: "They did, slide for slide, which was either research or a mirror, and the room could not decide whether to be flattered. Dawid said 'we already think this, for free'. The pitch died on that sentence and it deserved the burial — if your strategy is our strategy, your fee is a mirror tax. I kept their slide layout though. The layout was better than ours.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:agency-pitch:rep-4",
+          text: "The retainer exceeded the budget and one salary, which they presented as 'investment in ourselves'. Grazyna was in the room for that one — invited, seated, silent, lethal. She asked ONE question: 'what does the first invoice fund, in zloty?' The agency said 'momentum'. The meeting ended with a sound like a door closing on a museum. We kept our budget and our dignity.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:agency-pitch:rep-5",
+          text: "The junior DID the audit the seniors just described — actual screenshots, actual numbers, marked up in a font size I could read from the back. After the pitch I asked if she was happy there. She said 'not after today'. I gave her my card, not to poach — to KEEP. Two years later she runs content at a place I admire and she still has the card.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:agency-pitch:rep-6",
+          text: "Because every pitch is a free consultation and a temperature check on my own work. If an agency can find a gap, a competitor can too. I take notes in the meeting, steal the good questions, and decline with warmth. The agency knows the game — half of them pitch to be declined, for the CV line. We are all professionals here.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "ania:intern-ideas",
+      label: "The intern ideas",
+      optionCandidates: [
+        { id: "ania:intern-ideas:opt-1", topicId: "ania:intern-ideas", text: "The interns pitched marketing ideas today." },
+        { id: "ania:intern-ideas:opt-2", topicId: "ania:intern-ideas", text: "One idea was genuinely good and I am upset." },
+        { id: "ania:intern-ideas:opt-3", topicId: "ania:intern-ideas", text: "An intern asked what our TikTok strategy is." },
+        { id: "ania:intern-ideas:opt-4", topicId: "ania:intern-ideas", text: "The interns want to rebrand the coffee machine." },
+        { id: "ania:intern-ideas:opt-5", topicId: "ania:intern-ideas", text: "Klaudia stole an intern idea already." },
+        { id: "ania:intern-ideas:opt-6", topicId: "ania:intern-ideas", text: "How do you run an ideas session that isn't theater?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:intern-ideas:rep-1",
+          text: "Seventeen ideas, two of them legal, one of them MAGNIFICENT. Interns pitch with the confidence of people who have never watched an idea die in procurement, and that confidence is the actual deliverable. I take every idea seriously for exactly ten minutes. Ten minutes of belief costs nothing and keeps the pipeline honest. The other six hours are triage. Balance.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:intern-ideas:rep-2",
+          text: "The one where we film 'the printer explains the company' — the PRINTER, as narrator, our whole story in ninety seconds. It is funny, it is on-brand, and it is the idea I would have needed three years to earn. I am upset because it is correct. The printer gets a voice actor. Zosia has been informed and laughed in a way that meant yes. The intern gets the credit in BOLD.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:intern-ideas:rep-3",
+          text: "Our TikTok strategy is Klaudia's existence, and I told them exactly that. She IS the channel — the office comes pre-installed with a content engine that runs on ring light and nerve. The intern looked at Klaudia's numbers, looked at me, and wrote 'so the strategy is a person'. Yes. Personnel is the strategy. Always was. The org chart is a media plan if you squint.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:intern-ideas:rep-4",
+          text: "Rebrand the coffee machine — a NAME, a personality, a backstory. And I hate that it worked on me. The machine is the only office appliance with universal daily contact; it is a MEDIA PROPERTY waiting for its arc. I have brought it to Zosia as 'internal brand activation'. She said no. She said no with a smile. The smile has a follow-up meeting. The machine's rebrand is alive.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:intern-ideas:rep-5",
+          text: "She stole the sticker idea within the HOUR and posted it before the intern finished presenting. The intern's reaction? Awe. Klaudia then credited the intern BY NAME in the caption, which turned theft into a mentorship arc with engagement numbers. That is her dark art: she metabolizes ideas so fast the stealing becomes a feature. I have a rule though. Credit is oxygen.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:intern-ideas:rep-6",
+          text: "Three rules. One: no slides, whiteboard only — slides let people perform ideas instead of having them. Two: every idea gets one genuine question before any judgment, and the question has to start with 'what would need to be true'. Three: I pick one idea and fund it BEFORE the session ends, so the pipeline has proof of life. Theater happens when nothing is ever chosen.",
+          relationshipHint: "pleased",
+          tags: ["quest:ania-webinar-volunteered", "period:afternoon"],
+        },
+      ],
+    },
+    {
+      id: "ania:testimonial-hunt",
+      label: "The testimonial hunt",
+      optionCandidates: [
+        { id: "ania:testimonial-hunt:opt-1", topicId: "ania:testimonial-hunt", text: "Why are you hunting testimonials again?" },
+        { id: "ania:testimonial-hunt:opt-2", topicId: "ania:testimonial-hunt", text: "The client wrote 'all good' as their testimonial." },
+        { id: "ania:testimonial-hunt:opt-3", topicId: "ania:testimonial-hunt", text: "Bartek's testimonial collection is legendary." },
+        { id: "ania:testimonial-hunt:opt-4", topicId: "ania:testimonial-hunt", text: "One client wants to stay anonymous but be quoted." },
+        { id: "ania:testimonial-hunt:opt-5", topicId: "ania:testimonial-hunt", text: "Grazyna invoices testimonial usage time?" },
+        { id: "ania:testimonial-hunt:opt-6", topicId: "ania:testimonial-hunt", text: "What makes a testimonial actually good?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:testimonial-hunt:rep-1",
+          text: "Because testimonials are the only marketing asset the client writes FOR us, and hunting season is emotional. The trick is timing: I ask forty-eight hours after a save, when the gratitude is still warm and the invoice is still fresh. Ask too late and it is a chore; ask too early and it is a hostage note. The forty-eight-hour window is my entire secret. You have it now. Guard it.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:testimonial-hunt:rep-2",
+          text: "'All good' is a beginning, not an ending. I replied with one question: 'good how — the deadlines, the people, the coffee?' He wrote three paragraphs about our response times by lunch. People are not ungenerous, they are UNPROMPTED. My whole craft is the follow-up question. 'All good' plus one nudge equals a homepage. Every time. The nudge is never rude. The nudge is a mirror.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:testimonial-hunt:rep-3",
+          text: "His collection has a waiting LIST — clients who heard about the testimonial round and want in. He collects them mid-conversation, naturally, the way some people collect recipes. The best one, the one I would tattoo on the office: 'Bartek left and the project kept working. That was the point.' Eleven words that explain the entire business model.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "quest:bartek-recommended-you"],
+        },
+        {
+          id: "ania:testimonial-hunt:rep-4",
+          text: "Anonymous-but-quoted is a genre and I honor it — 'Head of Operations, enterprise client' carries more weight than a name nobody can verify anyway. The quote is real, the gratitude is real, and the shyness is REAL, usually because their procurement department reads our website, which is the most relatable fear in business. Anonymous praise still converts.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:testimonial-hunt:rep-5",
+          text: "She does not invoice usage — she CREATED a ledger column called 'brand assets, goodwill' and logs every testimonial at a nominal one zloty, so the wall of quotes technically has book value. The wall is worth nineteen zloty. It is the most valuable nineteen zloty in the company and one day an auditor will smile at that line item. I will be there.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:testimonial-hunt:rep-6",
+          text: "A good testimonial mentions a FEELING and a FACT — 'they answered before the deadline' is a fact with a pulse. The great ones admit a doubt first: 'we were worried about switching, then...' Doubt-then-relief is the oldest story shape in the world and it outsells every superlative. If a quote has no doubt in it, it is an ad. If it has a doubt, it is a story. Stories travel.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "ania:trend-reports",
+      label: "The trend reports",
+      optionCandidates: [
+        { id: "ania:trend-reports:opt-1", topicId: "ania:trend-reports", text: "You bought another trend report? How much this time?" },
+        { id: "ania:trend-reports:opt-2", topicId: "ania:trend-reports", text: "Do the trend reports ever predict anything?" },
+        { id: "ania:trend-reports:opt-3", topicId: "ania:trend-reports", text: "This year's report says authenticity is trending." },
+        { id: "ania:trend-reports:opt-4", topicId: "ania:trend-reports", text: "Klaudia read the report and made six videos." },
+        { id: "ania:trend-reports:opt-5", topicId: "ania:trend-reports", text: "Grazyna asks what last year's report delivered." },
+        { id: "ania:trend-reports:opt-6", topicId: "ania:trend-reports", text: "What is the actual use of a trend report?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:trend-reports:rep-1",
+          text: "Four hundred zloty for a PDF, which sounds like a scam until you realize it is a scam I can QUOTE in meetings. The report is not information, it is AMMUNITION — 'industry analysis suggests' opens doors that 'I think' never has. I buy two a year, I read forty pages of each, and the rest is shelf. Professional shelf. Shelf with a purpose.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:trend-reports:rep-2",
+          text: "They predict the past with excellent confidence. Last year's report predicted short-form video, which was already everywhere by the time the PDF shipped — reports are the industry describing its own tide FROM the beach. That said, the tide descriptions are consistent, and consistency is a signal. You read five reports, find the overlap, and THAT is the actual forecast.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:trend-reports:rep-3",
+          text: "Authenticity is trending, which means authenticity is about to become a PERFORMANCE, which means real authenticity is about to get a market advantage. I am ahead of the curve by being genuinely like this — tired, sincere, and allergic to stock photos of handshake people. The report says 'show your humans'. Sir, our humans are ALREADY showing. The printer has a fandom.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:trend-reports:rep-4",
+          text: "She speed-read it in nine minutes and produced six videos before I finished my highlighter pass. Her instinct outruns every report — she was filming 'authenticity' content in February, TEN MONTHS before the report discovered it. I have started using her feed as a leading indicator and the reports as confirmation for the CFO-facing slides. She is the report.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:trend-reports:rep-5",
+          text: "She asks every year, with the calm of a woman who already knows the answer is 'a slide and a hunch'. Last year I answered honestly: 'the report delivered one decision we would have made anyway and the confidence to make it out loud'. She approved this year's purchase in eleven seconds. Honest accounting is a loyalty program with finance. She knows I know she knows.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:trend-reports:rep-6",
+          text: "Permission. That is the whole product. The report lets a conservative room try a new thing WITHOUT anyone sticking their neck out — 'the data suggests' is a heat shield. The ideas in it are usually obvious; the innovation is SOCIAL. Marketing is mostly astrology until the moment it is diplomacy, and the report is the diplomacy layer. Four hundred zloty for permission. Cheap.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "ania:behind-the-scenes",
+      label: "The behind-the-scenes content",
+      optionCandidates: [
+        { id: "ania:behind-the-scenes:opt-1", topicId: "ania:behind-the-scenes", text: "Can you film behind-the-scenes in the server room?" },
+        { id: "ania:behind-the-scenes:opt-2", topicId: "ania:behind-the-scenes", text: "The BTS of the failed demo got more likes than the demo." },
+        { id: "ania:behind-the-scenes:opt-3", topicId: "ania:behind-the-scenes", text: "Janusz refused to be on camera. Then?" },
+        { id: "ania:behind-the-scenes:opt-4", topicId: "ania:behind-the-scenes", text: "Dawid was caught smiling in a BTS clip." },
+        { id: "ania:behind-the-scenes:opt-5", topicId: "ania:behind-the-scenes", text: "Where is the line between BTS and oversharing?" },
+        { id: "ania:behind-the-scenes:opt-6", topicId: "ania:behind-the-scenes", text: "The BTS account of the office dog is a hit." },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:behind-the-scenes:rep-1",
+          text: "Denied, politely, by Marek, in writing, with a diagram explaining what a camera flash does to his peace. The server room stays mythical — which honestly HELPS, because unphotographed infrastructure has brand gravity. The mystique is the content. I have filmed the DOOR of the server room, four seconds, dramatic hum, two million hypothetical views waiting to happen.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:behind-the-scenes:rep-2",
+          text: "Of course it did — failure is the only genre where the audience is guaranteed to feel taller than the protagonist. The failed demo clip has outperformed every polished asset by seven to one. The lesson is not 'ship failures', the lesson is 'ship truths'. The demo worked the NEXT week and the follow-up clip did half the numbers. Redemption never rates like ruin.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:behind-the-scenes:rep-3",
+          text: "Refused on camera, so we filmed HIS HANDS. Ninety seconds of Janusz fixing the boiler, hands only, no face, with one line of caption: 'the building is held together by these'. It is our most shared post ever. Janusz watched it once on Renata's phone, said 'hands look strong', and returned to the boiler. He knows. He KNOWS. The hands account is his now. He has not posted.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:behind-the-scenes:rep-4",
+          text: "The clip is eleven seconds long and it is our crown jewel — Dawid, mid-meeting, smiling at something Pawel said, unaware. The internet decided the CEO is 'secretly warm' and the narrative wrote itself. He has seen it. He said 'the graph is up'. That is the whole review. The smile stays up.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:behind-the-scenes:rep-5",
+          text: "The line is DIGNITY — if the person in the clip would wince, it does not ship, no matter the engagement. BTS is a gift the team gives the audience, not a tax the audience extracts from the team. I run every clip past its subject, always. It costs me one same-day video and buys me a decade of access. Access is the whole asset.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:behind-the-scenes:rep-6",
+          text: "Burek outperforms every human on the account by a factor I have stopped publishing because it demoralizes the talent. His content is SIMPLE: one dog, one office, total sincerity. There is a lesson there and the lesson is that audiences can smell effort. The dog does not try. Klaudia has begun featuring him strategically — a 'burek cam' transition every third reel.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "ania:unsubscribe-zen",
+      label: "The unsubscribe zen",
+      optionCandidates: [
+        { id: "ania:unsubscribe-zen:opt-1", topicId: "ania:unsubscribe-zen", text: "Someone replied to the newsletter with pure rage." },
+        { id: "ania:unsubscribe-zen:opt-2", topicId: "ania:unsubscribe-zen", text: "How are you calm about unsubscribes?" },
+        { id: "ania:unsubscribe-zen:opt-3", topicId: "ania:unsubscribe-zen", text: "The unsubscribe button is broken for one user. Again." },
+        { id: "ania:unsubscribe-zen:opt-4", topicId: "ania:unsubscribe-zen", text: "A subscriber resubscribed after leaving. Why?" },
+        { id: "ania:unsubscribe-zen:opt-5", topicId: "ania:unsubscribe-zen", text: "Zosia watches our unsubscribe rate nervously." },
+        { id: "ania:unsubscribe-zen:opt-6", topicId: "ania:unsubscribe-zen", text: "What was your worst unsubscribe message ever?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:unsubscribe-zen:rep-1",
+          text: "The rage reply was three paragraphs on how our newsletter 'murders his mornings'. I replied once: 'fair — the mornings are gone. I have unsubscribed you myself, with respect.' He wrote back a DAY later to say the newsletter was fine actually, he had just been having a quarter. Email anger is a mirror with a reply button.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:unsubscribe-zen:rep-2",
+          text: "Because a clean unsubscribe is a SUCCESS, not a loss — the list should be people who would miss us, not hostages with mail fatigue. Every unsubscribe raises the average engagement of everyone who stayed. I run the numbers monthly and they always say the same thing: the list got better. Churn with grace. The zen is statistical. The peace is in the dashboard.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:unsubscribe-zen:rep-3",
+          text: "The broken unsubscribe is my WHITE WHALE — one user, one client domain, a filter that eats the link. I have unsubscribed him MANUALLY four times and his mailbox re-subscribes him through some corporate automation that predates us all. We have exchanged pleasantries. We have exchanged Christmas wishes. At this point he is not a subscriber, he is a CO-AUTHOR. The man stays.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "ania:unsubscribe-zen:rep-4",
+          text: "He left for a 'inbox zero era', lasted five weeks, and came back with a note: 'the silence was worse'. THAT note is framed in my heart. The lesson is huge — you do not miss content, you miss CADENCE. The Tuesday arrival was a tiny landmark in his week and landmarks matter to humans more than information does. We are not in the newsletter business.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:unsubscribe-zen:rep-5",
+          text: "She watches it like a heartbeat, and I finally showed her the correlation she feared: unsubscribes SPIKE after every sales push and RECOVER within two lists. The audience self-cleans what the push dirties. She asked if I could 'reduce the spikes'. I said yes, by reducing the pushes, and we looked at each other like two generals across a treaty table. The pushes continue.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:unsubscribe-zen:rep-6",
+          text: "Two words: 'finally.' and then his full name, misspelled, which he had spelled correctly in his subscriber profile for THREE YEARS. Sir. The rage I could take. The misspelling was an indictment of us both. I fixed the profile, unsubscribed him with ceremony, and added 'check the spelling' to my onboarding review checklist. His rage improved our data hygiene.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "ania:typo-tweet",
+      label: "The typo tweet",
+      optionCandidates: [
+        { id: "ania:typo-tweet:opt-1", topicId: "ania:typo-tweet", text: "The typo tweet. Walk me through it." },
+        { id: "ania:typo-tweet:opt-2", topicId: "ania:typo-tweet", text: "You left it up on purpose, didn't you?" },
+        { id: "ania:typo-tweet:opt-3", topicId: "ania:typo-tweet", text: "Zosia saw the typo tweet before you did." },
+        { id: "ania:typo-tweet:opt-4", topicId: "ania:typo-tweet", text: "The typo became a brand in-joke." },
+        { id: "ania:typo-tweet:opt-5", topicId: "ania:typo-tweet", text: "Klaudia says she would never typo. Sure." },
+        { id: "ania:typo-tweet:opt-6", topicId: "ania:typo-tweet", text: "What is your typo prevention system now?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:typo-tweet:rep-1",
+          text: "The announcement said 'We are hirng' and the internet did what the internet does: corrected us, memed us, and applied to work with us — applications TRIPLED, because 'hirng' read as human. A robot would not have typoed. The typo was proof of life at a company people suspected was automated.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:typo-tweet:rep-2",
+          text: "Left up for ninety minutes, which is the correct dose — long enough to collect the affection, short enough to show we saw it. Then the correction tweet: 'We are hiring. We are not hiring proofreaders. (We are hiring proofreaders.)' The correction outperformed the typo. The PAIR is taught in a course somewhere, probably. I have never checked. I prefer the legend.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:typo-tweet:rep-3",
+          text: "She saw it at seven fourteen and replied internally with one line: 'leave it, it is working'. That is manager instinct you cannot teach — she recognized a gift disguised as a mistake BEFORE the engagement numbers confirmed it. I have worked under people who would have demanded a retraction and a review. Zosia recognized a meme in the wild.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:typo-tweet:rep-4",
+          text: "'Hirng' is now office canon — the mugs say it, the recruit pack says it, and one client opened our pitch with 'hi, we are also hirng'. A typo with a two-year lifespan and a merch line is called a BRAND ASSET and I have added it to the asset register at one zloty, where Grazyna keeps all our sentimental property. The register is a museum of things that went wrong correctly.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "ania:typo-tweet:rep-5",
+          text: "She claims a typoless record and I have receipts — a caption from March with 'aesthetic' spelled with three e's, deleted in under a minute. I do not blackmail. I ARCHIVE. The archive keeps us honest and gently competitive. She calls my archive 'the vault of crimes'. I call it 'quality assurance with narrative'. Neither of us deletes anything. That is the real bond.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:typo-tweet:rep-6",
+          text: "Two-pair review: every external post is read by me and one volunteer who is NOT on marketing that day — fresh eyes catch what famished eyes forgive. Klaudia volunteers Mondays. Marek volunteered once, returned the post with three comments about the font, and retired from the program undefeated. The system is human, slow, and it works. The typos that survive now are CHOSEN.",
+          relationshipHint: "pleased",
+          tags: ["period:morning"],
+        },
+      ],
+    },
+    {
+      id: "ania:jingle",
+      label: "The radio jingle",
+      optionCandidates: [
+        { id: "ania:jingle:opt-1", topicId: "ania:jingle", text: "You recorded a jingle? With lyrics?" },
+        { id: "ania:jingle:opt-2", topicId: "ania:jingle", text: "The jingle is playing on local radio. HOW." },
+        { id: "ania:jingle:opt-3", topicId: "ania:jingle", text: "Pawel sings the jingle now. Unprompted." },
+        { id: "ania:jingle:opt-4", topicId: "ania:jingle", text: "Grazyna heard the jingle invoice. Survive?" },
+        { id: "ania:jingle:opt-5", topicId: "ania:jingle", text: "The jingle's rhymes are crimes. Confess." },
+        { id: "ania:jingle:opt-6", topicId: "ania:jingle", text: "Would you do a second jingle?" },
+      ],
+      replyCandidates: [
+        {
+          id: "ania:jingle:rep-1",
+          text: "Four lines, one rhyme scheme that would embarrass a greeting card, and a hook that lives in your head RENT-FREE against its will. I wrote it in a bath. I sang the demo into a phone with a cashier's enthusiasm. The studio kept my demo vocal on the final cut because the session singer 'could not match the sincerity'. The sincerity was a cold. The cold is famous now.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "ania:jingle:rep-2",
+          text: "The local station had a gap in their rotation and their ad sales guy went to our CHURCH BAZAAR, Renata's table, where the jingle was playing from a tablet as decoration. He asked. Renata negotiated. The station plays it twice a week in the slot after the fishing report. The fishing audience is LOYAL and DEMOGRAPHICALLY PERFECT. Renata closed a radio deal at a cake stall.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "ania:jingle:rep-3",
+          text: "He sings it at his DESK, the hook specifically, in the exact key, and yesterday Marek hummed it BACK to him. The jingle has achieved horizontal transmission. It is in the building's bloodstream. When an intern hums your melody and a sysadmin returns it, you have outperformed every KPI I have ever reported. I logged it as 'organic reach: internal, total'.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "ania:jingle:rep-4",
+          text: "The invoice said 'jingle production' and she said the word 'jingle' out loud like it was a financial crime. Then I showed her the radio deal — paid placement, six months, effectively FREE distribution — and she recalculated in real time. The jingle is now an 'audio asset with earned media value'. The word jingle is banned from the ledger. Fine.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "ania:jingle:rep-5",
+          text: "Confessed: 'training that empowers your software superpowers' is a rhyme that should have required a permit. The studio engineer asked if I wanted to fix it and I said NO — imperfect rhymes are memorable BECAUSE the brain trips on them and re-boots the song. Every jingle in history has one crime rhyme. It is not a flaw. It is a LOADING MECHANISM. The crime is the feature.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "ania:jingle:rep-6",
+          text: "There is a second jingle drafted for the TRAINING ROOM — 'learn the thing, ring the thing' — and it is possibly worse and definitely catchier. It is waiting for a sponsor, a station, and a Tuesday when I feel powerful. The first jingle took a bath and a cold. The second deserves a full production. Some artists peak. I am pacing myself.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
   ],
   taskOffers: [
     {

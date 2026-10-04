@@ -1480,6 +1480,643 @@ export const BARTEK_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "bartek:training-room",
+      label: "The training room itself",
+      optionCandidates: [
+        { id: "bartek:training-room:opt-1", topicId: "bartek:training-room", text: "Why does the training room smell like ambition?" },
+        { id: "bartek:training-room:opt-2", topicId: "bartek:training-room", text: "The projector in the training room is from another era." },
+        { id: "bartek:training-room:opt-3", topicId: "bartek:training-room", text: "Where should the trainer stand, position-wise?" },
+        { id: "bartek:training-room:opt-4", topicId: "bartek:training-room", text: "The U-shape desk layout versus classroom rows?" },
+        { id: "bartek:training-room:opt-5", topicId: "bartek:training-room", text: "Someone rearranged your training room overnight." },
+        { id: "bartek:training-room:opt-6", topicId: "bartek:training-room", text: "Could you train anywhere, or is the room the trick?" },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:training-room:rep-1",
+          text: "Seventeen years of nervous energy soaked into the carpet. Every cohort arrives terrified that they will be found out, and by Thursday they have taught each other more than I taught them. That relief has a smell. Open a window in February and you lose a quarter of the curriculum. We keep it sealed. Like a distillery.",
+          relationshipHint: "pleased",
+          tags: ["period:morning"],
+        },
+        {
+          id: "bartek:training-room:rep-2",
+          text: "The projector and I have a bond. It hums in C, it warms the first row, and it fails exactly once per cohort — always on the slide about failure handling, which the room takes as intentional theater. I have replaced it twice. Both replacements were returned. The room rejected them. You do not argue with a room that has seniority.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:training-room:rep-3",
+          text: "Not at the front. The front is where authority stands and authority is the enemy of learning. I teach from the sides — near the window, at the back corner, anywhere that forces people to turn their heads and thereby stay awake. The one place I never stand is behind anyone. Teachers who stand behind people are grading them. I am not grading. I am hosting.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:training-room:rep-4",
+          text: "U-shape for discussion days, rows for lecture days, and the trick is never telling the room which day it is. They walk in, they read the furniture, and they adjust before I say a word. The room does my introduction. Rows say today we receive. The U says today we think. Furniture is the oldest learning technology and it is free.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:training-room:rep-5",
+          text: "That was either Janusz deep-cleaning or Zosia's culture camera needing angles. Either way, the room resists — by morning the chairs drift back to the U like water finding its level. Seventeen years of cohorts have voted on this layout with their bodies. Democracy does not need to know it is a democracy.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "bartek:training-room:rep-6",
+          text: "I have trained in a warehouse, a restaurant after closing, and once in a car park with the hood of a Skoda as the projector screen. The room is not the trick. The trick is that people learn from people, and the room only decides how honest everyone will be about it. That said — give me my room. The Skoda had no whiteboard and I still dream about it.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "bartek:handouts",
+      label: "The handout doctrine",
+      optionCandidates: [
+        { id: "bartek:handouts:opt-1", topicId: "bartek:handouts", text: "You still print handouts in the year 2026?" },
+        { id: "bartek:handouts:opt-2", topicId: "bartek:handouts", text: "Your handouts have blank spaces instead of answers." },
+        { id: "bartek:handouts:opt-3", topicId: "bartek:handouts", text: "One client framed the handout from your course." },
+        { id: "bartek:handouts:opt-4", topicId: "bartek:handouts", text: "Pawel collects your handouts like trading cards." },
+        { id: "bartek:handouts:opt-5", topicId: "bartek:handouts", text: "The PDF version never gets opened, does it?" },
+        { id: "bartek:handouts:opt-6", topicId: "bartek:handouts", text: "What makes a handout worth keeping?" },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:handouts:rep-1",
+          text: "Paper is the only file format that survives a decade. I found a handout from 2014 in a client's drawer last spring, coffee-ringed and annotated, still being argued with. Show me the PDF that gets argued with. Digital slides die with the login. Paper dies with the reader, and readers are stubborn.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:handouts:rep-2",
+          text: "Deliberately. A handout with all the answers gets read once and binned. A handout with holes gets completed, and completion is memory's favorite sport. The blank space is not missing content. The blank space is the content. I have had students defend their filled-in handouts like family documents.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:handouts:rep-3",
+          text: "He did — page four, the one about scope conversations, in an actual frame, in reception. I pretended to be humble about it for the whole visit and then asked for a photo of the frame. A trainer's real certificate is not the one the company prints. It is the one the client hangs unprompted.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "quest:bartek-recommended-you"],
+        },
+        {
+          id: "bartek:handouts:rep-4",
+          text: "He does, in a folder, by year, and he has asked me to sign two of them. I signed. Then I explained that the handout he treasures is twenty percent wrong and I have taught it differently since. He said the wrong version helped more. That is the secret of teaching — the flawed honest version beats the polished correct one. I have never known which of my handouts is which.",
+          relationshipHint: "neutral",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "bartek:handouts:rep-5",
+          text: "Never, and I have the analytics to prove it, because one client tracked the opens. Two percent. The paper version of the same material gets annotated, folded, stapled to walls. I provide the PDF for legal reasons and the paper for human ones. The legal reasons are a formality. The humans are the point.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "bartek:handouts:rep-6",
+          text: "One page, one purpose, and at least one thing worth scribbling on. A handout is a letter to the reader on a bad day in eight months' time — tired, stuck, surrounded by strangers. Write for that person. Big type, real examples, and nothing that needs a second document to decode. If it cannot survive a coffee ring, it cannot survive a career.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "bartek:difficult-students",
+      label: "The difficult students",
+      optionCandidates: [
+        { id: "bartek:difficult-students:opt-1", topicId: "bartek:difficult-students", text: "How do you handle the person who knows everything?" },
+        { id: "bartek:difficult-students:opt-2", topicId: "bartek:difficult-students", text: "The skeptic in the back with folded arms?" },
+        { id: "bartek:difficult-students:opt-3", topicId: "bartek:difficult-students", text: "Someone fell asleep in your class. Your move?" },
+        { id: "bartek:difficult-students:opt-4", topicId: "bartek:difficult-students", text: "The student who argues with every exercise?" },
+        { id: "bartek:difficult-students:opt-5", topicId: "bartek:difficult-students", text: "A whole cohort went silent on day one. Handling?" },
+        { id: "bartek:difficult-students:opt-6", topicId: "bartek:difficult-students", text: "Ever met a student you could not reach?" },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:difficult-students:rep-1",
+          text: "I hand them the room. 'You have clearly seen this in production — walk us through what broke.' The know-it-all either becomes my co-trainer or runs out of material by the second slide, and both outcomes teach the room something. The trick is never competing. Competition is the one game a trainer always loses to the loudest person in it.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "bartek:difficult-students:rep-2",
+          text: "The folded arms are a question mark, not a wall. By lunch I will have asked them for one concrete case from their own work, and the arms unfold when they realize the course is about to become useful. Skeptics are just students who have been burned by bad training before. Respect the burn and they become the room's best ally.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:difficult-students:rep-3",
+          text: "Nothing. The sleeper is data about my pacing, not a discipline problem. I drop my voice, change the activity, and let them wake on their own — waking a sleeper in front of a room buys you one laugh and loses you the whole room's safety. Marek once slept through my entire morning session, woke at lunch, and asked the sharpest question of the day. The sleep was the review.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:difficult-students:rep-4",
+          text: "Every exercise has a wrong way on purpose and the arguer finds it faster than anyone. I put them on stage to break the exercise publicly. When it breaks in their hands, the room learns twice — once from the exercise and once from the breaking. The arguer gets an audience instead of an enemy, which is all they wanted. Nobody argues after they have taught.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:difficult-students:rep-5",
+          text: "Silence on day one is fear wearing professionalism. I break it by being the first to admit something — usually the story of my first production disaster. The room relaxes when the trainer goes first into the embarrassing territory. By coffee, someone laughs, and laughter is the room deciding to exist. Cohorts are not silent. They are waiting for a permit.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:difficult-students:rep-6",
+          text: "One. Years ago — brilliant, furious, and gone by Thursday. I did everything right and it did not matter, because the course was not his problem. His problem was a company that had already decided to let him go. No exercise fixes that. I still think about him. He taught me the trainer's limit: I can teach anyone the material, but I cannot teach a room they have already left.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "bartek:half-day-vs-full",
+      label: "The half-day versus full-day",
+      optionCandidates: [
+        { id: "bartek:half-day-vs-full:opt-1", topicId: "bartek:half-day-vs-full", text: "Half-day or full-day training? Settle it." },
+        { id: "bartek:half-day-vs-full:opt-2", topicId: "bartek:half-day-vs-full", text: "Clients always want the full day. Why refuse?" },
+        { id: "bartek:half-day-vs-full:opt-3", topicId: "bartek:half-day-vs-full", text: "What happens to brains after hour four?" },
+        { id: "bartek:half-day-vs-full:opt-4", topicId: "bartek:half-day-vs-full", text: "The full-day course includes lunch. Is lunch curriculum?" },
+        { id: "bartek:half-day-vs-full:opt-5", topicId: "bartek:half-day-vs-full", text: "Zosia says two half-days beat one full day. False?" },
+        { id: "bartek:half-day-vs-full:opt-6", topicId: "bartek:half-day-vs-full", text: "How do you know which format a client needs?" },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:half-day-vs-full:rep-1",
+          text: "Half-day for skills, full-day for culture change, and most clients who ask for a full day actually need two half-days spaced a month apart. Learning is not pouring. It is setting and returning. The return visit is where the material sticks, because the returner arrives with questions that only the first half could plant.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:half-day-vs-full:rep-2",
+          text: "Because a full day feels like value and behaves like fatigue. Sales-wise the full day invoices double, so I lose money saying no, and I say no anyway — usually. The exception is when the group is traveling in, or when the client's calendar will never permit a return. Honesty about format is the first lesson I teach. It is also the first thing I sell against.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:half-day-vs-full:rep-3",
+          text: "Hour four is where the room becomes polite. Politely nodding, politely typing, politely gone. I schedule the hands-on work for hours three and four, because the hands stay awake after the mind sits down. If someone is drinking their fifth coffee and agreeing with everything, the day is over and only the clock has not been told.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "bartek:half-day-vs-full:rep-4",
+          text: "Lunch is the fourth module and the most important one. Everything taught before lunch gets tested at lunch — over soup, the students explain the morning to each other, and whatever survives that retelling is real learning. I take the far end of the table, listen hard, and rebuild the afternoon from what the soup report tells me. The menu matters less than the murmur.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:half-day-vs-full:rep-5",
+          text: "Zosia is right and I hate it professionally, because the spaced format pays me half as much per engagement and retains twice as much per student. Her calendar brain beats my stage craft. I have quoted her version to three clients this year and all three cohorts came back sharper. She will be unbearable about it and she has earned it.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "bartek:half-day-vs-full:rep-6",
+          text: "I ask who will be in the room and what happens the morning after. If the after-morning is a full workday, take the half-day — the material needs a place to land. If the team is together and the phones are off, take the full day and use the extra hours for practice, never for content. The format is not about how much I can give. It is about how much they can hold.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "bartek:slide-fonts",
+      label: "The slide font opinions",
+      optionCandidates: [
+        { id: "bartek:slide-fonts:opt-1", topicId: "bartek:slide-fonts", text: "Your slides use one font. All of them. Always." },
+        { id: "bartek:slide-fonts:opt-2", topicId: "bartek:slide-fonts", text: "Comic Sans walks in. What do you actually do?" },
+        { id: "bartek:slide-fonts:opt-3", topicId: "bartek:slide-fonts", text: "Klaudia offered to redesign your slides." },
+        { id: "bartek:slide-fonts:opt-4", topicId: "bartek:slide-fonts", text: "Your font size rule is famous. Say it again." },
+        { id: "bartek:slide-fonts:opt-5", topicId: "bartek:slide-fonts", text: "Tomek said fonts are a solved problem. Reaction?" },
+        { id: "bartek:slide-fonts:opt-6", topicId: "bartek:slide-fonts", text: "Does the font really change learning?" },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:slide-fonts:rep-1",
+          text: "One font, one weight, two sizes. Decorations are taxes on attention and my students pay enough in fear. The font I use is so boring it disappears, which is the entire job. When someone remembers a slide of mine, I want them to remember the sentence, not the lettering. Fonts are stagehands. Stagehands wear black.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:slide-fonts:rep-2",
+          text: "Depends whose slides. A client's Comic Sans is their culture and I teach in it without a flicker — the room is theirs. My Comic Sans is a firing offense, though I once used it on purpose for the slide about email etiquette, and the physical groan that left the room proved the point better than the content did. Fonts can be punchlines. Choose the punch deliberately.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:slide-fonts:rep-3",
+          text: "She offered a full visual identity — gradients, animations, the works. I said no and then watched her reel about my refusal outperform every deck I have ever built. The compromise we settled on: she made me a single title slide, beautiful as a poster, and I use it as the opening image and then never again. Both of us claim victory. Both of us are right.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "bartek:slide-fonts:rep-4",
+          text: "The back row decides. Design every slide for the person in the worst seat with the oldest eyes, and if that means four words per slide, the slide has earned its four words. The front row never left a course saying the font was too big. The back row has left many a course saying nothing at all, because they saw nothing at all.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:slide-fonts:rep-5",
+          text: "He is right that rendering is solved and wrong that choosing is. The machines can display anything. The question of what a tired human can absorb at minute ninety is not solved and never will be, because the human keeps changing. I told him that. He said 'fair' and changed the subject, which in Tomek is a conversion experience.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:slide-fonts:rep-6",
+          text: "More than content, and I say that as someone whose content is decent. A kind font lowers the room's shoulders before you have said a word, and lowered shoulders learn. The research is soft on this and the experience is not — I have taught the same module in a clean font and a chaotic one, and the clean room asked braver questions.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "bartek:microphone",
+      label: "The microphone technique",
+      optionCandidates: [
+        { id: "bartek:microphone:opt-1", topicId: "bartek:microphone", text: "Why do you refuse the lapel mic?" },
+        { id: "bartek:microphone:opt-2", topicId: "bartek:microphone", text: "Handheld mic or voice alone in a small room?" },
+        { id: "bartek:microphone:opt-3", topicId: "bartek:microphone", text: "Your mic died mid-masterclass once. Recovery?" },
+        { id: "bartek:microphone:opt-4", topicId: "bartek:microphone", text: "Klaudia says everyone needs a mic for content." },
+        { id: "bartek:microphone:opt-5", topicId: "bartek:microphone", text: "The feedback screech in the big hall last spring?" },
+        { id: "bartek:microphone:opt-6", topicId: "bartek:microphone", text: "Teach me to speak so a mic is unnecessary." },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:microphone:rep-1",
+          text: "A lapel mic clips the voice to the body, and I teach with my whole body — walking the rows, leaning over shoulders, drawing on walls. The clipped voice stays at the podium even when the man leaves it, and the room hears the lie. Handheld, at arm's length, honestly managed. The mic is a prop. I only carry props I can drop.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:microphone:rep-2",
+          text: "Voice alone under twenty people, handheld over twenty, and never trust a room that tells you the acoustics are fine. The acoustics are decided by the person in the back with the hearing aid and the opinion, not by the venue manager. I test my unamplified voice from the worst seat before every session. The walk of shame to the back is the best soundcheck in the business.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:microphone:rep-3",
+          text: "I put the dead mic down, walked to the center of the room, and taught the last forty minutes from memory and lungs. The reviews called it the best part of the day. The lesson stuck with me — the tech is scaffolding, and when it falls you find out whether you brought a building.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:microphone:rep-4",
+          text: "She is right for the camera and wrong for the room, and we have agreed to film my workshops with mics and run them without. The camera needs the intimacy of the clipped voice. The room needs the honesty of the moving one. Two audiences, two acoustics, one trainer refusing to become a radio host. She edits around me. The footage is somehow better for the fight.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "bartek:microphone:rep-5",
+          text: "The screech was a rite of passage and the room owned it — three hundred people jumping, then laughing, then completely mine. You cannot buy that kind of shared startle. I thanked the sound tech from the stage and blamed the building, and the building accepted. Every trainer has one feedback story. The good ones turn theirs into the opening joke of the next decade.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:microphone:rep-6",
+          text: "Talk to the back row and let the front row overhear. That is the whole secret — projection is not volume, it is aim. Put the sentence at the far wall, breathe before the important part, and land the endings instead of swallowing them. Most speakers are understood by the front and tolerated by the back. Reverse it and you will never need batteries again.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "bartek:evaluation-sheets",
+      label: "The evaluation sheets",
+      optionCandidates: [
+        { id: "bartek:evaluation-sheets:opt-1", topicId: "bartek:evaluation-sheets", text: "Do you read the evaluation sheets after every course?" },
+        { id: "bartek:evaluation-sheets:opt-2", topicId: "bartek:evaluation-sheets", text: "Everyone rates five stars. Useless data?" },
+        { id: "bartek:evaluation-sheets:opt-3", topicId: "bartek:evaluation-sheets", text: "One evaluation called you 'a safe pair of hands'." },
+        { id: "bartek:evaluation-sheets:opt-4", topicId: "bartek:evaluation-sheets", text: "The harshest evaluation you ever received?" },
+        { id: "bartek:evaluation-sheets:opt-5", topicId: "bartek:evaluation-sheets", text: "Zosia wants evaluation data on the culture dashboard." },
+        { id: "bartek:evaluation-sheets:opt-6", topicId: "bartek:evaluation-sheets", text: "What would you ask if you could ask one question?" },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:evaluation-sheets:rep-1",
+          text: "Every one, the same night, with tea. The sheets are the only honest mirrors in this trade — clients smile, colleagues nod, but the anonymous sheet after a long Thursday knows things. I have kept every sheet for seventeen years. Three boxes in my basement. My wife calls them the archive. They are. Of my failures, mostly, which are the useful ones.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:evaluation-sheets:rep-2",
+          text: "The fives are useless and I read them anyway, because the handwriting matters — a five squeezed into the corner is a two that gave up. The useful data is in the four with a sentence attached, and in anything written in the free-text box at all. Nobody fills the free-text box casually. That box is where the truth does its paperwork.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:evaluation-sheets:rep-3",
+          text: "I did, and it is the review I measure the career against. Anyone can be impressive for a day. Safe hands means the room felt allowed to be slow, to be wrong, to ask the question twice. The sheets that call me brilliant are nice. The ones that call me safe are the ones I worked for.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "bartek:evaluation-sheets:rep-4",
+          text: "2016. Six words: 'Good slides. No idea if learned.' It was correct, it was devastating, and it rebuilt my courses — I added the follow-up call, the practice week, the return visit. The client who wrote it became a client for nine years because I called to thank them. The harshest sheet in the archive is the most valuable thing in it.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "bartek:evaluation-sheets:rep-5",
+          text: "She can have the averages, never the sheets. The moment evaluations become a dashboard, trainers start teaching to the dashboard, and the free-text box fills with what the metric wanted to hear. I will report the trends and hand her the anonymized themes. The raw sheets stay in the archive, doing the slow honest work that dashboards cannot.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "bartek:evaluation-sheets:rep-6",
+          text: "Not 'was this useful' — everyone lies on that one, politely. I would ask: 'what did you do differently on Monday?' The honest answers split the room in two, and both halves teach me. The doers tell me what transferred. The non-doers tell me what the company actually permits.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "bartek:recorded-courses",
+      label: "The recorded courses",
+      optionCandidates: [
+        { id: "bartek:recorded-courses:opt-1", topicId: "bartek:recorded-courses", text: "Zosia wants to record your courses. Refused again?" },
+        { id: "bartek:recorded-courses:opt-2", topicId: "bartek:recorded-courses", text: "Could a recording of you teach as well as you?" },
+        { id: "bartek:recorded-courses:opt-3", topicId: "bartek:recorded-courses", text: "Klaudia recorded one session without asking." },
+        { id: "bartek:recorded-courses:opt-4", topicId: "bartek:recorded-courses", text: "You watched your own recording once. Verdict?" },
+        { id: "bartek:recorded-courses:opt-5", topicId: "bartek:recorded-courses", text: "Dawid asked what a recorded course is worth." },
+        { id: "bartek:recorded-courses:opt-6", topicId: "bartek:recorded-courses", text: "If you did record, what would you record?" },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:recorded-courses:rep-1",
+          text: "Refused, gently, eleven times. A recording is a perfect course for people who do not exist — the ones with no questions, no bad days, no need to be looked at while confused. My work is two-thirds reading the room. The camera cannot read. It can only testify. I keep telling her: record the exercises, not the explanations. She is starting to hear it.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:recorded-courses:rep-2",
+          text: "It would teach the material and lose the teaching. The recording would say everything I say and mean less of it, because meaning in a classroom is negotiated live — the pause that lands, the example swapped for the one this room needs. A recording of me would be an excellent podcast of a man talking to people who are not there. That is a different job. I do not want it.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:recorded-courses:rep-3",
+          text: "She did, and I made her delete it, and then asked her to film the exercise section instead — which she did, beautifully, and that footage now trains our new trainers in how the rooms actually work. We converted a violation into a curriculum. She calls it her best edit. I call it my best catch. The client never knew. The training room did.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "bartek:recorded-courses:rep-4",
+          text: "Ten minutes. That was all I could stand. I say 'essentially' too much, I pace left when I should own the room, and — this is the part I kept — when a student asked the hard question, the recording caught me saying 'I do not know, let us find out' without a flicker of panic. I have watched those four seconds more than the rest combined. The rest is fixable.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:recorded-courses:rep-5",
+          text: "He asked, I gave him the honest ledger. A recording scales the content and caps the change — one file, infinite seats, and the seats learn at the file's pace, not theirs. Worth real money for compliance topics. Worth nothing for the courses I actually teach, where the value is the live adjustment. He nodded, put it in the decision log, and dropped it.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "bartek:recorded-courses:rep-6",
+          text: "The exercises, silent, with captions. No me, no voice, just the room solving the problem at human speed — the small victories, the arguments, the moment the quiet one gets it. That recording would teach more than any lecture ever filmed, because it shows what learning looks like instead of what teaching looks like. Nobody has ever sold that video. Everyone has needed it.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "bartek:parking-lot-technique",
+      label: "The parking lot technique",
+      optionCandidates: [
+        { id: "bartek:parking-lot-technique:opt-1", topicId: "bartek:parking-lot-technique", text: "Your parking lot flipchart — does it actually work?" },
+        { id: "bartek:parking-lot-technique:opt-2", topicId: "bartek:parking-lot-technique", text: "What happens to the questions that get parked?" },
+        { id: "bartek:parking-lot-technique:opt-3", topicId: "bartek:parking-lot-technique", text: "Someone parked a personal question once." },
+        { id: "bartek:parking-lot-technique:opt-4", topicId: "bartek:parking-lot-technique", text: "Przemek filled your parking lot with sales questions." },
+        { id: "bartek:parking-lot-technique:opt-5", topicId: "bartek:parking-lot-technique", text: "Is the parking lot just a polite 'no'?" },
+        { id: "bartek:parking-lot-technique:opt-6", topicId: "bartek:parking-lot-technique", text: "Teach me to park a question without killing it." },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:parking-lot-technique:rep-1",
+          text: "It works because it makes the detour visible instead of forbidden. A question that would derail the room becomes a marked car in a marked space, and the room relaxes — nothing is lost, everything is just scheduled. The flipchart is the cheapest classroom management tool ever invented and the most respected. People park willingly when they trust the lot is real.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:parking-lot-technique:rep-2",
+          text: "They get answered — that is the covenant. Every parked question gets a written answer within the week, sent to the whole cohort, credited to whoever parked it. The parking lot is a promise with a flipchart attached. The year I skipped the follow-ups, the next cohort parked nothing, and I had taught them not to trust me. I have never skipped them since.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:parking-lot-technique:rep-3",
+          text: "Someone parked 'what do I do about my manager' in the middle of a Git course. I answered it privately at lunch, and the answer took twenty minutes and had nothing to do with Git. The parking lot held a career question for two hours like it was nothing. That is what the technique is really for — giving hard questions a safe place to wait.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "bartek:parking-lot-technique:rep-4",
+          text: "He did — seven questions about upselling a training course, during the training course. I answered the first one live because it was genuinely good, parked the rest, and by the afternoon he had converted three of them into course material about positioning. The parking lot does not kill sales energy. It FILTERS it. One Przemek per room, flowing through one flipchart.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "bartek:parking-lot-technique:rep-5",
+          text: "A polite no kills the question. The parking lot postpones the answer, which is different — and the difference is the follow-through. Parked questions that vanish teach rooms to stop asking. Parked questions that come back answered teach rooms that every question is worth forming. The flipchart is just a calendar with sticky notes and a conscience.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:parking-lot-technique:rep-6",
+          text: "Three steps. Write it down word for word — their words, not your tidier version. Say when it will be answered, out loud, with a day attached. Then thank the asker by name, because the question was a gift of attention. The whole trick is to treat the parked question as cargo, not clutter. Cars in a lot are cars people intend to drive away.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "bartek:dry-markers",
+      label: "The dry marker crisis",
+      optionCandidates: [
+        { id: "bartek:dry-markers:opt-1", topicId: "bartek:dry-markers", text: "Every marker in the training room is half-dead." },
+        { id: "bartek:dry-markers:opt-2", topicId: "bartek:dry-markers", text: "You carry your own markers. Confessed?" },
+        { id: "bartek:dry-markers:opt-3", topicId: "bartek:dry-markers", text: "The red one died mid-diagram in the big session." },
+        { id: "bartek:dry-markers:opt-4", topicId: "bartek:dry-markers", text: "Janusz restocks the markers now without being asked." },
+        { id: "bartek:dry-markers:opt-5", topicId: "bartek:dry-markers", text: "Grazyna flagged marker spending as 'creative'." },
+        { id: "bartek:dry-markers:opt-6", topicId: "bartek:dry-markers", text: "Why not presenters use slides instead of walls?" },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:dry-markers:rep-1",
+          text: "Half-dead markers are the room's way of testing the trainer. A dying marker writes for exactly one bold stroke, and that stroke had better be the important one. I start every course by testing all four colors on the corner of the flipchart, publicly, like a pilot's walkaround. The room learns something about me. The markers learn something about respect.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:dry-markers:rep-2",
+          text: "Three markers, inner pocket, since 2012, and I have stopped being embarrassed about it. The year I trusted the venue's markers, the black one died during the architecture section and I taught the second half in green. The client still calls it 'the green architecture course'. Never again. A tradesman owns his tools. Trainers included.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "bartek:dry-markers:rep-3",
+          text: "It died halfway through the payment flow, so the second half of the diagram is in my own carried red, two shades braver. The cohort noticed, nobody minded, and one student said the color change 'marked the interesting part'. Out of failure, emphasis. I have since done it on purpose twice. The room never knows which red is which.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:dry-markers:rep-4",
+          text: "He does — full box, first Tuesday of the month, no words exchanged. It started the year he found me testing markers in the dark before a 7am session. Now the box is simply there, like weather. The best working relationships in this building are conducted entirely in stationery. I have thanked him twice. He has accepted once.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "bartek:dry-markers:rep-5",
+          text: "She did, and I showed her the math — markers cost less per trained mind than the coffee, and nobody audits the coffee. She narrowed her eyes, approved the line, and added a column tracking markers per course, which I now fill in honestly. The audit exists. The markers flow. Somewhere in that ledger is the most bureaucratic marker supply chain in Poland.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "bartek:dry-markers:rep-6",
+          text: "Slides show. Walls hold. When I write the room's ideas on the wall, the wall becomes the room's shared memory for the whole day — nobody asks 'can you go back a slide', because the answer is always visible, growing, owned by everyone. Slides are a lecture. Walls are a negotiation. I negotiate for a living. The markers are the pens of the treaty.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "bartek:client-lunch",
+      label: "The client lunch",
+      optionCandidates: [
+        { id: "bartek:client-lunch:opt-1", topicId: "bartek:client-lunch", text: "You take every client to the same lunch spot?" },
+        { id: "bartek:client-lunch:opt-2", topicId: "bartek:client-lunch", text: "Who orders first at a client lunch?" },
+        { id: "bartek:client-lunch:opt-3", topicId: "bartek:client-lunch", text: "A client got drunk at a business lunch. Story?" },
+        { id: "bartek:client-lunch:opt-4", topicId: "bartek:client-lunch", text: "Grazyna audits your lunch receipts. Fairly?" },
+        { id: "bartek:client-lunch:opt-5", topicId: "bartek:client-lunch", text: "The vegetarian client and the pierogi incident." },
+        { id: "bartek:client-lunch:opt-6", topicId: "bartek:client-lunch", text: "What is the actual purpose of the client lunch?" },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:client-lunch:rep-1",
+          text: "Same place, same table, eleven years. The waitresses know the ritual, the menu has no surprises, and every client gets the same seat facing the window. Familiarity is the message — I am a man who repeats, whose word does not wander. New restaurants are for dates. Contracts are signed at tables where the salt has history.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:client-lunch:rep-2",
+          text: "The client, always, and I order second and eat what they order. Not mimicry — reconnaissance. Their choices tell me how they decide: the cautious orderer, the adventurous one, the person who asks the waiter's opinion. Lunch is the interview the calendar never scheduled. I have watched men order like they negotiate, and I adjust the afternoon accordingly.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:client-lunch:rep-3",
+          text: "Two glasses of wine became five, and by dessert he was negotiating against himself, offering us more money than we asked for. I declined the extra on the spot and re-set the price at the original number the next morning, in writing. He signed it and never mentioned it. Some deals you win by refusing the win. That lunch bought eleven years of trust for the price of one invoice.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:client-lunch:rep-4",
+          text: "Every receipt, with a client name attached, quarterly. Fair does not describe it — her audit is kinder than mine, because she has never once questioned a lunch, only its documentation. I write one line per receipt: who, what was discussed, what moved. She approved the format years ago and now other consultants copy it.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "bartek:client-lunch:rep-5",
+          text: "I ordered for the table without checking, the platter arrived wall-to-wall meat and potato, and she smiled through two hours of bread and pickled cucumber. I apologized at coffee and she said the incident told her more about us than any pitch — that we moved fast and checked after. She signed anyway and now laughs about it annually. But we check first, always, since.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "bartek:client-lunch:rep-6",
+          text: "Not the deal. The deal gets done in rooms with slides. The lunch is where you find out whether you can survive the deal — whether the client interrupts, how they treat the waiter, whether they ask a single question about your life. Sixty minutes of soup tells me what six weeks of contract law cannot. You are not feeding the client.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "bartek:trainer-clock",
+      label: "The trainer's internal clock",
+      optionCandidates: [
+        { id: "bartek:trainer-clock:opt-1", topicId: "bartek:trainer-clock", text: "You always end courses exactly on time. How?" },
+        { id: "bartek:trainer-clock:opt-2", topicId: "bartek:trainer-clock", text: "The energy dip at 14:30 — beatable?" },
+        { id: "bartek:trainer-clock:opt-3", topicId: "bartek:trainer-clock", text: "You cut a module live because the clock said so?" },
+        { id: "bartek:trainer-clock:opt-4", topicId: "bartek:trainer-clock", text: "Zosia's meetings never end on time. Contrast?" },
+        { id: "bartek:trainer-clock:opt-5", topicId: "bartek:trainer-clock", text: "How long can you actually hold a room?" },
+        { id: "bartek:trainer-clock:opt-6", topicId: "bartek:trainer-clock", text: "Teach me your time management for a training day." },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:trainer-clock:rep-1",
+          text: "Because ending late is stealing from people, and stealing is bad business. I run the day in fifteen-minute blocks with two sacrificial modules — material I will cut without mercy if the morning runs long. The sacrificial modules are chosen in advance, marked in my notes, and mourned never. The room believes the day was effortless. The day was triage.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:trainer-clock:rep-2",
+          text: "Not beaten — scheduled. The 14:30 dip is universal, so I put the loudest, most physical work there: the group exercise, the walking activity, anything that happens standing up. You do not fight the dip. You give it something to do with its hands. Coffee is a rumor. Movement is the cure. And if all else fails, I tell them the dip is coming, and being forewarned halves it.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:trainer-clock:rep-3",
+          text: "Twice a year, minimum. The module goes on the parking lot with an honest word — 'we do not have the time to do this properly, and badly is worse than never'. Clients respect the cut more than the overrun. The trainer who ends late is a trainer whose promises have a flexible exchange rate. Mine do not. The clock and I have a deal older than most of my clients.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:trainer-clock:rep-4",
+          text: "Her overruns are a choice, not a flaw — she runs the room until the room is finished, and the room is often finished late but never unfinished. I run the clock and let the material go. Two philosophies, one company, and we have negotiated exactly one treaty: no meetings run long in the training room. Her time owns the office. Mine owns the classroom. The border is peaceful.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral", "period:afternoon"],
+        },
+        {
+          id: "bartek:trainer-clock:rep-5",
+          text: "Four hours, twice a day, maximum, and anyone claiming more is selling confidence rather than training. The room's attention is a muscle and I am its interval coach — load, rest, load. My record is a six-hour emergency workshop during a system migration, and I paid for that week with my voice and half my credibility with my own knees. The graph has a shape. I respect the shape.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:trainer-clock:rep-6",
+          text: "Plan the day backwards from the ending. Decide what they must be able to DO at 16:50, then buy that outcome with the cheapest hours — their best attention goes on the hardest skill, which is almost always the first two hours after lunch. Write the plan, hold the blocks loosely, and let the questions renovate the middle. The beginning and end are load-bearing.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "bartek:war-stories",
+      label: "The war stories",
+      optionCandidates: [
+        { id: "bartek:war-stories:opt-1", topicId: "bartek:war-stories", text: "Tell a war story. The one you always tell." },
+        { id: "bartek:war-stories:opt-2", topicId: "bartek:war-stories", text: "The database migration of 2017. True story?" },
+        { id: "bartek:war-stories:opt-3", topicId: "bartek:war-stories", text: "Do war stories actually teach anything?" },
+        { id: "bartek:war-stories:opt-4", topicId: "bartek:war-stories", text: "Przemek retells your stories with better endings." },
+        { id: "bartek:war-stories:opt-5", topicId: "bartek:war-stories", text: "One story you have never told in a course?" },
+        { id: "bartek:war-stories:opt-6", topicId: "bartek:war-stories", text: "When does a war story become a lie?" },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:war-stories:rep-1",
+          text: "The Wednesday the client's whole system ran on one spreadsheet owned by one man on holiday. We found it at 2am, printed it, and taped the pages to a wall like a map of a country that should not exist. By morning we had a real database plan, and by Friday the man had a replacement and a new title.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:war-stories:rep-2",
+          text: "Mostly. True in every number, which I keep exact on purpose — 2:41am, eleven tables, one backup that was three weeks old. The names are changed and the panic is not. A war story with rounded numbers is entertainment. A war story with exact ones is testimony. The room can feel the difference and trusts the testimony.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "bartek:war-stories:rep-3",
+          text: "They teach the one thing slides cannot: that the material has been tested by fire, by someone, in weather. A war story is a receipt proving the theory survived contact with a Tuesday at 3am. Students forget frameworks by Friday. They forget a good war story never — and inside every war story is a framework wearing a costume.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:war-stories:rep-4",
+          text: "He does, and his endings are better, and I let him have them. In his version of the migration story I say something heroic at the end. In reality I said nothing and drank cold coffee. But his audiences learn the same lesson and laugh more, and the story outlives both of us either way. Legends are co-authored.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "bartek:war-stories:rep-5",
+          text: "One, about a student I failed — not the one from the difficult-days story, an earlier one, quieter. I have told it exactly twice, off-stage, to trainers I mentor, because on stage it would teach the wrong thing. The room needs to believe the craft works. It does work, almost always. The exceptions belong in the archive, not the syllabus. Every trainer keeps one.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:war-stories:rep-6",
+          text: "When the numbers round up, when the teller becomes the hero, and when the lesson arrives before the disaster does. A true war story has the hero arriving late, unprepared, and slightly ridiculous. The moment the teller was calm and right the whole time, the story has left testimony and entered marketing. I tell mine with the panic intact. The panic is the proof.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "bartek:legacy-students",
+      label: "The legacy students",
+      optionCandidates: [
+        { id: "bartek:legacy-students:opt-1", topicId: "bartek:legacy-students", text: "Do you hear from students years later?" },
+        { id: "bartek:legacy-students:opt-2", topicId: "bartek:legacy-students", text: "One of your students now teaches here?" },
+        { id: "bartek:legacy-students:opt-3", topicId: "bartek:legacy-students", text: "A student corrected your material at a conference." },
+        { id: "bartek:legacy-students:opt-4", topicId: "bartek:legacy-students", text: "Pawel and Tomek were both your students?" },
+        { id: "bartek:legacy-students:opt-5", topicId: "bartek:legacy-students", text: "Do you keep a list of everyone you have taught?" },
+        { id: "bartek:legacy-students:opt-6", topicId: "bartek:legacy-students", text: "What is the legacy actually worth to you?" },
+      ],
+      replyCandidates: [
+        {
+          id: "bartek:legacy-students:rep-1",
+          text: "Christmas cards, LinkedIn notes, one wedding invitation, and a monthly coffee with a student from 2013 who now outranks me at a bank. The card from her says the same thing every year — 'still using the parking lot'. One technique, surviving a decade, inside someone else's institution. That is the entire reward structure of this job and it pays better than the invoice.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "bartek:legacy-students:rep-2",
+          text: "Tomek sat in my Git course six years ago, back row, arms folded, certain he would hate it. Now he reviews the material and crosses out my examples with a red pen and total love. The student who corrects you is the graduation of the whole craft. I keep his corrections. The course is better than the one I taught him, and he is the reason in writing.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "bartek:legacy-students:rep-3",
+          text: "She did, from the audience, in front of forty people, and she was right — the pattern I taught had been deprecated. I thanked her, updated the slide on the spot, and made the correction itself the new slide. The room learned the pattern and the deeper lesson: material expires, honesty does not. She sends me errata now, quarterly, like a one-woman standards body.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "bartek:legacy-students:rep-4",
+          text: "Different courses, same back row energy. Pawel took notes on everything and asked permission to understand. Tomek took notes on everything I got wrong. Both approaches built the men you see — one checks with me before acting, one checks me before believing. The classroom produces both kinds and needs both kinds. I would fail either one now and be proud of it.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "bartek:legacy-students:rep-5",
+          text: "No list, and that is deliberate. The moment teaching becomes a collection, students become inventory. I remember the ones who needed something — the quiet one, the angry one, the one who taught me back. The rest I release gladly, like a ferry releasing passengers. Kasia finds this professionally horrifying. She has a spreadsheet of my career.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "bartek:legacy-students:rep-6",
+          text: "Nothing measurable, which is why I trust it. My invoice is money. My legacy is a hundred rooms where someone says 'let me park that question' or 'what would the back row see' without knowing where the sentence came from. Techniques outlive their names. Somewhere a training room runs on my habits and my name has never been said there.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
   ],
   taskOffers: [
     {

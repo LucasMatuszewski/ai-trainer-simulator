@@ -1377,6 +1377,638 @@ export const KASIA_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "kasia:benefits",
+      label: "The benefits sheet",
+      optionCandidates: [
+        { id: "kasia:benefits:opt-1", topicId: "kasia:benefits", text: "What benefits do we actually have?" },
+        { id: "kasia:benefits:opt-2", topicId: "kasia:benefits", text: "The gym discount is at a gym nobody goes to." },
+        { id: "kasia:benefits:opt-3", topicId: "kasia:benefits", text: "Is the massage perk real or a rumor?" },
+        { id: "kasia:benefits:opt-4", topicId: "kasia:benefits", text: "Can I trade a benefit day for money?" },
+        { id: "kasia:benefits:opt-5", topicId: "kasia:benefits", text: "The benefits sheet is four pages long." },
+        { id: "kasia:benefits:opt-6", topicId: "kasia:benefits", text: "Which benefit do people actually use?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:benefits:rep-1",
+          text: "The benefits sheet, the benefits reality, and the space between them — that space is where I live professionally. On paper: gym, massage, duvet day, fruit Thursday, a learning budget with a very specific form. In reality: fruit Thursday, undefeated, attended by everyone including people who claim to hate bananas.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:benefits:rep-2",
+          text: "It is twelve minutes away and OPEN TWENTY-FOUR SEVEN, which I say the way the brochure says it. We negotiated that gym in 2021 when the alternative was nothing. The discount is thirty percent. Attendance is two people, one of whom is me, twice, in October, both times by accident.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:benefits:rep-3",
+          text: "Real, quarterly, and booked through a form that asks your preferred pressure with a dropdown. The massage chair situation of 2022 is why we have the dropdown. There was an INCIDENT. The word 'incident' is doing heavy lifting there, but the form has prevented a sequel, which is HR in one sentence.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:benefits:rep-4",
+          text: "You cannot, and people ask monthly, always in a hush, like a heist. Benefits are not wages, they are a different currency — one that cannot be saved, only spent on wellbeing, which is the whole point and the whole annoyance. Grazyna and I have a standing agreement to both say no together. It is our friendship's spine.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:benefits:rep-5",
+          text: "Four pages, and I know all four by heart, which is my party trick and my burden. Page three is the graveyard: benefits we negotiate every year and never use, listed with dignity. The duvet day is on page one. The duvet day has NEVER been used by anyone. Its existence is the purest form of hope in this company.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:benefits:rep-6",
+          text: "Fruit Thursday, then the learning budget, then — and this surprises everyone — the coffee. We tallied it once: the coffee subsidy is our third largest benefit and nobody has ever thanked it. I mentioned that in a all-hands. Nobody thanked it then either. I have made peace with coffee's humility.",
+          relationshipHint: "neutral",
+          tags: ["period:morning"],
+        },
+      ],
+    },
+    {
+      id: "kasia:sick-notes",
+      label: "The sick note process",
+      optionCandidates: [
+        { id: "kasia:sick-notes:opt-1", topicId: "kasia:sick-notes", text: "Do I really need a note for one sick day?" },
+        { id: "kasia:sick-notes:opt-2", topicId: "kasia:sick-notes", text: "The sick note form asks for a diagnosis." },
+        { id: "kasia:sick-notes:opt-3", topicId: "kasia:sick-notes", text: "Someone sent a sick note photo from a beach." },
+        { id: "kasia:sick-notes:opt-4", topicId: "kasia:sick-notes", text: "How do I call in sick without sounding guilty?" },
+        { id: "kasia:sick-notes:opt-5", topicId: "kasia:sick-notes", text: "Burek ate whose sick note this time?" },
+        { id: "kasia:sick-notes:opt-6", topicId: "kasia:sick-notes", text: "Why does the sick folder smell of mint?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:sick-notes:rep-1",
+          text: "Legally yes, spiritually no — bring it whenever, I file it whenever, and the system does not judge. The system is a folder. The JUDGING is also a folder, mine, and it is empty for you because you called before ten, which puts you in the top decile of sick reporters. There is a decile system. Of course there is.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:sick-notes:rep-2",
+          text: "The form says 'reason' but 'reason' means 'the word the doctor used', not your life story. Write what the doctor wrote. I once received a form with a full symptom diary and a temperature chart. Beautiful work. Wrong audience. I am HR, not a hospital. The chart is still in the file, though. It was excellent.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:sick-notes:rep-3",
+          text: "The beach photo is my favorite document in the entire archive. The note was real, the doctor was real, and the beach was real — the man was sick, and he recovered somewhere with a sea view, and honestly? That is medicine. I filed it. I did not file the judgment. The judgment stayed in my heart where it belongs.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:sick-notes:rep-4",
+          text: "Say the sentence, stop, do not apologize your way into a second sentence. 'I am sick, I will rest, back tomorrow maybe.' Every extra word is a handle someone can pull. HR trains managers not to ask, but people confess at the doorway anyway. The doorway confession is an art form and you should not perform it. Rest. That is the whole policy.",
+          relationshipHint: "pleased",
+          tags: ["period:morning"],
+        },
+        {
+          id: "kasia:sick-notes:rep-5",
+          text: "Burek consumed a sick note in 2023 and it remains his only documented case of eating paperwork. I reissued the note, annotated the file 'original eaten by dog', and now the file has a dog-related postscript, which makes it the liveliest document in the cabinet. Burek is the only employee here with a bite mark on the archive.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:sick-notes:rep-6",
+          text: "The mint is therapeutic, deliberate, and mine. Sick notes arrive with the energy of a sneeze, so I keep mints at the folder. It is a small kindness for a document genre nobody enjoys. Also the mints cover the smell of the folder, which is a mystery I have chosen not to investigate. Some filing cabinets keep secrets.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "kasia:feedback-forms",
+      label: "The feedback form after everything",
+      optionCandidates: [
+        { id: "kasia:feedback-forms:opt-1", topicId: "kasia:feedback-forms", text: "There is a feedback form for the feedback form?" },
+        { id: "kasia:feedback-forms:opt-2", topicId: "kasia:feedback-forms", text: "Why does every event need a feedback form?" },
+        { id: "kasia:feedback-forms:opt-3", topicId: "kasia:feedback-forms", text: "Everyone writes 'fine' in the feedback forms." },
+        { id: "kasia:feedback-forms:opt-4", topicId: "kasia:feedback-forms", text: "I gave honest feedback once. It escalated." },
+        { id: "kasia:feedback-forms:opt-5", topicId: "kasia:feedback-forms", text: "The training feedback asked if I felt 'energized'." },
+        { id: "kasia:feedback-forms:opt-6", topicId: "kasia:feedback-forms", text: "Do you read the free-text comments?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:feedback-forms:rep-1",
+          text: "There is, and its name is the meta-review, and I am aware of the recursion. It runs once a year, it takes ninety seconds, and last year it produced ONE actionable insight: that ninety seconds is ninety seconds too many. I have kept it anyway. Consistency is a value. So is irony, apparently.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:feedback-forms:rep-2",
+          text: "Because memory is a liar with a calendar. If we ask on Friday how Tuesday's training felt, Tuesday will have become a rumor of itself. The form is a snapshot before the photo fades. Also — and I say this with love — the forms are how I justify the budget for the next event. Forms fund parties. Fill the forms.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:feedback-forms:rep-3",
+          text: "'Fine' is data. A room of fines means acceptable. One 'great' among fines means a fluke. One 'horrible' among fines means a conversation, which I will have gently, with coffee, and no forms present. The scale only sings when someone breaks it. I wait for the breakers.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:feedback-forms:rep-4",
+          text: "It did, and I apologize — that was the era before the anonymity upgrade, and your honesty deserved better armor. The comment reached a manager with a highlighter, which is the food chain working exactly wrong. It is fixed now: anonymous means anonymous, and I defend it like the fridge accord. With my whole chest.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "kasia:feedback-forms:rep-5",
+          text: "The 'energized' scale came from a consultant in 2022 and I have defended it ever since, on the grounds that it is the only question people answer with their WHOLE personality. You have not lived until a grown engineer circles 'completely depleted' in pen. The data is unusable. The culture is priceless.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:feedback-forms:rep-6",
+          text: "Every one, with a coffee, on Friday afternoons — it is my favorite part of the week and I will deny that too. The comments are where this company keeps its diary. Someone once wrote 'the cookies tasted like morale'. I have no idea what it means. I have framed it. Some things are not data. They are ARCHIVE.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "kasia:office-grapevine",
+      label: "The office grapevine",
+      optionCandidates: [
+        { id: "kasia:office-grapevine:opt-1", topicId: "kasia:office-grapevine", text: "You always know things first. How?" },
+        { id: "kasia:office-grapevine:opt-2", topicId: "kasia:office-grapevine", text: "Is the grapevine ever wrong?" },
+        { id: "kasia:office-grapevine:opt-3", topicId: "kasia:office-grapevine", text: "Renata and you run separate intel networks." },
+        { id: "kasia:office-grapevine:opt-4", topicId: "kasia:office-grapevine", text: "The grapevine says two people are leaving." },
+        { id: "kasia:office-grapevine:opt-5", topicId: "kasia:office-grapevine", text: "I started a rumor as a joke and it is winning." },
+        { id: "kasia:office-grapevine:opt-6", topicId: "kasia:office-grapevine", text: "What is the biggest grapevine miss in history?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:office-grapevine:rep-1",
+          text: "Recruiters hear everything twice — once as small talk and once as a resignation risk. I do not run the grapevine, I merely WATER it. My official position is that I know nothing. My unofficial position is also that I know nothing, delivered in a tone that has kept this office informed for years.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:office-grapevine:rep-2",
+          text: "The grapevine is never wrong, only early or exaggerated. The kernel is always true — someone IS interviewing, something IS being renamed. The grapevine is a fire alarm with a personality. I read it the way Marek reads graphs: for the slope, not the number.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:office-grapevine:rep-3",
+          text: "Renata is a library and I am a newsroom. She stores what happened; I hear what is ABOUT to. We do not compete, we EXCHANGE, at the coffee machine, in glances that would baffle a cryptographer. Between the two of us, this office has no secrets and perfect coverage. It is a public service and neither of us bills for it.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:office-grapevine:rep-4",
+          text: "Then I will tell you exactly what I tell the grapevine: nothing, with a smile that confirms nothing and denies nothing. If it is true, they will resign through me, with paperwork. If it is false, the rumor dies of starvation by Friday. Either way I win and nobody knows the game was played.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral", "period:morning"],
+        },
+        {
+          id: "kasia:office-grapevine:rep-5",
+          text: "Then you have learned the first law of the grapevine: jokes exit the room faster than facts, wearing the facts' coat. Walk it back GENTLY — 'I was clearly joking' reads as a cover-up, so laugh louder instead. Or let it run. The printer rumor of 2021 started as my joke and now it is basically scripture.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:office-grapevine:rep-6",
+          text: "The year the grapevine reported a MERGER and the truth was a new coffee supplier. The office grieved and celebrated simultaneously for a week. When the beans arrived, one person cried. I have never fully repaired my trust in the grapevine since, and I say that as its principal landscaper.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "kasia:working-hours",
+      label: "The nine-to-five myth",
+      optionCandidates: [
+        { id: "kasia:working-hours:opt-1", topicId: "kasia:working-hours", text: "Is anyone here actually nine to five?" },
+        { id: "kasia:working-hours:opt-2", topicId: "kasia:working-hours", text: "My contract says eight hours. My calendar laughs." },
+        { id: "kasia:working-hours:opt-3", topicId: "kasia:working-hours", text: "Marek arrives at seven. Is he the standard?" },
+        { id: "kasia:working-hours:opt-4", topicId: "kasia:working-hours", text: "I answered one email at 22:00. Am I fired?" },
+        { id: "kasia:working-hours:opt-5", topicId: "kasia:working-hours", text: "Zosia says timing is a message. Confirm?" },
+        { id: "kasia:working-hours:opt-6", topicId: "kasia:working-hours", text: "When is staying late a problem?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:working-hours:rep-1",
+          text: "The contract says nine to five and the office says 'see you when the coffee does'. Officially the hours are the hours. Unofficially the building runs on a wave: Marek at seven, Tomek til midnight, and Przemek existing in a timezone of his own invention. My job is pretending the wave is a schedule.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:working-hours:rep-2",
+          text: "The calendar laughs at all of us, and that is why the contract exists — as a floor, not a ceiling, and definitely as a legal document I can point at when someone's 'quick call' arrives at 18:45. The hours are armor. Wear them loosely, but know where the armor is.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:working-hours:rep-3",
+          text: "Marek is not a standard, he is a FORCE of nature with a key. He arrives at seven because the servers are honestest before the people arrive. Nobody is asked to match him. Nobody COULD match him. His hours are a personal weather system and the forecast is always 'deploying'.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:working-hours:rep-4",
+          text: "You are not fired, you are a statistic. One 22:00 email is a fluke, a weekly 22:00 email is a pattern, and a pattern is a conversation I will start with your manager, gently, armed with the contract and one raised eyebrow. Reply-to-all at midnight helps no one. The email will still be there at nine. So will we.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:working-hours:rep-5",
+          text: "Confirmed — she is right, which annoys both of us equally. A 16:58 announcement is a newsletter; a 09:02 announcement is an incident. The content is the same. The heart rate of the readership is not. I schedule my own sends for ten past ten, when the office is caffeinated and merciful.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:working-hours:rep-6",
+          text: "When it is secret, silent, and unpaid — that is when staying late stops being a favor and becomes a leak. Stay late for the demo, sure. Stay late every Thursday for a month without telling anyone why, and I will find you, and we will have the conversation about boundaries with the good biscuits. The GOOD ones. That is how serious I am.",
+          relationshipHint: "annoyed",
+          tags: ["period:evening", "relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "kasia:speak-up",
+      label: "The speak-up campaign",
+      optionCandidates: [
+        { id: "kasia:speak-up:opt-1", topicId: "kasia:speak-up", text: "What is the speak-up campaign exactly?" },
+        { id: "kasia:speak-up:opt-2", topicId: "kasia:speak-up", text: "The speak-up poster has Burek on it." },
+        { id: "kasia:speak-up:opt-3", topicId: "kasia:speak-up", text: "I reported something small. Was that okay?" },
+        { id: "kasia:speak-up:opt-4", topicId: "kasia:speak-up", text: "Nobody believes the speak-up channel is real." },
+        { id: "kasia:speak-up:opt-5", topicId: "kasia:speak-up", text: "Someone used speak-up to nominate a pizza topping." },
+        { id: "kasia:speak-up:opt-6", topicId: "kasia:speak-up", text: "What happens after someone speaks up?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:speak-up:rep-1",
+          text: "It is a promise wearing a poster: if something is wrong — a process, a manager, a smell — you can say it to me without it costing you anything. The campaign has a jingle Klaudia recorded. The jingle is a lot. The promise underneath the jingle is iron. Focus on the promise.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:speak-up:rep-2",
+          text: "Burek is on it because the test audience — Pawel, honestly — said the poster needed 'a face people already trust'. Burek's trust ratings are the highest in this building and he has never once read the poster. The caption says 'Burek speaks up. You can too.' Marketing does the captions. I do the semantics.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:speak-up:rep-3",
+          text: "More than okay — small reports are how big things get caught early, like moles. I logged it, I looked, and if nothing grows from it, the log sits quietly doing its job. The reporting muscle only works if it lifts small weights first. You did cardio for the whole office. Thank you, sincerely.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:speak-up:rep-4",
+          text: "Then let me say the boring truth: the channel exists, I read it alone, and last quarter it produced two fixes and one compliment that made my month. The disbelief is the biggest obstacle I have, bigger than any actual problem. Belief arrives one kept promise at a time. I am patient. I have a lanyard and tenure.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:speak-up:rep-5",
+          text: "The pizza nomination — pineapple, pro-crust audience — went into the official log because my rule is: the channel answers everything, even nonsense, ESPECIALLY nonsense. I forwarded it to Zosia with the subject 'speak-up works'. The pineapple remains unresolved. Democracy is messy and delicious.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:speak-up:rep-6",
+          text: "I listen, I check, and something happens — a conversation, a fix, or an explanation of why not, in writing, within the week. The worst outcome is silence, so silence is the one thing I never allow. Speaking up is a contract: you bring the truth, I bring the paperwork. So far the paperwork is winning.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "kasia:reference-checks",
+      label: "The reference call voice",
+      optionCandidates: [
+        { id: "kasia:reference-checks:opt-1", topicId: "kasia:reference-checks", text: "Why do you do reference calls in the stairwell?" },
+        { id: "kasia:reference-checks:opt-2", topicId: "kasia:reference-checks", text: "Your reference call voice is a different person." },
+        { id: "kasia:reference-checks:opt-3", topicId: "kasia:reference-checks", text: "What do you actually ask in a reference check?" },
+        { id: "kasia:reference-checks:opt-4", topicId: "kasia:reference-checks", text: "A reference said 'no comment' for everything." },
+        { id: "kasia:reference-checks:opt-5", topicId: "kasia:reference-checks", text: "Do references ever ask about us?" },
+        { id: "kasia:reference-checks:opt-6", topicId: "kasia:reference-checks", text: "Someone lied on their CV. Big lie?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:reference-checks:rep-1",
+          text: "The stairwell is my call booth — one bar of signal, total privacy, and acoustics that flatter the voice. The office hears half of 'would you hire this person again' and imagines drama. The stairwell hears all of it and imagines nothing. Reference work is stairwell work. It is also where I get my steps in. Efficiency.",
+          relationshipHint: "pleased",
+          tags: ["period:morning"],
+        },
+        {
+          id: "kasia:reference-checks:rep-2",
+          text: "That is my 'professional warm' voice — twenty percent slower, forty percent friendlier, and calibrated to make a stranger say true things they would not say to their own mirror. Everyone has one. Marek's comes out when he talks to the server room. Przemek's is his default. Mine is booked for calls and weddings.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:reference-checks:rep-3",
+          text: "Dates, role, and then the only question that matters: 'would you work with them again?' Everything else is choreography. Pauses tell me more than answers — a two-second pause before 'yes' is a full paragraph. I take notes in a code nobody has cracked, mostly because it is just my handwriting after coffee.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:reference-checks:rep-4",
+          text: "'No comment' seven times is a COMMENT with a paragraph count. I thank them warmly, log the silence, and read the whole conversation again for what was NOT said. The silence said plenty. The candidate never knew. The reference system protects everyone, including people who do not believe in it. Especially them.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:reference-checks:rep-5",
+          text: "Constantly. The moment they learn I am calling from THIS office, the questions reverse: 'is it true about the Batman sign?', 'does the dog really attend standup?', 'is the printer okay?'. I answer as an ambassador. We have gained two candidates and lost zero references to Burek enthusiasm. The sign alone has a fan base.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:reference-checks:rep-6",
+          text: "Small lies are nerves — a month here, a title there, forgiven with a note. Big lies are architecture: a whole employer, a whole degree. Architecture I document, the process handles, and I never enjoy. The strange part is that the big liars are always the most charming in the interview. Charm is not evidence. I check anyway. I always check.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "kasia:party-committee",
+      label: "The party committee compliance",
+      optionCandidates: [
+        { id: "kasia:party-committee:opt-1", topicId: "kasia:party-committee", text: "Does the party committee have HR oversight?" },
+        { id: "kasia:party-committee:opt-2", topicId: "kasia:party-committee", text: "Why does fun need a risk assessment?" },
+        { id: "kasia:party-committee:opt-3", topicId: "kasia:party-committee", text: "You vetoed the mechanical bull. Cowardice?" },
+        { id: "kasia:party-committee:opt-4", topicId: "kasia:party-committee", text: "The last party ran out of chairs." },
+        { id: "kasia:party-committee:opt-5", topicId: "kasia:party-committee", text: "Is attendance at office parties mandatory?" },
+        { id: "kasia:party-committee:opt-6", topicId: "kasia:party-committee", text: "Who signs off the party budget with Grazyna?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:party-committee:rep-1",
+          text: "I am the oversight, the insurance requirement, and — this surprises people — a member. Renata plans joy, I plan the edges of joy where joy meets insurance. My committee title is 'magical thinking prevention officer'. Klaudia shortened it to 'fun police'. I have it on a mug. The mug was NOT approved by the committee.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:party-committee:rep-2",
+          text: "Because joy with hazards is a lawsuit with confetti, and the form takes eleven minutes, which is eleven minutes less of my life spent in an office with a lawyer. The form has saved us from one ceiling, two candles, and the mechanical bull. The bull's vendor still calls me. I have a folder for him.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:party-committee:rep-3",
+          text: "PRUDENCE. The bull's insurance excluded 'enthusiastic adults', which is everyone we employ. I offered a compromise — a foam bull, waist height — and the committee said it lacked drama. Since then I am 'the woman who killed the bull'. I have made peace with it. My tombstone may as well say it. Waist-height foam, people. SAFETY.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:party-committee:rep-4",
+          text: "Chairs are my department and I take the blame with dignity. The RSVP said forty. The party had sixty, because people bring partners, partners bring friends, and friends bring opinions about the playlist. Since then the formula is RSVP plus thirty percent, and Janusz builds the overflow seating himself. The man is a load-bearing tradition.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:party-committee:rep-5",
+          text: "Never — mandatory fun is an HR crime scene and I refuse to author one. Attendance is optional, photos are opt-in, and the speech is survivable. The strange statistic: the parties people are free to skip are the ones everyone attends, which is either culture or math and I do not question my luck.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:party-committee:rep-6",
+          text: "I do, armed with three quotes and one justification per zloty. Grazyna reads party budgets the way Dawid reads contracts — for the traps. She has never rejected a party, but she has reduced one by a candle budget, which taught me: never let the line item rhyme with 'celebration'. Call it 'team infrastructure'. She knows. She allows it. That is our dance.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+      ],
+    },
+    {
+      id: "kasia:remote-onboarding",
+      label: "Remote onboarding",
+      optionCandidates: [
+        { id: "kasia:remote-onboarding:opt-1", topicId: "kasia:remote-onboarding", text: "How do you onboard someone who is never here?" },
+        { id: "kasia:remote-onboarding:opt-2", topicId: "kasia:remote-onboarding", text: "The remote hire's laptop arrived before his contract." },
+        { id: "kasia:remote-onboarding:opt-3", topicId: "kasia:remote-onboarding", text: "Remote people miss the coffee machine lore." },
+        { id: "kasia:remote-onboarding:opt-4", topicId: "kasia:remote-onboarding", text: "Do remote hires meet Burek virtually?" },
+        { id: "kasia:remote-onboarding:opt-5", topicId: "kasia:remote-onboarding", text: "The remote checklist has ninety items." },
+        { id: "kasia:remote-onboarding:opt-6", topicId: "kasia:remote-onboarding", text: "First day as a remote hire — what actually happens?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:remote-onboarding:rep-1",
+          text: "With over-correction: a courier box, a video call per day for two weeks, and a buddy who is contractually kind. The office absorbs people by osmosis — the fridge accord, the room names, the printer grief. Remote people need that culture EXPLAINED, which is either my job or my calling. Possibly both, and I am at peace with it.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:remote-onboarding:rep-2",
+          text: "That was the courier company's efficiency beating my paperwork by a day, and I have not forgiven the timeline. He was a fully equipped employee and legally a rumor. I couriered the contract to his house within hours. Now the checklist has a step called 'paperwork outranks laptops'. Every rule here has a story and usually it is my face on the story.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:remote-onboarding:rep-3",
+          text: "They do, and it is the one loss I cannot ship. You cannot courier standing near someone while they fight the coffee machine. So I wrote it down — the coffee lore, the yogurt law, the B-flat hum — as a document I update quarterly. It is titled 'Things The Hallways Teach'. It is my favorite thing I have ever authored and nobody reads it until they visit. Then they read it twice.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "kasia:remote-onboarding:rep-4",
+          text: "There is a slot on day three titled 'meet the morale lead' and it is a camera pointed at Burek for five minutes. Attendance is one hundred percent, every cohort, including the two people who pretended to be above it. Nobody is above Burek. That is not policy, that is physics.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:remote-onboarding:rep-5",
+          text: "Eighty-nine items and one easter egg. The items are boring on purpose — laptops, accounts, forms — because boring means nobody drowns. The easter egg is item forty-seven and it just says 'you are doing fine'. Three people have cried at item forty-seven. All three are still here. Draw your own conclusions; I have drawn mine.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:remote-onboarding:rep-6",
+          text: "A box at the door, three calls, one shadowing session, and by evening a message in the chat from someone random — I rotate the randomizer myself. Day one is engineered loneliness prevention. Everyone remembers their first day here. Remote or not, I intend for the memory to be 'someone was expecting me'. That is the entire philosophy.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "kasia:certificates",
+      label: "The framed certificates",
+      optionCandidates: [
+        { id: "kasia:certificates:opt-1", topicId: "kasia:certificates", text: "Your wall has more certificates than the office has rooms." },
+        { id: "kasia:certificates:opt-2", topicId: "kasia:certificates", text: "Are those certificates alphabetical or chronological?" },
+        { id: "kasia:certificates:opt-3", topicId: "kasia:certificates", text: "The mediation certificate has its own spotlight." },
+        { id: "kasia:certificates:opt-4", topicId: "kasia:certificates", text: "Did Pawel donate you a certificate?" },
+        { id: "kasia:certificates:opt-5", topicId: "kasia:certificates", text: "Grazyna audited your certificate wall." },
+        { id: "kasia:certificates:opt-6", topicId: "kasia:certificates", text: "Which certificate means the most to you?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:certificates:rep-1",
+          text: "Fourteen framed, six in the drawer awaiting frames, and one being re-framed after the humidity incident. The wall is not vanity, it is EVIDENCE — when a candidate doubts we know what we are doing, I walk them past the wall. Recruiting is theater and the wall is my set design. Every recruiter has one. Mine is simply better lit.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:certificates:rep-2",
+          text: "Chronological, left to right, the story of a career told in fonts. The early ones have borders like wedding invitations. The recent ones look like parking tickets, which is the industry's whole aesthetic decline in one wall. Alphabetical order would be chaos. Dates are destiny. I will die on this wall-arrangement hill and be buried in frame.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:certificates:rep-3",
+          text: "It earned the spotlight by being the hardest forty hours of my professional life — two days of roleplay, one real conflict resolved on camera, and a final exam I passed by breathing slowly. The spotlight was Klaudia's idea, for 'content'. It stayed for my sanity. When the office fights, I look at that spotlight and remember I am, officially, calm.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:certificates:rep-4",
+          text: "He TRIED to gift me one of his course certificates, with a ceremony and everything. I declined gently — the wall is a personal archive, not a museum of other people's achievements. But the gesture is in my drawer, filed under 'keep'. The boy laminated it. There is a future for him in stationery if code ever breaks his heart.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:certificates:rep-5",
+          text: "She checked three dates against the files and pronounced the wall 'audit-clean', which is the highest praise Grazyna issues and the only kind she issues. She then asked why I had framed a RUNNING certificate. It is a 5k, not a professional certification. I framed it anyway. Some achievements do not need her approval to be on the wall.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "kasia:certificates:rep-6",
+          text: "The one from my first job, where I was terrible, aged twenty-two, and the certificate is for 'attendance'. I frame it first on the wall to remember that everyone starts as a punchline. When a nervous candidate sits down, I point at it and say 'I began here'. The shoulders drop. The interview starts honestly. That certificate works harder than any diploma I own.",
+          relationshipHint: "neutral",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "kasia:payslip-question",
+      label: "Payslip questions",
+      optionCandidates: [
+        { id: "kasia:payslip-question:opt-1", topicId: "kasia:payslip-question", text: "My payslip has a code on it nobody can explain." },
+        { id: "kasia:payslip-question:opt-2", topicId: "kasia:payslip-question", text: "Why does the payslip arrive at 23:40?" },
+        { id: "kasia:payslip-question:opt-3", topicId: "kasia:payslip-question", text: "Can you tell me what Tomek earns?" },
+        { id: "kasia:payslip-question:opt-4", topicId: "kasia:payslip-question", text: "The bonus line says 'discretionary'. Meaning?" },
+        { id: "kasia:payslip-question:opt-5", topicId: "kasia:payslip-question", text: "Someone framed their first payslip in the kitchen." },
+        { id: "kasia:payslip-question:opt-6", topicId: "kasia:payslip-question", text: "Why is the payslip portal password so strict?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:payslip-question:rep-1",
+          text: "The code is a tax thing with a personality disorder and I have a decoder sheet laminated — of course I do. Bring the payslip, I will translate it into human, and you will leave angrier about the system but calmer about your money. That is the trade. I perform it monthly, like a fortune teller with a calculator.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:payslip-question:rep-2",
+          text: "Because the payroll system runs at midnight like it is doing something shameful, and honestly, arriving at 23:40 means nobody reads it before coffee, which is when mistakes should be discovered — caffeinated, with witnesses. I have petitioned for a morning release. The system does not negotiate. The system has never once answered my emails.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:payslip-question:rep-3",
+          text: "I cannot, will not, and have built a career on the elegant shrug that question requires. Salary confidentiality is the one wall in this office thicker than the glass one. What I CAN say: the bands exist, they are defensible, and Grazyna guards them with the zeal of a dragon on a spreadsheet. Ask about bands, not people. Bands I discuss. People never.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:payslip-question:rep-4",
+          text: "'Discretionary' means the company decided, the company may decide differently next year, and no, that is not a loophole, it is the entire genre. I hate the word and its fifteen fonts. My advice, off the record, whispered: treat every bonus as a surprise gift and never a plan. Financial advisors hate this one trick. The trick is grief management.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:payslip-question:rep-5",
+          text: "That was Pawel, month one, and the frame is the proudest object in that kitchen. I walked past it every day for a week trying not to cry into my coffee. First payslips are sacred — money you earned, printed, with your name spelled right. If the office ever does a museum, that frame is exhibit one and I will curate the wing for free.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "kasia:payslip-question:rep-6",
+          text: "Because the portal guards the ONE document that can impersonate you completely, and its password rules were written by a security consultant who feared everything equally. Fourteen characters, one symbol, no dictionary words, and it expires when you have finally memorized it. That last part is deliberate. I have proof. I choose not to present it.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "kasia:meditation-room",
+      label: "The meditation room",
+      optionCandidates: [
+        { id: "kasia:meditation-room:opt-1", topicId: "kasia:meditation-room", text: "Is the meditation room open or still a myth?" },
+        { id: "kasia:meditation-room:opt-2", topicId: "kasia:meditation-room", text: "The meditation room booking sheet has three names." },
+        { id: "kasia:meditation-room:opt-3", topicId: "kasia:meditation-room", text: "Someone naps in the meditation room. Daily." },
+        { id: "kasia:meditation-room:opt-4", topicId: "kasia:meditation-room", text: "Zosia calls it the silence room. Which is it?" },
+        { id: "kasia:meditation-room:opt-5", topicId: "kasia:meditation-room", text: "The cushion in there is older than most employees." },
+        { id: "kasia:meditation-room:opt-6", topicId: "kasia:meditation-room", text: "Should the meditation room have a policy?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:meditation-room:rep-1",
+          text: "Open, real, and criminally underbooked. It is the closet that became a wellness room in 2022 — one cushion, one plant with survival instincts, and a sign that says 'be here, not your inbox'. People book it for phone calls and then, changed by the room, actually meditate for four minutes. The conversion rate is small but the room is patient.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:meditation-room:rep-2",
+          text: "Three names, and I am one of them, which I will neither confirm nor discuss — confidentiality applies to cushions too. What I CAN say: the bookings are fifteen minutes, respectful, and the sheet has a comment column where someone wrote 'life-changing' and someone else wrote 'ran out of time'. The range is human. I love the range.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:meditation-room:rep-3",
+          text: "Napping IS meditation for the overworked — I have read articles, I have made my peace. The booking sheet says 'mindfulness'; the do-not-disturb sign says the rest. My only rule: set an alarm. The one time someone napped through a client call, the room's reputation wobbled for a quarter. The room recovered. The napper transferred to napping at home. Growth.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:meditation-room:rep-4",
+          text: "Same room, two marketing strategies. Her 'silence room' is for the tour brochure; my 'meditation room' is for the benefits sheet. The room itself does not care what we call it. The room holds a cushion and our collective pretense, and it does both beautifully. Zosia and I have agreed to disagree in writing. The writing is a sticky note on the door.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:meditation-room:rep-5",
+          text: "That cushion predates my employment and possibly some governments. It has been sat on by every generation of this office, including one CEO, and it has never once complained. Janusz refuses to replace it — 'the cushion is broken in, like the building'. He is right. New cushions have no stories. This one hums when you sit. We interpret it as wisdom.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:meditation-room:rep-6",
+          text: "One rule only: fifteen minutes, then the room belongs to the next person. No policy survives its first encounter with genuine silence anyway — you cannot enforce calm, you can only schedule it and hope. The rule exists so the room stays a refuge and does not become somebody's second office with better lighting. I guard that line like the payslip codes.",
+          relationshipHint: "neutral",
+          tags: ["period:afternoon"],
+        },
+      ],
+    },
+    {
+      id: "kasia:photo-wall",
+      label: "The new-hire photo wall",
+      optionCandidates: [
+        { id: "kasia:photo-wall:opt-1", topicId: "kasia:photo-wall", text: "My photo wall picture is terrible. Redo it?" },
+        { id: "kasia:photo-wall:opt-2", topicId: "kasia:photo-wall", text: "Who photographs the new hires?" },
+        { id: "kasia:photo-wall:opt-3", topicId: "kasia:photo-wall", text: "The first photo on the wall is from 2015." },
+        { id: "kasia:photo-wall:opt-4", topicId: "kasia:photo-wall", text: "Burek has three photos on the wall. Policy?" },
+        { id: "kasia:photo-wall:opt-5", topicId: "kasia:photo-wall", text: "Klaudia offered to retouch the whole wall." },
+        { id: "kasia:photo-wall:opt-6", topicId: "kasia:photo-wall", text: "What happens to photos when someone leaves?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:photo-wall:rep-1",
+          text: "Terrible is the HOUSE STYLE. The wall is deliberately un-retouched — everyone photographed in the same doorway light, blinking allowances included. The day we allow retouching, the wall stops being a team and becomes a catalog. Yours is terrible. Mine is worse. Welcome to the wall. There are no redos, only eventual fondness.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:photo-wall:rep-2",
+          text: "I do, on the first Friday, with the office camera that has survived two floods and one Burek incident. One shot, no warnings, mid-sentence if possible — the brief is 'how you actually look when you talk'. New hires hate it for a week and love it forever. I have the testimonials. I keep them in a folder marked 'future ammunition'. Kidding. Mostly.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:photo-wall:rep-3",
+          text: "2015, the founding team, four people squinting next to a wall that had just been painted. The photo is technically awful and emotionally load-bearing — three of those four are still here, and the fourth sends a Christmas card TO THE WALL. I have witnessed people touch it before big meetings, like a shrine. The wall works. I did not plan that part. The wall did.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:photo-wall:rep-4",
+          text: "Burek has three because he has attended three first Fridays and the RULE is: present at the photo, on the photo. He sat in frame each time with total professionalism. Legal says the wall is 'unofficial'. The wall contains a dog with better attendance than most humans. I have decided legality is a spectrum. The wall agrees with me.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:photo-wall:rep-5",
+          text: "She offered, with filters, a unified tone, and 'a visual identity'. I declined in my kindest voice. The wall's power is its honesty — bad lighting, real faces, zero branding. Klaudia took the refusal professionally and then secretly enhanced ONE photo, mine, and made me look like a skincare ad. It is back to normal now. We do not discuss the week it was not.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "kasia:photo-wall:rep-6",
+          text: "They stay. That surprises everyone — the wall keeps everyone who ever stood in the doorway light, alumni included. People come back for visits and find themselves between two strangers, older, badly lit, home. The wall is the opposite of a resignation: it says you were HERE. I will defend that policy with the laminated ferocity it deserves.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "kasia:work-anniversaries",
+      label: "The workiversary posts",
+      optionCandidates: [
+        { id: "kasia:work-anniversaries:opt-1", topicId: "kasia:work-anniversaries", text: "Why does every workiversary get an announcement?" },
+        { id: "kasia:work-anniversaries:opt-2", topicId: "kasia:work-anniversaries", text: "The workiversary posts use the same three adjectives." },
+        { id: "kasia:work-anniversaries:opt-3", topicId: "kasia:work-anniversaries", text: "My workiversary is this week. What happens?" },
+        { id: "kasia:work-anniversaries:opt-4", topicId: "kasia:work-anniversaries", text: "Can I opt out of my workiversary post?" },
+        { id: "kasia:work-anniversaries:opt-5", topicId: "kasia:work-anniversaries", text: "Marek's ten-year workiversary post was one line." },
+        { id: "kasia:work-anniversaries:opt-6", topicId: "kasia:work-anniversaries", text: "Who writes the workiversary blurbs?" },
+      ],
+      replyCandidates: [
+        {
+          id: "kasia:work-anniversaries:rep-1",
+          text: "Because time passing is the only metric this office celebrates without a spreadsheet, and I protect that with my lanyard. The announcement takes me four minutes to write and it is the only document I write where nobody requests edits. Four minutes of pure, unedited HR joy per person per year. I ration myself accordingly.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "kasia:work-anniversaries:rep-2",
+          text: "'Dedicated', 'reliable', and 'part of the family' — the holy trinity, and yes, I am aware. The adjectives are a template from 2019 that survived because nobody has written a better one sober. I have TRIED. Every synonym sounds like a hostage note. The trinity stays until someone braver than me rewrites HR poetry.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "kasia:work-anniversaries:rep-3",
+          text: "A post in the channel, one emoji minimum from everyone including Dawid, and a small cake appearance if the calendar cooperates. You will say 'oh you should not have' and mean it in both directions. That is the ritual. It is small, it is slightly embarrassing, and in ten years you will find the post screenshot and feel something. Guaranteed. I have data.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:work-anniversaries:rep-4",
+          text: "You can, quietly, and the post becomes a card on your desk instead — same words, smaller audience. Three people have opted out and all three kept the cards, which I know because I see everything on desks, professionally. The post is a service, not a tax. Choose your format. I cater both with equal sincerity.",
+          relationshipHint: "neutral",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "kasia:work-anniversaries:rep-5",
+          text: "'Ten years. Server still up.' Six words and it outperformed every workiversary post in company history by every measure — reactions, replies, one person printing it. I asked Marek if he wanted a longer version. He said 'no'. The brevity was the sentiment. I have learned more about writing from that man than from any course, including his beloved keyboard guy.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "kasia:work-anniversaries:rep-6",
+          text: "Me, with input from one colleague I survey in secret — the answers are always better than the template. 'He fixed the thing before anyone noticed' made one post legendary. The blurbs are tiny biographies and I treat them like haikus: true, brief, and slightly warm. The adjectives may be three. The facts I hide inside them are chosen.",
+          relationshipHint: "pleased",
+          tags: ["period:afternoon"],
+        },
+      ],
+    },
   ],
   taskOffers: [
     {

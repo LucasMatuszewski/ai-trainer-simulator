@@ -1384,6 +1384,641 @@ export const JANUSZ_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "janusz:soap",
+      label: "The soap supply",
+      optionCandidates: [
+        { id: "janusz:soap:opt-1", topicId: "janusz:soap", text: "The bathroom soap smells like a forest now." },
+        { id: "janusz:soap:opt-2", topicId: "janusz:soap", text: "Why did you switch soap suppliers?" },
+        { id: "janusz:soap:opt-3", topicId: "janusz:soap", text: "Grazyna questioned the soap line item." },
+        { id: "janusz:soap:opt-4", topicId: "janusz:soap", text: "The dispenser drips on the floor by the sink." },
+        { id: "janusz:soap:opt-5", topicId: "janusz:soap", text: "Do you make anything yourself, Janusz?" },
+        { id: "janusz:soap:opt-6", topicId: "janusz:soap", text: "Which soap lasts longest, honestly?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:soap:rep-1",
+          text: "Pine. The old one was cherry and people lingered. Pine says: wash, look at the window, go back to work. A soap sets a pace. Twenty years of soap and I will tell you the scent is the cheapest management tool in this building.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:soap:rep-2",
+          text: "The cherry supplier got bought by a bigger cherry supplier and the soap got worse quietly. Same bottle, thinner soap. Nobody reads soap. I read soap. Switched to a family outfit from outside Grodzisk. They deliver on Thursdays and their invoice is handwritten. Trust has a texture. So does soap.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:soap:rep-3",
+          text: "She did. I showed her the cost per wash — not per bottle, per WASH — and the pine won on numbers alone. She approved it and added the calculation style to her own files. Grazyna respects a numerator change. That was a good Tuesday.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:soap:rep-4",
+          text: "I know. It drips at nine, it drips at two. There is a mat, and the mat is washed, and the floor has never once been slippery in twenty years. The drip is not a fault. The drip is a drip. Some things you fix and some things you schedule around.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:soap:rep-5",
+          text: "Soap, in winter, small batches. It is not a business. It is what you do with wax left from candles and patience left from evenings. Grazyna takes two bars a month and pretends it is an arrangement. The arrangement predates her new car and will outlast it.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:soap:rep-6",
+          text: "The industrial pink. Ugly as a Monday and it outlasts everything. The pine is for the people who look. The pink is for the pump. You did not ask about the pump, but the pump is where the truth of soap lives.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "janusz:night-shift",
+      label: "The night shifts",
+      optionCandidates: [
+        { id: "janusz:night-shift:opt-1", topicId: "janusz:night-shift", text: "You were here at midnight again?" },
+        { id: "janusz:night-shift:opt-2", topicId: "janusz:night-shift", text: "What is the office like at 2am?" },
+        { id: "janusz:night-shift:opt-3", topicId: "janusz:night-shift", text: "Do you ever sleep, Janusz?" },
+        { id: "janusz:night-shift:opt-4", topicId: "janusz:night-shift", text: "Marek and you crossed paths at 3am." },
+        { id: "janusz:night-shift:opt-5", topicId: "janusz:night-shift", text: "Is the building different at night?" },
+        { id: "janusz:night-shift:opt-6", topicId: "janusz:night-shift", text: "Tomek fell asleep in the beanbag at 1am." },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:night-shift:rep-1",
+          text: "Flood check. The pipes are honest at midnight — you hear the trouble before you see it. I walked the route, heard nothing, and went home. The nothing was the whole point. Quiet pipes is the sound of a job done for twenty years.",
+          relationshipHint: "neutral",
+          tags: ["period:evening"],
+        },
+        {
+          id: "janusz:night-shift:rep-2",
+          text: "Honest. The building at 2am has no audience and shows what it is — one flickering tube over the kitchen, a draft by the glass wall, and the hum Marek chases on his graphs. I know that hum like a voice. At night it sings. In the day it just pays rent.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:night-shift:rep-3",
+          text: "Six hours, same time, since 1994. The body is a schedule you keep or it keeps you. Naps are a tool, not a lifestyle. The chair by the window at four is allowed fifteen minutes and has never once needed more.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:night-shift:rep-4",
+          text: "We nodded. He had his laptop, I had my mop, and neither of us said a word, because at 3am the work is the conversation. He left a coffee on the trolley though. No note. Marek says things with objects. I kept the cup. It is in the closet with the others.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "janusz:night-shift:rep-5",
+          text: "The walls settle and the floors let go of the day. You hear which door was slammed hardest. You hear who's chair squeaks still — that one is next on the list. A building talks all night. People just leave before it starts.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:night-shift:rep-6",
+          text: "I covered him with the grey blanket from the closet and turned the lights to evening mode. He stayed till six. Woke up embarrassed, fixed the thing he stayed for, and now checks the beanbag before he settles in. That is how a person learns a building. Through one blanket, once.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "janusz:warnings",
+      label: "The yellow warnings",
+      optionCandidates: [
+        { id: "janusz:warnings:opt-1", topicId: "janusz:warnings", text: "The yellow warning notes are everywhere." },
+        { id: "janusz:warnings:opt-2", topicId: "janusz:warnings", text: "Why yellow paper specifically?" },
+        { id: "janusz:warnings:opt-3", topicId: "janusz:warnings", text: "Your note said 'the door remembers'. Meaning?" },
+        { id: "janusz:warnings:opt-4", topicId: "janusz:warnings", text: "Someone removed a warning note and touched the hot plate." },
+        { id: "janusz:warnings:opt-5", topicId: "janusz:warnings", text: "How long does a warning stay up?" },
+        { id: "janusz:warnings:opt-6", topicId: "janusz:warnings", text: "Klaudia filmed the warning notes for content." },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:warnings:rep-1",
+          text: "Every note is a promise I made to someone's hand. The kettle, the plate, the third step — each one is a place the building could bite. The notes come down when the thing is fixed, and not one day before. People call it decoration. It is a contract.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:warnings:rep-2",
+          text: "Yellow is seen by a tired eye. White vanishes into walls, red means fire and gets ignored like fire alarms. Yellow sits between — it says: nothing is burning, but slow down here. Twenty years of yellow and one burned palm. The palm was 2003. Before the system.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:warnings:rep-3",
+          text: "The door by the storage closes on its own when the heating runs. It took a coat button in 2019. 'The door remembers' means: the door does that thing again when the radiators come on. People read it, smile, and slow down at that door. All the message needed to do was make them slow down.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:warnings:rep-4",
+          text: "He is fine. Palm red for two days, pride red for longer. I did not say anything. The note was still there when it healed — I moved it to his monitor for a week. Some lessons want a witness. The witness was a sticky note and it worked.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "janusz:warnings:rep-5",
+          text: "Until the fix, plus one week of quiet. Then it comes down and goes in the box. The box is a history of every small danger this building ever was. Some years the box is full. Good years, the box stays shut. You can read a decade in that box.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:warnings:rep-6",
+          text: "She asked. I said the notes are not for the internet, they are for the thumb that presses the kettle. She put her phone down, thought, and asked instead what the notes were FOR. Best question anyone asked me that month. The video never happened. The respect did.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+      ],
+    },
+    {
+      id: "janusz:chair-repairs",
+      label: "The chair repairs",
+      optionCandidates: [
+        { id: "janusz:chair-repairs:opt-1", topicId: "janusz:chair-repairs", text: "My chair stopped squeaking overnight. Sorcery?" },
+        { id: "janusz:chair-repairs:opt-2", topicId: "janusz:chair-repairs", text: "How many chairs have you fixed here?" },
+        { id: "janusz:chair-repairs:opt-3", topicId: "janusz:chair-repairs", text: "The gas lift on the kitchen stool is gone." },
+        { id: "janusz:chair-repairs:opt-4", topicId: "janusz:chair-repairs", text: "Zosia's chair gets serviced before everyone's." },
+        { id: "janusz:chair-repairs:opt-5", topicId: "janusz:chair-repairs", text: "Where do the dead chairs go?" },
+        { id: "janusz:chair-repairs:opt-6", topicId: "janusz:chair-repairs", text: "Can you teach me to fix my chair at home?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:chair-repairs:rep-1",
+          text: "No sorcery. Thursday nights, after the lights go soft, I walk the floor and listen. A squeak is a question the chair is asking. I answer it with three drops of oil and five minutes. You will never see the work. The chair is quiet and that is the whole report.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:chair-repairs:rep-2",
+          text: "Four hundred, give or take the ones that came back twice. I keep a card for every chair — date, part, mood. Chairs have moods. A chair that squeaks angry needs a part. A chair that squeaks tired needs oil. The cards are in a shoebox, in order, like a hospital's records but with more dignity.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:chair-repairs:rep-3",
+          text: "On my list. The part arrives Thursday from a man in Piotrkow who has saved that model since 2011. Until then, do not trust the stool with your whole weight and your whole coffee at once. Choose one. The stool and I both thank you.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:chair-repairs:rep-4",
+          text: "Her chair holds the calendar of this company, in a way. Eleven years of decisions in that seat. It gets the good casters and first oil. This is not favor. This is maintenance of infrastructure. The chair is where the budget lives. You keep the budget's chair healthy.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:chair-repairs:rep-5",
+          text: "Downstairs, third basement, in rows. Not thrown — LAID. Parts go back into service; a dead chair is six living chairs, over time. Every chair in this office that rolls, rolls on some ancestor down there. The dead support the living. That is not a speech about chairs. It is just true.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:chair-repairs:rep-6",
+          text: "Flip it, look at the five stars on the base, tighten what is loose, oil what is loud, and stop before you feel clever. The feeling of clever is where chairs die. Do the three things, drink tea, done. If it still complains after that, it is a part, and parts are a Thursday matter, not a pride matter.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "janusz:plant-corner",
+      label: "The plant corner",
+      optionCandidates: [
+        { id: "janusz:plant-corner:opt-1", topicId: "janusz:plant-corner", text: "The plant corner is thriving. What is the secret?" },
+        { id: "janusz:plant-corner:opt-2", topicId: "janusz:plant-corner", text: "One plant died anyway. Which one?" },
+        { id: "janusz:plant-corner:opt-3", topicId: "janusz:plant-corner", text: "Renata brings you cuttings from home?" },
+        { id: "janusz:plant-corner:opt-4", topicId: "janusz:plant-corner", text: "The fern by the glass wall leans at the sun." },
+        { id: "janusz:plant-corner:opt-5", topicId: "janusz:plant-corner", text: "Can I take a plant for my desk?" },
+        { id: "janusz:plant-corner:opt-6", topicId: "janusz:plant-corner", text: "Do the plants have names, Janusz?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:plant-corner:rep-1",
+          text: "No secret. Water on Mondays, less than you think. Turn them on Thursdays, quarter turns. Talk is optional and I skip it — plants want consistency, not conversation. The corner thrives because nobody loves it too much. The hardest part of care is stopping.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:plant-corner:rep-2",
+          text: "The bamboo, in 2021, and it still bothers me. Someone fed it tea. With sugar. It was loved wrong, which is worse than ignored. The pot is in the closet. I keep it for the reminder. Care is not what you feel. Care is what the thing needs. The bamboo taught that better than any manual.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "janusz:plant-corner:rep-3",
+          text: "Every spring, wrapped in wet newspaper like a gift. Her balcony plants are stronger stock than any shop. We trade — she brings cuttings, I return jars of the winter soap. Twenty years of this economy. Neither of us ever calls it a trade.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "janusz:plant-corner:rep-4",
+          text: "It knows where the light is. I could turn the pot and be done, but the lean is its own opinion and the fern has earned it. Plants that lean are paying attention. I trust a leaning plant more than a straight one. Same with people, if I am honest, and I am mostly honest before my second coffee.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:plant-corner:rep-5",
+          text: "Take the pothos on the end — it forgives everything and it grows toward wherever your desk is happiest. Water it when the leaves speak, which is rarely. If it lives a year, take a cutting and give it to someone. That is how this corner has filled the whole floor. One plant, one borrower, one year at a time.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:plant-corner:rep-6",
+          text: "No names. Names make you forgive them when they fail. The fern is the fern and the ivy is the ivy and the task stays the task. Naming is for dogs and boats. Plants want a schedule and a person who shows up. I show up. The plants do the rest, quietly, like most of the work in this building.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "janusz:tradesman",
+      label: "The tradesmen gate",
+      optionCandidates: [
+        { id: "janusz:tradesman:opt-1", topicId: "janusz:tradesman", text: "Who decides which repairmen come in?" },
+        { id: "janusz:tradesman:opt-2", topicId: "janusz:tradesman", text: "The electrician only speaks to you, Janusz." },
+        { id: "janusz:tradesman:opt-3", topicId: "janusz:tradesman", text: "A salesman got in and pitched Maciek at the lift." },
+        { id: "janusz:tradesman:opt-4", topicId: "janusz:tradesman", text: "How do you vet a new plumber?" },
+        { id: "janusz:tradesman:opt-5", topicId: "janusz:tradesman", text: "The window guys left a mess last time." },
+        { id: "janusz:tradesman:opt-6", topicId: "janusz:tradesman", text: "Grazyna wants three quotes for everything now." },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:tradesman:rep-1",
+          text: "I do, and Renata signs, and Grazyna pays, in that order. A tradesman comes in once with me watching and I learn everything — the van, the shoes, whether the tools are clean. The van tells you the business. The shoes tell you the pride. The tools tell you the truth. Most decisions make themselves at the shoes.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:tradesman:rep-2",
+          text: "Pan Zdzislaw has wired this building since before the glass wall. He speaks to me because I was here when the old panel was, and you cannot explain a building's history in a meeting. He drinks one coffee, points at things, and leaves. Twenty years of that. Cheaper than any contract and twice as reliable.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:tradesman:rep-3",
+          text: "He did, through the delivery door, wearing a lanyard he does not have. Maciek bought a subscription to something before lunch. I found the lanyard in the bin — plastic, glossy, wrong weight. It is on the closet wall now as a lesson. The delivery door has a new rule since: boxes first, words after.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "janusz:tradesman:rep-4",
+          text: "I give him the smallest job first — one tap, one valve — and I watch how he leaves the space. A good tradesman leaves it cleaner than a bad one found it. That is the whole test. The tap tells you the hands. The space tells you the character. Two visits, and you know a plumber for life.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:tradesman:rep-5",
+          text: "They did, and they will not again. I swept it, photographed it, and sent the photo with the final payment question. The crew came back Sunday, own time, and finished clean. Nobody is angry forever when the evidence is a photo of dust. Pictures are quieter than words and they shout the same.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:tradesman:rep-6",
+          text: "Good. Three quotes is how you learn a building's real price. I read the middle one closest — the low quote forgot something, the high one is paying for lunch. Grazyna knows this and lets me pick from the middle anyway. The system trusts two old men's instincts and a spreadsheet. It has not failed us yet.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+      ],
+    },
+    {
+      id: "janusz:coffee-machine-doctor",
+      label: "The coffee machine doctor",
+      optionCandidates: [
+        { id: "janusz:coffee-machine-doctor:opt-1", topicId: "janusz:coffee-machine-doctor", text: "You fixed the espresso machine yourself again?" },
+        { id: "janusz:coffee-machine-doctor:opt-2", topicId: "janusz:coffee-machine-doctor", text: "Why not just buy a new machine?" },
+        { id: "janusz:coffee-machine-doctor:opt-3", topicId: "janusz:coffee-machine-doctor", text: "The machine sings a high note on Tuesdays." },
+        { id: "janusz:coffee-machine-doctor:opt-4", topicId: "janusz:coffee-machine-doctor", text: "Marek wants to put a sensor inside the machine." },
+        { id: "janusz:coffee-machine-doctor:opt-5", topicId: "janusz:coffee-machine-doctor", text: "What is the machine's actual diagnosis?" },
+        { id: "janusz:coffee-machine-doctor:opt-6", topicId: "janusz:coffee-machine-doctor", text: "Teach me the descale ritual." },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:coffee-machine-doctor:rep-1",
+          text: "The gasket was tired, not the machine. One gasket, six zloty, forty minutes, and the office never knew it was one morning from cold coffee. That is the quiet work. Nobody thanks a disaster that did not happen. I have collected forty years of unthanked mornings. The collection keeps the coffee on.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:coffee-machine-doctor:rep-2",
+          text: "New machines are strangers. This one I know — where it holds its heat, where it sulks, which button lies. A new machine means six months of learning its moods while the office drinks worse coffee. This machine and I have an arrangement older than half the staff. You do not fire someone you understand.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:coffee-machine-doctor:rep-3",
+          text: "Tuesday is descale residue passing the narrow bend. Harmless, one note, always the same note. Marek says he can predict the day from the pitch drift, which makes two of us listening to that machine like it is a patient. It is a patient. It is the best-fed patient in the building and it takes eleven hundred people to work a day.",
+          relationshipHint: "neutral",
+          tags: ["period:morning"],
+        },
+        {
+          id: "janusz:coffee-machine-doctor:rep-4",
+          text: "I told him no, and he took it well, for a man with sensors in his blood. The machine is mechanical honesty — pressure, heat, water, no logs, no dashboards. Let it stay dumb. The office has enough charts. One machine should just be a machine, and I should just be the man who listens to it. Division of powers.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:coffee-machine-doctor:rep-5",
+          text: "Old, cared for, and vain. It works better when people watch it — I am not joking, the pressure holds steadier on demo days. Machines and men. It will need a full service in two winters, and when that day comes it will be worth every zloty, because that machine has poured more goodwill than any budget line in this company.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:coffee-machine-doctor:rep-6",
+          text: "Watch once, then do it yourself next month with me in the room, silent. Machine off, night before. Solution in, wait through two full cups of nothing — the waiting is the ritual, the waiting is where people cheat. Rinse three times, not two. Three. The ones who rinse twice taste it for a week and learn. The machine teaches patience or it teaches nothing.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "janusz:screw-drawer",
+      label: "The screw drawer",
+      optionCandidates: [
+        { id: "janusz:screw-drawer:opt-1", topicId: "janusz:screw-drawer", text: "The screw drawer is famous. What is in it exactly?" },
+        { id: "janusz:screw-drawer:opt-2", topicId: "janusz:screw-drawer", text: "Tomek needs a specific screw for his shelf." },
+        { id: "janusz:screw-drawer:opt-3", topicId: "janusz:screw-drawer", text: "How is the drawer organized? It can't be." },
+        { id: "janusz:screw-drawer:opt-4", topicId: "janusz:screw-drawer", text: "Grazyna tried to inventory the drawer once." },
+        { id: "janusz:screw-drawer:opt-5", topicId: "janusz:screw-drawer", text: "You found the screw for the wobbly desk in minutes." },
+        { id: "janusz:screw-drawer:opt-6", topicId: "janusz:screw-drawer", text: "What happens to the drawer in twenty more years?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:screw-drawer:rep-1",
+          text: "Every screw this building has ever shed, plus the ones I saved from machines that left. Counted? No. Lost? Also no. It is not a drawer of screws, it is a drawer of answers to questions nobody has asked yet. The day someone needs the odd one, the drawer is the only place in the city it exists.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:screw-drawer:rep-2",
+          text: "Tell him to bring the shelf's broken brother — no, tell him to bring the hole. You match the screw to the hole, never the picture. He will stand at the drawer five minutes and leave with the right one and a story. That drawer teaches patience better than any course the company ever bought.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:screw-drawer:rep-3",
+          text: "It is organized by twenty years of my hand. Trays inside trays. The left third is metric, the middle is miscellany, and the right is 'someday' — the screws I cannot place yet. The someday section is the drawer's heart. Organization is not labels. Organization is knowing where you stopped.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:screw-drawer:rep-4",
+          text: "She lasted eleven minutes, wrote 'assorted, quantity: yes' in her ledger, and closed it gently, like a lid on a jar of bees. We never spoke of it again. Some assets appreciate off the books. Her ledger and my drawer have a truce older than most marriages in this city.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:screw-drawer:rep-5",
+          text: "Minutes, because the desk is a 2016 model and 2016 used that flat-head nobody stocks. The drawer had six. The desk got one and a quarter turn of care. People think the drawer is a hobby. The drawer is a parts department with a personality, and the personality is mine.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:screw-drawer:rep-6",
+          text: "Same as now, with more history in it. Someone after me will curse it, then use it, then defend it. That is the life of every honest drawer. I found mine the same way — cursed it in 1998, used it in 1999, defended it ever since. The drawer outlives us all and holds the building together, screw by saved screw.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "janusz:winter-99",
+      label: "The winter of 1999",
+      optionCandidates: [
+        { id: "janusz:winter-99:opt-1", topicId: "janusz:winter-99", text: "Tell me about the winter of 1999." },
+        { id: "janusz:winter-99:opt-2", topicId: "janusz:winter-99", text: "Did the building really run on one heater?" },
+        { id: "janusz:winter-99:opt-3", topicId: "janusz:winter-99", text: "Is the winter-99 story true or improved?" },
+        { id: "janusz:winter-99:opt-4", topicId: "janusz:winter-99", text: "The boiler that survived that winter — still around?" },
+        { id: "janusz:winter-99:opt-5", topicId: "janusz:winter-99", text: "Marek asked about winter-99 for the runbooks." },
+        { id: "janusz:winter-99:opt-6", topicId: "janusz:winter-99", text: "Would the building survive that winter today?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:winter-99:rep-1",
+          text: "Cold came early, the old boiler quit on the tenth of December, and this city forgot how to deliver parts in snow. We ran the building on one reserve heater, three electric ones, and the honesty of the walls. Everybody wore coats at their desks for a month. Productivity did not drop one percent. People are tougher than dashboards think.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:winter-99:rep-2",
+          text: "One heater and a janitor who walked the pipes every four hours. The heater was a war model, orange, loud as a tractor. It heated the server room first, by my choice — the company dies with the machines, the people can wear gloves. Nobody argued. Cold makes meetings short and decisions honest.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:winter-99:rep-3",
+          text: "Improved in the telling, true in the bones. The parts: boiler died, city froze, building stood. The legend added: I carried fuel upstairs at night, alone, in the storm. There was a young man with me. He is a grandfather now and we do not tell the story with him in it because the story is better simple. Legends are edited for weight, not for lies. There is a difference.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:winter-99:rep-4",
+          text: "Downstairs, painted grey, cold since 2004, and it stays because it WORKED. Every new boiler man comes down, looks at it, and asks why it is still here. I say: it held in ninety-nine. That sentence ends the tour. Some machines earn a room for life. It held. That is the whole CV.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:winter-99:rep-5",
+          text: "He wrote it down in that flat way of his — 'single point of failure: one heater, one janitor, four-hour checks'. He is right and he missed the point. The point is not the risk. The point is that it held anyway, because people walked the route. You cannot put a walk in a runbook. You can only hope the next tired man loves the building.",
+          relationshipHint: "neutral",
+          tags: ["relationship:warm", "quest:marek-showed-the-log"],
+        },
+        {
+          id: "janusz:winter-99:rep-6",
+          text: "Longer, warmer, and softer. The new glass holds heat the old windows never dreamed of. But I will tell you what is worse now — everyone works from home when the cold comes. Ninety-nine had every desk full and every coat on. The building survived on people staying. These days the building would survive on nobody noticing. Progress. Something is lost. The coats were community.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "janusz:five-am",
+      label: "The five am start",
+      optionCandidates: [
+        { id: "janusz:five-am:opt-1", topicId: "janusz:five-am", text: "Is 5am really your start time?" },
+        { id: "janusz:five-am:opt-2", topicId: "janusz:five-am", text: "What is the building like at five?" },
+        { id: "janusz:five-am:opt-3", topicId: "janusz:five-am", text: "Does anything ever happen at five am?" },
+        { id: "janusz:five-am:opt-4", topicId: "janusz:five-am", text: "Pawel tried to match your schedule for a week." },
+        { id: "janusz:five-am:opt-5", topicId: "janusz:five-am", text: "Maciek claims he is also a five am person." },
+        { id: "janusz:five-am:opt-6", topicId: "janusz:five-am", text: "Why five and not six?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:five-am:rep-1",
+          text: "Five. The gate, the lights, the kettle in the closet. By six the building is warm and by seven it is ready to be used by people. A building does not wake up on its own. Somebody walks it into the day. I have walked this one into nine thousand days. You get to know its mornings.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:five-am:rep-2",
+          text: "Empty and honest. The night lights still on in the corner Marek likes. One window someone left open in summer. The plants by the glass wall catching the first grey. It is the only hour the building belongs to itself and to me. I am not lonely at five. I am early. There is a difference and the difference is the plants.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:five-am:rep-3",
+          text: "Once a season something happens. A pipe that announces itself. A window the wind found. A courier at the wrong door with the right van. Five am is when the building makes its small announcements, before the day can drown them out. Most mornings I hear nothing. The nothing is the announcement I prefer.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:five-am:rep-4",
+          text: "He lasted four days and slept in the beanbag on the fifth. Good try, honest fall. I made him tea that morning and told him: your hours are a rhythm, not a virtue. His best work starts at ten and it is good work. The building needs five am men and ten am men. The trick is knowing which one you are.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "janusz:five-am:rep-5",
+          text: "Maciek arrives at eight forty-five and calls it five because of his watch, which is set to a conference in another country. I let the claim stand. A man's watch is his own business. The building knows who walks it at five. The building does not gossip.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:five-am:rep-6",
+          text: "Six misses the pipes. At five there is still night in the walls and the trouble sounds different — a drip at five is a drip, a drip at six is already a puddle with a meeting. The hour is not discipline. The hour is listening. Five is when the building still talks quietly.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "janusz:steps",
+      label: "The step counter",
+      optionCandidates: [
+        { id: "janusz:steps:opt-1", topicId: "janusz:steps", text: "Renata says you do twenty thousand steps a day." },
+        { id: "janusz:steps:opt-2", topicId: "janusz:steps", text: "You wear a step counter? Modern of you." },
+        { id: "janusz:steps:opt-3", topicId: "janusz:steps", text: "Where do most of your steps happen?" },
+        { id: "janusz:steps:opt-4", topicId: "janusz:steps", text: "Dawid saw your step count and said nothing." },
+        { id: "janusz:steps:opt-5", topicId: "janusz:steps", text: "Did you ever hit zero steps? A day off?" },
+        { id: "janusz:steps:opt-6", topicId: "janusz:steps", text: "Do you compete with anyone on steps?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:steps:rep-1",
+          text: "Renata counts my steps the way she counts everything — better than I do. Twenty thousand on a good day, sixteen on a quiet one. The floor is two hundred meters end to end. Do the sums and you get a man who walks Warsaw twice a year without leaving the building. The building is my city and the rent is steps.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:steps:rep-2",
+          text: "Renata gave it to me three birthdays ago. It beeps when I sit too long, which is the counter's whole opinion and it is usually right. I did not want it. Now I check it. That is how the machines get you — one beep at a time, politely, until you and the beep are colleagues.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:steps:rep-3",
+          text: "The basement to the roof loop. Stairs, both directions, every day. The lift is for people and boxes and I am neither before noon. The stairs know my feet the way the floor knows the mop. Most of my steps are between a problem and its part, and the part is always in the basement. The basement is where I get my figure.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:steps:rep-4",
+          text: "He looked, nodded once, and said 'sustainable'. From Dawid that is a parade. The CEO walks the block at lunch, I walk the floors since morning. Neither of us calls it exercise. It is just the route the work takes. The counter only counts what the work already was.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:steps:rep-5",
+          text: "Once. Fever, four years back, and the building was fine without me — that was the harder lesson than the fever. Renata covered, Renata's way, which is a phone call and a notebook. The counter read forty steps, all to the kitchen and back. I rested. The building held. Both of us learned something and neither of us says what.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "janusz:steps:rep-6",
+          text: "The courier dog, Burek. Not a real contest — his legs are shorter and his heart is bigger. On his days here he does my numbers by noon and naps on the achievement. I have started scoring myself against the napping. If the dog rests satisfied, the floor is clean enough. That is the only leaderboard that matters in this building.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "janusz:seasons",
+      label: "The building's seasons",
+      optionCandidates: [
+        { id: "janusz:seasons:opt-1", topicId: "janusz:seasons", text: "Does the building change with the seasons?" },
+        { id: "janusz:seasons:opt-2", topicId: "janusz:seasons", text: "What is the building's worst season?" },
+        { id: "janusz:seasons:opt-3", topicId: "janusz:seasons", text: "Spring — what does the building do in spring?" },
+        { id: "janusz:seasons:opt-4", topicId: "janusz:seasons", text: "The autumn drafts by the old wall are back." },
+        { id: "janusz:seasons:opt-5", topicId: "janusz:seasons", text: "Which season do you like, Janusz?" },
+        { id: "janusz:seasons:opt-6", topicId: "janusz:seasons", text: "Summer — does the building struggle in heat?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:seasons:rep-1",
+          text: "Like an old man changes with weather — honestly, and in the joints. Winter the pipes talk, spring the walls dry and the paint lifts a hair, summer the glass wall expands its centimeter and autumn everything in between. I keep a calendar of it. Twenty years of the same complaints, on schedule. The building is the most reliable employee here.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:seasons:rep-2",
+          text: "The turn — February into March. Frozen, then not, then frozen again. The pipes cannot decide and neither can the heating. That is when I sleep lightest. A building in two minds needs a man with one. The rest of the year it mostly manages itself and I mostly listen.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:seasons:rep-3",
+          text: "Breathes. The windows open for the first time in six months and the building exhales a winter of held air. The plants get moved a meter toward the light. The outside stairs get their first wash. Spring is when I fix everything winter taught me about — on the building's schedule, not the budget's. The budget catches up in April.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:seasons:rep-4",
+          text: "They are. Left wall, third window, a gap the size of a coin that swells in October. I know it by the sound it makes near the plants. The seal man comes in November, fixes it, and by next October the coin is back. We have an arrangement, the gap and me. Some things you fix forever. Some you greet.",
+          relationshipHint: "annoyed",
+          tags: ["period:morning"],
+        },
+        {
+          id: "janusz:seasons:rep-5",
+          text: "September. The building is warm but the air is sharp, the windows open in the morning, the students come back and the coffee queue grows. The floor shines after the summer deep clean. September is the building at its best mood. Nobody notices. Noticing is my department.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:seasons:rep-6",
+          text: "The glass wall becomes a promise the sun takes seriously. Afternoons, the west side bakes and Marek's machines hum louder and the plants drink double. We had a heat plan since 2015 — blinds down by two, fans up by three, and the good ice for the coffee machine at four. The building does not struggle. The building negotiates. I hold the pen.",
+          relationshipHint: "pleased",
+          tags: ["period:afternoon"],
+        },
+      ],
+    },
+    {
+      id: "janusz:robot-apprentice",
+      label: "The robot apprentice",
+      optionCandidates: [
+        { id: "janusz:robot-apprentice:opt-1", topicId: "janusz:robot-apprentice", text: "You built Halina? The plant robot?" },
+        { id: "janusz:robot-apprentice:opt-2", topicId: "janusz:robot-apprentice", text: "Does Halina work or is she a mascot?" },
+        { id: "janusz:robot-apprentice:opt-3", topicId: "janusz:robot-apprentice", text: "Marek offered to upgrade Halina's brain." },
+        { id: "janusz:robot-apprentice:opt-4", topicId: "janusz:robot-apprentice", text: "Pawel asked to apprentice under you. For Halina?" },
+        { id: "janusz:robot-apprentice:opt-5", topicId: "janusz:robot-apprentice", text: "Halina missed a plant last week. Scandal?" },
+        { id: "janusz:robot-apprentice:opt-6", topicId: "janusz:robot-apprentice", text: "What is next for the robot fleet?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:robot-apprentice:rep-1",
+          text: "Built in the garage, one winter, from a scooter motor and stubbornness. The plants were getting twice-a-day water from me and hating it. Halina does once, measured, on a rail I greased every Sunday. The plants perked up in a month. The lesson cost me a winter: care is not more. Care is exact.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:robot-apprentice:rep-2",
+          text: "She works. Two hundred meters of rail, four stops, every morning at six twenty. The watering is boring and boring is what machines are for. I kept the interesting parts — noticing, pruning, judging. Halina carries the jug. I carry the opinion. Twenty years from now they will say a robot did my job. Let them. The robot has never once noticed a sad leaf.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:robot-apprentice:rep-3",
+          text: "He offered sensors, a schedule brain, remote eyes. I said no and he accepted, which is Marek's best quality — he asks again in a year, never the same week. Halina is dumb on purpose. A dumb machine cannot be updated into nonsense. Her one job is water and she has never missed a Monday. There are CEOs who cannot say that.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "janusz:robot-apprentice:rep-4",
+          text: "He asked for the rail, not the robot — wanted to see how a scooter became a gardener. We spent two Saturdays in the garage. He labeled everything, of course, the boy labels his labels. He left with grease under his nails and a respect for motors. That is the whole apprenticeship. Grease and respect. The robot came third.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm", "quest:pawel-apprentice"],
+        },
+        {
+          id: "janusz:robot-apprentice:rep-5",
+          text: "She did not miss. The plant moved. Klaudia rearranged the corner for light and did not tell the rail. I moved the stop back by a hand width and Halina found it the next morning. The robot is never wrong. The building around the robot is wrong, weekly, and I am the translator between them. That is management, in the end.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:robot-apprentice:rep-6",
+          text: "Nothing new. Two are enough — Halina waters, Seba patrols the doors at night and naps more than he admits. A third robot would need a third opinion about what matters, and I only have two. Machines should arrive slowly, like furniture, one at a time, each with one job and one name. The fleet stays at two until the building asks. The building has not asked.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "janusz:boiler-room",
+      label: "The boiler room",
+      optionCandidates: [
+        { id: "janusz:boiler-room:opt-1", topicId: "janusz:boiler-room", text: "Nobody goes to the boiler room but you." },
+        { id: "janusz:boiler-room:opt-2", topicId: "janusz:boiler-room", text: "What is down there besides the boiler?" },
+        { id: "janusz:boiler-room:opt-3", topicId: "janusz:boiler-room", text: "Marek wants to put servers in the boiler room." },
+        { id: "janusz:boiler-room:opt-4", topicId: "janusz:boiler-room", text: "The boiler room is warm in winter. Candidates noticed." },
+        { id: "janusz:boiler-room:opt-5", topicId: "janusz:boiler-room", text: "Ever found anything strange down there?" },
+        { id: "janusz:boiler-room:opt-6", topicId: "janusz:boiler-room", text: "What happens to the building when the boiler fails?" },
+      ],
+      replyCandidates: [
+        {
+          id: "janusz:boiler-room:rep-1",
+          text: "Good. It is not a room for visitors. It is the one place the building says what it really is — water, heat, pressure, no posters. Everything upstairs is the building dressed. Down there is the building thinking. I go down twice a day and I do not rush the visit.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "janusz:boiler-room:rep-2",
+          text: "The boiler, the pumps, the winter-99 heater that earned its retirement, shelves of parts by winter, and one chair. The chair is mine since before some of your salaries. Down there is also where the building keeps its spare honesty. Every pipe is labeled in my hand. The labels have outlived three handwriting changes in the office upstairs.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "janusz:boiler-room:rep-3",
+          text: "I told him no, and I was right, and he knew it by the second question. Heat, dust, and a boiler that hammers when it thinks — servers want the opposite of everything that room is. He took the no like an engineer: asked why, listened, nodded. The room stays what it is. Not every space needs a second career.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "janusz:boiler-room:rep-4",
+          text: "They have, and I chase them out gently. The warm is the boiler's work, not a lounge. One candidate fell asleep on the parts shelf in January and I let him sleep twenty minutes, because January, then walked him up. Renata asked where he was. I said: learning where the heat comes from. True and sufficient.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "janusz:boiler-room:rep-5",
+          text: "A tin box, 2011, with keys to doors this building does not have anymore. Doors from before the renovation, doors from the firm before the firm. I gave the box to Renata — keys are her country, not mine. The boiler room gave up its one ghost and went back to being honest. Pipes and pressure. No more surprises since. I check anyway.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "janusz:boiler-room:rep-6",
+          text: "Nothing dramatic. It fails like an old man, slowly, with symptoms I have a schedule for. The reserve heater comes out, the office wears coats, the meeting gets shorter. Cold is survivable. Cold with twenty years of notes is survivable politely. The boiler and I have an understanding: it warns me, and I never make it a surprise to anyone else.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
   ],
   taskOffers: [
     {

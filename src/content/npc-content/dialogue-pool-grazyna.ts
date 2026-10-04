@@ -1389,6 +1389,648 @@ export const GRAZYNA_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "grazyna:master-workbook",
+      label: "The master workbook",
+      optionCandidates: [
+        { id: "grazyna:master-workbook:opt-1", topicId: "grazyna:master-workbook", text: "What is in the master workbook, exactly?" },
+        { id: "grazyna:master-workbook:opt-2", topicId: "grazyna:master-workbook", text: "The workbook is one file. One. No backups?" },
+        { id: "grazyna:master-workbook:opt-3", topicId: "grazyna:master-workbook", text: "Zosia asked to see the master workbook." },
+        { id: "grazyna:master-workbook:opt-4", topicId: "grazyna:master-workbook", text: "Sheet forty-one is called 'do not'. Intentional?" },
+        { id: "grazyna:master-workbook:opt-5", topicId: "grazyna:master-workbook", text: "Pawel offered to migrate it to the cloud." },
+        { id: "grazyna:master-workbook:opt-6", topicId: "grazyna:master-workbook", text: "What happens to the workbook when you retire?" },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:master-workbook:rep-1",
+          text: "Ninety-one sheets. Every zloty this company has moved since 2015, every promise made to a supplier, and one sheet of candles for the market stall, which is none of the company's business and perfectly labeled. The workbook is not a file. It is the company's diary, written in columns, which is the only honest genre.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:master-workbook:rep-2",
+          text: "Two backups, on drives that have never touched the internet, in a drawer that has never flooded, in a building I have personally inspected for water risk. The cloud is someone else's drawer with a monthly fee. I have had a drawer for forty years and it has never once charged me for access during an outage.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "grazyna:master-workbook:rep-3",
+          text: "She saw sheet one, the cash summary, for eleven minutes, and left looking like a woman who had visited a shrine. The rest stays closed — not from secrecy, from mercy. Managers who see everything start managing everything, and the workbook works because it judges no one. Judgment is my job and I am salaried for it.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "grazyna:master-workbook:rep-4",
+          text: "It holds three line items from 2019 that I have not been able to explain to my own satisfaction. I document what I cannot prove and I do not delete what I do not understand. Every accountant has a 'do not' sheet. Most hide it. Mine is labeled, which is the entire difference between superstition and bookkeeping.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "grazyna:master-workbook:rep-5",
+          text: "He offered with such hope. I asked him one question: 'if the internet dies on the twenty-eighth, who tells the cleaners they are paid?' He looked at the floor, which is where the drives live, and understood. The boy learns. Not from courses — from questions with floors in them.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "grazyna:master-workbook:rep-6",
+          text: "There is a successor sheet, tabbed, labeled, with a cover note that says 'start at sheet one, do not start at the candles'. Retirement is a handover or it is an evacuation, and I refuse to evacuate a diary. Whoever inherits it will curse the columns for a year and then defend them like a language. Everyone does. The columns are fluent by year two.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "grazyna:overdue-invoices",
+      label: "The overdue invoices",
+      optionCandidates: [
+        { id: "grazyna:overdue-invoices:opt-1", topicId: "grazyna:overdue-invoices", text: "How overdue is the oldest invoice right now?" },
+        { id: "grazyna:overdue-invoices:opt-2", topicId: "grazyna:overdue-invoices", text: "Your reminder emails are polite. Suspiciously polite." },
+        { id: "grazyna:overdue-invoices:opt-3", topicId: "grazyna:overdue-invoices", text: "A client paid twice by mistake again." },
+        { id: "grazyna:overdue-invoices:opt-4", topicId: "grazyna:overdue-invoices", text: "Przemek promised the client would pay 'next week'." },
+        { id: "grazyna:overdue-invoices:opt-5", topicId: "grazyna:overdue-invoices", text: "Do you ever write off a debt?" },
+        { id: "grazyna:overdue-invoices:opt-6", topicId: "grazyna:overdue-invoices", text: "The 300-day invoice. Tell me it closed." },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:overdue-invoices:rep-1",
+          text: "Two hundred and sixty-one days, a company that renews with us every year and pays like the invoice is a rumor. The age is not the problem. The age is information — I know their cash cycle better than their own finance team by now. Patience is not softness. Patience is a ledger reading itself out loud.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:overdue-invoices:rep-2",
+          text: "Polite closes faster than sharp. Reminder one is warm, two is precise, three has the word 'schedule' in it, and four is written as if a lawyer dictated it slowly. The client never knows which reminder is the last one before the tone changes. Neither do I, until the moment. The politeness is a scale, and I own the scale.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:overdue-invoices:rep-3",
+          text: "It happens twice a year and each time it is the same dance: I return the money with a note that says what happened and why it is theirs. Six days later the SAME client sends the original amount again, correctly. The double payment is how some companies say thank you. I do not argue with the dialect. I document it and move on.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "grazyna:overdue-invoices:rep-4",
+          text: "He did, and 'next week' is now in its ninth consecutive week, which in sales units is apparently still next week. I have stopped notifying Przemek and started notifying the calendar. The calendar does not believe salesmen. The calendar just gets closer. Eventually next week IS this week, and I am always already sitting in it.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "grazyna:overdue-invoices:rep-5",
+          text: "Twice in twenty years, both times with a funeral involved. You write off a debt when collecting it costs more humanity than the number holds. The write-off is not weakness — it is the ledger admitting the world. I sign those personally, in ink, and I remember the names. The rest of the ledger forgives. I do the remembering.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "grazyna:overdue-invoices:rep-6",
+          text: "It closed at three hundred and eleven days, paid in full, with an apology letter from their new CFO who found it during an onboarding audit. I framed nothing. I filed everything. The apology letter is in the folder behind the invoice, in order, as history. The folder is complete. That is better than a frame. A frame ends a story. A folder keeps it for whoever asks next.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "grazyna:cake-accounting",
+      label: "The cake fund",
+      optionCandidates: [
+        { id: "grazyna:cake-accounting:opt-1", topicId: "grazyna:cake-accounting", text: "Is there really a formal cake fund?" },
+        { id: "grazyna:cake-accounting:opt-2", topicId: "grazyna:cake-accounting", text: "The cake fund is short again. Again." },
+        { id: "grazyna:cake-accounting:opt-3", topicId: "grazyna:cake-accounting", text: "Who decides which cake gets bought?" },
+        { id: "grazyna:cake-accounting:opt-4", topicId: "grazyna:cake-accounting", text: "Grazyna, do you ever eat the cake?" },
+        { id: "grazyna:cake-accounting:opt-5", topicId: "grazyna:cake-accounting", text: "Przemek expensed a cake to the cake fund." },
+        { id: "grazyna:cake-accounting:opt-6", topicId: "grazyna:cake-accounting", text: "Why does a cake fund need a ledger?" },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:cake-accounting:rep-1",
+          text: "There is. Five zloty a month, voluntary, collected in a tin that predates the company. Twelve years of birthday arithmetic in one tin. It has covered ninety-one cakes, two emergency cakes, and one cake that was apologized for. The tin has never once been late. Some institutions in this building run on invoices. The best one runs on five zloty and shame.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:cake-accounting:rep-2",
+          text: "It is short because four new hires have not been told about the tin, which is an onboarding failure I have now escalated to myself. The shortfall is eleven zloty. I cover it, annotated 'advance', and the tin repays me by March. The cake arrives on time regardless. Cakes do not wait for receivables. That is the fund's entire culture.",
+          relationshipHint: "neutral",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "grazyna:cake-accounting:rep-3",
+          text: "The birthday person's desk neighbors decide, by process of asking, and the budget decides the size. There is no committee. Committees ruin cake the way they ruin everything — slowly, with minutes. The system is: two neighbors, one budget line, one hour. It has worked for twelve years and survived three office moves. The tin moves with the office. Priority of transport.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "grazyna:cake-accounting:rep-4",
+          text: "The dry corner piece, with tea, standing, usually discussing the invoice while the others sing. I do not sit for songs. But I eat the corner, because the corner is what is left after fairness and somebody should eat what fairness leaves. That is also my job description, if you want it in one sentence.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "grazyna:cake-accounting:rep-5",
+          text: "He expensed a CLIENT cake to the birthday tin, which is the financial equivalent of using the collection plate as a coaster. The receipt was returned with two words: 'wrong tin'. He repaid it the same day, with interest, in the form of a second cake nobody had ordered. The tin has never been healthier. Sometimes a violation is a deposit.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "grazyna:cake-accounting:rep-6",
+          text: "Because a fund without a ledger is a rumor, and rumors about money end friendships. The cake ledger is one page, in the tin, updated in pen. Five zloty in, cake out, name, date. Twelve years on one page. When people ask what I actually do here, I show them that page. The whole job is: write down what happened, so nobody has to argue about it later.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "grazyna:euro-question",
+      label: "The euro question",
+      optionCandidates: [
+        { id: "grazyna:euro-question:opt-1", topicId: "grazyna:euro-question", text: "What happens to our invoices if we join the euro?" },
+        { id: "grazyna:euro-question:opt-2", topicId: "grazyna:euro-question", text: "Would the euro be good for the candle business?" },
+        { id: "grazyna:euro-question:opt-3", topicId: "grazyna:euro-question", text: "Zosia says the euro is a communications topic." },
+        { id: "grazyna:euro-question:opt-4", topicId: "grazyna:euro-question", text: "Your spreadsheets are currency-proof, right?" },
+        { id: "grazyna:euro-question:opt-5", topicId: "grazyna:euro-question", text: "Maciek priced a deal in euros already." },
+        { id: "grazyna:euro-question:opt-6", topicId: "grazyna:euro-question", text: "Do you remember the last currency change?" },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:euro-question:rep-1",
+          text: "Nothing dramatic. The numbers keep their relationships; only the names change. Every price in the workbook has a currency column since 2016, because clients drift in and out of euros like weather. The day the country joins, I press one button, check two hundred rows by hand anyway, and sleep well. Preparation is boring. So is a bridge that holds.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:euro-question:rep-2",
+          text: "The stall prices round up. Germans pay without counting, which is a kind of economy I respect and do not practice. Candles are an impulse in any currency — nobody has ever needed a candle at a specific exchange rate. The euro would change the ledger, not the wax. Wax is eternal. The rest is accounting.",
+          relationshipHint: "neutral",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "grazyna:euro-question:rep-3",
+          text: "Everything is a communications topic to Zosia, including gravity. But she is right this once — a currency change is ten percent arithmetic and ninety percent people being frightened at copy machines. I will handle the ten percent in a weekend. The ninety percent needs her blazer, her voice, and a week of cake in the kitchen. Division of labor.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "grazyna:euro-question:rep-4",
+          text: "Every formula keys off the currency column. The workbooks have been bilingual since a client from Brno made me humble in 2017. Currency-proof is not a feature you add in a crisis. It is a habit you keep for years out of suspicion. Suspicion has saved this company more money than any deal ever brought in.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:euro-question:rep-5",
+          text: "He did, at a rate he invented in the taxi. The invoice went out with a euro figure that was off by our whole coffee budget. I corrected it silently and deducted nothing from his confidence, which would have been theft. The deal closed anyway. The client never knew. The workbook knew. The workbook always knows and never tells.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "grazyna:euro-question:rep-6",
+          text: "The denary to zloty, 1995. My mother kept both in a sugar tin for a year, just in case history changed its mind. History did not. But I learned the truth of currency: it is collective belief with a serial number. The euro, the zloty, candles at a market stall — all of it runs on people agreeing. My job is being the one person who checks the agreement against the paper.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "grazyna:round-numbers",
+      label: "The round number rule",
+      optionCandidates: [
+        { id: "grazyna:round-numbers:opt-1", topicId: "grazyna:round-numbers", text: "Why do you reject every round-number receipt?" },
+        { id: "grazyna:round-numbers:opt-2", topicId: "grazyna:round-numbers", text: "One receipt was 247.83. You approved it instantly." },
+        { id: "grazyna:round-numbers:opt-3", topicId: "grazyna:round-numbers", text: "Przemek submits only round numbers. On purpose?" },
+        { id: "grazyna:round-numbers:opt-4", topicId: "grazyna:round-numbers", text: "Is the round number rule a superstition?" },
+        { id: "grazyna:round-numbers:opt-5", topicId: "grazyna:round-numbers", text: "A client invoiced us a perfect thousand. React?" },
+        { id: "grazyna:round-numbers:opt-6", topicId: "grazyna:round-numbers", text: "Where did the rule come from?" },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:round-numbers:rep-1",
+          text: "Because life does not come in round numbers. A real taxi is 43.70. A real lunch is 61.15. A receipt that says 200.00 is a story someone rounded before I could check it. I do not accuse. I ask for the itemized version, and the itemized version always has a .37 in it somewhere. Honesty has decimals. Always has.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:round-numbers:rep-2",
+          text: "247.83 is a receipt with a pulse — someone actually paid it. Approved in eleven seconds and I flagged the vendor as trustworthy, which in my ledger is a promotion. Vendors do not know they are being graded. Every receipt is an exam and most fail on vibes alone. That one had vibes AND arithmetic.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "grazyna:round-numbers:rep-3",
+          text: "On purpose, and we have an arrangement now: he submits 90.00, I return it with a note asking for the actual figure, and he resubmits 87.50. Two emails, every month, for nine years. The dance is not about the money. The dance is how he proves he submitted something real underneath. I could stop the dance. The dance is the audit.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "grazyna:round-numbers:rep-4",
+          text: "It is statistics wearing a superstition costume. Fraud is lazy and laziness rounds. The rule catches nothing on its own — it just decides WHERE I look first. A good auditor is not a machine. A good auditor is a woman with limited hours and a ranked list of suspicions. Round numbers top the list. They have for forty years. The list stays undefeated.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:round-numbers:rep-5",
+          text: "I paid it. Client invoices are their confession, not mine — if they bill a thousand flat, that is their culture and my discount. My rule governs what LEAVES this company, not what enters. Money arriving in round numbers is a gift. Money leaving in round numbers is a question. The asymmetry is the whole craft.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "grazyna:round-numbers:rep-6",
+          text: "1988. A warehouse I will not name, a manager who expensed exactly 500 every single month for 'fuel', for a car I had never seen. I asked to see the car. There was no car. There has not been a car since 1988 and I have not trusted a round number since. The rule is not about numbers. The rule is about cars that do not exist.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "grazyna:bank-lunch",
+      label: "The bank lunch",
+      optionCandidates: [
+        { id: "grazyna:bank-lunch:opt-1", topicId: "grazyna:bank-lunch", text: "You vanish at 11:30 daily. Where to?" },
+        { id: "grazyna:bank-lunch:opt-2", topicId: "grazyna:bank-lunch", text: "Why a physical bank in the digital age?" },
+        { id: "grazyna:bank-lunch:opt-3", topicId: "grazyna:bank-lunch", text: "The tellers know your order. Confirmed?" },
+        { id: "grazyna:bank-lunch:opt-4", topicId: "grazyna:bank-lunch", text: "Zosia scheduled a call at 11:30. Bold." },
+        { id: "grazyna:bank-lunch:opt-5", topicId: "grazyna:bank-lunch", text: "Is it true you walk the same route every day?" },
+        { id: "grazyna:bank-lunch:opt-6", topicId: "grazyna:bank-lunch", text: "The bank branch might close. Feelings?" },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:bank-lunch:rep-1",
+          text: "The bank, then soup, in that order, at that hour, because the bank empties at 11:30 and the soup line forms at 12:00. The gap is my office away from the office. Deposits, documents, one conversation with a human who knows my account without a screen. Then soup. The schedule has survived four directors and one flood. It will survive you.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:bank-lunch:rep-2",
+          text: "Because when something breaks at 16:50 on the last day of the quarter, the app shows me a queue and the branch shows me a person. I have watched two companies lose a week to an app update. The branch is my backup drive. You do not mock a woman's backup drive. You envy it quietly, like everyone else.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "grazyna:bank-lunch:rep-3",
+          text: "Confirmed, and it is not an order, it is a summary. Tea, no sugar, and the room's temperature discussed in one sentence. Fifteen years of Tuesdays. The tellers have watched my signature age like a tree. When Kasia interviews candidates, she does not mention that part of the company culture. The bank tellers are our best reference check.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "grazyna:bank-lunch:rep-4",
+          text: "She did, once, in 2019. The call happened without me and produced a decision she reversed the next morning. My 11:30 has outlived every meeting that ever challenged it. She knows the route now — books around it, like tide. A manager who respects the bank walk is a manager whose budgets clear on time. These things are connected. Nothing here is unconnected.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "grazyna:bank-lunch:rep-5",
+          text: "Same route, twenty years. Past the cobbler, through the small square, past the bench where a man has fed pigeons since before some of these pigeons were born. The route is not ritual for its own sake. It is reconnaissance — I know every shop that opened, every shop that died. The street is a ledger and I read it daily. It has never once needed a reminder email.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:bank-lunch:rep-6",
+          text: "The branch closes, the people move two streets over, and I follow, because I bank with PEOPLE who happen to have a building. The building is furniture. The soup schedule adjusts by four minutes. But I will say this — the day they close that branch, the square loses its last reason to be busy, and streets like that do not come back.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "grazyna:forecasting",
+      label: "The forecasting",
+      optionCandidates: [
+        { id: "grazyna:forecasting:opt-1", topicId: "grazyna:forecasting", text: "Your forecast is always lower than Maciek's." },
+        { id: "grazyna:forecasting:opt-2", topicId: "grazyna:forecasting", text: "How accurate are your forecasts, honestly?" },
+        { id: "grazyna:forecasting:opt-3", topicId: "grazyna:forecasting", text: "What breaks your forecast every time?" },
+        { id: "grazyna:forecasting:opt-4", topicId: "grazyna:forecasting", text: "Zosia wants a forecast the team can see." },
+        { id: "grazyna:forecasting:opt-5", topicId: "grazyna:forecasting", text: "Dawid reads your forecast before the board deck." },
+        { id: "grazyna:forecasting:opt-6", topicId: "grazyna:forecasting", text: "Teach me to forecast in one lesson." },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:forecasting:rep-1",
+          text: "His forecast is a wish in a suit. Mine is the wish minus weather, holidays, one client's moods, and the printer. The gap between our numbers is not disagreement — it is the price of optimism, itemized. When our lines meet, it means either excellent news or excellent lying, and I check which before I congratulate anyone.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:forecasting:rep-2",
+          text: "Within five percent on the quarter, within two on the year, and embarrassingly exact on the parts nobody cares about — stationery, drains, the candles. Precision on big numbers is luck. Precision on small numbers is discipline. I publish the big ones with a margin and the small ones with a threat. The threats keep everyone honest and the margins keep me employed.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "grazyna:forecasting:rep-3",
+          text: "August. Every year. Half the country is at the sea, the clients slow-reply, and one deal always slips into September wearing August's clothes. I have built the August dip into the model since 2018 and I still get a call every August asking why revenue is 'suddenly' seasonal. The sea, Zosia. The sea is suddenly seasonal. It is seasonal every year. That is what seasonal means.",
+          relationshipHint: "annoyed",
+          tags: ["period:afternoon"],
+        },
+        {
+          id: "grazyna:forecasting:rep-4",
+          text: "She can have the shape, not the cells. A visible forecast becomes a promise, and a promise becomes a hostage situation when the printer dies in March. I will publish the curve and the confidence, which is honest, and withhold the decimal, which is mercy. Teams need direction, not digits. Digits are for the two of us and our private war.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "grazyna:forecasting:rep-5",
+          text: "He does, and he has never once asked me to raise it. That is the whole relationship. The board deck is where everyone's hopes go dressed as numbers; my forecast is where the numbers go undressed. He reads mine to know what is actually true, then walks upstairs and governs accordingly.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "grazyna:forecasting:rep-6",
+          text: "One lesson: count what already happened, then subtract what could still not happen. Most people forecast by adding hopes to the present. You forecast by subtracting risks from it. The present is the only fact you own. Everything else is a rumor about the future, and I do not book rumors. Start there. The method fits on a napkin. The discipline takes twenty years.",
+          relationshipHint: "pleased",
+          tags: ["quest:grazyna-showed-the-books"],
+        },
+      ],
+    },
+    {
+      id: "grazyna:stapler-famine",
+      label: "The stapler famine",
+      optionCandidates: [
+        { id: "grazyna:stapler-famine:opt-1", topicId: "grazyna:stapler-famine", text: "There are no working staplers on this floor." },
+        { id: "grazyna:stapler-famine:opt-2", topicId: "grazyna:stapler-famine", text: "You keep the good stapler in your desk. Admit it." },
+        { id: "grazyna:stapler-famine:opt-3", topicId: "grazyna:stapler-famine", text: "The stapler order was denied. Why?" },
+        { id: "grazyna:stapler-famine:opt-4", topicId: "grazyna:stapler-famine", text: "Janusz repairs staplers? Since when?" },
+        { id: "grazyna:stapler-famine:opt-5", topicId: "grazyna:stapler-famine", text: "Tomek stapled a cable to his desk. Related?" },
+        { id: "grazyna:stapler-famine:opt-6", topicId: "grazyna:stapler-famine", text: "How does a stapler famine even start?" },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:stapler-famine:rep-1",
+          text: "There are three, and their locations are known to me alone. This is not hoarding — it is distribution without a distribution system, which is what happens when nobody wants to own logistics until they need a stapler. Ask, and you will be stapling within the minute. Search, and you will learn why I control the map.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:stapler-famine:rep-2",
+          text: "I keep THE stapler, the 1989 one, metal, which has outlived four companies and one marriage. It does not live in my desk. It lives in its case, because things that work deserve cases. You may borrow it, supervised, and return it to the case. This is not a joke. The stapler has outlived better jokes.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "grazyna:stapler-famine:rep-3",
+          text: "Denied because the request was for eleven staplers at a price that assumed gold-plated hinges. I counter-offered three good ones, which covers the actual usage rate I have watched for six years. The order was not denied. The order was rounded down to reality. My whole job is rounding things down to reality.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "grazyna:stapler-famine:rep-4",
+          text: "Since forever. A stapler is a spring, a jaw, and pride. He fixed the 2014 one in nine minutes and now fixes all of them in a batch every February. The repair bench is in his closet, next to the chair hospital. This building's office equipment has better healthcare than most companies' employees, and that is a sentence I choose to stand behind.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "grazyna:stapler-famine:rep-5",
+          text: "Related, and he paid for the desk, not the stapler — the stapler was returned to the famine with a bent jaw and a story. I put the story in the file. The file now says 'staplers: structural role in engineering morale'. Twenty years of accounting and the strangest asset I track is still the truth. It fits in no column. It goes in the file anyway.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "grazyna:stapler-famine:rep-6",
+          text: "Slowly. One stapler breaks and is not replaced because the order is 'pending'. The second one migrates to someone's home desk. The third becomes ceremonial. Within a quarter, a floor of adults is asking the accountant for stapling, which is how I end up knowing everything about everyone's paperwork. The famine is not a shortage of staplers.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "grazyna:shortcut-scripture",
+      label: "The shortcut scripture",
+      optionCandidates: [
+        { id: "grazyna:shortcut-scripture:opt-1", topicId: "grazyna:shortcut-scripture", text: "You do everything with keyboard shortcuts?" },
+        { id: "grazyna:shortcut-scripture:opt-2", topicId: "grazyna:shortcut-scripture", text: "Pawel saw your hands move and gasped." },
+        { id: "grazyna:shortcut-scripture:opt-3", topicId: "grazyna:shortcut-scripture", text: "Is the mouse really that slow?" },
+        { id: "grazyna:shortcut-scripture:opt-4", topicId: "grazyna:shortcut-scripture", text: "You have a laminated shortcut card. Of course you do." },
+        { id: "grazyna:shortcut-scripture:opt-5", topicId: "grazyna:shortcut-scripture", text: "Maciek calls your shortcuts 'legacy skills'." },
+        { id: "grazyna:shortcut-scripture:opt-6", topicId: "grazyna:shortcut-scripture", text: "Which shortcut is your favorite?" },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:shortcut-scripture:rep-1",
+          text: "The keyboard was finished in 1985 and nothing since has improved it. Every trip to the mouse is a small death of attention. My hands do not leave home row and the work does not leave the screen. Speed is not the point. Continuity is. A thought survives a shortcut. A thought does not always survive a mouse hunt.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:shortcut-scripture:rep-2",
+          text: "He did, and then he asked me to slow down so he could write the sequence down. I did not slow down. I made him a card instead — he has it laminated, which is his own religion catching up to mine. The boy learns by gasping first and asking second. It is not a bad method. It is exactly how I learned, from a woman named Halina, in 1989. Different Halina. Same energy.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "period:morning"],
+        },
+        {
+          id: "grazyna:shortcut-scripture:rep-3",
+          text: "Slow is the wrong word. The mouse is a detour that believes it is a route. Every menu click is a question you ask the screen that the keyboard already knew the answer to. Keep the mouse for the internet, where wandering is the point. The ledger is not the internet. The ledger is a place where wandering is a finding.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "grazyna:shortcut-scripture:rep-4",
+          text: "Laminated, dated 2003, updated twice, and it hangs to the left of the monitor like a saint's picture. The card has survived three monitors and one coffee that I will not discuss. Lamination is how you tell the office which knowledge is permanent. The boy Pawel inherited the habit from me, which makes the card an heirloom in the making.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:shortcut-scripture:rep-5",
+          text: "Legacy skills built this workbook, and the workbook pays for his glass wall. He can call the shortcuts what he likes from his standing desk. When his machine froze mid-demo last spring, whose hands saved the file in four seconds flat? The legacy's. The legacy is the fire escape. You mock the fire escape until the fire.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "grazyna:shortcut-scripture:rep-6",
+          text: "The one nobody teaches: transpose, then paste-special, then transpose back — three moves that turn any sideways mess into sense. I have watched juniors rebuild an entire table by hand what that sequence fixes in two seconds. The shortcuts I love are not the fast ones. They are the ones that make a problem smaller. Speed is showmanship. Smallness is the craft.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "grazyna:winter-market",
+      label: "The winter market stall",
+      optionCandidates: [
+        { id: "grazyna:winter-market:opt-1", topicId: "grazyna:winter-market", text: "The candle stall at the market — that is you?" },
+        { id: "grazyna:winter-market:opt-2", topicId: "grazyna:winter-market", text: "How did the market stall start?" },
+        { id: "grazyna:winter-market:opt-3", topicId: "grazyna:winter-market", text: "The stall sold out by noon last December." },
+        { id: "grazyna:winter-market:opt-4", topicId: "grazyna:winter-market", text: "Klaudia wants to film the stall for content." },
+        { id: "grazyna:winter-market:opt-5", topicId: "grazyna:winter-market", text: "Zosia calls the stall 'your other startup'." },
+        { id: "grazyna:winter-market:opt-6", topicId: "grazyna:winter-market", text: "Who staffs the stall when you cannot?" },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:winter-market:rep-1",
+          text: "Corner pitch, red awning, the good tablecloth. The candles are mine, the arithmetic is mine, and the cashbox is a biscuit tin with a lock Janusz drilled for me in 2019. The market is where the company's accountant is just a woman selling fire in jars. I recommend the experience to everyone with a ledger and a hobby.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "grazyna:winter-market:rep-2",
+          text: "A hobby with receipts. I made candles for gifts, the gifts generated requests, and the requests generated a stall — the exact lifecycle of every business in history, compressed. The first year I tracked profit in my head. The second year the head was not enough. There is a workbook. There is always a workbook. The candle workbook is sheet forty-one and nobody looks at it.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "grazyna:winter-market:rep-3",
+          text: "Sold out, and I had priced for inventory, not for glory. The lesson cost me a January of lost revenue and taught me the whole rule: scarcity is not a strategy, it is a failure to forecast demand, even when the demand is for ozone-scented wax. This year the count doubles. The forecast is mine. The forecast is always mine.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "grazyna:winter-market:rep-4",
+          text: "She asked, and I said one condition: the ledger stays out of frame. She filmed the wax, the awning, the queue, and the BISCUIT TIN, which performed better than the candles. Two strangers asked where to buy the tin. The tin is not for sale. The tin is load-bearing. But the video brought forty new customers, so the tin and I have agreed to a career in cameos.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "grazyna:winter-market:rep-5",
+          text: "It is not a startup. A startup burns money to find out what it is. The stall knows exactly what it is — twelve square meters of December with a margin I can recite. If she wants to call it a startup because that word gets the good coffee, fine. The stall answers to a higher authority: the workbook. The workbook says it is profitable and humble. Both are rarer than buzzwords.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:winter-market:rep-6",
+          text: "Renata, one Saturday a season, and she sells BETTER than me — remembers names, wraps in paper, hands children the free tealight with two hands like a ceremony. I sit on the crate doing the book and watch a receptionist outsell a professional. It is humbling in the way only true things are. The tin agrees. The tin counts faster when she works.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "grazyna:depreciation",
+      label: "The depreciation philosophy",
+      optionCandidates: [
+        { id: "grazyna:depreciation:opt-1", topicId: "grazyna:depreciation", text: "You depreciate everything. Even the printer?" },
+        { id: "grazyna:depreciation:opt-2", topicId: "grazyna:depreciation", text: "What is the depreciation schedule on the chairs?" },
+        { id: "grazyna:depreciation:opt-3", topicId: "grazyna:depreciation", text: "Does anything in this office appreciate?" },
+        { id: "grazyna:depreciation:opt-4", topicId: "grazyna:depreciation", text: "Tomek says code does not depreciate, it rots." },
+        { id: "grazyna:depreciation:opt-5", topicId: "grazyna:depreciation", text: "Do you depreciate people? Professionally speaking." },
+        { id: "grazyna:depreciation:opt-6", topicId: "grazyna:depreciation", text: "The candles — do they depreciate in the workbook?" },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:depreciation:rep-1",
+          text: "The printer is on a seven-year schedule and has outlived it by four, which makes it a depreciation success story and a maintenance nightmare. The books say it is worth almost nothing. The books are wrong about the printer the way they are wrong about every veteran — the numbers describe the cost, never the loyalty. Both truths live on the same sheet. That is bookkeeping.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:depreciation:rep-2",
+          text: "Five years, straight line, and the schedule is optimistic by two — the chairs die at year three from swivel fatigue and meetings. The schedule is not a prediction, it is a budget with a memory. When a chair dies early I do not blame the chair. I update the schedule and buy the sturdier model. The schedule learns. Slowly, like everyone in this building.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "grazyna:depreciation:rep-3",
+          text: "Three things. The Batman sign, which a client once valued at a contract renewal — Dawid keeps no books on it, correctly. The recipe archive, which is knowledge and appreciates by use. And the relationship with the bank, which is twenty years of never surprising them. Appreciation is just depreciation you have been kind to. The ledger holds both in the same hand.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "grazyna:depreciation:rep-4",
+          text: "Tomek is right and his word is better than mine. Code does not lose value smoothly — it holds, then drops off a cliff the day the framework dies. I would call that step depreciation, and step depreciation is the most expensive kind. He manages the cliff. I record it. Between the two of us, the company never mistakes a plateau for a future.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "grazyna:depreciation:rep-5",
+          text: "No, and here is the accountant's heresy: people appreciate, if you maintain them. Training is a capital expense, not a cost — Kasia knows it, budgets for it, and I defend the line every year against people who want it cut. A depreciating workforce is a company eating its own furniture. I have seen it from the outside, through a window, at a company I will not name.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "grazyna:depreciation:rep-6",
+          text: "The candles appreciate until December and depreciate by February, which makes them a seasonal asset, the most honest class there is. Wax holds its value; scent does not. The workbook gives them a one-year life and a valuation of cost plus pride. The pride column is unaudited and strictly mine. Every ledger should have one column the auditor cannot touch. One. Only one.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+      ],
+    },
+    {
+      id: "grazyna:shredder",
+      label: "The shredder",
+      optionCandidates: [
+        { id: "grazyna:shredder:opt-1", topicId: "grazyna:shredder", text: "The shredder runs every evening at five. Ritual?" },
+        { id: "grazyna:shredder:opt-2", topicId: "grazyna:shredder", text: "Pawel fed it a staple-filled document. Casualties?" },
+        { id: "grazyna:shredder:opt-3", topicId: "grazyna:shredder", text: "What actually gets shredded?" },
+        { id: "grazyna:shredder:opt-4", topicId: "grazyna:shredder", text: "The shredder is older than half the staff." },
+        { id: "grazyna:shredder:opt-5", topicId: "grazyna:shredder", text: "Kasia asks what the shredding schedule is. Why?" },
+        { id: "grazyna:shredder:opt-6", topicId: "grazyna:shredder", text: "Ever shredded something you regretted?" },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:shredder:rep-1",
+          text: "Five o'clock, ten minutes, everything accumulated that day that belongs to no archive. The shredder is how the office forgets safely. Paper that should not exist must not linger overnight — lingering is how drawers fill with future questions. Ten minutes a day and the company sleeps without paper dreams. It is the most restful part of my job.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:shredder:rep-2",
+          text: "One jam, forty minutes of my life, and a lesson the whole floor heard through the door — not shouting, just the lesson, in the tone I save for machines. The staples survived. The boy survived. The shredder now has a sign I did not make: 'NO STAPLES — GRAZYNA IS WATCHING'. I did not make the sign. I permit the sign. The sign works better than any policy.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "grazyna:shredder:rep-3",
+          text: "Drafts with numbers that were never true, misprints with names that were misspelled, and any page that shows what we almost did. The shredder is the company's second chance department. Nothing shredded is a secret — it is a DRAFT. People confuse the two and get dramatic. Drafts burn. Records stay. The archive decides which is which, and the archive is me.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "grazyna:shredder:rep-4",
+          text: "It predates me by one year, which makes it my senior in this office and I treat it accordingly. Serviced every March by the same man since 2008. It has eaten the financial history of this company one draft at a time and never once jammed on honest paper. Respect is not sentiment. Respect is maintenance schedules. The shredder has one and keeps it.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "grazyna:shredder:rep-5",
+          text: "Because Kasia understands something most people miss: retention schedules and shredding schedules are the same document read in two directions. HR keeps what the law requires for exactly as long as the law requires. My shredder is her policy's executor. We meet quarterly, compare calendars, and the company stays clean on both ends. The most compliant friendship in the building.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "grazyna:shredder:rep-6",
+          text: "One page, 2015, a pricing draft with a joke in the margin that was funnier than the pricing. Gone. I have rebuilt that joke from memory twice at the market stall and it dies in the retelling. The lesson: shred the numbers, keep the margin. Since then, any document with a good margin note gets the note copied out first. The shredder takes the paper.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "grazyna:laminator",
+      label: "The laminator",
+      optionCandidates: [
+        { id: "grazyna:laminator:opt-1", topicId: "grazyna:laminator", text: "Why does accounting own the office laminator?" },
+        { id: "grazyna:laminator:opt-2", topicId: "grazyna:laminator", text: "The laminator queue has a sign-up sheet now." },
+        { id: "grazyna:laminator:opt-3", topicId: "grazyna:laminator", text: "Pawel laminated his whole cheat sheet. Your influence?" },
+        { id: "grazyna:laminator:opt-4", topicId: "grazyna:laminator", text: "What was the first thing you ever laminated?" },
+        { id: "grazyna:laminator:opt-5", topicId: "grazyna:laminator", text: "The laminator jammed during quarter close. Drama?" },
+        { id: "grazyna:laminator:opt-6", topicId: "grazyna:laminator", text: "Is lamination just accounting superstition?" },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:laminator:rep-1",
+          text: "Because I bought it, in 2009, with petty cash that was legitimately petty. Ownership follows purchase in this office — ask the kettle people, they learned it the hard way. The laminator serves the whole floor, but the drawer it lives in is mine, and so is the schedule. Shared tools with no owner die of politeness. This one has an owner and a queue. It will outlive us all.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:laminator:rep-2",
+          text: "There is, and it is honored, which restored my faith in this floor's ability to self-govern. Fifteen-minute slots, one sheet minimum, no wedding invitations — the last rule was added after 2019 and I will not elaborate. The sheet is laminated too, obviously. A queue for a laminator, laminated. At some point the recursion becomes culture. We are at that point.",
+          relationshipHint: "delighted",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "grazyna:laminator:rep-3",
+          text: "Direct influence and I accept the credit. The boy laminated his shortcut sheet, then his style guide, and now advises others on sleeve selection. Lamination is not about plastic. It is about declaring which knowledge is permanent in a building where everything is renamed quarterly. I taught one intern to laminate. The intern taught a floor.",
+          relationshipHint: "pleased",
+          tags: ["relationship:warm", "period:afternoon"],
+        },
+        {
+          id: "grazyna:laminator:rep-4",
+          text: "A price list from my first job, 1990, which the owner kept re-printing weekly because the sun faded it. I laminated one copy and it outlasted the shop, the owner, and the street it stood on. That is the whole sermon in one object: decide what is true, write it down, protect it from weather. The laminator is just the sacrament. The belief comes first.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "grazyna:laminator:rep-5",
+          text: "It jammed at 17:40 on the last day of close, with the summary sheet half-in, and I fixed it myself in silence while Zosia watched from the doorway like a woman at an airport. The sheet survived. The summary shipped. The laminator got serviced that weekend and has behaved since, because it knows. Machines know. The ones that are maintained know twice as well.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "grazyna:laminator:rep-6",
+          text: "Superstition is belief without evidence. Lamination is belief WITH evidence — every laminated thing in this office has outlasted its unlaminated twin. That is not faith, that is a controlled study running for fifteen years with consistent results. The control group keeps fading. The treatment group keeps teaching. I simply published the findings on card stock and sealed them.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
+    {
+      id: "grazyna:tea-ritual",
+      label: "The three o'clock tea",
+      optionCandidates: [
+        { id: "grazyna:tea-ritual:opt-1", topicId: "grazyna:tea-ritual", text: "Your 15:00 tea is office legend. Details?" },
+        { id: "grazyna:tea-ritual:opt-2", topicId: "grazyna:tea-ritual", text: "The kitchen knows not to book meetings at three." },
+        { id: "grazyna:tea-ritual:opt-3", topicId: "grazyna:tea-ritual", text: "Which tea is it? It smells like a forest." },
+        { id: "grazyna:tea-ritual:opt-4", topicId: "grazyna:tea-ritual", text: "Renata joins you sometimes. Officially?" },
+        { id: "grazyna:tea-ritual:opt-5", topicId: "grazyna:tea-ritual", text: "Has the tea ritual ever been late?" },
+        { id: "grazyna:tea-ritual:opt-6", topicId: "grazyna:tea-ritual", text: "Zosia wants the ritual in the culture deck." },
+      ],
+      replyCandidates: [
+        {
+          id: "grazyna:tea-ritual:rep-1",
+          text: "Kettle at 14:58, steep for four minutes, first sip at 15:03, standing, at the kitchen window, watching the parking lot become honest in the afternoon light. Ten minutes. No phone, no ledger, no speech. The tea is the only appointment I keep that has never once asked me for a number.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "grazyna:tea-ritual:rep-2",
+          text: "The kitchen knows, the calendar knows, and once a sales visit learned it the hard way — booked at three, waited eleven minutes, and closed the deal anyway, so the lesson did not take. The ritual is not a privilege. It is maintenance. Everyone in this building gets theirs in some form; mine is scheduled where others' are improvised.",
+          relationshipHint: "neutral",
+          tags: ["period:afternoon"],
+        },
+        {
+          id: "grazyna:tea-ritual:rep-3",
+          text: "Black, with a spoon of something pine-related that Janusz brings me every autumn from who knows where. I have never asked. The tea is the one line item in my life without a receipt and I intend to keep it that way. Some things must remain unaudited or the audit eats the person doing it.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "grazyna:tea-ritual:rep-4",
+          text: "Thursdays, standing, two cups, and the conversation covers nothing that appears in either of our inboxes. We have never once discussed work at tea and we have solved more this way than any committee this floor has produced. The tradition is three years old and has no name. Things with names get meetings. This stays nameless and therefore immortal.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "grazyna:tea-ritual:rep-5",
+          text: "Once, the audit of 2022, and the tea was late by forty minutes, cold, and drunk standing in a stairwell. The audit found nothing anyway. Draw your own conclusions about whether the ritual is a luxury. I have drawn mine: a rested accountant finds things a tired one misses. The tea is not a break FROM the work. The tea is part of the control system.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "grazyna:tea-ritual:rep-6",
+          text: "Then it stops working. The deck will make it a policy, the policy will get a slot name, and the slot name will get invitations, and by spring I will be attending my own tea with three other people and an agenda. Some culture must remain undocumented to stay alive. Tell her the tea is 'an accounting control'.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+      ],
+    },
   ],
   taskOffers: [
     {

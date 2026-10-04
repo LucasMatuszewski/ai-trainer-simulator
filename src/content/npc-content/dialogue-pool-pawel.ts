@@ -1383,6 +1383,644 @@ export const PAWEL_DIALOGUE_POOL: NpcDialoguePool = {
         },
       ],
     },
+    {
+      id: "pawel:certifications",
+      label: "The certification hunt",
+      optionCandidates: [
+        { id: "pawel:certifications:opt-1", topicId: "pawel:certifications", text: "Another certificate, Pawel? That is five this month." },
+        { id: "pawel:certifications:opt-2", topicId: "pawel:certifications", text: "Do these courses actually teach anything?" },
+        { id: "pawel:certifications:opt-3", topicId: "pawel:certifications", text: "You finished a forty hour course in a weekend." },
+        { id: "pawel:certifications:opt-4", topicId: "pawel:certifications", text: "Where do you keep all the certificates?" },
+        { id: "pawel:certifications:opt-5", topicId: "pawel:certifications", text: "Marek saw your certificate wall." },
+        { id: "pawel:certifications:opt-6", topicId: "pawel:certifications", text: "Should I start collecting certificates too?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:certifications:rep-1",
+          text: "Five! Well, four and a half — the networking one crashed at ninety-eight percent and I refuse to retake it out of respect for our history. Each one has a PDF, a badge, and a small ceremony I hold alone at my desk. You are welcome to attend the next one. There is no cake yet. There will be.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:certifications:rep-2",
+          text: "They teach you the vocabulary, which is honestly the hard part. Before the cloud course I thought 'region' meant where the office was. Now I know it means where my mistakes live when they are not here. That is education. The certificate is just the receipt.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:certifications:rep-3",
+          text: "Forty hours is a suggestion for people who sleep normally. I watched it at two-x with a notebook and a fever of purpose. Some parts I watched twice because the narrator blinked. I do not recommend my method. I recommend my result, which is a PDF.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:certifications:rep-4",
+          text: "A folder called 'proof', backed up in three places, because what is the point of a certificate if it can be lost? The folder structure is: year, subject, and one folder called 'someday' that contains a certificate in project management I have not earned emotionally.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:certifications:rep-5",
+          text: "He did, and he stood there for a full minute, and then he said 'the cloud one is not terrible', which from Marek is basically a diploma with honors. I have not stopped thinking about it. It is possible nothing else needs to happen in my career now.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "quest:pawel-apprentice"],
+        },
+        {
+          id: "pawel:certifications:rep-6",
+          text: "Yes but pick ONE and finish it completely before the hunger for the next one starts. The mistake is collecting course logos like stickers. One finished certificate beats eleven at two percent. I learned that the respectful way, which is to say expensively.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "pawel:standup-notes",
+      label: "The standup notes",
+      optionCandidates: [
+        { id: "pawel:standup-notes:opt-1", topicId: "pawel:standup-notes", text: "You read your standup update from a script." },
+        { id: "pawel:standup-notes:opt-2", topicId: "pawel:standup-notes", text: "Why do you rehearse fifteen minutes for standup?" },
+        { id: "pawel:standup-notes:opt-3", topicId: "pawel:standup-notes", text: "Your notes have stage directions in them." },
+        { id: "pawel:standup-notes:opt-4", topicId: "pawel:standup-notes", text: "What happens when standup goes off-script?" },
+        { id: "pawel:standup-notes:opt-5", topicId: "pawel:standup-notes", text: "Tomek noticed your script. He said nothing." },
+        { id: "pawel:standup-notes:opt-6", topicId: "pawel:standup-notes", text: "Can I borrow your standup note format?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:standup-notes:rep-1",
+          text: "It is not a script, it is a SAFETY NET. Yesterday I said 'yesterday' and then my mind served an empty room. Since then, notes. Yesterday I did X. Today I do Y. No blockers, unless the coffee machine counts, which we agreed it does not.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:standup-notes:rep-2",
+          text: "Because the standup is ninety seconds long and I intend to survive all of them. Rehearsal is not fear, it is respect for the team's time. Marek says 'just say the thing'. I say the thing! I just say it in the order I practiced, in the tone I practiced, with breathing marked.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:standup-notes:rep-3",
+          text: "Those are breath marks! 'Pause here' means pause there. 'Slow' means the sentence about the deployment, because last time I said it fast and Marek asked three questions and my soul left through the fire exit. The directions stay. They are load-bearing.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "pawel:standup-notes:rep-4",
+          text: "Off-script standup is how incidents happen. Someone asks a follow-up and suddenly I have promised a feature, a timeline, and my weekend. The script has one rule: never answer a question with a number unless the number is already written down. I live by the notes now.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:standup-notes:rep-5",
+          text: "He NOTICED? Okay. Okay okay okay. Is 'said nothing' good noticing or bad noticing? Tomek saying nothing is his most loaded feature. I am going to assume it means respect and rebuild my entire confidence on that assumption. Do not correct me.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:standup-notes:rep-6",
+          text: "Take it! Three lines, one number maximum, and a pre-written answer for 'anything else'. The pre-written answer is 'not today', which works for everything, including things that are absolutely happening today. It buys you the afternoon. You are welcome.",
+          relationshipHint: "pleased",
+          tags: ["period:morning"],
+        },
+      ],
+    },
+    {
+      id: "pawel:dotfiles",
+      label: "The dotfiles repo",
+      optionCandidates: [
+        { id: "pawel:dotfiles:opt-1", topicId: "pawel:dotfiles", text: "You have a dotfiles repo? Show me. Now." },
+        { id: "pawel:dotfiles:opt-2", topicId: "pawel:dotfiles", text: "What is in the dotfiles, in human terms?" },
+        { id: "pawel:dotfiles:opt-3", topicId: "pawel:dotfiles", text: "Your terminal prompt has a weather report." },
+        { id: "pawel:dotfiles:opt-4", topicId: "pawel:dotfiles", text: "Did the dotfiles survive your laptop reinstall?" },
+        { id: "pawel:dotfiles:opt-5", topicId: "pawel:dotfiles", text: "Marek asked for your dotfiles link." },
+        { id: "pawel:dotfiles:opt-6", topicId: "pawel:dotfiles", text: "Is it true your setup file has comments?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:dotfiles:rep-1",
+          text: "It is not much, it is home, it has forty-one commits and a README that says 'works on my machine, which is the only machine'. Every config I have ever loved is in there. If the office burned down I would save the dotfiles and THEN the people. Order matters.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:dotfiles:rep-2",
+          text: "It is the personality of my computer in file form. Keyboard delays, window snapping, a script that mutes notifications when a calendar block says 'focus', and one alias called 'please' that runs sudo. I type please at my computer all day. It has improved my manners and nothing else.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:dotfiles:rep-3",
+          text: "It checks Janusz's roof sensor! If he says rain, my prompt shows an umbrella. I spent a weekend on this instead of the ticket Marek assigned. He noticed the umbrella before he noticed the ticket. I do not know what that says about us but I think it is beautiful.",
+          relationshipHint: "pleased",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "pawel:dotfiles:rep-4",
+          text: "The reinstall took eleven minutes BECAUSE of the dotfiles. One command, coffee refill, and my whole computer came back with its opinions intact. I cried a little. Marek called it 'adequate' and then used my window script. I have witnesses.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:dotfiles:rep-5",
+          text: "HE ASKED FOR THE LINK? I need to sit down. I am sitting down. I need you to understand that Marek's dotfiles are mentioned in forums by strangers. If he clones mine I will know, because the repo stats will show one view, and that view will be the entire point of my career.",
+          relationshipHint: "delighted",
+          tags: ["quest:pawel-apprentice", "relationship:warm"],
+        },
+        {
+          id: "pawel:dotfiles:rep-6",
+          text: "Four hundred comments. Comments to my future self, comments apologizing to my future self, and one comment that just says 'do not touch this, past Pawel knew things'. Future me deserves explanations. Present me provides them. It is the only long-term relationship I manage well.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "pawel:newsletters",
+      label: "The newsletter inbox",
+      optionCandidates: [
+        { id: "pawel:newsletters:opt-1", topicId: "pawel:newsletters", text: "You subscribe to how many newsletters?" },
+        { id: "pawel:newsletters:opt-2", topicId: "pawel:newsletters", text: "Do you actually read forty newsletters a week?" },
+        { id: "pawel:newsletters:opt-3", topicId: "pawel:newsletters", text: "You quoted a newsletter in standup. It worked." },
+        { id: "pawel:newsletters:opt-4", topicId: "pawel:newsletters", text: "One newsletter is just a guy complaining about keyboards." },
+        { id: "pawel:newsletters:opt-5", topicId: "pawel:newsletters", text: "Grazyna saw your inbox count. She made a face." },
+        { id: "pawel:newsletters:opt-6", topicId: "pawel:newsletters", text: "Ever think about unsubscribing from everything?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:newsletters:rep-1",
+          text: "Forty-three. Forty-four if the sourdough one came back from the dead again, which it does quarterly, like a ghost with a recipe. Each one is a tiny promise that the industry will make sense if I just keep reading. It has not made sense yet. I keep reading.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:newsletters:rep-2",
+          text: "I READ three and SKIM forty. There is a system: the subject line gets two seconds, the first paragraph gets ten, and if neither scares me, archive. The unread count is not a to-do pile, it is a library of futures I am choosing not to visit today.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:newsletters:rep-3",
+          text: "It DID work and nobody knows the quote was from a newsletter about billing systems. Marek nodded. Marek NODDED at billing content. The newsletter earns its place in the archive of honor. I have a folder for quotes that landed. It has two entries. This was one.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:newsletters:rep-4",
+          text: "That is Trustworthy Keyboard Guy and he is a LEGEND. He has hated every keyboard since 2019 and his rage has a rhyme to it. Marek follows him too, we discovered, which makes us colleagues in a way HR has no form for.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:newsletters:rep-5",
+          text: "She said 'unread 6,204' out loud like a diagnosis and then walked away shaking her head. But here is the thing — I KNOW all six thousand. They are not unread, they are UNSORTED. There is a difference and I will die explaining it to accountants.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "pawel:newsletters:rep-6",
+          text: "Every Sunday night I draft the great unsubscribe and every Monday morning I cannot do it. What if THIS is the week the testing newsletter explains everything? It never is. But the version of me that believes it might is the version that gets up on Mondays.",
+          relationshipHint: "neutral",
+          tags: ["stats:low-caffeine", "period:morning"],
+        },
+      ],
+    },
+    {
+      id: "pawel:portfolio",
+      label: "The portfolio site",
+      optionCandidates: [
+        { id: "pawel:portfolio:opt-1", topicId: "pawel:portfolio", text: "Your portfolio still says coming soon." },
+        { id: "pawel:portfolio:opt-2", topicId: "pawel:portfolio", text: "How long has the portfolio been under construction?" },
+        { id: "pawel:portfolio:opt-3", topicId: "pawel:portfolio", text: "Show me the portfolio. I will be nice." },
+        { id: "pawel:portfolio:opt-4", topicId: "pawel:portfolio", text: "The portfolio has a visitor counter. Retro." },
+        { id: "pawel:portfolio:opt-5", topicId: "pawel:portfolio", text: "Klaudia offered to photograph your portfolio launch." },
+        { id: "pawel:portfolio:opt-6", topicId: "pawel:portfolio", text: "What goes on a junior portfolio anyway?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:portfolio:rep-1",
+          text: "It says coming soon because I keep REDESIGNING the landing page instead of adding projects. The current version is the ninth. The ninth is minimal, which means I deleted everything twice. Soon means soon relative to geological time, and I stand by that.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "pawel:portfolio:rep-2",
+          text: "Fourteen months? But in my defense, twelve of those months taught me CSS at a depth no course offers. The portfolio is not late. The portfolio is an education with a deadline I keep renegotiating with myself. Myself is a lenient manager.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:portfolio:rep-3",
+          text: "Okay but remember the nice part. There is a hero section, one project — the backup script, obviously, it is my child — and a footer that says 'more soon'. You have now seen one hundred percent of the content. The 'more' is aspirational. Thank you for being kind. I saw your face.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:portfolio:rep-4",
+          text: "The counter is my favorite feature and it shows fourteen visits, six of which are me, four are Marek, and two are bots I have named. The bots are my most consistent audience. One of them visits every Tuesday. I have come to rely on it emotionally.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:portfolio:rep-5",
+          text: "She wants a LAUNCH EVENT. With a countdown! My portfolio, which has one project, getting a premiere like a film. I said yes before my fear finished loading. If it happens, you are invited, and yes there will be a red carpet, and yes it will be a hoodie.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "period:afternoon"],
+        },
+        {
+          id: "pawel:portfolio:rep-6",
+          text: "One real thing you fixed and the honest story of how it broke. Nobody wants a junior's masterpiece. They want proof you can be trusted with production and that you know what you do not know. That second part is a whole page. It is the page I have written best.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "pawel:afraid-to-ask",
+      label: "Afraid to ask",
+      optionCandidates: [
+        { id: "pawel:afraid-to-ask:opt-1", topicId: "pawel:afraid-to-ask", text: "What is something you have never dared to ask?" },
+        { id: "pawel:afraid-to-ask:opt-2", topicId: "pawel:afraid-to-ask", text: "I do not know what the build does and I run it daily." },
+        { id: "pawel:afraid-to-ask:opt-3", topicId: "pawel:afraid-to-ask", text: "Everyone here seems to already know things." },
+        { id: "pawel:afraid-to-ask:opt-4", topicId: "pawel:afraid-to-ask", text: "Tomek said there are no stupid questions." },
+        { id: "pawel:afraid-to-ask:opt-5", topicId: "pawel:afraid-to-ask", text: "I asked Marek something basic. He answered. Fully." },
+        { id: "pawel:afraid-to-ask:opt-6", topicId: "pawel:afraid-to-ask", text: "How do you ask for help without feeling like fog?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:afraid-to-ask:rep-1",
+          text: "What DNS actually is. I have configured it, broken it, and fixed it at 2am, and I still could not define it in a sentence without blinking too much. One day I will ask Marek and he will draw the diagram on the whiteboard and I will feel the sun on my face.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:afraid-to-ask:rep-2",
+          text: "SAME. I run the build the way you drive a rental car — carefully, superstitiously, and with no idea what is under the hood. I once renamed a build step to see what would happen. The office learned what would happen. We do not speak of the Tuesday. We rebuild together.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:afraid-to-ask:rep-3",
+          text: "They APPEAR to know things. Tomek googles syntax hourly, I have watched him. Marek keeps a paper notebook of commands he refuses to memorize on principle. Everyone is improvising with better posture. The knowing is a costume and we are all inside it, sweating.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:afraid-to-ask:rep-4",
+          text: "He did, and then someone asked him a stupid question and he answered it for ten minutes with visible joy. Tomek does not suffer questions. He suffers ASKED-BEFORE questions. So now I keep a list of everything I almost ask, and I ask it in a different accent.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:afraid-to-ask:rep-5",
+          text: "He answered it COMPLETELY, with a diagram, and then he said 'good question' and left. I have replayed it eleven times. The lesson is: the scary people are just busy people, and busy people respect a question that has already tried Google first. I always try Google first now. Always.",
+          relationshipHint: "delighted",
+          tags: ["quest:pawel-apprentice"],
+        },
+        {
+          id: "pawel:afraid-to-ask:rep-6",
+          text: "Write the question down first. By the time the sentence is complete you have either solved it or earned the asking. And start with what you tried — 'I read the docs and got lost at step three' — because it tells the person you are worth the time. This is my whole method. It is one trick, honestly.",
+          relationshipHint: "neutral",
+          tags: ["stats:low-focus"],
+        },
+      ],
+    },
+    {
+      id: "pawel:deadlines",
+      label: "The deadline dance",
+      optionCandidates: [
+        { id: "pawel:deadlines:opt-1", topicId: "pawel:deadlines", text: "How do you survive deadline week, Pawel?" },
+        { id: "pawel:deadlines:opt-2", topicId: "pawel:deadlines", text: "You made a spreadsheet to track your panic." },
+        { id: "pawel:deadlines:opt-3", topicId: "pawel:deadlines", text: "Marek said estimate double and add a day." },
+        { id: "pawel:deadlines:opt-4", topicId: "pawel:deadlines", text: "I promised a Friday and it is Wednesday. Help." },
+        { id: "pawel:deadlines:opt-5", topicId: "pawel:deadlines", text: "Your last-minute save was legendary. Explain it." },
+        { id: "pawel:deadlines:opt-6", topicId: "pawel:deadlines", text: "Does the panic ever turn into planning?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:deadlines:rep-1",
+          text: "Deadline week is a lifestyle. I sleep in shifts, my energy drink intake becomes a medical event, and I write the task list on my ARM when the laptop dies. It always gets done. It has always gotten done. The quality is a gamble I place with trembling hands and total faith.",
+          relationshipHint: "pleased",
+          tags: ["stats:high-caffeine"],
+        },
+        {
+          id: "pawel:deadlines:rep-2",
+          text: "It is a PAN CALENDAR. Columns: task, fear level, actual minutes needed, and 'what am I afraid of specifically'. The last column is the trick — by the time I write it down, the fear is ridiculous on paper. 'The code will know I rushed.' It KNOWS, Pawel. But the column helps.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:deadlines:rep-3",
+          text: "He told me that in week one and I thought it was a joke. It is not a joke. It is the oldest spell in engineering. I now estimate honestly, double it, add a day, and deliver EARLY, and the look on Zosia's face when that happens is my new favorite weather.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:deadlines:rep-4",
+          text: "Okay. Do not panic. Panic AFTER reading this. Step one: tell Marek today, not Friday — bad news does not age well. Step two: list what actually ships versus what is decoration. Step three: cut decoration without mercy. The demo needs a pulse, not a wardrobe. You will make it. We have all been there. Some of us live there.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:deadlines:rep-5",
+          text: "It was not legendary, it was GRAZYNAnautic — I stayed until the office lights went to night mode, Janusz brought me soup unasked, and at 3am the bug turned out to be one letter. One! I fixed it, slept under my desk for forty minutes, and presented at nine with the confidence of a man held together by soup.",
+          relationshipHint: "neutral",
+          tags: ["period:evening", "relationship:neutral"],
+        },
+        {
+          id: "pawel:deadlines:rep-6",
+          text: "It is turning! Slowly, like a ship. I still panic, but now the panic has a agenda and a timer. Twenty-five minutes of terror, five minutes of tea. The tea is mandatory. Marek says the timer is the only discipline I have ever built and he is right and I hate that he is right.",
+          relationshipHint: "annoyed",
+        },
+      ],
+    },
+    {
+      id: "pawel:styleguide",
+      label: "The style guide cheat sheet",
+      optionCandidates: [
+        { id: "pawel:styleguide:opt-1", topicId: "pawel:styleguide", text: "You laminated the style guide. You laminated it." },
+        { id: "pawel:styleguide:opt-2", topicId: "pawel:styleguide", text: "Why does the style guide have a table of contents?" },
+        { id: "pawel:styleguide:opt-3", topicId: "pawel:styleguide", text: "Tomek saw your laminated sheet and nodded." },
+        { id: "pawel:styleguide:opt-4", topicId: "pawel:styleguide", text: "What is rule one of the style guide?" },
+        { id: "pawel:styleguide:opt-5", topicId: "pawel:styleguide", text: "The style guide conflicts with itself on line forty." },
+        { id: "pawel:styleguide:opt-6", topicId: "pawel:styleguide", text: "Can I annotate your cheat sheet?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:styleguide:rep-1",
+          text: "LAMINATED. Because paper gets coffee on it and coffee is the enemy of reference material. The laminator was twelve zloty and it is the best infrastructure investment this desk has seen. I laminate important things now. I have a queue. Marek's pad of incident notes is next, he does not know yet.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:styleguide:rep-2",
+          text: "Because the style guide is the only document in this office with an OPINIONS PER PAGE density higher than Zosia's emails. Naming, spacing, the semicolon question — it needs navigation. My table of contents has color tabs. The tabs are laminated. Everything is laminated.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:styleguide:rep-3",
+          text: "THE NOD. I witnessed it. Tomek's nod is the style guide's second edition — worth more than any review comment. I have decided the lamination was the detail that earned it. Craft respects craft. Also he said 'finally, someone printed it'. PRINTED IT, Pawel. I printed a religion.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm"],
+        },
+        {
+          id: "pawel:styleguide:rep-4",
+          text: "Rule one is 'the code is read more than it is written, dress it accordingly'. I did not write it — Tomek did, years ago, on a whiteboard that got erased, and I rescued the sentence into lamination. Everything else on the sheet is footnotes to that. I am not exaggerating. I am precisely exaggerating.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:styleguide:rep-5",
+          text: "Line forty is the CSS section versus the naming section and they have disagreed since before I was hired. The official position is 'context decides'. The unofficial position, from Marek, is 'nobody wins, go home'. I documented both positions in the margin. The margin is where truth lives.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "pawel:styleguide:rep-6",
+          text: "Please do, but in PENCIL — the sheet is laminated, annotations need the special pen, and the special pen is in Janusz's drawer until Thursday. The waiting list for annotation is one item long and it is me, planning my own corrections. We can share. Bring your own pen.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "pawel:study-group",
+      label: "The Discord study group",
+      optionCandidates: [
+        { id: "pawel:study-group:opt-1", topicId: "pawel:study-group", text: "You are in a study group with strangers on the internet?" },
+        { id: "pawel:study-group:opt-2", topicId: "pawel:study-group", text: "What does the study group actually study?" },
+        { id: "pawel:study-group:opt-3", topicId: "pawel:study-group", text: "The study group has a bot that shames lurkers." },
+        { id: "pawel:study-group:opt-4", topicId: "pawel:study-group", text: "Someone in the group is definitely twelve." },
+        { id: "pawel:study-group:opt-5", topicId: "pawel:study-group", text: "You cowrote a guide with someone you never met." },
+        { id: "pawel:study-group:opt-6", topicId: "pawel:study-group", text: "Should I join the study group?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:study-group:rep-1",
+          text: "Eleven strangers, one channel, and the gentlest moderation bot in existence. We have never seen each other's faces but we have seen each other's terminal errors, which is more intimate anyway. One of them wished me luck before my Marek review. I think about that daily.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:study-group:rep-2",
+          text: "Currently a networking course, previously algorithms, and for two beautiful weeks, bread. The bread phase produced no engineers but four loaves and one fire drill in Gdansk. We voted to return to networking. I still miss the bread channel. It had the best energy.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:study-group:rep-3",
+          text: "The bot posts 'we noticed you are quiet' with a sad crab picture. The crab is very effective. Nobody wants to disappoint the crab. I have started responding JUST for the crab, which is a motivation system I did not plan and fully endorse.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:study-group:rep-4",
+          text: "KidCheckmate is either twelve or forty with a youthful typing style, and honestly the group runs on not-asking. He solves problems faster than all of us and goes to bed at eight. His profile says 'working professional'. His timezone says 'suspicious'. We protect him. It is group policy.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:study-group:rep-5",
+          text: "We wrote a git guide together across three timezones and I have never seen her face or heard her voice, but I know how she thinks about rebase conflicts. That is a real relationship. My mother does not understand it. My mother also does not understand rebase, so the call is even.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:study-group:rep-6",
+          text: "Yes, but lurk for a week first, that is the law. Read the pinned messages, learn the crab, and then post one small win. The group feeds on small wins. Bring yours. Someone there is stuck on the exact thing you solved yesterday and does not know it yet.",
+          relationshipHint: "neutral",
+          tags: ["period:evening"],
+        },
+      ],
+    },
+    {
+      id: "pawel:lightning-talk",
+      label: "The lightning talk",
+      optionCandidates: [
+        { id: "pawel:lightning-talk:opt-1", topicId: "pawel:lightning-talk", text: "You signed up for a lightning talk. Voluntarily." },
+        { id: "pawel:lightning-talk:opt-2", topicId: "pawel:lightning-talk", text: "What is the lightning talk even about?" },
+        { id: "pawel:lightning-talk:opt-3", topicId: "pawel:lightning-talk", text: "Five minutes is nothing. You will be fine." },
+        { id: "pawel:lightning-talk:opt-4", topicId: "pawel:lightning-talk", text: "You rehearsed in the training room after hours?" },
+        { id: "pawel:lightning-talk:opt-5", topicId: "pawel:lightning-talk", text: "Zosia put your talk in the all-staff invite." },
+        { id: "pawel:lightning-talk:opt-6", topicId: "pawel:lightning-talk", text: "What if the projector fails during your talk?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:lightning-talk:rep-1",
+          text: "I signed up at 2am when confidence is highest and judgment is lowest, and by morning the sign-up was real and so was the terror. But it is FIVE minutes, and I have survived Marek's code review and one flood, so the bars have been set in interesting places.",
+          relationshipHint: "neutral",
+          tags: ["stats:high-caffeine"],
+        },
+        {
+          id: "pawel:lightning-talk:rep-2",
+          text: "'How our backup script saved my weekend' — one story, three slides, and a moral. The moral is 'test your restores'. It is the only thing I truly know and the whole talk fits inside it. If I get nervous I will just say 'backups' until someone stops me.",
+          relationshipHint: "pleased",
+          tags: ["quest:pawel-restore-drill"],
+        },
+        {
+          id: "pawel:lightning-talk:rep-3",
+          text: "Five minutes is NOTHING at sea level and EVERYTHING on stage. I did the math: at my speaking pace, that is four hundred words, and I have written six hundred, so the real talk is editing. Marek says cut half. Tomek says cut two thirds. The talk is shrinking like my fear is not.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "pawel:lightning-talk:rep-4",
+          text: "Twice. Janusz let me in and stayed to watch, and now I have an audience review from a man who has seen this office through floods. He said 'you talk with your hands, the hands are good'. It is the best feedback I have ever received and it is about my hands.",
+          relationshipHint: "delighted",
+          tags: ["period:evening"],
+        },
+        {
+          id: "pawel:lightning-talk:rep-5",
+          text: "THE ALL-STAFF INVITE. It says 'lightning talk: Pawel' next to the word 'quarterly'. I am in the same sentence as quarterly RESULTS. Zosia says it is good visibility. My hands say they are airdrying. But she believes in me out loud, in writing, and that is fuel. Terrifying, corporate fuel.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:lightning-talk:rep-6",
+          text: "Then I do the talk from memory with hand gestures and Marek's notebook as a prop, because the story lives in me now, not the slides. I tested this fear by presenting once with the projector OFF as a drill. Janusz watched. He said the dark version was better. The dark version is now plan A.",
+          relationshipHint: "pleased",
+        },
+      ],
+    },
+    {
+      id: "pawel:dark-mode",
+      label: "Dark mode everything",
+      optionCandidates: [
+        { id: "pawel:dark-mode:opt-1", topicId: "pawel:dark-mode", text: "Is your spreadsheet really in dark mode?" },
+        { id: "pawel:dark-mode:opt-2", topicId: "pawel:dark-mode", text: "Why is dark mode a personality for you?" },
+        { id: "pawel:dark-mode:opt-3", topicId: "pawel:dark-mode", text: "The office lights hurt after your monitor glow." },
+        { id: "pawel:dark-mode:opt-4", topicId: "pawel:dark-mode", text: "You dark-moded the shared team calendar?" },
+        { id: "pawel:dark-mode:opt-5", topicId: "pawel:dark-mode", text: "Klaudia says light mode photographs better." },
+        { id: "pawel:dark-mode:opt-6", topicId: "pawel:dark-mode", text: "Does dark mode actually save your eyes?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:dark-mode:rep-1",
+          text: "It is and it is BEAUTIFUL. Rows like a night highway, totals glowing amber. Grazyna opened it once, made a sound like a kettle, and converted it back. We now keep two versions: mine, and the one that is legal in this office. It is a two-state solution and it holds.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:dark-mode:rep-2",
+          text: "Because at 2am the light mode is a_searchlight and dark mode is a friend. Everything I love works at night — backups, builds, the good ideas. Dark mode is not a setting, it is solidarity with the hours nobody claps for.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:dark-mode:rep-3",
+          text: "Sorry! My monitor is at eight percent brightness and people still squint when they walk past, like I am running a tanning bed. Marek installed my flux config on the OFFICE machine as an experiment and three people thanked him for 'the new vibe'. The vibe was mine. I am spreading.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:dark-mode:rep-4",
+          text: "Locally! Locally dark-moded, nothing shared was harmed. But for one hour everyone's calendar events glowed like a cockpit and Kasia asked if we had been hacked. We had been IMPROVED. The hour ended. The memory did not.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "pawel:dark-mode:rep-5",
+          text: "She is right and I refuse to care. Her ring light sees a glow rectangle and thinks cinema. My retinas see kindness. We have agreed to disagree across the color spectrum, which is the most respectful conflict this office hosts.",
+          relationshipHint: "neutral",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "pawel:dark-mode:rep-6",
+          text: "Honestly? Unknown. But my 2am self-argument rate dropped thirty percent since I switched, and that data is real even if the mechanism is a mystery. Some tools work because of engineering. Dark mode works because of forgiveness. My eyes have accepted the terms.",
+          relationshipHint: "pleased",
+          tags: ["stats:low-caffeine", "period:evening"],
+        },
+      ],
+    },
+    {
+      id: "pawel:linux-rice",
+      label: "The desktop rice",
+      optionCandidates: [
+        { id: "pawel:linux-rice:opt-1", topicId: "pawel:linux-rice", text: "You spent a weekend customizing your desktop again." },
+        { id: "pawel:linux-rice:opt-2", topicId: "pawel:linux-rice", text: "What is 'ricing' and why does it sound illegal?" },
+        { id: "pawel:linux-rice:opt-3", topicId: "pawel:linux-rice", text: "Your desktop has a widget that shows build status." },
+        { id: "pawel:linux-rice:opt-4", topicId: "pawel:linux-rice", text: "Marek saw your rice and said one word." },
+        { id: "pawel:linux-rice:opt-5", topicId: "pawel:linux-rice", text: "Did the rice survive the office update?" },
+        { id: "pawel:linux-rice:opt-6", topicId: "pawel:linux-rice", text: "Is the rice why your actual tickets are late?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:linux-rice:rep-1",
+          text: "CUSTOMIZED is strong. I changed four pixels and reinstalled everything, which in rice culture is a moderate weekend. The wallpaper is now a photo of the server room Marek let me take once. It is the most 'me' my computer has ever looked. My tickets are unaffected and I will not be taking questions.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "pawel:linux-rice:rep-2",
+          text: "It means making your desktop beautiful, and it sounds illegal because pride in small things IS treated as a crime in some workplaces. Not here. Here, Marek once spent a full lunch adjusting terminal opacity. There is a lineage. I am part of a school.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:linux-rice:rep-3",
+          text: "It glows green when the build passes and red when it fails, and the red one has a feature where the widget seems to LOOK at me. Marek says the widget is a productivity hazard. Marek also asks for the widget config every time his own build breaks. We do not discuss the contradiction.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:linux-rice:rep-4",
+          text: "The word was 'clean'. ONE word. I have replayed it so many times it has begun to harmonize. In Marek's dialect, 'clean' is a paragraph. I screenshotted the desktop, printed the screenshot, and the printout is laminated on my desk. The desk now rice-references the rice. It is turtles all the way down.",
+          relationshipHint: "delighted",
+          tags: ["quest:pawel-apprentice", "relationship:warm"],
+        },
+        {
+          id: "pawel:linux-rice:rep-5",
+          text: "The update nuked it and I rebuilt it in forty minutes from the dotfiles, LIVE, while people watched like a surgery demonstration. Someone clapped. The rebuild is now faster than the breakage, which is the definition of victory in my culture.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:linux-rice:rep-6",
+          text: "The rice is not why. The rice is a BREAK from why. I do my tickets, then I earn my pixels, in that order, written on a sticky note that is also part of the rice. The system is self-policing. The sticky note has never once moved. Okay, once. But it moved BACK.",
+          relationshipHint: "neutral",
+        },
+      ],
+    },
+    {
+      id: "pawel:rubber-duck",
+      label: "The rubber duck",
+      optionCandidates: [
+        { id: "pawel:rubber-duck:opt-1", topicId: "pawel:rubber-duck", text: "Why is there a rubber duck on your keyboard?" },
+        { id: "pawel:rubber-duck:opt-2", topicId: "pawel:rubber-duck", text: "Does talking to the duck actually work?" },
+        { id: "pawel:rubber-duck:opt-3", topicId: "pawel:rubber-duck", text: "You named the duck. Admit it." },
+        { id: "pawel:rubber-duck:opt-4", topicId: "pawel:rubber-duck", text: "Burek keeps staring at the duck." },
+        { id: "pawel:rubber-duck:opt-5", topicId: "pawel:rubber-duck", text: "Someone borrowed the duck and the bug took longer." },
+        { id: "pawel:rubber-duck:opt-6", topicId: "pawel:rubber-duck", text: "Should the whole team get ducks?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:rubber-duck:rep-1",
+          text: "That is my debugging partner and his name is on a need-to-know basis. The rule: explain the bug out loud before asking anyone. Half the time the bug surrenders to the duck, which saves Marek an interruption and saves me the walk of shame. The duck has never once judged me. Name one colleague about whom that is true.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:rubber-duck:rep-2",
+          text: "It works because your mouth is slower than your brain. The bug lives in the speed. When you explain it to someone with infinite patience and zero opinions — like a duck — the mistake gets caught in the sentence, mid-air, publicly, in front of the duck. Humbling. Effective. Free.",
+          relationshipHint: "delighted",
+        },
+        {
+          id: "pawel:rubber-duck:rep-3",
+          text: "His name is Stanislaw and he is a professional. He has heard things, Pawel-things, that no duck should hear. We have an arrangement: I provide context, he provides silence, and the bug provides the confession. He gets dusted on Fridays. He has a tiny scarf in winter. This is normal in this industry and I will not be mocked.",
+          relationshipHint: "annoyed",
+        },
+        {
+          id: "pawel:rubber-duck:rep-4",
+          text: "Burek and Stanislaw are in a cold war and I am the neutral power. Burek stares, Stanislaw sits, and I have started moving the duck two centimeters further from the desk edge every morning as a precaution. Janusz suggested it. Janusz understands interspecies office diplomacy at a level HR never will.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:rubber-duck:rep-5",
+          text: "The duck was gone for TWO HOURS and my bug went unexplained for two hours. Coincidence? The duck returned smelling of someone else's desk — possibly Tomek's, it smelled of irony — and the bug fell in minutes. I am not saying the duck is magic. I am saying the duck is load-bearing and the borrowing stops.",
+          relationshipHint: "annoyed",
+          tags: ["relationship:neutral"],
+        },
+        {
+          id: "pawel:rubber-duck:rep-6",
+          text: "I proposed it in the suggestion box — 'one duck per desk, colors by team' — and the suggestion got seven supportive comments, which is seven more than most suggestions get. Zosia starred it. Somewhere in a budget there may be a line for ducks. If it happens, I get to name the team lead duck. I have chosen. His name is also Stanislaw.",
+          relationshipHint: "delighted",
+          tags: ["relationship:warm", "period:afternoon"],
+        },
+      ],
+    },
+    {
+      id: "pawel:shadow-oncall",
+      label: "Shadowing the oncall",
+      optionCandidates: [
+        { id: "pawel:shadow-oncall:opt-1", topicId: "pawel:shadow-oncall", text: "Why are you awake at 3am reading the alert channel?" },
+        { id: "pawel:shadow-oncall:opt-2", topicId: "pawel:shadow-oncall", text: "Marek knows you shadow his oncall shifts?" },
+        { id: "pawel:shadow-oncall:opt-3", topicId: "pawel:shadow-oncall", text: "Is watching oncall a normal hobby for interns?" },
+        { id: "pawel:shadow-oncall:opt-4", topicId: "pawel:shadow-oncall", text: "You kept notes from every incident this month." },
+        { id: "pawel:shadow-oncall:opt-5", topicId: "pawel:shadow-oncall", text: "One day you will be on the oncall rota. Ready?" },
+        { id: "pawel:shadow-oncall:opt-6", topicId: "pawel:shadow-oncall", text: "Should I shadow oncall too?" },
+      ],
+      replyCandidates: [
+        {
+          id: "pawel:shadow-oncall:rep-1",
+          text: "Because 3am alerts are where the real systems live. During the day everything works and nobody says why. At 3am the graph trembles and Marek types four words and the world is saved. It is the best free education in this city and it streams directly to my phone, which I hold with both hands like a relic.",
+          relationshipHint: "pleased",
+          tags: ["period:evening"],
+        },
+        {
+          id: "pawel:shadow-oncall:rep-2",
+          text: "He found out in month two when I reacted to an alert faster than the alert did. He did not say anything. The next morning there was a second chair at his desk and the rota had a line under his name that says 'training'. That line is me. I have never been so formally honored.",
+          relationshipHint: "delighted",
+          tags: ["quest:pawel-apprentice", "relationship:warm"],
+        },
+        {
+          id: "pawel:shadow-oncall:rep-3",
+          text: "Define normal. I do not collect stamps, I do not follow football. I read incident channels and postmortems with a highlighter. Marek says it is the first hobby I have had that could ever pay rent, and he is right, and my stamp-collecting uncle would be devastated.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:shadow-oncall:rep-4",
+          text: "A notebook, organized by symptom, with the fix and the FEELING of the fix. 'Disk full — extend partition — heart stopped at the rm command.' Feelings are the part the docs leave out. My notebook is the only place in this office that records fear accurately. Historians will thank me.",
+          relationshipHint: "pleased",
+        },
+        {
+          id: "pawel:shadow-oncall:rep-5",
+          text: "No, and that is correct. Marek says you go on the rota when a 3am page does not excite you anymore — when it is just Tuesday. I am not there yet. I am still at the stage where my heart does a drum solo. The rota can wait. The drum solo is actually quite nice.",
+          relationshipHint: "neutral",
+        },
+        {
+          id: "pawel:shadow-oncall:rep-6",
+          text: "Read the channel first, one week, silently. Learn who panics and who types slowly. The slow typists are the seniors — speed is for emergencies, calm is for control. Then ask Marek for the 'training' line. He will not say yes. He will just add the chair. That is how he says yes.",
+          relationshipHint: "delighted",
+        },
+      ],
+    },
   ],
   taskOffers: [
     {
