@@ -369,6 +369,15 @@ function nearestInteractionPoint(): { id: string; label: string } | null {
   return best;
 }
 
+/** Closure verdict Medium 7: ACTIVATION is when the machine starts -
+ *  play the definition's registered sfx positioned at the point (the
+ *  registry sources exist since registerBuiltinInteractionPoints). */
+function playInteractionSfx(pointId: string): void {
+  const def = INTERACTION_POINT_DEFS.find((d) => d.id === pointId);
+  if (!def) return;
+  positionalSfx?.play(def.sfxId, def.id);
+}
+
 function buildGreetingWrapper(): GreetingWrapperHandle | null {
   if (JEV_MODE === "off") return null;
   return createGreetingWrapper({
@@ -500,7 +509,10 @@ window.addEventListener("keydown", (e) => {
         // means "use it now" — activate immediately so the lifecycle
         // advances reserved -> in-use -> done and the effect applies.
         const used = usePoint(nearest.id, "player");
-        if (used.ok) activateAction(used.actionId);
+        if (used.ok) {
+          activateAction(used.actionId);
+          playInteractionSfx(nearest.id);
+        }
       }
     }
   }
@@ -2156,7 +2168,10 @@ function frame(): void {
         );
         if (dist < 1.4) {
           const used = usePoint(pointId, npcId);
-          if (used.ok) activateAction(used.actionId);
+          if (used.ok) {
+            activateAction(used.actionId);
+            playInteractionSfx(pointId);
+          }
           pendingNpcTrips.delete(npcId);
         }
       }
