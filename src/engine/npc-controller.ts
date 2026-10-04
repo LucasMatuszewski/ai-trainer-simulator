@@ -710,10 +710,14 @@ export function createNpcController(
     // run owned - without this, both participants stay pinned at the
     // meeting spot until the next period transition, and
     // rendezvousFree() then excludes them from any future staging.
+    // Only STAGING-owned overrides are released: a dice-fired run
+    // between NPCs pinned by another system must leave those pins.
     // Re-plan to their schedule desks (NOT via setOverride(null):
     // that path calls releaseArrival, which mid-transition would
     // re-run C-51 walk-ins for NPCs already in the building).
     for (const id of [run.aId, run.bId]) {
+      if (!stagedByRendezvous.has(id)) continue;
+      stagedByRendezvous.delete(id);
       if (!overrides.has(id)) continue;
       overrides.delete(id);
       validatedDestinations.delete(id);
@@ -778,6 +782,11 @@ export function createNpcController(
   // uses deepRandom), so seeded controller tests keep their streams.
   const DEEP_RENDEZVOUS_COOLDOWN_S = 90;
   let nextRendezvousAt = 45 + deepRandom() * 45;
+  // Verdict finding 6: staging OWNS the overrides it sets. Settlement
+  // releases ONLY these - a dice-fired deep run between two NPCs pinned
+  // by another system (events layer, tests) must leave their overrides
+  // untouched.
+  const stagedByRendezvous = new Set<NpcId>();
   // C-78 v1.1 QA counters (why-didnt-it-stage visibility for
   // Playwright/WebMCP; plain data, read via getDeepDebug()).
   const deepDebug = { gateSeen: 0, quiet: 0, due: 0, attempts: 0, blocked: "" };
@@ -848,6 +857,8 @@ export function createNpcController(
         overrides.delete(bId);
         continue;
       }
+      stagedByRendezvous.add(aId);
+      stagedByRendezvous.add(bId);
       return true;
     }
     return false;
