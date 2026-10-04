@@ -36,7 +36,9 @@ function profileEntries(): Array<[string, SocialProfile]> {
 
 describe("SOCIAL_PROFILES_VERSION", () => {
   it("is 1 for the first authored profile table", () => {
-    expect(SOCIAL_PROFILES_VERSION).toBe(1);
+    // C-78 REVISE (v2): the seed table gained real poles (hostile + warm
+    // human anchors) — the version bump re-seeds untouched pairs per D-51.
+    expect(SOCIAL_PROFILES_VERSION).toBe(2);
   });
 });
 

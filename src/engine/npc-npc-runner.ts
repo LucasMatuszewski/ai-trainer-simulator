@@ -19,6 +19,13 @@
  * current line is a `onPlayerApproach` carrier, otherwise ends silently.
  */
 
+import {
+  type NpcNpcConversation,
+  type NpcNpcExchange,
+  type NpcNpcLine,
+  type RelationshipBand,
+} from "../content/npc-npc-conversations-schema";
+
 export interface RunnerLine {
   id: string;
   /** Which cast slot speaks this line ("A" = script.cast[0], "B" = cast[1]). */
@@ -142,3 +149,86 @@ export function createNpcNpcRunner(options: NpcNpcRunnerOptions): NpcNpcRunner {
 
 /** The always-available authored hush line when none is authored. */
 export const DEFAULT_HUSH = "…anyway.";
+
+// ---------------------------------------------------------------------------
+// Path flattening (C-78 REVISE: the whole path is pre-decided at pair
+// formation — one deterministic walk of the authored `next` chain)
+// ---------------------------------------------------------------------------
+
+/**
+ * Base dwell seconds handed to `dwellFor` by the controller. Matches
+ * the legacy RESPONSE_DELAY_S cadence (chatter.ts), so a deep line
+ * holds roughly as long as a starter bubble did before the reply.
+ */
+export const BASE_DWELL_S = 3.8;
+
+function toRunnerEvent(line: NpcNpcLine, speaker: "A" | "B"): RunnerEvent {
+  return {
+    id: line.id,
+    speaker,
+    text: line.text,
+    dwellS: dwellFor(line.text, BASE_DWELL_S),
+    onPlayerApproach: line.onPlayerApproach,
+    reaction: line.reaction,
+  };
+}
+
+/**
+ * Flattens ONE authored path into the ordered RunnerEvent[] the runner
+ * plays: starter (A) + response (B) per exchange, following the chain
+ * link (`response.next` if authored, else `starter.next`) until END, a
+ * missing link, a revisited exchange (cycle guard) or maxLevels.
+ *
+ * When the path's final response carries an `endings` line for the
+ * LIVE band, that closing line is appended as one extra event spoken
+ * by the same cast slot (state-conditional endings, REVISE #6).
+ *
+ * `_rng` is accepted for the future Jev branch-picking wave (one Choice
+ * per authored branch point) and deliberately unused in v1: every line
+ * here has at most one `next`, so playback is fully deterministic.
+ *
+ * @throws when `startExchangeId` does not name an exchange of the
+ *         script (a caller bug, never a runtime condition).
+ */
+export function flattenPath(
+  script: NpcNpcConversation,
+  startExchangeId: string,
+  bandValue: RelationshipBand,
+  _rng: () => number = Math.random,
+  maxLevels = 5,
+): RunnerEvent[] {
+  const byStarter = new Map<string, NpcNpcExchange>(
+    script.exchanges.map((exchange) => [exchange.starter.id, exchange]),
+  );
+  const first = byStarter.get(startExchangeId);
+  if (first === undefined) {
+    throw new Error(
+      `flattenPath: unknown start exchange "${startExchangeId}" in script "${script.id}"`,
+    );
+  }
+  const events: RunnerEvent[] = [];
+  const visited = new Set<string>();
+  let current: NpcNpcExchange = first;
+  let lastResponse: NpcNpcLine = first.response;
+  while (!visited.has(current.starter.id) && visited.size < maxLevels) {
+    visited.add(current.starter.id);
+    events.push(toRunnerEvent(current.starter, "A"));
+    events.push(toRunnerEvent(current.response, "B"));
+    lastResponse = current.response;
+    const nextId = current.response.next ?? current.starter.next;
+    if (nextId === undefined || nextId === "END") break;
+    const next = byStarter.get(nextId);
+    if (next === undefined) break;
+    current = next;
+  }
+  const ending = lastResponse.endings?.[bandValue];
+  if (ending !== undefined) {
+    events.push({
+      id: `${lastResponse.id}#ending:${bandValue}`,
+      speaker: "B",
+      text: ending,
+      dwellS: dwellFor(ending, BASE_DWELL_S),
+    });
+  }
+  return events;
+}
