@@ -2179,6 +2179,8 @@ declare global {
       /** C-46 chatter views, for the same QA surface. */
       getChatter: () => readonly { a: string; b: string; responseIn: number; starterLine: string }[];
       getDeepDebug: () => { gateSeen: number; quiet: number; due: number; attempts: number; blocked: string } | null;
+      /** C-78 v1.1 QA: advance the NPC controller by simulated seconds. */
+      debugTick: (seconds: number) => void;
       inspectNpcs: () => Array<{
         npcId: string;
         position: { x: number; z: number };
@@ -2281,6 +2283,16 @@ window.__aitrainer = {
   teleport: (x: number, z: number, yaw: number): void => {
     if (!controls) return;
     controls.setPlayerPose(x, z, yaw);
+  },
+  // C-78 v1.1 QA accelerator: advance ONLY the NPC controller by
+  // `seconds` of simulated time (30 Hz steps) - chatter, deep
+  // conversations and rendezvous staging without waiting on the
+  // throttled headless frame clock. Mirrors debugSkipPeriod.
+  debugTick: (seconds: number): void => {
+    const controller = sceneObjects?.npcController;
+    if (!controller) return;
+    const steps = Math.round(seconds * 30);
+    for (let i = 0; i < steps; i += 1) controller.update(1 / 30);
   },
   // Debug helper: returns the gender + child-mesh kinds of every
   // NPC group in the scene. Used by the gender-bug triage script
