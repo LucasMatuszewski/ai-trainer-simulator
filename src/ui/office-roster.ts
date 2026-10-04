@@ -60,6 +60,9 @@ export interface OfficeRosterHandle {
   root: HTMLElement;
   /** Re-render the relationship numbers / availability state. */
   refresh: (npcStates: Map<NpcId, { relationship: number; available: boolean; status?: string }>) => void;
+  /** Closure verdict High 2: unlock the computer mid-session when the
+   *  contract flag flips (it is baked into the mount-time HTML). */
+  setComputerUnlocked: (hasContract: boolean) => void;
   /** Set the currently-focused NPC (camera will pan to them). */
   setFocus: (id: NpcId | null) => void;
 }
@@ -126,8 +129,20 @@ export function mountOfficeRoster(
   });
 
   let currentFocus: NpcId | null = null;
+  const computerBtn = () => wrap.querySelector<HTMLButtonElement>("[data-action='computer']");
   return {
     root: wrap,
+    // Closure verdict High 2: the contract flag can flip mid-session
+    // (Bartek's contract dialogue) - without this the computer button
+    // stayed disabled until the whole roster remounted.
+    setComputerUnlocked(hasContract: boolean) {
+      const btn = computerBtn();
+      if (!btn) return;
+      btn.disabled = !hasContract;
+      btn.title = hasContract
+        ? "Debug a client script (+cash on win)"
+        : "You need a contract before you can debug";
+    },
     refresh(npcStates) {
       for (const npc of npcs) {
         const card = cards.get(npc.id)!;

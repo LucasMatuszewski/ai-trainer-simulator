@@ -1298,6 +1298,10 @@ async function playIntroCinematic(): Promise<void> {
 function refreshRoster(): void {
   if (!roster) return;
   const state = game.get();
+  // Closure verdict High 2: the contract unlocks the computer
+  // mid-session (Bartek's contract dialogue); refreshRoster runs on
+  // game updates AND at ~2 Hz, so the button follows the flag.
+  roster.setComputerUnlocked(state.flags["got-acme-contract"] === true);
   // C-46: the roster tells the truth. Read each NPC's LIVE state from
   // the controller-maintained userData (the same source the debug
   // inspector uses) and map it to a real location label via the pure
