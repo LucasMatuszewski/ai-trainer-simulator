@@ -2178,6 +2178,7 @@ declare global {
       }[];
       /** C-46 chatter views, for the same QA surface. */
       getChatter: () => readonly { a: string; b: string; responseIn: number; starterLine: string }[];
+      getDeepDebug: () => { gateSeen: number; quiet: number; due: number; attempts: number; blocked: string } | null;
       inspectNpcs: () => Array<{
         npcId: string;
         position: { x: number; z: number };
@@ -2265,6 +2266,7 @@ window.__aitrainer = {
   // C-78 REVISE v1 QA hook: the authored deep conversations in flight
   // (plain data - no three.js objects cross the console boundary).
   getDeepConversations: () => sceneObjects?.npcController.getActiveDeepConversations() ?? [],
+  getDeepDebug: () => sceneObjects?.npcController.getDeepDebug() ?? null,
   getChatter: () => sceneObjects?.npcController.getActiveConversations() ?? [],
   setSensitivity: (radPerPixel: number): void => {
     setMouseSensitivity(radPerPixel);

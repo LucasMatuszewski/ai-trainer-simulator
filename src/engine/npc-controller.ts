@@ -133,6 +133,15 @@ export interface ActiveConversationView {
   starterLine: string;
 }
 
+/** C-78 v1.1 QA: staging counters for why-didnt-it-stage visibility. */
+export interface DeepDebugView {
+  gateSeen: number;
+  quiet: number;
+  due: number;
+  attempts: number;
+  blocked: string;
+}
+
 /** C-78 REVISE v1: debug/test view of one active deep conversation. */
 export interface DeepConversationView {
   a: string;
@@ -155,6 +164,8 @@ export interface NpcController {
   getActiveConversations: () => readonly ActiveConversationView[];
   /** C-78 REVISE v1: the authored deep conversations in flight. */
   getActiveDeepConversations: () => readonly DeepConversationView[];
+  /** C-78 v1.1 QA: rendezvous staging counters. */
+  getDeepDebug: () => DeepDebugView;
   /**
    * WS4 (C-77): the most recent eligible chatter pair list the update
    * loop computed (the `candidatePairs` output). The world-tick scheduler
@@ -753,7 +764,10 @@ export function createNpcController(
   // deep branch fires. Staging consumes NO shared-rng draws (its jitter
   // uses deepRandom), so seeded controller tests keep their streams.
   const DEEP_RENDEZVOUS_COOLDOWN_S = 90;
-  let nextRendezvousAt = 75 + deepRandom() * 75;
+  let nextRendezvousAt = 45 + deepRandom() * 45;
+  // C-78 v1.1 QA counters (why-didnt-it-stage visibility for
+  // Playwright/WebMCP; plain data, read via getDeepDebug()).
+  const deepDebug = { gateSeen: 0, quiet: 0, due: 0, attempts: 0, blocked: "" };
   const rendezvousFree = (id: NpcId): boolean => {
     const object = npcObjects[id];
     const state = runtime.get(id);
@@ -778,18 +792,25 @@ export function createNpcController(
     return true;
   };
   const tryStageRendezvous = (period: Period): boolean => {
+    deepDebug.attempts += 1;
     const flags = options.getFlags?.() ?? {};
     for (const script of NPC_NPC_CONVERSATIONS) {
       const [aId, bId] = script.cast;
       if (aId === undefined || bId === undefined) continue;
-      if (!rendezvousFree(aId) || !rendezvousFree(bId)) continue;
+      if (!rendezvousFree(aId) || !rendezvousFree(bId)) {
+        deepDebug.blocked = `${script.id}:free a=${rendezvousFree(aId)} b=${rendezvousFree(bId)}`;
+        continue;
+      }
       // The same gates the dice-time deep branch applies: cast x live
       // band x flags x period, with the recent-script ring respected.
       const relBand = band(options.getRelationship?.(aId, bId) ?? 50);
       const eligible = eligibleConversations(aId, bId, relBand, flags, period);
       const fresh = eligible.filter((entry) => !recentDeepScripts.includes(entry.id));
       const pool = fresh.length > 0 ? fresh : eligible;
-      if (!pool.some((entry) => entry.id === script.id)) continue;
+      if (!pool.some((entry) => entry.id === script.id)) {
+        deepDebug.blocked = `${script.id}:eligible band=${relBand} n=${eligible.length}`;
+        continue;
+      }
       const anchor = npcObjects[aId].position;
       // 8 spokes at 1.5 m around the anchor: the first VALID spot (not
       // inside furniture - validateOverride runs findValidNpcSpawn)
@@ -805,7 +826,10 @@ export function createNpcController(
         );
         if (validated !== null) partnerSpot = { x: validated.position.x, z: validated.position.z };
       }
-      if (partnerSpot === null) continue;
+      if (partnerSpot === null) {
+        deepDebug.blocked = `${script.id}:spokes`;
+        continue;
+      }
       if (!stageMeetingSpot(bId, partnerSpot.x, partnerSpot.z)) continue;
       if (!stageMeetingSpot(aId, anchor.x, anchor.z)) {
         overrides.delete(bId);
@@ -2360,6 +2384,9 @@ export function createNpcController(
         // and the staging cooldown is due, stage one eligible scripted
         // pair regardless of what the dice found. Regular chatter
         // continues on the same roll.
+        deepDebug.gateSeen += 1;
+        if (conversations.size + deepRuns.size === 0) deepDebug.quiet += 1;
+        if (controllerElapsed >= nextRendezvousAt) deepDebug.due += 1;
         if (
           conversations.size + deepRuns.size === 0 &&
           controllerElapsed >= nextRendezvousAt
@@ -2441,6 +2468,7 @@ export function createNpcController(
         totalCount: snapshot.totalCount,
       };
     }),
+    getDeepDebug: () => ({ ...deepDebug }),
     getChatterCandidatePairs: () => lastChatterCandidatePairs,
     setOverride: (npcId, entry) => {
       const period = ensureCurrentPeriod();
