@@ -23,7 +23,8 @@ import { game } from "./game/state";
 import { runDailyTick, publishCashflow } from "./game/economy";
 import { runPeriodEvent, registerNpcController } from "./game/events";
 import { registerPlayerActions } from "./webmcp/tools";
-import { registerWebmcpTools, type RegisterResult } from "./webmcp/bridge";
+import { registerWebmcpTools, toToolResponse, type RegisterResult } from "./webmcp/bridge";
+import { callTool } from "./webmcp/tools";
 import { drainPendingAgentJoin, notifyOfficeLoaded, registerAgentCompanion } from "./webmcp/tools";
 import { approachHumanConversation } from "./webmcp/companion-conversation";
 import { createNpcExchange, type NpcExchange } from "./webmcp/npc-exchange";
@@ -2240,6 +2241,11 @@ declare global {
       /** C-46 chatter views, for the same QA surface. */
       getChatter: () => readonly { a: string; b: string; responseIn: number; starterLine: string }[];
       getDeepDebug: () => { gateSeen: number; quiet: number; due: number; attempts: number; blocked: string } | null;
+      /** WebMCP QA: the real tool implementations via the real bridge. */
+      webmcpCall: (name: string, args?: Record<string, unknown>) => Promise<{
+        content: ReadonlyArray<{ type: "text"; text: string }>;
+        isError?: boolean;
+      }>;
       /** C-78 v1.1 QA: advance the NPC controller by simulated seconds. */
       debugTick: (seconds: number) => void;
       inspectNpcs: () => Array<{
@@ -2344,6 +2350,13 @@ window.__aitrainer = {
   teleport: (x: number, z: number, yaw: number): void => {
     if (!controls) return;
     controls.setPlayerPose(x, z, yaw);
+  },
+  // WebMCP QA surface (closure verdict Medium 9): invoke the REAL
+  // registered tool implementations through the same bridge conversion
+  // the host uses. The E2Es drive the game through this - no shimmed
+  // document.modelContext anywhere in tests/.
+  webmcpCall: async (name: string, args: Record<string, unknown> = {}) => {
+    return toToolResponse(await callTool({ name, parameters: args }));
   },
   // C-78 v1.1 QA accelerator: advance ONLY the NPC controller by
   // `seconds` of simulated time (30 Hz steps) - chatter, deep
