@@ -57,7 +57,7 @@ import {
   updateRepair,
   usePoint,
 } from "./engine/interaction-points";
-import { band as socialBand } from "./game/social";
+import { band as socialBand, pairKey } from "./game/social";
 import {
   caffeineBand,
   createNeedsTable,
@@ -694,6 +694,15 @@ function startOffice(playIntro = false): void {
       () => game.get().day,
       isLunchActive,
       positionalSfx,
+      // C-78 REVISE v1: NPC-NPC deep conversations read the LIVE social
+      // matrix + flags, and settle their one bounded reaction per run
+      // through the standard reducer action (D-50).
+      {
+        getRelationship: (a, b) => game.get().social?.relationships[pairKey(a, b)] ?? 50,
+        getFlags: () => game.get().flags,
+        onConversationReaction: (pair, bucket) =>
+          game.dispatch({ type: "apply-social-reaction", pair, bucket }),
+      },
     );
     sceneObjects = built;
     // C-61 fix: hand the REAL engine camera to the bubble system. DOM

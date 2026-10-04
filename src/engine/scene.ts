@@ -31,6 +31,7 @@ import { registerSoundSource } from "../audio/positional";
 import type { PositionalSfx } from "../audio/positional-three";
 import { roomAt } from "./chatter";
 import { createJanuszRobotFleet, type JanuszRobotFleet } from "./janusz-robots";
+import type { ReactionBucket } from "../game/social";
 import { makeGarden, makeOutdoorScenery } from "./furniture/garden";
 import { makeReceptionGarden } from "./furniture/reception-garden";
 import { makeLobbyPlanter } from "./furniture/lobby-planter";
@@ -159,6 +160,16 @@ export function buildOfficeScene(
   // (distance x room x facing gain on the shared SfxBus); when
   // omitted, the controller's default full-volume play is kept.
   positionalSfx?: PositionalSfx | null,
+  // C-78 REVISE v1: live game-state reads for the NPC-NPC deep
+  // conversation layer. The scene stays store-free - main.ts passes
+  // these through. When omitted the controller runs inert (neutral
+  // band, no flags, no reaction dispatch) and only evergreen neutral
+  // scripts can fire.
+  socialDeps?: {
+    getRelationship?: (a: NpcId, b: NpcId) => number;
+    getFlags?: () => Readonly<Record<string, boolean>>;
+    onConversationReaction?: (pair: [NpcId, NpcId], bucket: ReactionBucket) => void;
+  },
 ): SceneObjects {
   const updatables: Array<(dt: number) => void> = [];
 
@@ -337,12 +348,15 @@ export function buildOfficeScene(
     npcObjects[npc.id] = m;
   });
 
-  const npcController = createNpcController(NPCS, npcObjects, getCurrentPeriod, getDay, Math.random, isLunchActive, positionalSfx ? {
-    playSfx: (id: "sfx_photocopier" | "sfx_error_buzzer") => {
-      if (id === "sfx_photocopier") positionalSfx.play(id, "photocopier");
-      else positionalSfx.play(id); // unregistered source = full-volume bus play
-    },
-  } : {});
+  const npcController = createNpcController(NPCS, npcObjects, getCurrentPeriod, getDay, Math.random, isLunchActive, {
+    ...(socialDeps ?? {}),
+    ...(positionalSfx ? {
+      playSfx: (id: "sfx_photocopier" | "sfx_error_buzzer") => {
+        if (id === "sfx_photocopier") positionalSfx.play(id, "photocopier");
+        else positionalSfx.play(id); // unregistered source = full-volume bus play
+      },
+    } : {}),
+  });
   updatables.push(npcController.update);
 
   // C-70: Janusz's robot fleet. getJanusz reads the live NPC object

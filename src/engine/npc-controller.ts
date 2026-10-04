@@ -73,6 +73,19 @@ import {
   PRINTER_FLASH_SWEEP_INTERVAL_S,
   printerFlashIntensity,
 } from "./printer-flash";
+import {
+  eligibleConversations,
+  pickConversation,
+} from "../content/npc-npc-conversations";
+import type { NpcNpcConversation } from "../content/npc-npc-conversations-schema";
+import { band, type ReactionBucket } from "../game/social";
+import {
+  BASE_DWELL_S,
+  DEFAULT_HUSH,
+  createNpcNpcRunner,
+  flattenPath,
+  type NpcNpcRunner,
+} from "./npc-npc-runner";
 
 export const COPY_RUN_INTERVAL_S = { min: 60, max: 120 } as const;
 export const COPY_RUN_DWELL_S = { min: 6, max: 10 } as const;
@@ -119,6 +132,17 @@ export interface ActiveConversationView {
   starterLine: string;
 }
 
+/** C-78 REVISE v1: debug/test view of one active deep conversation. */
+export interface DeepConversationView {
+  a: string;
+  b: string;
+  scriptId: string;
+  phase: string;
+  /** Index of the line currently on screen. */
+  lineIndex: number;
+  totalCount: number;
+}
+
 export interface NpcController {
   update: (dt: number) => void;
   destroy: () => void;
@@ -128,6 +152,8 @@ export interface NpcController {
   hasArrived: (npcId: NpcId) => boolean;
   /** C-46 debug/test hook: the conversations currently in flight. */
   getActiveConversations: () => readonly ActiveConversationView[];
+  /** C-78 REVISE v1: the authored deep conversations in flight. */
+  getActiveDeepConversations: () => readonly DeepConversationView[];
   /**
    * WS4 (C-77): the most recent eligible chatter pair list the update
    * loop computed (the `candidatePairs` output). The world-tick scheduler
@@ -468,6 +494,24 @@ export interface NpcControllerOptions {
    *  any chatter tuning would silently reshuffle every escape-jitter
    *  roll and make jam tests seed-fragile. */
   chatter?: boolean;
+  /**
+   * C-78 REVISE v1 (NPC-NPC deep conversations): live game-state reads.
+   * When omitted the controller assumes relationship 50 (neutral band)
+   * and no flags, so only evergreen neutral scripts can fire and the
+   * legacy single-exchange flow is otherwise unchanged. Production
+   * wiring (main.ts): getRelationship reads
+   * `social.relationships[pairKey(a, b)]`, getFlags reads `state.flags`.
+   */
+  getRelationship?: (a: NpcId, b: NpcId) => number;
+  getFlags?: () => Readonly<Record<string, boolean>>;
+  /**
+   * Settles ONE bounded reaction per finished deep conversation (the
+   * last DELIVERED emotional beat; never "neutral" - a neutral dispatch
+   * would still mark the pair "touched" and freeze its archetype
+   * regression). Production wiring:
+   * `(pair, bucket) => game.dispatch({ type: "apply-social-reaction", pair, bucket })`.
+   */
+  onConversationReaction?: (pair: [NpcId, NpcId], bucket: ReactionBucket) => void;
   /** C-64: injectable so controller tests do not need a browser AudioContext. */
   playSfx?: (id: "sfx_photocopier" | "sfx_error_buzzer") => void;
   /** C-64: explicit printer host for isolated controller tests. */
@@ -590,6 +634,112 @@ export function createNpcController(
     (nextSpeechAt.get(npcId) ?? 0) <= now;
   const markSpoke = (npcId: NpcId, now: number): void => {
     nextSpeechAt.set(npcId, now + SPEECH_COOLDOWN_S);
+  };
+  // ── C-78 REVISE v1: NPC-NPC deep conversations ──────────────────────
+  // One authored-script runner per active pair, keyed by pairKey. Deep
+  // runs count toward MAX_CONVERSATIONS through the same room/busy
+  // gates as the legacy single exchanges, and cool the pair down for
+  // longer (an authored beat should not instantly repeat).
+  interface DeepRun {
+    runner: NpcNpcRunner;
+    /** script.cast[0] - speaks the "A" lines. */
+    aId: NpcId;
+    /** script.cast[1] - speaks the "B" lines. */
+    bId: NpcId;
+    scriptId: string;
+    /** The live pair, for the bounded social-reaction dispatch. */
+    pair: [NpcId, NpcId];
+    renderedIndex: number;
+  }
+  const deepRuns = new Map<string, DeepRun>();
+  // usedReplyIds-style memory: every line an NPC has HEARD, bounded.
+  // v1 records it; a later wave can gate selection on it.
+  const heardLines = new Map<NpcId, Set<string>>();
+  const HEARD_LINE_LIMIT = 24;
+  const rememberLine = (npcId: NpcId, text: string): void => {
+    let heard = heardLines.get(npcId);
+    if (heard === undefined) {
+      heard = new Set<string>();
+      heardLines.set(npcId, heard);
+    }
+    heard.add(text);
+    if (heard.size > HEARD_LINE_LIMIT) {
+      const oldest = heard.values().next().value;
+      if (oldest !== undefined) heard.delete(oldest);
+    }
+  };
+  // Deep conversations repeat less often than single exchanges.
+  const DEEP_PAIR_COOLDOWN_S = PAIR_COOLDOWN_S * 2;
+  // Recent script ids (bounded ring) so the same pair/pool does not
+  // replay the identical script back to back; falls back to the full
+  // eligible set when everything is recent.
+  const recentDeepScripts: string[] = [];
+  const DEEP_RECENT_LIMIT = 3;
+  // Deep script picks use their own LCG (same pattern as copyRandom):
+  // consuming the SHARED rng here would reshuffle every seeded
+  // movement/escape roll downstream.
+  let deepRandomState = (getDay() * 40503) >>> 0;
+  const deepRandom = (): number => {
+    deepRandomState = (deepRandomState * 1664525 + 1013904223) >>> 0;
+    return deepRandomState / 0x100000000;
+  };
+  /** Ends a deep run's bookkeeping: cooldown + one bounded reaction. */
+  const settleDeepRun = (key: string, run: DeepRun): void => {
+    deepRuns.delete(key);
+    pairCooldowns.set(key, controllerElapsed + DEEP_PAIR_COOLDOWN_S);
+    const snapshot = run.runner.snapshot();
+    if (
+      snapshot.reaction !== null && snapshot.reaction !== "neutral" &&
+      options.onConversationReaction !== undefined
+    ) {
+      options.onConversationReaction(run.pair, snapshot.reaction);
+    }
+  };
+  /** Period transition / new day: abandon every run (interruption
+   *  table) with the same settlement as any other end. */
+  const abandonDeepRuns = (): void => {
+    for (const [key, run] of [...deepRuns]) {
+      run.runner.abandon();
+      settleDeepRun(key, run);
+    }
+  };
+  /** Pre-decides the whole path (one seeded decision, REVISE #3) and
+   *  puts the runner on the air with its first line. */
+  const startDeepConversation = (
+    script: NpcNpcConversation,
+    pair: ChatterPair,
+    relBand: "hostile" | "neutral" | "warm",
+  ): void => {
+    const [aId, bId] = script.cast;
+    const firstExchange = script.exchanges[0];
+    if (aId === undefined || bId === undefined || firstExchange === undefined) return;
+    const events = flattenPath(script, firstExchange.starter.id, relBand, deepRandom);
+    const runner = createNpcNpcRunner({
+      lines: events,
+      baseDwellS: BASE_DWELL_S,
+      onEnd: () => {},
+    });
+    deepRuns.set(pairKey(pair.a, pair.b), {
+      runner, aId, bId, scriptId: script.id,
+      pair: [pair.a as NpcId, pair.b as NpcId],
+      renderedIndex: 0,
+    });
+    recentDeepScripts.push(script.id);
+    if (recentDeepScripts.length > DEEP_RECENT_LIMIT) recentDeepScripts.shift();
+    const firstLine = runner.currentLine();
+    if (firstLine !== null) {
+      bubbleSystem?.show(npcObjects[aId].position, firstLine.text);
+      markSpoke(aId, controllerElapsed);
+      rememberLine(aId, firstLine.text);
+      rememberLine(bId, firstLine.text);
+    }
+    // Face each other for the duration of the run.
+    const aObject = npcObjects[aId];
+    const bObject = npcObjects[bId];
+    const dx = bObject.position.x - aObject.position.x;
+    const dz = bObject.position.z - aObject.position.z;
+    aObject.rotation.y = Math.atan2(dx, dz);
+    bObject.rotation.y = Math.atan2(-dx, -dz);
   };
   // C-54: the NPC currently in a player dialogue, if any.
   let playerTalkingTo: NpcId | null = null;
@@ -1089,6 +1239,9 @@ export function createNpcController(
     validatedDestinations.clear();
     // Everyone re-plans across the office, so any in-flight exchange
     // would end up as bubbles over NPCs walking away from each other.
+    // C-78 REVISE v1: deep runs are abandoned too (interruption table:
+    // period transition) with their one-shot settlement.
+    abandonDeepRuns();
     conversations.clear();
     // C-62/C-64 (Lucas: "Zosia's meeting with who?"): 1-2 colleagues
     // join whichever period currently contains Zosia's meeting. Reading
@@ -1144,6 +1297,7 @@ export function createNpcController(
     ceoOutToday = getDay() % 7 === 0;
     overrides.clear();
     validatedDestinations.clear();
+    abandonDeepRuns();
     conversations.clear();
     pendingArrivals.clear();
     const plan = planMorningArrivals(npcs.map((npc) => npc.id), getDay(), rng);
@@ -1211,6 +1365,7 @@ export function createNpcController(
     departing.clear();
     overrides.clear();
     validatedDestinations.clear();
+    abandonDeepRuns();
     conversations.clear();
         const leavers: NpcId[] = [];
     for (const npc of npcs) {
@@ -1526,6 +1681,11 @@ export function createNpcController(
     for (const conversation of conversations.values()) {
       chattingNow.add(conversation.aId);
       chattingNow.add(conversation.bId);
+    }
+    // C-78 REVISE v1: deep-conversation participants hold still too.
+    for (const run of deepRuns.values()) {
+      chattingNow.add(run.aId);
+      chattingNow.add(run.bId);
     }
     // C-54: an NPC in a PLAYER dialogue holds still for the same
     // reason - and keeps the face-the-player yaw main.ts set.
@@ -1914,6 +2074,46 @@ export function createNpcController(
     // Responses: each frame, deliver the partner's reply when the
     // starter's bubble has had its moment. The pair then cools down so
     // the NEXT exchange belongs to a different pair.
+    // --- C-78 REVISE v1: deep conversation drive loop ---------------
+    // Advance every active authored script and render each line as the
+    // runner flips to it. A participant that leaves (departing,
+    // walking, gone home, invisible) ABANDONS the run; the player
+    // opening a dialogue with a participant HUSHES it (see
+    // setTalkingToPlayer). Either way settleDeepRun fires once.
+    for (const [key, run] of [...deepRuns]) {
+      const aObject = npcObjects[run.aId];
+      const bObject = npcObjects[run.bId];
+      const aState = runtime.get(run.aId);
+      const bState = runtime.get(run.bId);
+      const left = aObject === undefined || bObject === undefined ||
+        !aObject.visible || !bObject.visible ||
+        aObject.userData.npcState === "gone-home" ||
+        bObject.userData.npcState === "gone-home" ||
+        departing.has(run.aId) || departing.has(run.bId) ||
+        aState === undefined || bState === undefined ||
+        aState.path !== null || bState.path !== null;
+      if (left) {
+        run.runner.abandon();
+        settleDeepRun(key, run);
+        continue;
+      }
+      const indexBefore = run.runner.snapshot().lineIndex;
+      run.runner.advance(safeDt);
+      const snapshot = run.runner.snapshot();
+      if (snapshot.phase !== "running") {
+        settleDeepRun(key, run);
+        continue;
+      }
+      const current = run.runner.currentLine();
+      if (current !== null && snapshot.lineIndex !== indexBefore) {
+        const speakerId = current.speaker === "A" ? run.aId : run.bId;
+        const speakerObject = speakerId === run.aId ? aObject : bObject;
+        bubbleSystem?.show(speakerObject.position, current.text);
+        markSpoke(speakerId, controllerElapsed);
+        rememberLine(run.aId, current.text);
+        rememberLine(run.bId, current.text);
+      }
+    }
     for (const [key, conversation] of [...conversations]) {
       if (controllerElapsed - conversation.starterAt < RESPONSE_DELAY_S) continue;
       conversations.delete(key);
@@ -1927,13 +2127,16 @@ export function createNpcController(
 
     if (chatterEnabled && bubbleElapsed >= 1) {
       bubbleElapsed = 0;
-      if (conversations.size < MAX_CONVERSATIONS && controllerElapsed >= nextStartAt) {
+      if (conversations.size + deepRuns.size < MAX_CONVERSATIONS && controllerElapsed >= nextStartAt) {
         // Candidates: everyone visible, out of home, not already mid-
         // conversation. The room comes from the position so the
         // second simultaneous conversation lands in a different room.
         const busy = new Set<string>();
         for (const conversation of conversations.values()) {
           busy.add(conversation.aId); busy.add(conversation.bId);
+        }
+        for (const run of deepRuns.values()) {
+          busy.add(run.aId); busy.add(run.bId);
         }
         const candidates = npcs
           .filter((npc) => {
@@ -1976,6 +2179,12 @@ export function createNpcController(
           activeRooms.add(roomAt(a.position.x, a.position.z));
           activeRooms.add(roomAt(b.position.x, b.position.z));
         }
+        for (const run of deepRuns.values()) {
+          const runA = npcObjects[run.aId];
+          const runB = npcObjects[run.bId];
+          activeRooms.add(roomAt(runA.position.x, runA.position.z));
+          activeRooms.add(roomAt(runB.position.x, runB.position.z));
+        }
         const pairs = candidatePairs(candidates, CHATTER_RADIUS, {
           cooldowns: pairCooldowns,
           now: controllerElapsed,
@@ -1990,6 +2199,34 @@ export function createNpcController(
         // no pair qualifies we simply keep waiting - the schedule stays
         // due, so chatter resumes the moment two NPCs are nearby.
         if (pair !== null && first !== undefined && second !== undefined) {
+          // --- C-78 REVISE v1: deep conversations first ----------------
+          // When an authored script is eligible for this pair (cast x
+          // live band x flags x period) it REPLACES the single-exchange
+          // flow: the whole path is flattened NOW (one seeded decision
+          // at formation) and the runner plays it as timed bubbles.
+          const relBand = band(
+            options.getRelationship?.(pair.a as NpcId, pair.b as NpcId) ?? 50,
+          );
+          const eligible = eligibleConversations(
+            pair.a as NpcId,
+            pair.b as NpcId,
+            relBand,
+            options.getFlags?.() ?? {},
+            period,
+          );
+          const fresh = eligible.filter(
+            (script) => !recentDeepScripts.includes(script.id),
+          );
+          const deepScript = pickConversation(
+            fresh.length > 0 ? fresh : eligible,
+            deepRandom,
+          );
+          if (deepScript !== null) {
+            startDeepConversation(deepScript, pair, relBand);
+            // Schedule the next start AFTER recording this one, so the
+            // 35% overlap gap can fire against the just-started run.
+            nextStartAt = controllerElapsed + nextStartDelay(conversations.size, rng);
+          } else {
           // C-46: the STARTER is a chattiness-weighted coin flip
           // inside the pair - this is what stops "only one person
           // talks all the time".
@@ -2030,6 +2267,7 @@ export function createNpcController(
           // Schedule the next start AFTER recording this one, so the
           // 35% overlap gap can fire against the just-started exchange.
           nextStartAt = controllerElapsed + nextStartDelay(conversations.size, rng);
+          }
         }
       }
     }
@@ -2062,6 +2300,25 @@ export function createNpcController(
     /** C-51: false while an NPC has not walked in yet this morning. */
     hasArrived: (npcId) => !pendingArrivals.has(npcId),
     setTalkingToPlayer: (npcId) => {
+      // C-78 REVISE v1: opening a player dialogue with a participant of
+      // a deep conversation HUSHES the run (interruption table). The
+      // current speaker plays the authored hush line, or "…anyway."
+      // when none is authored for the line on screen.
+      if (npcId !== null) {
+        for (const [key, run] of [...deepRuns]) {
+          if (run.aId !== npcId && run.bId !== npcId) continue;
+          const line = run.runner.currentLine();
+          const speakerId = line !== null && line.speaker === "A" ? run.aId : run.bId;
+          const speakerObject = npcObjects[speakerId];
+          bubbleSystem?.show(
+            speakerObject.position,
+            line?.onPlayerApproach ?? DEFAULT_HUSH,
+          );
+          markSpoke(speakerId, controllerElapsed);
+          run.runner.hush();
+          settleDeepRun(key, run);
+        }
+      }
       playerTalkingTo = npcId;
     },
     setBubblesVisible: (visible) => bubbleSystem?.setVisible(visible),
@@ -2074,6 +2331,17 @@ export function createNpcController(
       responseIn: Math.max(0, RESPONSE_DELAY_S - (controllerElapsed - conversation.starterAt)),
       starterLine: conversation.starterLine,
     })),
+    getActiveDeepConversations: () => [...deepRuns.values()].map((run) => {
+      const snapshot = run.runner.snapshot();
+      return {
+        a: run.aId,
+        b: run.bId,
+        scriptId: run.scriptId,
+        phase: snapshot.phase,
+        lineIndex: snapshot.lineIndex,
+        totalCount: snapshot.totalCount,
+      };
+    }),
     getChatterCandidatePairs: () => lastChatterCandidatePairs,
     setOverride: (npcId, entry) => {
       const period = ensureCurrentPeriod();

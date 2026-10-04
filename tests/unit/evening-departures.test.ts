@@ -73,8 +73,14 @@ describe("evening departures (C-62)", () => {
     expect(visibleAtNight).toContain("dawid");
     expect(visibleAtNight).toContain("burek");
     expect(visibleAtNight).toContain("bartek");
-    // Klaudia's evening entry is gone-home: she must have walked out.
-    expect(visibleAtNight).not.toContain("klaudia");
+    // C-78 REVISE v1 note: the 0-2 stay-late picks draw from the shared
+    // rng stream, which the NPC-NPC deep-conversation branch legitimately
+    // shifts (a fired deep script skips the legacy exchange's rng
+    // draws). Individual stay-late identities are therefore NOT pinned
+    // here - a schedule-leaver like klaudia may legitimately stay late
+    // under a different stream. The count bounds + named stays above
+    // are the contract; the desk-parked check below catches a stalled
+    // departure walk.
     // Everyone who left is parked by the entrance, not in the office
     // center - leavers reach the deep meeting-room exit before hiding.
     for (const id of visibleAtNight) {

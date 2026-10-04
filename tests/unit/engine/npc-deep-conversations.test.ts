@@ -1,0 +1,215 @@
+import * as THREE from "three";
+import { describe, expect, it } from "vitest";
+import { NPCS } from "../../../src/content/npcs";
+import { createNpcController } from "../../../src/engine/npc-controller";
+import type { DeepConversationView } from "../../../src/engine/npc-controller";
+import type { ReactionBucket } from "../../../src/game/social";
+import type { NPC, NpcId } from "../../../src/types";
+
+// C-78 REVISE v1: the controller integration of the authored NPC-NPC
+// deep conversations. The pure pieces (selection runtime, runner) have
+// their own suites; these tests pin the WIRING: an eligible pair plays
+// the authored script through the live relationship band, the runner's
+// lines render over time, the run settles exactly one bounded reaction
+// through the callback, and a player dialogue hushes the run.
+
+function npc(id: NpcId): NPC {
+  return NPCS.find((candidate) => candidate.id === id)!;
+}
+
+function makeObject(id: NpcId): THREE.Object3D {
+  const object = new THREE.Group();
+  object.userData.npcId = id;
+  for (const name of ["left-leg", "right-leg", "arm-left", "arm-right"]) {
+    const child = new THREE.Object3D();
+    child.name = name;
+    object.add(child);
+  }
+  return object;
+}
+
+/** Deterministic LCG so long simulations are reproducible. */
+function lcg(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0x1_0000_0000;
+  };
+}
+
+interface HarnessOptions {
+  getRelationship?: (a: NpcId, b: NpcId) => number;
+  onConversationReaction?: (pair: [NpcId, NpcId], bucket: ReactionBucket) => void;
+}
+
+interface Harness {
+  controller: ReturnType<typeof createNpcController>;
+  objects: Record<NpcId, THREE.Object3D>;
+}
+
+function mountHarness(ids: NpcId[], rng: () => number, harnessOptions: HarnessOptions = {}): Harness {
+  const objects = {} as Record<NpcId, THREE.Object3D>;
+  for (const id of ids) objects[id] = makeObject(id);
+  const controller = createNpcController(
+    ids.map((id) => npc(id)),
+    objects,
+    () => "morning",
+    () => 1,
+    rng,
+    () => false,
+    { arrivals: false, ...harnessOptions },
+  );
+  return { controller, objects };
+}
+
+function placeAt(harness: Harness, id: NpcId, x: number, z: number): void {
+  harness.controller.setOverride(id, { position: { x, y: 0, z }, face: 0, state: "at-desk" });
+}
+
+/** Drive `seconds` of office life, returning every deep-conversation
+ *  view observed after each step (empty arrays included). */
+function simulate(harness: Harness, seconds: number): DeepConversationView[][] {
+  const observations: DeepConversationView[][] = [];
+  const steps = Math.round(seconds / 0.25);
+  for (let step = 0; step < steps; step += 1) {
+    harness.controller.update(0.25);
+    observations.push([...harness.controller.getActiveDeepConversations()]);
+  }
+  return observations;
+}
+
+describe("NPC-NPC deep conversations (controller integration, C-78 REVISE v1)", () => {
+  it("plays an eligible authored script (with its full flattened path) instead of a single exchange", () => {
+    // kasia + pawel at relationship 50 = neutral band: the evergreen
+    // pipeline script (npcnpc-pk-pipeline, neutral x2) is eligible and
+    // must REPLACE the legacy single-exchange flow.
+    const harness = mountHarness(["kasia", "pawel"], lcg(11), {
+      getRelationship: () => 50,
+    });
+    harness.controller.update(0);
+    placeAt(harness, "kasia", 0, 0);
+    placeAt(harness, "pawel", 0.8, 0);
+
+    const observations = simulate(harness, 90);
+
+    const started = observations.filter((views) => views.length > 0);
+    expect(started.length).toBeGreaterThan(0);
+    const scriptIds = new Set(started.flatMap((views) => views.map((view) => view.scriptId)));
+    expect(scriptIds).toContain("npcnpc-pk-pipeline");
+
+    // Deeper than starter+response: a 2-exchange script flattens to
+    // starter, response, starter, response, band ending = 5 lines.
+    const first = started[0]![0]!;
+    expect(first.totalCount).toBeGreaterThanOrEqual(5);
+
+    // The lines actually RENDER over time: the line index advances
+    // while the run is on the air.
+    const lineIndexes = started.map((views) => views[0]!.lineIndex);
+    expect(Math.max(...lineIndexes)).toBeGreaterThan(0);
+  });
+
+  it("settles exactly ONE non-neutral reaction through the callback when the run completes", () => {
+    // kasia + marek at 25 = hostile band: the ticket-queue script's
+    // last delivered beat is "offended". The callback must fire once
+    // for the whole run - never per line, never "neutral".
+    const reactions: Array<{ pair: [NpcId, NpcId]; bucket: ReactionBucket }> = [];
+    const harness = mountHarness(["kasia", "marek"], lcg(23), {
+      getRelationship: () => 25,
+      onConversationReaction: (pair, bucket) => reactions.push({ pair, bucket }),
+    });
+    harness.controller.update(0);
+    placeAt(harness, "kasia", 0, 0);
+    placeAt(harness, "marek", 0.8, 0);
+
+    const observations = simulate(harness, 120);
+
+    const started = observations.filter((views) => views.length > 0);
+    expect(started.length).toBeGreaterThan(0);
+    expect(new Set(started.flatMap((views) => views.map((view) => view.scriptId))))
+      .toContain("npcnpc-km-ticket-queue");
+
+    // Exactly one settlement for the one completed run, with the
+    // script's final emotional beat.
+    expect(reactions.length).toBe(1);
+    const settled = reactions[0]!;
+    expect([...settled.pair].sort()).toEqual(["kasia", "marek"]);
+    expect(settled.bucket).toBe("offended");
+
+    // After the run completes, the deep list drains.
+    expect(observations[observations.length - 1]!.length).toBe(0);
+  });
+
+  it("hushes the run when the player opens a dialogue with a participant", () => {
+    const reactions: Array<{ pair: [NpcId, NpcId]; bucket: ReactionBucket }> = [];
+    const harness = mountHarness(["kasia", "pawel"], lcg(5), {
+      getRelationship: () => 50,
+      onConversationReaction: (pair, bucket) => reactions.push({ pair, bucket }),
+    });
+    harness.controller.update(0);
+    placeAt(harness, "kasia", 0, 0);
+    placeAt(harness, "pawel", 0.8, 0);
+
+    // Drive step by step until the deep run is on the air, then hush
+    // in the same instant - the first line (pk-s1) is still on screen
+    // and its dwell has not expired.
+    let started = false;
+    for (let step = 0; step < 360; step += 1) {
+      harness.controller.update(0.25);
+      if (harness.controller.getActiveDeepConversations().length > 0) {
+        started = true;
+        break;
+      }
+    }
+    expect(started).toBe(true);
+
+    // The delivered-beats rule: the pipeline's "annoyed" beat sits on
+    // line 0, whose dwell has not expired, so nothing has settled yet.
+    expect(reactions.length).toBe(0);
+    harness.controller.setTalkingToPlayer("kasia");
+    expect(harness.controller.getActiveDeepConversations().length).toBe(0);
+    // A hush this early settles NOTHING - no emotional beat was fully
+    // delivered before the player interrupted.
+    expect(reactions.length).toBe(0);
+
+    // ...and the hushed pair does not instantly restart: the deep
+    // cooldown (2x the single-exchange cooldown) keeps the list empty
+    // for the rest of a short window.
+    const after = simulate(harness, 10);
+    expect(after.every((views) => views.length === 0)).toBe(true);
+  });
+
+  it("leaves the legacy single-exchange flow alone when no script is eligible", () => {
+    // Two NPCs whose pair has NO authored script at all: chatter must
+    // fall back to the C-46 single-exchange flow (no deep runs, no
+    // reaction dispatch).
+    const reactions: Array<{ pair: [NpcId, NpcId]; bucket: ReactionBucket }> = [];
+    const harness = mountHarness(["bartek", "zosia"], lcg(3), {
+      getRelationship: () => 50,
+      onConversationReaction: (pair, bucket) => reactions.push({ pair, bucket }),
+    });
+    harness.controller.update(0);
+    placeAt(harness, "bartek", 0, 0);
+    placeAt(harness, "zosia", 0.8, 0);
+
+    let legacyStarts = 0;
+    let deepSeen = false;
+    let previous = new Set<string>();
+    for (let step = 0; step < 360; step += 1) {
+      harness.controller.update(0.25);
+      if (harness.controller.getActiveDeepConversations().length > 0) deepSeen = true;
+      const keys = new Set(
+        harness.controller
+          .getActiveConversations()
+          .map((c) => [c.a, c.b].sort().join("|")),
+      );
+      for (const key of keys) {
+        if (!previous.has(key)) legacyStarts += 1;
+      }
+      previous = keys;
+    }
+    expect(deepSeen).toBe(false);
+    expect(reactions.length).toBe(0);
+    // The legacy flow still ran: at least one exchange started.
+    expect(legacyStarts).toBeGreaterThan(0);
+  });
+});
