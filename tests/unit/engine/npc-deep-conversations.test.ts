@@ -134,6 +134,51 @@ describe("NPC-NPC deep conversations (controller integration, C-78 REVISE v1)", 
       .toContain("npcnpc-pk-pipeline");
   });
 
+  it("releases the rendezvous pair back to their desks when the run settles (verdict finding 6)", () => {
+    // Without the release, both participants stay pinned at the
+    // meeting spot until the next period transition (and
+    // rendezvousFree() then refuses to ever stage them again). After
+    // the staged run completes, pawel must WALK HOME to his authored
+    // desk - the pair separates again within a minute.
+    const harness = mountHarness(["kasia", "pawel"], lcg(41), {
+      getRelationship: () => 50,
+    });
+    harness.controller.update(0);
+    placeAt(harness, "kasia", 0, 0);
+    placeAt(harness, "pawel", 10, 0);
+    simulate(harness, 6);
+    harness.controller.setOverride("kasia", null);
+    harness.controller.setOverride("pawel", null);
+
+    // Drive until a deep run has actually PLAYED (not just staged)
+    // and then fully settled.
+    let sawRun = false;
+    let settled = false;
+    for (let step = 0; step < 360 * 2; step += 1) {
+      harness.controller.update(0.25);
+      const deep = harness.controller.getActiveDeepConversations().length;
+      if (deep > 0) sawRun = true;
+      if (sawRun && deep === 0 && step > 240) {
+        settled = true;
+        break;
+      }
+    }
+    expect(settled).toBe(true);
+
+    // Wait for the walk home; the pair must separate beyond chatter
+    // radius (pawel's desk is 10.7 m from kasia's).
+    let separated = false;
+    for (let step = 0; step < 240; step += 1) {
+      harness.controller.update(0.25);
+      const d = harness.objects.kasia.position.distanceTo(harness.objects.pawel.position);
+      if (d > 5) {
+        separated = true;
+        break;
+      }
+    }
+    expect(separated).toBe(true);
+  });
+
   it("does not stage a rendezvous while a member is already overridden", () => {
     // An override means another system owns the NPC (coffee trip,
     // event placement) - staging must not hijack it.

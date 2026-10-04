@@ -706,6 +706,19 @@ export function createNpcController(
     ) {
       options.onConversationReaction(run.pair, snapshot.reaction);
     }
+    // Verdict finding 6 (v1.1): release the RENDEZVOUS overrides this
+    // run owned - without this, both participants stay pinned at the
+    // meeting spot until the next period transition, and
+    // rendezvousFree() then excludes them from any future staging.
+    // Re-plan to their schedule desks (NOT via setOverride(null):
+    // that path calls releaseArrival, which mid-transition would
+    // re-run C-51 walk-ins for NPCs already in the building).
+    for (const id of [run.aId, run.bId]) {
+      if (!overrides.has(id)) continue;
+      overrides.delete(id);
+      validatedDestinations.delete(id);
+      planForEntry(id, scheduleFor(id, ensureCurrentPeriod()));
+    }
   };
   /** Period transition / new day: abandon every run (interruption
    *  table) with the same settlement as any other end. */
