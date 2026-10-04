@@ -2349,13 +2349,21 @@ export function createNpcController(
           // 35% overlap gap can fire against the just-started exchange.
           nextStartAt = controllerElapsed + nextStartDelay(conversations.size, rng);
           }
-        } else if (
+        }
+        // C-78 REVISE v1.1: deep-conversation rendezvous. NOT an
+        // else-branch of the pairing pick: in the morning the desk-
+        // adjacent pairs are almost always available, so a
+        // "no adjacent pair" gate would never open (live smoke +
+        // 15-NPC diagnostic: staging starved behind pair !== null).
+        // Instead: when the office is QUIET (no exchange in flight -
+        // legacy exchanges are ~5 s, so quiet windows are frequent)
+        // and the staging cooldown is due, stage one eligible scripted
+        // pair regardless of what the dice found. Regular chatter
+        // continues on the same roll.
+        if (
           conversations.size + deepRuns.size === 0 &&
           controllerElapsed >= nextRendezvousAt
         ) {
-          // C-78 REVISE v1.1: quiet office + no adjacent pair - stage
-          // one eligible scripted pair instead of letting the authored
-          // beats starve. The next start stays due for regular chatter.
           nextRendezvousAt =
             controllerElapsed + DEEP_RENDEZVOUS_COOLDOWN_S + deepRandom() * 60;
           tryStageRendezvous(period);
