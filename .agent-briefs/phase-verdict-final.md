@@ -1,0 +1,11 @@
+You are a delegate. Do not load the `agents-workflow-sacs`, `beads` or `cli-agent-delegation` skills, do not run `bd`, do not commit or push. Write your verdict to `.agent-briefs/phase-verdict-final-result.md`.
+
+# Task: FORMAL CLOSURE RE-VERDICT — final HEAD, all waves
+
+Repo: /home/lucas/DEV/Projects/ai-trainer-simulator, branch `feat/jev-npc-decision-steering`, HEAD `aa069f8` or later (v2026.10.01-05 or later). This is the FORMAL CLOSURE re-verdict for Waves 2+3 after three fix rounds. Verdict history: the Wave-2 verdict FAILed with 6 findings, the Wave-3 verdict FAILed with 8, the first closure re-verdict (at `df48e8b`) FAILed with 8 more — ALL have since been fixed across `f031cd8`, `7835d6d`, `cdea14d`, `e3aee15`, `f18a91e`, `8179828`, `8251701`, `d4bd27d`, `2e7a6ed`, `aa069f8`. Read the prior verdict files (`.agent-briefs/phase-verdict-wave2-result.md`, `phase-verdict-wave3-result.md`, `phase-verdict-wave23-rerun-result.md`) for the full findings lists — re-verify EVERY one at HEAD, plus the Wave-4 perceptibility gate (which already PASSED and needs no re-run unless you find a regression).
+
+**Verify with your own commands:** `pnpm typecheck` (0 expected); `pnpm test` (1231+ expected); `pnpm test:e2e --project=chromium tests/e2e/ws9a-robot-collision.spec.ts` (both must pass — the reroute test passes with retries:1, documented walk-timing variance). Then adversarially sweep the CURRENT state: any NEW regressions from the fix rounds, any remaining gap in the Wave-2/3 scope (dialogue v3, world-tick, interactions, mission, NPC-NPC v1 runner, social model, save v2, perceptibility), and the prior-verdict findings one by one.
+
+**Known-accepted residue (do NOT re-report):** reroute E2E sampling variance (retries:1 catches; documented); the nudge-exhaustion branch in the shared NPC nudge helper (unreachable in normal worlds); the social-matrix production dispatch (nightly regression + bands provider landed; per-conversation apply-social-reaction dispatch is Wave-4 scope).
+
+**Deliver:** findings by severity with file:line (only NEW or un-repaired items), then EXACTLY one final line: `PHASE-VERDICT: PASS` or `PHASE-VERDICT: FAIL — <reason>`.
