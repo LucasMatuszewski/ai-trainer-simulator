@@ -349,6 +349,11 @@ const PURPOSE_CHECK_S = 45;
 // Pending NPC trips: actorId -> pointId. When the actor arrives within
 // range, the action activates (reserved -> in-use -> done -> caffeine).
 const pendingNpcTrips = new Map<NpcId, string>();
+/** Closure verdict High 3: trips we OWN an override for. Completion (or
+ *  a give-up below) releases ONLY these - never an event-layer pin. */
+const tripOverrides = new Map<NpcId, string>();
+/** Busy-point retry counters (frames waited; cleared on success/give-up). */
+const tripWaits = new Map<NpcId, number>();
 
 /** WS6: the closest interaction point within use range, or null. */
 const INTERACTION_LABELS: Record<string, string> = {
@@ -700,6 +705,13 @@ function startOffice(playIntro = false): void {
           const needs = npcNeeds[action.actorId as NpcId];
           if (needs) npcNeeds[action.actorId as NpcId] = { ...needs, caffeine: 100 };
         }
+      }
+      // Closure verdict High 3: when a PURPOSEFUL NPC trip's use
+      // completes, release the override WE own so the drinker walks
+      // back to their desk (the events layer's pins are untouched).
+      if (action.actorId !== "player" && tripOverrides.get(action.actorId as NpcId) === action.pointId) {
+        tripOverrides.delete(action.actorId as NpcId);
+        sceneObjects?.npcController.setOverride(action.actorId as NpcId, null);
       }
     });
     interruptAll(); // release stale reservations from a previous mount
@@ -2148,18 +2160,25 @@ function frame(): void {
         if (trip) {
           sceneObjects?.npcController.setOverride(craving, trip.destination);
           pendingNpcTrips.set(craving, "coffee-machine");
+          tripOverrides.set(craving, "coffee-machine");
           lastPurposefulId = craving;
         }
       }
       // AC-22 (CR): arrival detection — when a tripped NPC reaches the
       // point, reserve + activate + the positional-audio sfx fire; the
-      // caffeine refill settles through onActionCompleted. The NPC
-      // returns to its desk via the existing schedule override clear.
+      // caffeine refill settles through onActionCompleted.
+      // Closure verdict High 3: a BUSY point no longer loses the trip -
+      // the NPC waits beside the machine and retries until the current
+      // user finishes (bounded, then gives up and goes home). A
+      // COMPLETED use releases the override we own, so the drinker
+      // walks back to their desk instead of standing at the machine
+      // until the period ends.
       for (const [npcId, pointId] of pendingNpcTrips) {
         const npcObject = sceneObjects?.npcObjects?.[npcId];
         const def = INTERACTION_POINT_DEFS.find((d) => d.id === pointId);
         if (!npcObject || !def || !npcObject.visible) {
           pendingNpcTrips.delete(npcId);
+          tripOverrides.delete(npcId);
           continue;
         }
         const dist = Math.hypot(
@@ -2171,8 +2190,22 @@ function frame(): void {
           if (used.ok) {
             activateAction(used.actionId);
             playInteractionSfx(pointId);
+            pendingNpcTrips.delete(npcId);
+            continue;
           }
-          pendingNpcTrips.delete(npcId);
+          // Busy: retry on the next purposeful checks (this loop runs
+          // inside the 45 s PURPOSE gate, so 2 waits ~= 90 s), then
+          // release the override so the NPC re-plans home instead of
+          // camping at the machine all period.
+          tripWaits.set(npcId, (tripWaits.get(npcId) ?? 0) + 1);
+          if (tripWaits.get(npcId)! > 2) {
+            tripWaits.delete(npcId);
+            pendingNpcTrips.delete(npcId);
+            if (tripOverrides.get(npcId) === pointId) {
+              tripOverrides.delete(npcId);
+              sceneObjects?.npcController.setOverride(npcId, null);
+            }
+          }
         }
       }
     }
