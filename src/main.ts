@@ -2241,6 +2241,8 @@ declare global {
       /** C-46 chatter views, for the same QA surface. */
       getChatter: () => readonly { a: string; b: string; responseIn: number; starterLine: string }[];
       getDeepDebug: () => { gateSeen: number; quiet: number; due: number; attempts: number; blocked: string } | null;
+      /** QA: walk an NPC to (x, z) through the real controller. */
+      debugMoveNpc: (npcId: string, x: number, z: number) => void;
       /** WebMCP QA: the real tool implementations via the real bridge. */
       webmcpCall: (name: string, args?: Record<string, unknown>) => Promise<{
         content: ReadonlyArray<{ type: "text"; text: string }>;
@@ -2357,6 +2359,17 @@ window.__aitrainer = {
   // document.modelContext anywhere in tests/.
   webmcpCall: async (name: string, args: Record<string, unknown> = {}) => {
     return toToolResponse(await callTool({ name, parameters: args }));
+  },
+  // QA: send an NPC to (x, z) through the REAL controller override -
+  // full path planning, collision and avoidance, exactly like the
+  // coffee trips. The reroute E2E drives traversals with this so the
+  // detour proof is deterministic instead of sampling luck.
+  debugMoveNpc: (npcId: string, x: number, z: number): void => {
+    sceneObjects?.npcController.setOverride(npcId as NpcId, {
+      position: { x, y: 0, z },
+      face: 0,
+      state: "at-desk",
+    });
   },
   // C-78 v1.1 QA accelerator: advance ONLY the NPC controller by
   // `seconds` of simulated time (30 Hz steps) - chatter, deep

@@ -139,6 +139,11 @@ test("the robot crosses the office without clipping any furniture", async ({ pag
   }
 });
 
+/** Office side of the kitchen boundary (matches the window prover). */
+function officeSideOf(p: XZ): boolean {
+  return p.x < 8.5 && p.z > -6.5;
+}
+
 function pointToSegmentDist(p: XZ, a: XZ, b: XZ): number {
   const abx = b.x - a.x;
   const abz = b.z - a.z;
@@ -176,7 +181,11 @@ test("an NPC walking to the kitchen demonstrably reroutes around the robot parke
       if (look.companion?.walking === false && (await distanceToStop()) > 6.0) break; // rejected — re-issue
     }
   }
-  expect(await distanceToStop(), "room route never brought the robot near the kitchen").toBeLessThan(6.0);
+  const diag = await readGame(page, (h) => ({
+    screen: h.getScreen(),
+    companion: h.inspectCompanion(),
+  }));
+  expect(await distanceToStop(), `room route never brought the robot near the kitchen; diag=${JSON.stringify(diag)}`).toBeLessThan(6.0);
 
   // Closed-loop parking: re-aim at the stop before every 1 m step so a
   // blocked stride or a heading drift can never accumulate into a
@@ -209,10 +218,13 @@ test("an NPC walking to the kitchen demonstrably reroutes around the robot parke
     `robot failed to park on the coffee stop (off by ${parkError.toFixed(2)} m)`,
   ).toBeLessThan(1.0);
 
-  // Lunch sends kitchen-sequence walkers past the parked robot, but WHO
-  // rolls a kitchen trip is random per period (burek: ~50%). Sweep up to
-  // six period windows (two lunches' worth of chances), tracking fresh
-  // trajectories each window, until a provable encounter happens.
+  // The prover used to wait for a RANDOM lunch walker to cross the
+  // robot - sampling luck, red-by-variance in three gate runs. It now
+  // DRIVES one deterministic traversal per window: a real NPC walks
+  // office-side -> kitchen-side THROUGH the robot's parked spot via
+  // the real controller override (full planning/collision/avoidance).
+  // The straight line between the endpoints crosses the robot, so the
+  // only way to stay clear is a genuine detour.
   const hardOverlap = (npcId: string, pos: XZ, robotPos: XZ): void => {
     const d = Math.hypot(pos.x - robotPos.x, pos.z - robotPos.z);
     expect(d, `NPC ${npcId} at ${JSON.stringify(pos)} overlaps the robot at ${JSON.stringify(robotPos)}`).toBeGreaterThan(0.3);
@@ -233,6 +245,39 @@ test("an NPC walking to the kitchen demonstrably reroutes around the robot parke
     if ((await summary.count()) > 0 && (await summary.first().isVisible())) {
       await summary.first().click();
       await page.waitForTimeout(600);
+    }
+    // Drive the deterministic traversal: pick a settled human on the
+    // office side and send them to the kitchen side, straight through
+    // the robot's parked position.
+    const robotNow = await readGame(page, (h) => h.inspectCompanion());
+    const npcStates = await readGame(page, (h) => h.inspectNpcs());
+    const robotPos: XZ = robotNow?.world ? { x: robotNow.world.x, z: robotNow.world.z } : P;
+    const walker = (npcStates ?? [])
+      .filter((n) => {
+        const p = { x: n.position.x, z: n.position.z };
+        return (
+          n.npcId !== "burek" &&
+          officeSideOf(p) &&
+          Math.hypot(p.x - robotPos.x, p.z - robotPos.z) > 2.0
+        );
+      })
+      [0];
+    if (walker) {
+      // Target 1.5 m PAST the robot along the walker's own heading, so
+      // the straight line between the endpoints passes EXACTLY through
+      // the parked robot - only a genuine detour keeps it clear.
+      const start = { x: walker.position.x, z: walker.position.z };
+      const dx = robotPos.x - start.x;
+      const dz = robotPos.z - start.z;
+      const len = Math.hypot(dx, dz) || 1;
+      const through = {
+        x: robotPos.x + (dx / len) * 1.5,
+        z: robotPos.z + (dz / len) * 1.5,
+      };
+      await page.evaluate(
+        ([id, tx, tz]) => window.__aitrainer!.debugMoveNpc(id as string, tx as number, tz as number),
+        [walker.npcId, through.x, through.z] as const,
+      );
     }
     const trajectories = new Map<string, { first: XZ; last: XZ; minRobotDist: number; jumped: boolean }>();
     for (let i = 0; i < 60; i += 1) {
