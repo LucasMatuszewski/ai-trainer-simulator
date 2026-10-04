@@ -234,6 +234,39 @@ describe("dialogue wrapper — session lifecycle", () => {
     await wrapper.steerTurn(makeRequest());
     expect(counters().requested).toBeGreaterThan(0);
   });
+
+  it("a steer resolving after nextSession() writes NOTHING into the memo (closure Medium 4)", async () => {
+    // The UI callback token guard prevented stale RENDERS; the memo
+    // itself also had to be fenced - an old request resolving after a
+    // close/reopen must not serve a LATER conversation.
+    let resolveRequest: (value: unknown) => void = () => {};
+    const deferredClient = {
+      isConfigured: () => true,
+      request: () =>
+        new Promise((resolve) => {
+          resolveRequest = resolve as typeof resolveRequest;
+        }),
+    };
+    const { wrapper } = makeHarness({}, { client: deferredClient as never });
+
+    const pending = wrapper.steerTurn(makeRequest());
+    wrapper.nextSession(); // the player closed / reopened the conversation
+    resolveRequest({
+      ok: true,
+      answers: OPTIONS.map((o, i) => ({
+        questionId: optKey(o.id),
+        score: { level: i === 0 ? 5 : 1, confidence: 0.9 },
+      })),
+    });
+    const decision = await pending;
+
+    expect(decision.fallback).toBe(true);
+    expect(decision.fallbackReason).toBe("session-changed");
+    // The stale curation must NOT sit in the memo for the next
+    // conversation with the same NPC/topic/used-set.
+    expect(wrapper.memoOptionOrder(NPC, TOPIC, [])).toBeNull();
+    expect(counters().stale).toBe(1);
+  });
 });
 
 describe("social reaction mapping", () => {

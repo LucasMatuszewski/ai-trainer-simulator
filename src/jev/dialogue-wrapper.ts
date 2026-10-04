@@ -176,6 +176,11 @@ export function createDialogueWrapper(options: DialogueWrapperOptions = {}): Dia
     }
 
     const startedAt = now();
+    // Closure verdict Medium 4: fence the MEMO WRITE, not just the UI
+    // application - capture the session now and refuse to repopulate
+    // the memo if close/reopen bumped the token while we were in
+    // flight (a stale curation must never serve a later conversation).
+    const sessionAtRequest = currentSession();
     let result;
     try {
       result = await client.request(
@@ -190,6 +195,10 @@ export function createDialogueWrapper(options: DialogueWrapperOptions = {}): Dia
       );
     } catch {
       result = { ok: false as const, reason: "network" as const };
+    }
+    if (currentSession() !== sessionAtRequest) {
+      logDecision({ time: now(), subject: request.npcId, latencyMs: Math.max(0, now() - startedAt), surface: "option-curation", outcome: "stale", fallback: true, fallbackReason: "session-changed" });
+      return FALLBACK("session-changed");
     }
     const latencyMs = Math.max(0, now() - startedAt);
     const base = { time: now(), subject: request.npcId, latencyMs };
