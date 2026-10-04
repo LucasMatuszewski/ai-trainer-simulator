@@ -30,7 +30,7 @@ import { pairKey, type Mood } from "../game/social";
 import type { NpcId } from "../types";
 
 /** Bump this when the profile table changes materially (D-51 re-seed rule). */
-export const SOCIAL_PROFILES_VERSION = 1;
+export const SOCIAL_PROFILES_VERSION = 2;
 
 /** Default archetype seed for pairs without an authored value (unused today:
  * the table covers all 105 pairs, but the migration chain keeps this default
@@ -379,6 +379,24 @@ export const ARCHETYPE_SEEDS: Record<string, number> = (() => {
       const key = pairKey(self, other);
       if (seeds[key] === undefined) seeds[key] = value;
     }
+  }
+  // C-78 REVISE: real poles — a seed table with no hostile pairs and no
+  // warm human pairs makes band-gated NPC-NPC talk flat on day 1. These
+  // overrides are the drama anchors (authors gate conversations on them):
+  // hostile office rivalries and warm friendships that actually qualify
+  // for the warm band (> 65).
+  const poles: Array<[[NpcId, NpcId], number]> = [
+    [[("kasia"), ("marek")], 25],
+    [[("tomek"), ("grazyna")], 22],
+    [[("ania"), ("tomek")], 30],
+    [[("klaudia"), ("maciek")], 28],
+    [[("pawel"), ("zosia")], 70],
+    [[("kasia"), ("przemek")], 72],
+    [[("ania"), ("klaudia")], 68],
+    [[("marek"), ("przemek")], 35],
+  ];
+  for (const [[a, b], v] of poles) {
+    seeds[pairKey(a, b)] = v;
   }
   return seeds;
 })();

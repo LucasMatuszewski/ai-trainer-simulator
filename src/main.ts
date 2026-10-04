@@ -57,6 +57,7 @@ import {
   updateRepair,
   usePoint,
 } from "./engine/interaction-points";
+import { band as socialBand } from "./game/social";
 import {
   caffeineBand,
   createNeedsTable,
@@ -295,7 +296,22 @@ function buildWorldTick(): WorldTickHandle | null {
       getFiredEvents: () => worldTickFiredEvents,
       // WS-note: pair relationship bands arrive when the WS-social pair
       // matrix is exposed; until then the projection omits them.
-      getRelationshipBands: () => ({}),
+      getRelationshipBands: () => {
+        // REVISE step 0 (C-78): real bands from the live social matrix +
+        // the player map, so NPC-NPC chatter/branch picks see actual
+        // relationships instead of an empty map.
+        const social = game.get().social;
+        const bands: Record<string, string> = {};
+        if (social) {
+          for (const [key, value] of Object.entries(social.relationships)) {
+            bands[key] = socialBand(value);
+          }
+        }
+        for (const [npcId, value] of Object.entries(game.get().npcRelationships)) {
+          bands[`player:${npcId}`] = socialBand(value);
+        }
+        return bands;
+      },
     },
     // TAC-01 rng-order preservation: the exact pre-bound legacy pickers
     // the events dispatcher uses as its fallback.
@@ -1732,6 +1748,9 @@ function advanceOfficePeriods(periodCount: number): void {
   if (game.get().day !== prevDay) {
     currentPeriodElapsed = 0;
     worldTickFiredEvents = []; // WS4: a new day, a fresh event list
+    // C-78 REVISE: nightly 10% regression toward archetype seeds — the
+    // social matrix breathes with the story instead of freezing.
+    game.dispatch({ type: "regress-social-nightly" });
     // The rollover already moved the calendar; endDay must not advance
     // it a second time (C-52).
     endDay(true);
