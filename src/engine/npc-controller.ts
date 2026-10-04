@@ -74,6 +74,7 @@ import {
   printerFlashIntensity,
 } from "./printer-flash";
 import {
+  NPC_NPC_CONVERSATIONS,
   eligibleConversations,
   pickConversation,
 } from "../content/npc-npc-conversations";
@@ -740,6 +741,79 @@ export function createNpcController(
     const dz = bObject.position.z - aObject.position.z;
     aObject.rotation.y = Math.atan2(dx, dz);
     bObject.rotation.y = Math.atan2(-dx, -dz);
+  };
+  // ── C-78 REVISE v1.1: deep-conversation rendezvous staging ──────────
+  // Desk geography rarely puts a scripted cast within CHATTER_RADIUS,
+  // so without staging the authored scripts almost never fire (the
+  // 2026-10-04 live smoke: zero deep runs across a full morning). When
+  // the office is quiet (no exchange in flight) and no adjacent pair
+  // qualified this roll, staging sends both members of ONE eligible
+  // scripted pair to validated spots ~1.5 m apart beside the anchor
+  // member's desk; the regular pairing dice finds them there and the
+  // deep branch fires. Staging consumes NO shared-rng draws (its jitter
+  // uses deepRandom), so seeded controller tests keep their streams.
+  const DEEP_RENDEZVOUS_COOLDOWN_S = 90;
+  let nextRendezvousAt = 75 + deepRandom() * 75;
+  const rendezvousFree = (id: NpcId): boolean => {
+    const object = npcObjects[id];
+    const state = runtime.get(id);
+    return (
+      object !== undefined && object.visible &&
+      object.userData.npcState !== "gone-home" &&
+      !departing.has(id) && id !== playerTalkingTo &&
+      !overrides.has(id) &&
+      state !== undefined && state.path === null &&
+      state.kitchenStops === null &&
+      canSpeak(id, controllerElapsed)
+    );
+  };
+  const stageMeetingSpot = (npcId: NpcId, x: number, z: number): boolean => {
+    const validated = validateOverride(
+      npcId,
+      { position: { x, y: 0, z }, face: 0, state: "at-desk" },
+    );
+    if (validated === null) return false;
+    overrides.set(npcId, validated);
+    startPath(npcId, validated, deepRandom() * 0.3);
+    return true;
+  };
+  const tryStageRendezvous = (period: Period): boolean => {
+    const flags = options.getFlags?.() ?? {};
+    for (const script of NPC_NPC_CONVERSATIONS) {
+      const [aId, bId] = script.cast;
+      if (aId === undefined || bId === undefined) continue;
+      if (!rendezvousFree(aId) || !rendezvousFree(bId)) continue;
+      // The same gates the dice-time deep branch applies: cast x live
+      // band x flags x period, with the recent-script ring respected.
+      const relBand = band(options.getRelationship?.(aId, bId) ?? 50);
+      const eligible = eligibleConversations(aId, bId, relBand, flags, period);
+      const fresh = eligible.filter((entry) => !recentDeepScripts.includes(entry.id));
+      const pool = fresh.length > 0 ? fresh : eligible;
+      if (!pool.some((entry) => entry.id === script.id)) continue;
+      const anchor = npcObjects[aId].position;
+      // 8 spokes at 1.5 m around the anchor: the first VALID spot (not
+      // inside furniture - validateOverride runs findValidNpcSpawn)
+      // becomes the partner's stand. Nothing is set unless BOTH spots
+      // validate, so a failed staging leaves no partial overrides.
+      let partnerSpot: { x: number; z: number } | null = null;
+      for (let spoke = 0; spoke < 8 && partnerSpot === null; spoke += 1) {
+        const angle = (spoke * Math.PI) / 4;
+        const x = anchor.x + Math.cos(angle) * 1.5;
+        const z = anchor.z + Math.sin(angle) * 1.5;
+        const validated = validateOverride(
+          bId, { position: { x, y: 0, z }, face: 0, state: "at-desk" },
+        );
+        if (validated !== null) partnerSpot = { x: validated.position.x, z: validated.position.z };
+      }
+      if (partnerSpot === null) continue;
+      if (!stageMeetingSpot(bId, partnerSpot.x, partnerSpot.z)) continue;
+      if (!stageMeetingSpot(aId, anchor.x, anchor.z)) {
+        overrides.delete(bId);
+        continue;
+      }
+      return true;
+    }
+    return false;
   };
   // C-54: the NPC currently in a player dialogue, if any.
   let playerTalkingTo: NpcId | null = null;
@@ -2204,16 +2278,23 @@ export function createNpcController(
           // live band x flags x period) it REPLACES the single-exchange
           // flow: the whole path is flattened NOW (one seeded decision
           // at formation) and the runner plays it as timed bubbles.
+          // A mid-walk participant would be abandoned by the drive loop
+          // on its very first frame (interruption table: walking =
+          // leaving), so a walking pair falls through to the legacy
+          // exchange, which is allowed to freeze a walker mid-route.
+          const aRun = runtime.get(pair.a as NpcId);
+          const bRun = runtime.get(pair.b as NpcId);
+          const bothSettled = (aRun?.path ?? null) === null && (bRun?.path ?? null) === null;
           const relBand = band(
             options.getRelationship?.(pair.a as NpcId, pair.b as NpcId) ?? 50,
           );
-          const eligible = eligibleConversations(
+          const eligible = bothSettled ? eligibleConversations(
             pair.a as NpcId,
             pair.b as NpcId,
             relBand,
             options.getFlags?.() ?? {},
             period,
-          );
+          ) : [];
           const fresh = eligible.filter(
             (script) => !recentDeepScripts.includes(script.id),
           );
@@ -2268,6 +2349,16 @@ export function createNpcController(
           // 35% overlap gap can fire against the just-started exchange.
           nextStartAt = controllerElapsed + nextStartDelay(conversations.size, rng);
           }
+        } else if (
+          conversations.size + deepRuns.size === 0 &&
+          controllerElapsed >= nextRendezvousAt
+        ) {
+          // C-78 REVISE v1.1: quiet office + no adjacent pair - stage
+          // one eligible scripted pair instead of letting the authored
+          // beats starve. The next start stays due for regular chatter.
+          nextRendezvousAt =
+            controllerElapsed + DEEP_RENDEZVOUS_COOLDOWN_S + deepRandom() * 60;
+          tryStageRendezvous(period);
         }
       }
     }

@@ -108,6 +108,50 @@ describe("NPC-NPC deep conversations (controller integration, C-78 REVISE v1)", 
     expect(Math.max(...lineIndexes)).toBeGreaterThan(0);
   });
 
+  it("stages a rendezvous when a scripted cast is eligible but far apart (C-78 v1.1)", () => {
+    // Desk geography rarely puts a scripted cast within CHATTER_RADIUS.
+    // When the office is quiet and no adjacent pair qualified, the
+    // controller stages a meeting: both members walk to validated
+    // spots ~1.5 m apart, and the regular pairing dice fires the deep
+    // script there. The placement overrides are RELEASED after setup
+    // (production desk NPCs are schedule-driven, not overridden) and
+    // the two re-plan to their authored desks, 10.7 m apart.
+    const harness = mountHarness(["kasia", "pawel"], lcg(31), {
+      getRelationship: () => 50,
+    });
+    harness.controller.update(0);
+    placeAt(harness, "kasia", 0, 0);
+    placeAt(harness, "pawel", 10, 0);
+    simulate(harness, 6); // arrive at the far-apart spots
+    harness.controller.setOverride("kasia", null);
+    harness.controller.setOverride("pawel", null);
+
+    const observations = simulate(harness, 240);
+
+    const started = observations.filter((views) => views.length > 0);
+    expect(started.length).toBeGreaterThan(0);
+    expect(new Set(started.flatMap((views) => views.map((view) => view.scriptId))))
+      .toContain("npcnpc-pk-pipeline");
+  });
+
+  it("does not stage a rendezvous while a member is already overridden", () => {
+    // An override means another system owns the NPC (coffee trip,
+    // event placement) - staging must not hijack it.
+    const harness = mountHarness(["kasia", "pawel"], lcg(37), {
+      getRelationship: () => 50,
+    });
+    harness.controller.update(0);
+    placeAt(harness, "kasia", 0, 0);
+    placeAt(harness, "pawel", 10, 0);
+    simulate(harness, 6);
+    // kasia stays overridden (a "coffee trip" stand-in); pawel is
+    // released and re-plans to his authored desk, far from kasia.
+    harness.controller.setOverride("pawel", null);
+
+    const observations = simulate(harness, 240);
+    expect(observations.every((views) => views.length === 0)).toBe(true);
+  });
+
   it("settles exactly ONE non-neutral reaction through the callback when the run completes", () => {
     // kasia + marek at 25 = hostile band: the ticket-queue script's
     // last delivered beat is "offended". The callback must fire once
