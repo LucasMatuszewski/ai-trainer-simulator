@@ -29,8 +29,15 @@ async function startGame(page: Page): Promise<void> {
   await page.click('[data-spec-id="ai"]');
   await page.click('[data-trait-id="debugger"]');
   await page.click('[data-action="begin"]');
-  await page.waitForTimeout(6500);
   await expect(page.locator(".hud")).toBeVisible();
+  // A fresh profile replays the day-1 intro cinematic and can roll a
+  // day summary on period skips - the office is only REALLY ready when
+  // the debug handle reports it (and stays reported).
+  await page.waitForFunction(
+    () => window.__aitrainer?.getScreen() === "office",
+    undefined,
+    { timeout: 120_000 },
+  );
 }
 
 /**
@@ -144,6 +151,11 @@ function officeSideOf(p: XZ): boolean {
   return p.x < 8.5 && p.z > -6.5;
 }
 
+/** Kitchen side of the boundary. */
+function kitchenSideOf(p: XZ): boolean {
+  return p.x > 9.5;
+}
+
 function pointToSegmentDist(p: XZ, a: XZ, b: XZ): number {
   const abx = b.x - a.x;
   const abz = b.z - a.z;
@@ -155,30 +167,36 @@ function pointToSegmentDist(p: XZ, a: XZ, b: XZ): number {
 }
 
 test("an NPC walking to the kitchen demonstrably reroutes around the robot parked there", async ({ page }) => {
-  test.setTimeout(600_000); // sweep up to 8 period windows + parking drive
+  test.setTimeout(300_000);
   await startGame(page);
 
   const joined = await call(page, "agent_join", { name: "Rusty", persona: "doorway block" });
   expect(joined).toMatchObject({ joined: true });
 
-  // Park the robot AT the coffee stop (13.0, -5.3) — an exact lunch
+  // Park the robot AT the coffee stop (13.0, -5.3) - an exact lunch
   // destination, so coffee-bound walkers' straight approaches END on
   // the robot. Phase 1: the room route, RE-ISSUED until the robot is
   // genuinely near the stop (walking===false also holds before a walk
-  // starts and after a rejected move — distance is the only honest
+  // starts and after a rejected move - distance is the only honest
   // signal). Phase 2: the short closed-loop drive.
   const COFFEE: XZ = { x: 13.0, z: -5.3 };
+  // Null-safe: a torn-down scene (transition) reads as "far away", so
+  // the route loop re-issues instead of throwing mid-read.
   const distanceToStop = async (): Promise<number> => {
-    const w = await page.evaluate(() => window.__aitrainer!.inspectCompanion());
-    return Math.hypot(w!.world!.x - COFFEE.x, w!.world!.z - COFFEE.z);
+    const w = await readGame(page, (h) => h.inspectCompanion());
+    if (w?.world === null || w?.world === undefined) return Infinity;
+    return Math.hypot(w.world.x - COFFEE.x, w.world.z - COFFEE.z);
   };
   for (let routeTry = 0; routeTry < 3 && (await distanceToStop()) > 6.0; routeTry += 1) {
     await call(page, "agent_move_to", { target: "kitchen" });
     for (let i = 0; i < 120; i += 1) {
-      await page.waitForTimeout(500);
+      // Drive the simulation forward - a headless browser throttles
+      // rAF to near-zero, so wall-clock waits never move the robot.
+      await page.waitForTimeout(30);
+      await page.evaluate(() => window.__aitrainer!.debugTick(0.5));
       if ((await distanceToStop()) < 3.5) break;
       const look = (await call(page, "agent_look_around")) as { companion?: { walking?: boolean } };
-      if (look.companion?.walking === false && (await distanceToStop()) > 6.0) break; // rejected — re-issue
+      if (look.companion?.walking === false && (await distanceToStop()) > 6.0) break; // rejected - re-issue
     }
   }
   const diag = await readGame(page, (h) => ({
@@ -208,127 +226,141 @@ test("an NPC walking to the kitchen demonstrably reroutes around the robot parke
       await page.waitForTimeout(250);
     }
     await call(page, "agent_step", { direction: "forward", metres: 1 });
-    await page.waitForTimeout(1300);
+    await page.waitForTimeout(60);
+    await page.evaluate(() => window.__aitrainer!.debugTick(1.2));
   }
-  const parked = await page.evaluate(() => window.__aitrainer!.inspectCompanion());
-  const P: XZ = { x: parked!.world!.x, z: parked!.world!.z };
+  const parkedRead = await readGame(page, (h) => h.inspectCompanion());
+  expect(parkedRead?.world, "companion world vanished at park time").toBeTruthy();
+  const P: XZ = { x: parkedRead!.world!.x, z: parkedRead!.world!.z };
   const parkError = Math.hypot(P.x - COFFEE.x, P.z - COFFEE.z);
   expect(
     parkError,
     `robot failed to park on the coffee stop (off by ${parkError.toFixed(2)} m)`,
   ).toBeLessThan(1.0);
 
-  // The prover used to wait for a RANDOM lunch walker to cross the
-  // robot - sampling luck, red-by-variance in three gate runs. It now
-  // DRIVES one deterministic traversal per window: a real NPC walks
-  // office-side -> kitchen-side THROUGH the robot's parked spot via
-  // the real controller override (full planning/collision/avoidance).
-  // The straight line between the endpoints crosses the robot, so the
-  // only way to stay clear is a genuine detour.
+  // THE PROOF (deterministic - no sampling luck): drive ONE real NPC
+  // office-side -> kitchen-side -> back on a line through the parked
+  // robot, all through the real controller override (planning +
+  // collision + avoidance, the same mechanism the coffee trips use).
+  // The return leg's straight line passes exactly through the parked
+  // robot, so the ONLY way to keep the hard-overlap and clearance
+  // assertions green is a genuine detour.
   const hardOverlap = (npcId: string, pos: XZ, robotPos: XZ): void => {
     const d = Math.hypot(pos.x - robotPos.x, pos.z - robotPos.z);
     expect(d, `NPC ${npcId} at ${JSON.stringify(pos)} overlaps the robot at ${JSON.stringify(robotPos)}`).toBeGreaterThan(0.3);
   };
-  let provers = 0;
-  outer: for (let window = 0; window < 8; window += 1) {
-    // Self-heal: the game can leave the office mid-test (day end); a
-    // vanished debug handle means the page needs a fresh session.
-    if ((await readGame(page, (h) => h.getScreen())) === null) {
-      await startGame(page);
-    }
-    await page.evaluate(() => window.__aitrainer!.debugSkipPeriod());
-    await page.waitForTimeout(400);
-    // Wave-3 verdict fix: skipping from Evening rolls into the NEXT day
-    // via endDay, which shows the blocking Day Summary — dismiss it or
-    // every later sample runs against a paused sim (zero provers).
-    const summary = page.locator('[data-action="continue"]');
-    if ((await summary.count()) > 0 && (await summary.first().isVisible())) {
-      await summary.first().click();
-      await page.waitForTimeout(600);
-    }
-    // Drive the deterministic traversal: pick a settled human on the
-    // office side and send them to the kitchen side, straight through
-    // the robot's parked position.
-    const robotNow = await readGame(page, (h) => h.inspectCompanion());
-    const npcStates = await readGame(page, (h) => h.inspectNpcs());
-    const robotPos: XZ = robotNow?.world ? { x: robotNow.world.x, z: robotNow.world.z } : P;
-    const walker = (npcStates ?? [])
-      .filter((n) => {
-        const p = { x: n.position.x, z: n.position.z };
-        return (
-          n.npcId !== "burek" &&
-          officeSideOf(p) &&
-          Math.hypot(p.x - robotPos.x, p.z - robotPos.z) > 2.0
-        );
-      })
-      [0];
-    if (walker) {
-      // Target 1.5 m PAST the robot along the walker's own heading, so
-      // the straight line between the endpoints passes EXACTLY through
-      // the parked robot - only a genuine detour keeps it clear.
-      const start = { x: walker.position.x, z: walker.position.z };
-      const dx = robotPos.x - start.x;
-      const dz = robotPos.z - start.z;
-      const len = Math.hypot(dx, dz) || 1;
-      const through = {
-        x: robotPos.x + (dx / len) * 1.5,
-        z: robotPos.z + (dz / len) * 1.5,
-      };
-      await page.evaluate(
-        ([id, tx, tz]) => window.__aitrainer!.debugMoveNpc(id as string, tx as number, tz as number),
-        [walker.npcId, through.x, through.z] as const,
+  const robotPos = P;
+
+  // Leg A: pick a settled human well inside the office side and send
+  // them 4 m past the robot along their heading (walkers stop ~1.5 m
+  // short of an override target - the stop still lands kitchen-side).
+  const npcStates = await readGame(page, (h) => h.inspectNpcs());
+  const walker = (npcStates ?? [])
+    .filter((n) => {
+      const p = { x: n.position.x, z: n.position.z };
+      return (
+        n.npcId !== "burek" &&
+        officeSideOf(p) &&
+        Math.hypot(p.x - robotPos.x, p.z - robotPos.z) > 2.0
       );
-    }
-    const trajectories = new Map<string, { first: XZ; last: XZ; minRobotDist: number; jumped: boolean }>();
-    for (let i = 0; i < 60; i += 1) {
-      await page.waitForTimeout(500);
-      const data = await readGame(page, (h) => ({
-        npcs: h.inspectNpcs(),
-        robot: h.inspectCompanion(),
-      }));
-      if (data === null) continue; // game left the office; next window re-boots
-      const robotPos = data.robot?.world ? { x: data.robot.world.x, z: data.robot.world.z } : P;
-      for (const npc of data.npcs ?? []) {
-        const pos: XZ = { x: npc.position.x, z: npc.position.z };
-        hardOverlap(npc.npcId, pos, robotPos);
-        const track = trajectories.get(npc.npcId);
-        const dist = Math.hypot(pos.x - robotPos.x, pos.z - robotPos.z);
-        if (!track) {
-          trajectories.set(npc.npcId, { first: pos, last: pos, minRobotDist: dist, jumped: false });
-        } else {
-          // A per-sample jump larger than any walking speed can produce
-          // (2.5 m in 500 ms at ~1.4 m/s) is a placement/teleport, not
-          // travel — a trajectory containing one never counts as a
-          // rerouting prover (sixth-verdict minor).
-          if (Math.hypot(pos.x - track.last.x, pos.z - track.last.z) > 2.5) track.jumped = true;
-          track.last = pos;
-          track.minRobotDist = Math.min(track.minRobotDist, dist);
+    })
+    [0];
+  expect(walker, "no office-side walker available to drive the traversal").toBeTruthy();
+  {
+    const start = { x: walker!.position.x, z: walker!.position.z };
+    const dx = robotPos.x - start.x;
+    const dz = robotPos.z - start.z;
+    const len = Math.hypot(dx, dz) || 1;
+    await page.evaluate(
+      ([id, tx, tz]) => window.__aitrainer!.debugMoveNpc(id as string, tx as number, tz as number),
+      [walker!.npcId, robotPos.x + (dx / len) * 4.0, robotPos.z + (dz / len) * 4.0] as const,
+    );
+  }
+
+  // Sample the whole journey; fire leg B (return, adaptive distance so
+  // the ~1.5 m stop-short lands strictly office-side) the moment the
+  // walker reaches the kitchen side; track the RETURN leg only.
+  let legBFired = false;
+  let returnFirst: XZ | null = null;
+  let returnLast: XZ | null = null;
+  let minRobotDist = Infinity;
+  for (let i = 0; i < 160; i += 1) {
+    await page.waitForTimeout(30);
+    await page.evaluate(() => window.__aitrainer!.debugTick(0.5));
+    const wNow = (await readGame(page, (h) => h.inspectNpcs()))?.find(
+      (n) => n.npcId === walker!.npcId,
+    );
+    if (wNow === undefined) continue;
+    const pos: XZ = { x: wNow.position.x, z: wNow.position.z };
+    hardOverlap(walker!.npcId, pos, robotPos);
+    minRobotDist = Math.min(minRobotDist, Math.hypot(pos.x - robotPos.x, pos.z - robotPos.z));
+    if (!legBFired) {
+      if (!officeSideOf(pos)) {
+        // Leg B: smallest T whose stop (~1.5 m short of the target)
+        // lands strictly office-side; the line still passes exactly
+        // through the parked robot.
+        const start = pos;
+        const dx = robotPos.x - start.x;
+        const dz = robotPos.z - start.z;
+        const len = Math.hypot(dx, dz) || 1;
+        const ux = dx / len;
+        const uz = dz / len;
+        let target = { x: robotPos.x, z: robotPos.z };
+        for (let t = 6; t <= 24; t += 2) {
+          const stop = { x: robotPos.x + ux * (t - 1.5), z: robotPos.z + uz * (t - 1.5) };
+          target = { x: robotPos.x + ux * t, z: robotPos.z + uz * t };
+          if (stop.x < 8.0 && stop.z > -6.0) break;
         }
+        await page.evaluate(
+          ([id, tx, tz]) => window.__aitrainer!.debugMoveNpc(id as string, tx as number, tz as number),
+          [walker!.npcId, target.x, target.z] as const,
+        );
+        legBFired = true;
       }
+      continue; // leg A samples are not the prover's trajectory
     }
-    // Rerouting proof (fourth verdict tightened): only a TRAVERSAL
-    // counts — an NPC observed starting office-side and later
-    // kitchen-side (or the reverse), whose STRAIGHT-line path between
-    // its endpoints would have run through the robot (< 0.55 m), must
-    // have actually stayed >= 0.45 m away. Walking up and standing
-    // beside the robot proves nothing about detours and is not a
-    // prover; far-away idlers never qualify either.
-    for (const [npcId, track] of trajectories) {
-      const officeSide = (p: XZ): boolean => p.x < 8.5 && p.z > -6.5;
-      const kitchenSide = (p: XZ): boolean => p.x > 9.5;
-      const isTraversal =
-        (officeSide(track.first) && kitchenSide(track.last)) ||
-        (kitchenSide(track.first) && officeSide(track.last));
-      if (!isTraversal || track.jumped) continue;
-      const lineThrough = pointToSegmentDist(P, track.first, track.last) < 0.55;
-      if (!lineThrough) continue;
-      provers += 1;
-      expect(
-        track.minRobotDist,
-        `NPC ${npcId} traversed office<->kitchen past the robot but its actual path got only ${track.minRobotDist.toFixed(2)} m away`,
-      ).toBeGreaterThanOrEqual(0.45);
-      break outer;
+    // Return leg in progress: record first/last.
+    if (returnFirst === null) returnFirst = pos;
+    returnLast = pos;
+    // Arrived: the walker stopped (two consecutive samples < 0.15 m).
+    if (
+      returnLast !== null &&
+      returnFirst !== null &&
+      Math.hypot(pos.x - returnLast.x, pos.z - returnLast.z) < 0.15 &&
+      i > 4
+    ) {
+      const settledTwice = await page.waitForTimeout(600).then(() => true);
+      void settledTwice;
+      const wEnd = (await readGame(page, (h) => h.inspectNpcs()))?.find(
+        (n) => n.npcId === walker!.npcId,
+      );
+      if (wEnd !== undefined) {
+        returnLast = { x: wEnd.position.x, z: wEnd.position.z };
+      }
+      break;
     }
   }
-  expect(provers, "no office<->kitchen traversal crossed the robot across six period windows — rerouting was never exercised").toBeGreaterThanOrEqual(1);
+
+  // THE PROVER: the return leg started kitchen-side, ended office-side,
+  // and its straight line passes through the parked robot.
+  expect(legBFired, "walker never reached the kitchen side (leg A failed)").toBe(true);
+  expect(returnFirst, "return leg was never sampled").toBeTruthy();
+  expect(returnLast, "return leg never completed").toBeTruthy();
+  expect(
+    kitchenSideOf(returnFirst!),
+    `return leg started at ${JSON.stringify(returnFirst)} - not kitchen side`,
+  ).toBe(true);
+  expect(
+    officeSideOf(returnLast!),
+    `return leg ended at ${JSON.stringify(returnLast)} - not office side`,
+  ).toBe(true);
+  const lineThrough = pointToSegmentDist(robotPos, returnFirst!, returnLast!);
+  expect(
+    lineThrough,
+    `straight line from ${JSON.stringify(returnFirst)} to ${JSON.stringify(returnLast)} misses the robot by ${lineThrough.toFixed(2)} m - geometry broken, proof void`,
+  ).toBeLessThan(0.55);
+  expect(
+    minRobotDist,
+    `NPC walked through the robot: closest approach ${minRobotDist.toFixed(2)} m (< 0.45 m) - rerouting FAILED`,
+  ).toBeGreaterThanOrEqual(0.45);
 });

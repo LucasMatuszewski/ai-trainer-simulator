@@ -2379,7 +2379,14 @@ window.__aitrainer = {
     const controller = sceneObjects?.npcController;
     if (!controller) return;
     const steps = Math.round(seconds * 30);
-    for (let i = 0; i < steps; i += 1) controller.update(1 / 30);
+    for (let i = 0; i < steps; i += 1) {
+      const dt = 1 / 30;
+      controller.update(dt);
+      // The companion robot steps on the same frame loop as the NPCs;
+      // a headless E2E browser throttles rAF to near-zero, so the QA
+      // accelerator advances BOTH - the simulation, not the wall clock.
+      if (agentCompanion?.isActive() === true) agentCompanion.update(dt);
+    }
   },
   // Debug helper: returns the gender + child-mesh kinds of every
   // NPC group in the scene. Used by the gender-bug triage script
