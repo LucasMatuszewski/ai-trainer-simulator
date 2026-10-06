@@ -1365,6 +1365,11 @@ export function createNpcController(
     // period transition) with their one-shot settlement.
     abandonDeepRuns();
     conversations.clear();
+    // Verdict re-round: transitions wipe the overrides the staging
+    // owned - the ownership markers must die WITH them, or a later
+    // coffee-trip pin on the same NPC gets erased by a stale release.
+    stagedByRendezvous.clear();
+
     // C-62/C-64 (Lucas: "Zosia's meeting with who?"): 1-2 colleagues
     // join whichever period currently contains Zosia's meeting. Reading
     // the schedule keeps guests aligned if the authored period moves again.
@@ -1421,6 +1426,10 @@ export function createNpcController(
     validatedDestinations.clear();
     abandonDeepRuns();
     conversations.clear();
+    // Verdict re-round: transitions wipe the overrides the staging
+    // owned - the ownership markers must die WITH them, or a later
+    // coffee-trip pin on the same NPC gets erased by a stale release.
+    stagedByRendezvous.clear();
     pendingArrivals.clear();
     const plan = planMorningArrivals(npcs.map((npc) => npc.id), getDay(), rng);
     // C-56: build the staggered-greeting order for the already-in
@@ -1489,6 +1498,9 @@ export function createNpcController(
     validatedDestinations.clear();
     abandonDeepRuns();
     conversations.clear();
+    // Verdict re-round: markers die with the override wipe (see
+    // synchronizePeriod).
+    stagedByRendezvous.clear();
         const leavers: NpcId[] = [];
     for (const npc of npcs) {
       const entry = scheduleFor(npc.id, period);

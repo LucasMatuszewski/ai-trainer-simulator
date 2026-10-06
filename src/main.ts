@@ -2166,19 +2166,26 @@ function frame(): void {
       // carries no steered action (?jev=off, breaker open, low
       // confidence, or plain no-coffee judgments).
       const needIds = Object.keys(npcNeeds) as NpcId[];
+      // Verdict re-round: a steered "stay" is a DECISION - honor it for
+      // this check (the craving fallback must not override a fresh
+      // judgment into coffee against the NPC's just-expressed choice).
+      const steeredStay = new Set<NpcId>();
       let craving: NpcId | undefined;
       for (const id of needIds) {
         if (id === lastPurposefulId) continue;
-        if (worldTick?.getActionMemo(id) === "coffee-machine" &&
+        const memo = worldTick?.getActionMemo(id) ?? null;
+        if (memo === "coffee-machine" &&
             sceneObjects?.npcController.hasArrived(id) === true) {
           craving = id;
           break;
         }
+        if (memo === "stay") steeredStay.add(id);
       }
       if (craving === undefined) {
         craving = needIds.find(
           (id) =>
             id !== lastPurposefulId &&
+            !steeredStay.has(id) &&
             caffeineBand(npcNeeds[id]?.caffeine ?? 100) === "craving" &&
             sceneObjects?.npcController.hasArrived(id),
         );

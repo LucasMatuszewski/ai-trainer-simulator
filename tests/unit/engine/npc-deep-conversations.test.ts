@@ -302,3 +302,101 @@ describe("NPC-NPC deep conversations (controller integration, C-78 REVISE v1)", 
     expect(legacyStarts).toBeGreaterThan(0);
   });
 });
+
+describe("NPC-NPC deep conversations (verdict re-round)", () => {
+  it("settlement does not erase a REPLACEMENT pin from a stale staging marker", () => {
+    // Staging records ownership; a period transition wipes the overrides
+    // it owned. If the marker survived the transition, the NEXT deep
+    // run's settlement would release pins owned by ANOTHER system (here:
+    // the placement pins that let the dice fire a fresh run between the
+    // two) and send both NPCs walking home to their desks.
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ["kasia", "pawel"] as NpcId[]) objects[id] = makeObject(id);
+    let currentPeriod: "morning" | "lunch" = "morning";
+    const controller = createNpcController(
+      (["kasia", "pawel"] as NpcId[]).map((id) => npc(id)),
+      objects,
+      () => currentPeriod,
+      () => 1,
+      lcg(31), // the proven staging seed (same as the staging test)
+      () => false,
+      { arrivals: false, getRelationship: () => 50 },
+    );
+    controller.update(0);
+    placeAt({ controller, objects }, "kasia", 0, 0);
+    placeAt({ controller, objects }, "pawel", 10, 0);
+    for (let step = 0; step < 24; step += 1) controller.update(0.25);
+    controller.setOverride("kasia", null);
+    controller.setOverride("pawel", null);
+
+    // PHASE 1: wait for the staging to CAPTURE the pair mid-walk. Both
+    // settle at their desks first (the placement release re-plans them);
+    // the staging then moves one of them AGAIN - that second movement
+    // is the observable moment its ownership markers exist while NO run
+    // has played or settled yet: exactly the stale-marker shape.
+    const pawelDesk = { x: -3, z: 7.5 };
+    let parked = false;
+    for (let step = 0; step < 240 && !parked; step += 1) {
+      controller.update(0.25);
+      const atDesk =
+        Math.hypot(objects.pawel!.position.x - pawelDesk.x, objects.pawel!.position.z - pawelDesk.z) < 0.6 &&
+        Math.hypot(objects.kasia!.position.x - 7.5, objects.kasia!.position.z - 5.5) < 0.6;
+      if (atDesk && step > 40) parked = true;
+    }
+    expect(parked, "the pair never settled at their desks").toBe(true);
+    let stagedWalk = false;
+    for (let step = 0; step < 240 * 3 && !stagedWalk; step += 1) {
+      controller.update(0.25);
+      const moved =
+        Math.hypot(objects.pawel!.position.x - pawelDesk.x, objects.pawel!.position.z - pawelDesk.z) > 1.5 ||
+        Math.hypot(objects.kasia!.position.x - 7.5, objects.kasia!.position.z - 5.5) > 1.5;
+      if (moved) stagedWalk = true;
+    }
+    expect(stagedWalk, "staging never captured the pair (no second movement)").toBe(true);
+
+    // PERIOD TRANSITION, mid-staged-walk: overrides wiped; the staging
+    // ownership markers must die WITH them (no run ever settled).
+    currentPeriod = "lunch";
+    controller.update(0.25);
+
+    // Replacement pins: both placed adjacent mid-office (NOT their
+    // desks), so the dice fires a fresh deep run between them.
+    placeAt({ controller, objects }, "kasia", 0, 0);
+    placeAt({ controller, objects }, "pawel", 0.8, 0);
+
+    // PHASE 2: drive until the fresh run plays AND settles.
+    let sawRun2 = false;
+    let settled2 = false;
+    for (let step = 0; step < 240 * 2 && !settled2; step += 1) {
+      controller.update(0.25);
+      const deep = controller.getActiveDeepConversations().length;
+      if (deep > 0) sawRun2 = true;
+      else if (sawRun2 && step > 40) settled2 = true;
+    }
+    expect(sawRun2, "the replacement-pin run never played").toBe(true);
+    expect(settled2, "the replacement-pin run never settled").toBe(true);
+
+    // THE CONTRACT: the replacement pins survive settlement - both stay
+    // at their PLACED mid-office spots. (A pair-distance assert would
+    // pass vacuously: the lunch re-plan parks both in the small kitchen,
+    // 6 m apart again.) With the stale-release bug they walk to their
+    // schedule targets, ~10 m from the placed spots.
+    for (let step = 0; step < 120; step += 1) controller.update(0.25);
+    const kasiaDrift = Math.hypot(
+      objects.kasia!.position.x - 0,
+      objects.kasia!.position.z - 0,
+    );
+    const pawelDrift = Math.hypot(
+      objects.pawel!.position.x - 0.8,
+      objects.pawel!.position.z - 0,
+    );
+    expect(
+      kasiaDrift,
+      `kasia left her placed spot (${kasiaDrift.toFixed(1)} m) - replacement pin erased`,
+    ).toBeLessThan(4);
+    expect(
+      pawelDrift,
+      `pawel left his placed spot (${pawelDrift.toFixed(1)} m) - replacement pin erased`,
+    ).toBeLessThan(4);
+  });
+});
