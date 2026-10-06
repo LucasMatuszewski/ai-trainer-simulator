@@ -447,3 +447,57 @@ describe("NPC-NPC deep conversations (re-check hardening)", () => {
     ).toBeLessThan(-4);
   });
 });
+
+describe("NPC-NPC deep conversations (same-position replacement)", () => {
+  it("a same-coords replacement during an active run survives settlement (cache-hit edge)", () => {
+    // validateOverride caches per (npc, coords): a replacement at the
+    // SAME coordinates would hand back the staged object and defeat
+    // reference identity. The external-write boundary deletes the ref
+    // regardless, so settlement cannot erase the replacement.
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ["kasia", "pawel"] as NpcId[]) objects[id] = makeObject(id);
+    const controller = createNpcController(
+      (["kasia", "pawel"] as NpcId[]).map((id) => npc(id)),
+      objects,
+      () => "morning",
+      () => 1,
+      lcg(41),
+      () => false,
+      { arrivals: false, getRelationship: () => 50 },
+    );
+    controller.update(0);
+    placeAt({ controller, objects }, "kasia", 0, 0);
+    placeAt({ controller, objects }, "pawel", 10, 0);
+    for (let step = 0; step < 24; step += 1) controller.update(0.25);
+    controller.setOverride("kasia", null);
+    controller.setOverride("pawel", null);
+
+    let sawRun = false;
+    for (let step = 0; step < 240 * 3 && !sawRun; step += 1) {
+      controller.update(0.25);
+      if (controller.getActiveDeepConversations().length > 0) sawRun = true;
+    }
+    expect(sawRun, "staged run never became active").toBe(true);
+
+    // Replacement at the STAGED coords themselves: the anchor is the
+    // walk-home spot kasia settled at (her desk, ~(7.5, 5.5)); the bare
+    // harness has no obstacles, so staging validated spoke 0 =
+    // anchor + 1.5 m east. Issuing that exact request hits the
+    // validateOverride cache and hands back the STAGED object - the
+    // case where reference identity alone would erase a replacement.
+    const stagedX = objects.kasia!.position.x + 1.5;
+    const stagedZ = objects.kasia!.position.z;
+    controller.setOverride("pawel", { position: { x: stagedX, y: 0, z: stagedZ }, face: 0, state: "at-desk" });
+
+    for (let step = 0; step < 240; step += 1) controller.update(0.25);
+
+    const drift = Math.hypot(
+      objects.pawel!.position.x - stagedX,
+      objects.pawel!.position.z - stagedZ,
+    );
+    expect(
+      drift,
+      `pawel drifted ${drift.toFixed(2)} m from the staged spot - the same-coords replacement was erased`,
+    ).toBeLessThan(4);
+  });
+});

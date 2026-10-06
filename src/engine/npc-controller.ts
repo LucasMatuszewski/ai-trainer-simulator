@@ -2515,6 +2515,13 @@ export function createNpcController(
     getDeepDebug: () => ({ ...deepDebug }),
     getChatterCandidatePairs: () => lastChatterCandidatePairs,
     setOverride: (npcId, entry) => {
+      // EXTERNAL write boundary: any override set through here belongs
+      // to another system (coffee trips, events, E2E staging) and ends
+      // rendezvous ownership of this NPC - the ref map is the source of
+      // truth, so settlement can never erase a replacement even when
+      // validateOverride's cache hands back the SAME object (same-coords
+      // replacement).
+      stagedOverrideRefs.delete(npcId);
       const period = ensureCurrentPeriod();
       const state = runtime.get(npcId);
       if (state === undefined) return;
