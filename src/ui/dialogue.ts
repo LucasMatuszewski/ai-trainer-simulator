@@ -24,6 +24,7 @@ import {
 import { BUCKET_DELTAS, band as socialBand } from "../game/social";
 import type { DialogueSteererHandle } from "../jev/dialogue-wrapper";
 import { dialoguePoolFor, v2MemoryFor } from "../content/npc-content/dialogue-pools";
+import { drawPortrait, drawRobotPortrait } from "./portraits";
 
 export interface DialogueController {
   open: (npc: NPC, tree: DialogueTree, treeId?: string) => void;
@@ -311,7 +312,7 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
       currentAvailableOptions = [];
       ensureContainer();
       container!.innerHTML = `
-        <div class="portrait">${escapeHtml(npc.emoji)}</div>
+        <canvas class="portrait" width="96" height="96" data-portrait="${npc.id}" aria-label="${escapeHtml(npc.name)}" title="${escapeHtml(npc.emoji)}"></canvas>
         <div class="content">
           <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
           <div class="text">${escapeHtml(node.text)}</div>
@@ -322,6 +323,7 @@ export function createDialogue(root: HTMLElement, onClose: () => void): Dialogue
         </div>
         <button class="skip" data-skip>Skip</button>
       `;
+drawPortrait(container!.querySelector<HTMLCanvasElement>(".portrait")!, npc);
 wireActionButtons(container!);
       container!.querySelector<HTMLButtonElement>("[data-continue]")!.addEventListener("click", finish);
       container!.querySelector<HTMLButtonElement>("[data-skip]")!.addEventListener("click", finish);
@@ -352,7 +354,7 @@ wireActionButtons(container!);
       // All options already answered. Show a closing line so the
       // dialogue is still closeable.
       container!.innerHTML = `
-        <div class="portrait">${escapeHtml(npc.emoji)}</div>
+        <canvas class="portrait" width="96" height="96" data-portrait="${npc.id}" aria-label="${escapeHtml(npc.name)}" title="${escapeHtml(npc.emoji)}"></canvas>
         <div class="content">
           <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
           <div class="text">${escapeHtml(node.text)}</div>
@@ -364,6 +366,7 @@ wireActionButtons(container!);
         </div>
         <button class="skip" data-skip>Skip</button>
       `;
+drawPortrait(container!.querySelector<HTMLCanvasElement>(".portrait")!, npc);
 wireActionButtons(container!);
       container!.querySelector<HTMLButtonElement>("[data-continue]")!.addEventListener("click", finish);
       container!.querySelector<HTMLButtonElement>("[data-skip]")!.addEventListener("click", finish);
@@ -371,7 +374,7 @@ wireActionButtons(container!);
     }
 
     container!.innerHTML = `
-      <div class="portrait">${escapeHtml(npc.emoji)}</div>
+      <canvas class="portrait" width="96" height="96" data-portrait="${npc.id}" aria-label="${escapeHtml(npc.name)}" title="${escapeHtml(npc.emoji)}"></canvas>
       <div class="content">
         <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
         <div class="text">${escapeHtml(node.text)}</div>
@@ -389,6 +392,7 @@ wireActionButtons(container!);
       </div>
       <button class="skip" data-skip>Skip</button>
     `;
+    drawPortrait(container!.querySelector<HTMLCanvasElement>(".portrait")!, npc);
 
 wireActionButtons(container!);
     container!.querySelectorAll<HTMLButtonElement>("[data-opt]").forEach((btn) => {
@@ -533,7 +537,7 @@ wireActionButtons(container!);
     }
 
     container.innerHTML = `
-      <div class="portrait">${escapeHtml(speaker.emoji)}</div>
+      <canvas class="portrait" width="96" height="96" aria-label="${escapeHtml(speaker.name)}" title="${escapeHtml(speaker.emoji)}"></canvas>
       <div class="content">
         <div><span class="name">${escapeHtml(speaker.name)}</span><span class="role">${escapeHtml(speaker.role)}</span></div>
         <div class="text">${escapeHtml(line)}</div>
@@ -549,6 +553,7 @@ wireActionButtons(container!);
       </div>
       <button class="skip" data-skip>Leave</button>
     `;
+    drawRobotPortrait(container.querySelector<HTMLCanvasElement>(".portrait")!, speaker.name);
 
     container.querySelectorAll<HTMLButtonElement>("[data-agent-opt]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -666,7 +671,7 @@ wireActionButtons(container!);
     const el = ensureV2Container();
     const entries = orderedV2Options();
     el.innerHTML = `
-      <div class="portrait">${escapeHtml(npc.emoji)}</div>
+      <canvas class="portrait" width="96" height="96" data-portrait="${npc.id}" aria-label="${escapeHtml(npc.name)}" title="${escapeHtml(npc.emoji)}"></canvas>
       <div class="content">
         <div><span class="name">${escapeHtml(npc.name)}</span><span class="role">${escapeHtml(npc.role)}</span></div>
         <div class="text">${escapeHtml(reply?.text ?? "")}</div>
@@ -681,6 +686,7 @@ wireActionButtons(container!);
       </div>
       <button class="skip" data-skip>Skip</button>
     `;
+    drawPortrait(el.querySelector<HTMLCanvasElement>(".portrait")!, npc);
     el.querySelector<HTMLButtonElement>("[data-v2-task]")?.addEventListener("click", () => pickV2Task());
     el.querySelectorAll<HTMLButtonElement>("[data-v2-opt]").forEach((button) => {
       button.addEventListener("click", () => pickV2(Number(button.dataset.v2Opt ?? "-1")));

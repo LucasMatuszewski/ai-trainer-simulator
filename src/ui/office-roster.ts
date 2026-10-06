@@ -13,6 +13,7 @@
  */
 
 import type { NPC, NpcId } from "../types";
+import { drawPortrait } from "./portraits";
 
 /**
  * C-46: map the controller's live `userData.npcState` to the truth the
@@ -104,7 +105,7 @@ export function mountOfficeRoster(
     card.className = "roster-card";
     card.dataset.npcId = npc.id;
     card.innerHTML = `
-      <div class="roster-portrait">${escapeHtml(npc.emoji)}</div>
+      <canvas class="roster-portrait" width="64" height="64" data-portrait="${npc.id}" aria-label="${escapeHtml(npc.name)}" title="${escapeHtml(npc.emoji)}"></canvas>
       <div class="roster-meta">
         <div class="roster-name">${escapeHtml(npc.name)}</div>
         <div class="roster-role">${escapeHtml(npc.role)}</div>
@@ -119,6 +120,8 @@ export function mountOfficeRoster(
       onPick(npc);
     });
     list.appendChild(card);
+    // C-79: paint the ID-card portrait straight onto the card's canvas.
+    drawPortrait(card.querySelector<HTMLCanvasElement>(".roster-portrait")!, npc);
     cards.set(npc.id, card);
   }
 

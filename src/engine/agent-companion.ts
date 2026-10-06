@@ -392,11 +392,17 @@ export interface AgentCompanion {
  * order, which was fragile: an index-based guess put the visor on whichever
  * part happened to come first.
  */
+/** C-79: the companion's palette, exported so the dialogue portrait
+ *  draws the robot from the SAME colors (portrait <-> model match). */
+export const COMPANION_ROBOT_COLORS = {
+  CHASSIS: 0x9aa7b4,   // brushed metal body
+  FACEPLATE: 0x2b3138, // dark faceplate, so the visor reads
+  VISOR: 0x2ce8ff,     // emissive cyan
+  TRIM: 0x596570,
+} as const;
+
 function applyRobotSkin(group: THREE.Group): void {
-  const CHASSIS = 0x9aa7b4;   // brushed metal body
-  const FACEPLATE = 0x2b3138; // dark faceplate, so the visor reads
-  const VISOR = 0x2ce8ff;     // emissive cyan
-  const TRIM = 0x596570;
+  const { CHASSIS, FACEPLATE, VISOR, TRIM } = COMPANION_ROBOT_COLORS;
 
   group.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;

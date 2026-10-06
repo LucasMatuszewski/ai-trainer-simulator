@@ -509,6 +509,14 @@ html, body {
   image-rendering: pixelated;
 }
 
+/* C-79: the ID-card portrait canvas fills the framed box, crisp pixels. */
+.dialogue .portrait canvas {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  display: block;
+}
+
 .dialogue .content .name {
   font-family: var(--font-pixel-bold);
   font-size: 16px;
@@ -849,6 +857,16 @@ html, body {
   font-size: 28px;
   color: var(--accent);
   flex-shrink: 0;
+}
+
+/* C-79: the roster avatar IS the portrait canvas now (the element carries
+ * .roster-portrait, so it gets the 56px framed box above); just keep the
+ * pixels crisp and the box from stretching. */
+canvas.roster-portrait {
+  image-rendering: pixelated;
+  display: block;
+  object-fit: cover;
+  padding: 0;
 }
 
 .roster-card:hover .roster-portrait,

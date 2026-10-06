@@ -910,3 +910,17 @@ A C-16 contradiction between two of Lucas's messages was surfaced and resolved.
 - **Tracking:** branch `feat/jev-npc-decision-steering` (Wave 2 after the pushed Wave 1); Beads sacs-xtma.13/.14; feedback L-2026-09-30-01.
 
 
+
+### C-78 — Dialogue replies paired to options; NPC↔NPC deep conversations v1.1; Jev purposeful-action surface (retroactive record, 2026-09-30 → 2026-10-06)
+
+- **Source (Lucas, playtest 2026-09-30):** "The dialogue options I have are jumping now... responses from NPCs should be dynamic and intelligent based on the whole game state... they still should be pre-selected manually to make sense and Jev should only choose from the options where all of them make sense for the previous turn so that the dialogue makes logical order." And: "the NPC talks are always Starter + response, it is not natural. We should add deeper conversations... allow branching and from 1 to 5 levels... relations between NPCs, some may be friend, other may be office-enemies."
+- **Paired replies (v3):** every option carries its own replies; `repliesFor(optionId)` NEVER crosses options; the steerer curates which options surface (authored order preserved on screen) and no longer picks replies. This fixed Tomek answering the wrong question and options shuffling mid-conversation.
+- **NPC↔NPC deep conversations:** cast × band schema (1-5 exchanges, band-keyed endings, 69-char bubble bound), pure runner (timed lines, hold state, interruption table: hush on player approach, abandon on leave/period end), exactly-once bounded reaction settlement into the social matrix, desk-adjacent authored scripts (12), rendezvous staging so casts meet despite desk geography.
+- **Jev purposeful-action surface (Wave-4):** needs projected as named bands; one coffee-vs-stay judgment per idle NPC per period; orchestrator executes walk/use/return; steered "stay" honored; deterministic craving scan remains the fallback.
+- **Verification:** 1,338 unit tests; ws9a E2E 2/2 on a fresh build; targeted re-check PASS (`.agent-briefs/verdict-recheck-result.md`).
+
+### C-79 — Roster + dialogue avatars become ID-card portraits drawn from the exact mesh palette (2026-10-06)
+
+- **Source (Lucas):** "As avatars we have now either letters or some icons. Can we do portraits that will use exact same colors as we have on the models, so same hair and skin color and same shirt/body color? So that it may be easier to remember the person by matching the colors from the portrait to the 3d model? But it should look like a real portraits from business or Id-card photos."
+- **Decision (procedural, not generated images):** portraits are pixel-art ID-card busts drawn on `<canvas>` from the SAME tone maps the 3D mesh reads (`SKIN_TONE_COLORS` / `HAIR_TONE_COLORS` / `SHIRT_TONE_COLORS` in `src/engine/npc-mesh.ts`, resolved identically: authored `appearance` first, per-id hash fallback second). Colors therefore cannot drift from the models — a palette-parity unit test pins it.
+- **Look:** front-facing neutral bust, plain light studio backdrop (ID-photo read), shirt with the male mesh's red tie, long hair fall for female meshes, short cap for male meshes, Burek drawn as a dog in his fur colors. 32×32 logical pixel grid, `image-rendering: pixelated`, sized to the existing 56px roster and 96px dialogue boxes. The old emoji/letter stays as the accessibility label.
