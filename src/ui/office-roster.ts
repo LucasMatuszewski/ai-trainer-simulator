@@ -13,6 +13,7 @@
  */
 
 import type { NPC, NpcId } from "../types";
+import { drawPortrait } from "./portraits";
 
 /**
  * C-46: map the controller's live `userData.npcState` to the truth the
@@ -60,6 +61,9 @@ export interface OfficeRosterHandle {
   root: HTMLElement;
   /** Re-render the relationship numbers / availability state. */
   refresh: (npcStates: Map<NpcId, { relationship: number; available: boolean; status?: string }>) => void;
+  /** Closure verdict High 2: unlock the computer mid-session when the
+   *  contract flag flips (it is baked into the mount-time HTML). */
+  setComputerUnlocked: (hasContract: boolean) => void;
   /** Set the currently-focused NPC (camera will pan to them). */
   setFocus: (id: NpcId | null) => void;
 }
@@ -101,7 +105,7 @@ export function mountOfficeRoster(
     card.className = "roster-card";
     card.dataset.npcId = npc.id;
     card.innerHTML = `
-      <div class="roster-portrait">${escapeHtml(npc.emoji)}</div>
+      <canvas class="roster-portrait" width="64" height="64" data-portrait="${npc.id}" aria-label="${escapeHtml(npc.name)}" title="${escapeHtml(npc.emoji)}"></canvas>
       <div class="roster-meta">
         <div class="roster-name">${escapeHtml(npc.name)}</div>
         <div class="roster-role">${escapeHtml(npc.role)}</div>
@@ -116,6 +120,8 @@ export function mountOfficeRoster(
       onPick(npc);
     });
     list.appendChild(card);
+    // C-79: paint the ID-card portrait straight onto the card's canvas.
+    drawPortrait(card.querySelector<HTMLCanvasElement>(".roster-portrait")!, npc);
     cards.set(npc.id, card);
   }
 
@@ -126,8 +132,20 @@ export function mountOfficeRoster(
   });
 
   let currentFocus: NpcId | null = null;
+  const computerBtn = () => wrap.querySelector<HTMLButtonElement>("[data-action='computer']");
   return {
     root: wrap,
+    // Closure verdict High 2: the contract flag can flip mid-session
+    // (Bartek's contract dialogue) - without this the computer button
+    // stayed disabled until the whole roster remounted.
+    setComputerUnlocked(hasContract: boolean) {
+      const btn = computerBtn();
+      if (!btn) return;
+      btn.disabled = !hasContract;
+      btn.title = hasContract
+        ? "Debug a client script (+cash on win)"
+        : "You need a contract before you can debug";
+    },
     refresh(npcStates) {
       for (const npc of npcs) {
         const card = cards.get(npc.id)!;
@@ -163,13 +181,15 @@ export function mountOfficeRoster(
   };
 }
 
+// C-78 (Lucas): the 0-100 scale read like a legacy +/-20 scale and
+// labeled a brand-new hire "BFF". Aligned to the social-model bands
+// (social.ts: hostile <35, warm >65) with stranger/cold at the bottom.
 function relationshipLabel(rel: number): string {
-  if (rel >= 50) return `Relationship: BFF (${rel})`;
-  if (rel >= 20) return `Relationship: Friend (${rel})`;
-  if (rel >= 5) return `Relationship: Acquaintance (${rel})`;
-  if (rel > -5) return `Relationship: Neutral (${rel})`;
-  if (rel > -20) return `Relationship: Annoyed (${rel})`;
-  return `Relationship: Hostile (${rel})`;
+  if (rel >= 80) return `Relationship: BFF (${rel})`;
+  if (rel >= 65) return `Relationship: Friend (${rel})`;
+  if (rel >= 35) return `Relationship: Coworker (${rel})`;
+  if (rel >= 20) return `Relationship: Acquaintance (${rel})`;
+  return `Relationship: Stranger (${rel})`;
 }
 
 function relationshipMood(rel: number): string {

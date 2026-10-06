@@ -7,8 +7,20 @@
  */
 
 import type { Action, GameState } from "../types";
-import { initialGameState } from "./initial";
 import { PERIOD_ORDER } from "./pacing";
+import {
+  freshV2State,
+  migrate,
+  writeV1Backup,
+  WORLD_DIARY_LIMIT,
+} from "./migrate";
+import {
+  applyReaction,
+  pairKey,
+  regressNightly,
+  type SocialState,
+} from "./social";
+import { ARCHETYPE_SEEDS } from "../content/npc-profiles";
 
 type Listener = (state: Readonly<GameState>) => void;
 
@@ -59,6 +71,11 @@ class GameStore {
 
   save(): void {
     try {
+      // D-51: before the first v2 write overwrites the slot, keep the
+      // untouched v1 blob under the backup key (branch switches then
+      // degrade instead of losing the player's v1 save).
+      const existing = localStorage.getItem(this.storageKey);
+      if (existing) writeV1Backup(existing);
       localStorage.setItem(this.storageKey, JSON.stringify(this.state));
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -69,19 +86,24 @@ class GameStore {
   load(): GameState {
     try {
       const raw = localStorage.getItem(this.storageKey);
-      if (!raw) return initialGameState();
-      const parsed = JSON.parse(raw) as GameState;
-      if (parsed.saveVersion !== 1) return initialGameState();
-      return parsed;
+      if (!raw) return freshV2State();
+      const parsed = JSON.parse(raw) as { saveVersion?: number };
+      // D-51 migration chain: v1 -> v2 (player data preserved, missing
+      // social pairs seeded); malformed or future versions become a
+      // fresh v2 game rather than throwing or silently wiping.
+      if (parsed.saveVersion === 1 || parsed.saveVersion === 2) {
+        return migrate(parsed);
+      }
+      return freshV2State();
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Failed to load save, using initial state:", err);
-      return initialGameState();
+      return freshV2State();
     }
   }
 
   reset(): void {
-    this.state = initialGameState();
+    this.state = freshV2State();
     try {
       localStorage.removeItem(this.storageKey);
     } catch {
@@ -168,10 +190,69 @@ export function reduce(state: GameState, action: Action): GameState {
     }
     case "set-player-pose":
       return { ...state, playerPose: action.pose };
+    case "mission-complete": {
+      // WS7 (AC-25, closure verdict): ONE dispatch applies the completion
+      // flag + rewards together — a single save, so an interruption can
+      // never leave a paid-but-incomplete or complete-but-unpaid state.
+      let next = reduce(state, { type: "set-flag", flag: action.completionFlag, value: true });
+      if (action.cash !== 0) next = reduce(next, { type: "add-cash", amount: action.cash });
+      if (action.credibilityDelta !== 0) {
+        next = reduce(next, { type: "add-stat", stat: "credibility", delta: action.credibilityDelta });
+      }
+      return next;
+    }
     case "load":
       return action.state;
     case "reset":
-      return initialGameState();
+      // D-51: New Game starts on the CURRENT schema. The UI's reset
+      // path (character creation) dispatches this action, so it must
+      // produce a v2 state — initialGameState() stays v1 as the
+      // migration source of truth, never as a live state.
+      return freshV2State();
+    case "apply-social-reaction": {
+      // D-50: one aggregated, clamped transaction (bucket delta +
+      // optional authored delta + capped witness deltas). The social
+      // block is lazy-seeded for states predating the v2 wiring.
+      const social: SocialState =
+        state.social ?? freshV2State().social ?? {
+          relationships: {},
+          mood: {},
+          profilesVersion: 0,
+        };
+      const relationships = applyReaction(
+        social.relationships,
+        action.pair,
+        action.bucket,
+        {
+          witnesses: action.witnesses,
+          authoredRelDelta: action.authoredRelDelta,
+        },
+      );
+      const touched = [
+        ...new Set([...(social.touched ?? []), pairKey(action.pair[0], action.pair[1])]),
+      ];
+      return { ...state, social: { ...social, relationships, touched } };
+    }
+    case "regress-social-nightly": {
+      if (!state.social) return state;
+      return {
+        ...state,
+        social: {
+          ...state.social,
+          relationships: regressNightly(state.social.relationships, ARCHETYPE_SEEDS, 0.1),
+        },
+      };
+    }
+    case "append-diary": {
+      const diary = [...(state.worldDiary ?? []), action.entry].slice(-WORLD_DIARY_LIMIT);
+      return { ...state, worldDiary: diary };
+    }
+    case "set-equipment-fault": {
+      const equipment = { ...(state.equipment ?? {}) };
+      if (action.faulted) equipment[action.id] = "faulted";
+      else delete equipment[action.id];
+      return { ...state, equipment };
+    }
   }
 }
 

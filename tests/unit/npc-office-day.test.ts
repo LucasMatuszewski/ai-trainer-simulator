@@ -100,7 +100,12 @@ describe("office day (C-48 v5 crowd-flow regression)", () => {
     expect(totalEpisodes).toBeLessThan(80);
     // Nobody paces: a day of walking is tens of metres, not hundreds.
     // The worst offender covered 905m before this was fixed.
-    expect(worstWalked).toBeLessThan(150);
+    // C-78 REVISE v1.1: rendezvous staging adds PURPOSEFUL walking -
+    // each staged deep conversation sends one NPC ~10 m to a desk-side
+    // chat and releases them home afterwards (a few round-trips per
+    // day). That is office life, not pacing, so the ceiling rises from
+    // 150 to 200 m; a return of the marathons would still blow it.
+    expect(worstWalked).toBeLessThan(200);
     // And no single stall runs long enough to read as "stuck".
     expect(worstFreeze).toBeLessThan(12);
   });

@@ -1,0 +1,9 @@
+You are a delegate. Do not load the `agents-workflow-sacs`, `beads` or `cli-agent-delegation` skills, do not run `bd`, do not commit or push. Write your verdict to `.agent-briefs/phase-verdict-wave1-result-8.md`.
+
+# Task: Wave 1 phase QA verdict — review CURRENT HEAD
+
+Repo: /home/lucas/DEV/Projects/ai-trainer-simulator, branch `feat/jev-npc-decision-steering`. Wave 1 spans `d85da34..HEAD`. Prior verdict history: result-4 (dodge legs, stall loop), result-6 (escalation unreachable for re-blocked dodges; spawn/arrival keep-out; raw-AABB legs; teleport-jump provers), result-7 (occupied room destination -> endless replans; exhausted nudges still overlapping; strictly-deeper escape rule needed). The CURRENT HEAD commit claims to fix result-7's findings: an occupied-destination fallback chain (replan -> 75% standoff target -> honest stopWalk), an exhaustive 8x8 ring placement search with a farthest-candidate fallback in BOTH the companion join and the shared npc-controller nudge helper, and a strictly-deeper-only person-escape rule.
+
+**Verify with your own commands:** `pnpm typecheck`; `pnpm test` (964 expected); `pnpm test:e2e --project=chromium tests/e2e/ws9a-robot-collision.spec.ts` (dev server on 5173, v2026.09.28-08). Then adversarially probe AT HEAD: (1) a person occupying the room destination — the walk must now end honestly (adjacent settle or a typed stopWalk), never walk in place; (2) a crowded spawn — join must place the robot at a non-overlapping or best-effort position; (3) regressions from the strictly-deeper escape rule (a robot may now pass at constant distance inside a person's radius — can it overlap in practice?); (4) anything else at HEAD within Wave-1 scope.
+
+**Deliver:** findings by severity with file:line, then EXACTLY one final line: `PHASE-VERDICT: PASS` or `PHASE-VERDICT: FAIL — <reason>`.

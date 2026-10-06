@@ -1,0 +1,57 @@
+{
+  "ran": "2026-10-03T09:06:49.582Z",
+  "model": "typesafe/jev-1.13-20260917",
+  "overall": "5/5",
+  "results": [
+    {
+      "id": "tomek-prod-newhire-morning",
+      "expected": "v-frank",
+      "got": "v-frank",
+      "confidence": 0.52,
+      "correct": true,
+      "model": "typesafe/jev-1.13-20260917",
+      "cost": 0,
+      "scoreSurface": 0.88
+    },
+    {
+      "id": "tomek-prod-friend-evening",
+      "expected": "any of v-panicked / v-frank",
+      "got": "v-frank",
+      "confidence": 0.76,
+      "correct": true,
+      "model": "typesafe/jev-1.13-20260917",
+      "cost": 0,
+      "scoreSurface": 1.18
+    },
+    {
+      "id": "tomek-hotfix-cold-afternoon",
+      "expected": "v-defensive",
+      "got": "v-defensive",
+      "confidence": 0.71,
+      "correct": true,
+      "model": "typesafe/jev-1.13-20260917",
+      "cost": 0,
+      "scoreSurface": 0.3
+    },
+    {
+      "id": "tomek-resume-warm",
+      "expected": "any of v-yes-own-it / v-no-honest",
+      "got": "v-no-honest",
+      "confidence": 0.41,
+      "correct": true,
+      "model": "typesafe/jev-1.13-20260917",
+      "cost": 0,
+      "scoreSurface": 1.36
+    },
+    {
+      "id": "tomek-deploy-stranger-noon",
+      "expected": "v-frank",
+      "got": "v-frank",
+      "confidence": 0.42,
+      "correct": true,
+      "model": "typesafe/jev-1.13-20260917",
+      "cost": 0,
+      "scoreSurface": 0.86
+    }
+  ]
+}

@@ -23,7 +23,8 @@ import { game } from "./game/state";
 import { runDailyTick, publishCashflow } from "./game/economy";
 import { runPeriodEvent, registerNpcController } from "./game/events";
 import { registerPlayerActions } from "./webmcp/tools";
-import { registerWebmcpTools, type RegisterResult } from "./webmcp/bridge";
+import { registerWebmcpTools, toToolResponse, type RegisterResult } from "./webmcp/bridge";
+import { callTool } from "./webmcp/tools";
 import { drainPendingAgentJoin, notifyOfficeLoaded, registerAgentCompanion } from "./webmcp/tools";
 import { approachHumanConversation } from "./webmcp/companion-conversation";
 import { createNpcExchange, type NpcExchange } from "./webmcp/npc-exchange";
@@ -39,10 +40,52 @@ import {
 import { CORRIDOR_WAYPOINTS, buildWaypointEdges, DEFAULT_MAX_EDGE_LENGTH } from "./content/corridor-waypoints";
 import { WORLD_ROOMS } from "./content/world-layout";
 import { NPCS, OBSTACLES } from "./content/npcs";
+import { getNpcObstacles } from "./engine/npc-spawn-validator";
+import { createPositionalSfx, type PositionalSfx } from "./audio/positional-three";
+import {
+  INTERACTION_POINT_DEFS,
+  beginRepair,
+  finishRepair,
+  interruptAll,
+  isFaulted,
+  onActionCompleted,
+  registerBuiltinInteractionPoints,
+  resetInteractionPoints,
+  setFaultReadout,
+  activateAction,
+  suggestNpcUse,
+  updateInteractionPoints,
+  updateRepair,
+  usePoint,
+} from "./engine/interaction-points";
+import { band as socialBand, pairKey } from "./game/social";
+import {
+  caffeineBand,
+  createNeedsTable,
+  decayNeeds,
+  type NpcNeedsTable,
+} from "./game/npc-needs";
+import { roomAt } from "./engine/chatter";
+import { createGreetingWrapper, type GreetingWrapperHandle } from "./jev/greeting-wrapper";
+import { counters as jevCounters } from "./jev/decision-log";
+// WS3 (C-77): steered dialogue turns + the authored v2 pool content.
+import { createDialogueWrapper, type DialogueSteererHandle } from "./jev/dialogue-wrapper";
+import { dialoguePoolFor, registerNpcDialoguePools } from "./content/npc-content/dialogue-pools";
+import { mountJevSettings } from "./ui/jev-settings";
+import { mountMissionUi, type MissionUiHandle } from "./ui/mission";
+import { createMissionWrapper, type MissionSteerer } from "./jev/mission-wrapper";
+import {
+  createDefaultDecisionHooks,
+  jevDecisionHooks,
+} from "./engine/npc-controller";
+import {
+  createWorldTickWrapper,
+  type WorldTickHandle,
+} from "./engine/world-tick";
 import { approachSpotFor } from "./content/npc-approach";
 import { getActiveQuest } from "./content/quests";
 import type { GameState, NPC, NpcId } from "./types";
-import { mountHud, renderHud, renderHudClock, showToast, type HudElements } from "./ui/hud";
+import { mountHud, renderHud, renderHudClock, showPrompt, showToast, type HudElements } from "./ui/hud";
 import { mountFpsMeter, type FpsMeter } from "./ui/fps-meter";
 import { positionHoverLabel } from "./ui/hover-label-position";
 import { mountTitleScreen, mountCharacterCreate, showDailySummary, showGameOver } from "./ui/title";
@@ -70,6 +113,35 @@ import { pushOutOfObstacles } from "./engine/collision";
 import { planWalkToFace } from "./engine/walk-to-face";
 import { WORLD_BOUNDS, WORLD_COLLISION_WALLS } from "./content/world-layout";
 import { GAME_VERSION } from "./version";
+
+// ---------------------------------------------------------------
+// Jev NPC-steering extension point (ADR-0009 section 3.8 / section 10, WS0 seam)
+//
+// THE hook holder later Jev waves populate to steer NPC decisions:
+// pickMorningGreeting, pickEveningGoodbye, pickChatterPair,
+// pickChatterStarter, pickChatterExchange, pickRandomDestination.
+// Import it from here (or from ./engine/npc-controller, its home) and
+// assign members:
+//
+//   import { jevDecisionHooks } from "../main";
+//   jevDecisionHooks.pickMorningGreeting = (npcId) => ...;
+//
+// Unset members fall back to the legacy pickers (pre-bound per
+// controller in createDefaultDecisionHooks), so an unconfigured game
+// plays exactly like the pre-seam build. The controller reads the
+// holder live on every decision, so hooks may be installed or removed
+// at any time. NOTE: createNpcController itself is constructed inside
+// buildOfficeScene (src/engine/scene.ts); the controller resolves
+// options.hooks -> this holder -> legacy itself, so no constructor
+// wiring is needed here. The sixth surface, pickRandomDestination, is
+// wired in src/game/events.ts against the same holder with a
+// presence-first check (a steered `null` = "stay at desk" is a
+// decision, not an absent hook). Hook implementations must not throw
+// (frame-loop invariant); throw containment + fallback wrapping and
+// load/reset holder lifecycle are owned by the WS1+ wrapper layer
+// (ADR-0009 D-47/D-58).
+// ---------------------------------------------------------------
+export { jevDecisionHooks } from "./engine/npc-controller";
 
 type Screen = "title" | "create" | "office" | "summary" | "minigame" | "gameover";
 
@@ -153,6 +225,191 @@ function toggleFullscreen(): void {
 }
 let endDayModal: EndDayModalHandle | null = null;
 let unsubscribeGame: (() => void) | null = null;
+// WS1: the steered morning-greeting wrapper. It is a no-op while no
+// Jev access is configured (invisible fallback, AC-10) and pre-decides
+// greetings so the synchronous WS0 hook returns the stored line
+// instantly (D-48 pre-decision). ?jev=off disables construction;
+// ?jev=shadow requests+logs but never steers (D-55).
+const JEV_MODE = new URLSearchParams(window.location.search).get("jev");
+let greetingWrapper: GreetingWrapperHandle | null = null;
+let lastGreetingPrefetchDay = 0;
+// WS3: the authored v2 pools are CONTENT - they power the deterministic
+// conversation fallback with Jev off, too - so registration is
+// unconditional and idempotent.
+registerNpcDialoguePools();
+// The steered dialogue-turn wrapper. Same ?jev mode handling as the
+// greeting wrapper: off = never constructed, shadow = judge + log
+// without steering. Null on screens without the office.
+let dialogueSteerer: DialogueSteererHandle | null = null;
+// WS4 (C-77): the world-tick scheduler — ONE batched ambient request per
+// 6 unpaused real seconds (+ every period transition) covering chatter
+// pair/starter/exchange and next-period destinations. Same ?jev modes as
+// the other wrappers: "off" never constructs, "shadow" judges + logs
+// without steering, live otherwise (still inert while unconfigured).
+let worldTick: WorldTickHandle | null = null;
+// WS4: today's fired random-event slugs for the tick projection
+// (allowlisted content ids only; D-59). Reset at each day rollover.
+let worldTickFiredEvents: string[] = [];
+// WS7 (C-77): the conference-speech mission overlay. Open pauses the
+// simulation clock like a blocking modal (its presentation runs on its
+// own clock).
+let missionUi: MissionUiHandle | null = null;
+// D-55 (?jev=strict): when set, every fallback decision surfaces a
+// console warning — for QA hunts without a visible UI toast.
+const JEV_STRICT = new URLSearchParams(window.location.search).get("jev") === "strict";
+let lastStrictCheck = 0;
+function jevStrictCheck(): void {
+  // D-55 strict mode: surface fallback activity on the console. Polled
+  // at 1 Hz (cheap counters read, no per-decision noise).
+  if (!JEV_STRICT || performance.now() - lastStrictCheck < 1000) return;
+  lastStrictCheck = performance.now();
+  const c = jevCounters();
+  if (c.legacy + c.rejected > 0) {
+    console.warn(
+      `[jev][strict] fallbacks detected — legacy: ${c.legacy}, rejected: ${c.rejected} (see debug panel for details)`,
+    );
+  }
+}
+
+function buildDialogueSteerer(): DialogueSteererHandle | null {
+  if (JEV_MODE === "off") return null;
+  return createDialogueWrapper({ shadow: JEV_MODE === "shadow" });
+}
+
+// WS7: the mission steerer (question pick + answer scoring), sharing the
+// ?jev mode handling with the other wrappers.
+function buildMissionSteerer(): MissionSteerer | null {
+  if (JEV_MODE === "off") return null;
+  return createMissionWrapper({ shadow: JEV_MODE === "shadow" });
+}
+
+function buildWorldTick(): WorldTickHandle | null {
+  if (JEV_MODE === "off") return null;
+  return createWorldTickWrapper({
+    hooks: jevDecisionHooks,
+    mode: JEV_MODE === "shadow" ? "shadow" : "live",
+    providers: {
+      getDay: () => game.get().day,
+      getPeriod: () => game.get().timeOfDay,
+      getChatCandidates: () => sceneObjects?.npcController.getChatterCandidatePairs() ?? [],
+      getDestinationNpcs: () => NPCS.map((npc) => npc.id),
+      getFiredEvents: () => worldTickFiredEvents,
+      // WS-note: pair relationship bands arrive when the WS-social pair
+      // matrix is exposed; until then the projection omits them.
+      // Closure verdict High 3 (action surface): live needs project as
+      // named bands, and idle arrived NPCs are the action candidates.
+      getNpcNeeds: () => npcNeeds,
+      getActionCandidates: () =>
+        (Object.keys(npcNeeds) as NpcId[]).filter(
+          (id) =>
+            id !== lastPurposefulId &&
+            sceneObjects?.npcController.hasArrived(id) === true,
+        ),
+      getRelationshipBands: () => {
+        // REVISE step 0 (C-78): real bands from the live social matrix +
+        // the player map, so NPC-NPC chatter/branch picks see actual
+        // relationships instead of an empty map.
+        const social = game.get().social;
+        const bands: Record<string, string> = {};
+        if (social) {
+          for (const [key, value] of Object.entries(social.relationships)) {
+            bands[key] = socialBand(value);
+          }
+        }
+        for (const [npcId, value] of Object.entries(game.get().npcRelationships)) {
+          bands[`player:${npcId}`] = socialBand(value);
+        }
+        return bands;
+      },
+    },
+    // TAC-01 rng-order preservation: the exact pre-bound legacy pickers
+    // the events dispatcher uses as its fallback.
+    legacy: (() => {
+      const hooks = createDefaultDecisionHooks({
+        rng: Math.random,
+        getDay: () => game.get().day,
+      });
+      return {
+        pickChatterPair: hooks.pickChatterPair,
+        pickChatterStarter: hooks.pickChatterStarter,
+        pickChatterExchange: hooks.pickChatterExchange,
+        pickRandomDestination: hooks.pickRandomDestination,
+      };
+    })(),
+  });
+}
+// WS10 (C-77): shared positional-audio player. Created lazily on the
+// first office mount; reads player position/yaw/room LIVE via the
+// getters, so it is safe to build before `controls` exists.
+let positionalSfx: PositionalSfx | null = null;
+// WS6 (D-53/AC-20..22): runtime NPC needs + interaction wiring. Needs
+// are runtime-only (never saved); effects flow through the standard
+// game actions.
+let npcNeeds: NpcNeedsTable = createNeedsTable(
+  NPCS.map((npc) => npc.id),
+);
+let heldE = false;
+let lastRepairProgress = 0;
+// AC-22 (CR): purposeful NPC equipment use — round-robin cursor; every
+// PURPOSE_CHECK_S one craving NPC heads for the coffee machine. The
+// caffeine effect applies through onActionCompleted.
+let lastPurposefulId: NpcId | null = null;
+let purposefulCooldown = 0;
+const PURPOSE_CHECK_S = 45;
+// Pending NPC trips: actorId -> pointId. When the actor arrives within
+// range, the action activates (reserved -> in-use -> done -> caffeine).
+const pendingNpcTrips = new Map<NpcId, string>();
+/** Closure verdict High 3: trips we OWN an override for. Completion (or
+ *  a give-up below) releases ONLY these - never an event-layer pin. */
+const tripOverrides = new Map<NpcId, string>();
+/** Busy-point retry counters (frames waited; cleared on success/give-up). */
+const tripWaits = new Map<NpcId, number>();
+
+/** WS6: the closest interaction point within use range, or null. */
+const INTERACTION_LABELS: Record<string, string> = {
+  "coffee-machine": "coffee machine",
+  printer: "printer",
+  whiteboard: "whiteboard",
+};
+function nearestInteractionPoint(): { id: string; label: string } | null {
+  const p = controls?.getPlayerPosition();
+  if (!p || screen !== "office") return null;
+  let best: { id: string; label: string; d: number } | null = null;
+  for (const def of INTERACTION_POINT_DEFS) {
+    const d = Math.hypot(def.position.x - p.x, def.position.z - p.z);
+    if (d < 1.8 && (best === null || d < best.d)) {
+      best = { id: def.id, label: INTERACTION_LABELS[def.id] ?? def.id, d };
+    }
+  }
+  return best;
+}
+
+/** Closure verdict Medium 7: ACTIVATION is when the machine starts -
+ *  play the definition's registered sfx positioned at the point (the
+ *  registry sources exist since registerBuiltinInteractionPoints). */
+function playInteractionSfx(pointId: string): void {
+  const def = INTERACTION_POINT_DEFS.find((d) => d.id === pointId);
+  if (!def) return;
+  positionalSfx?.play(def.sfxId, def.id);
+}
+
+function buildGreetingWrapper(): GreetingWrapperHandle | null {
+  if (JEV_MODE === "off") return null;
+  return createGreetingWrapper({
+    hooks: jevDecisionHooks,
+    shadow: JEV_MODE === "shadow",
+    getGameState: () => {
+      const g = game.get();
+      return { day: g.day, npcRelationships: g.npcRelationships };
+    },
+  });
+}
+
+function prefetchGreetingsNow(): void {
+  if (!greetingWrapper) return;
+  lastGreetingPrefetchDay = game.get().day;
+  void greetingWrapper.prefetch(NPCS.map((npc) => npc.id)).catch(() => undefined);
+}
 let focusedNpcId: NpcId | null = null;
 // C-54: who the currently-open player dialogue is with (null when
 // none). The dialogue controller is created once, so its close
@@ -192,6 +449,15 @@ let fpsMeter: FpsMeter | null = null;
 const npcFaceAnimations = new Map<string, number>(); // npcId -> target yaw
 const npcScheduleYaws = new Map<string, number>();    // npcId -> schedule yaw
 
+window.addEventListener("keyup", (e) => {
+  // The release always finishes the hold, regardless of focus/modals —
+  // dropping a repair hold must not leave the lifecycle stuck in-use.
+  if ((e.code === "KeyE" || e.key.toLowerCase() === "e") && heldE) {
+    heldE = false;
+    finishRepair();
+  }
+});
+
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     // One priority chain, topmost layer first (Lucas, 2026-09-03: Esc
@@ -228,6 +494,43 @@ window.addEventListener("keydown", (e) => {
       toggleFullscreen();
     }
   }
+  // WS6 (AC-20/21): E uses the nearest interaction point; at a faulted
+  // printer it is a HOLD-to-repair (keydown begins, keyup finishes).
+  // CR-minor fix: never swallow "e" while typing in a text field, and
+  // never trigger behind an open modal.
+  const eTarget = e.target;
+  const eIsTextEntry = eTarget instanceof HTMLElement && (
+    eTarget.tagName === "INPUT" || eTarget.tagName === "TEXTAREA" || eTarget.isContentEditable
+  );
+  if (
+    (e.code === "KeyE" || e.key.toLowerCase() === "e") &&
+    !e.repeat &&
+    screen === "office" &&
+    !dialogue?.isOpen() &&
+    !helpModal?.isOpen() &&
+    !endDayModal?.isOpen() &&
+    !webmcpModal?.isOpen() &&
+    missionUi?.isOpen() !== true &&
+    !eIsTextEntry
+  ) {
+    const nearest = nearestInteractionPoint();
+    if (nearest) {
+      e.preventDefault();
+      if (isFaulted(nearest.id)) {
+        beginRepair(nearest.id, "player");
+        heldE = true;
+      } else {
+        // WS6 verdict fix: usePoint only RESERVES; the player pressing E
+        // means "use it now" — activate immediately so the lifecycle
+        // advances reserved -> in-use -> done and the effect applies.
+        const used = usePoint(nearest.id, "player");
+        if (used.ok) {
+          activateAction(used.actionId);
+          playInteractionSfx(nearest.id);
+        }
+      }
+    }
+  }
   if ((e.code === "KeyZ" || e.key.toLowerCase() === "z") && !e.repeat) {
     const target = e.target;
     const isTextEntry = target instanceof HTMLElement && (
@@ -238,7 +541,8 @@ window.addEventListener("keydown", (e) => {
       screen === "office" &&
       !dialogue?.isOpen() &&
       !helpModal?.isOpen() &&
-      !endDayModal?.isOpen()
+      !endDayModal?.isOpen() &&
+      missionUi?.isOpen() !== true
     ) {
       e.preventDefault();
       endDayModal?.open();
@@ -302,6 +606,7 @@ function showCharacterCreate(): void {
     uiRoot,
     (data) => {
       game.dispatch({ type: "reset" });
+      resetInteractionPoints();
       bartekSummoned = false;
       bartekApproaching = false;
       game.dispatch({ type: "load", state: { ...game.get(), character: { ...data }, stats: applyTrait(data.trait, game.get().stats) } });
@@ -378,17 +683,89 @@ function startOffice(playIntro = false): void {
   setScreen("office");
   if (!engine) {
     engine = createEngine(canvas);
+    if (!positionalSfx) {
+      // WS10 (C-77): built lazily on the first office mount; the
+      // getters read the player LIVE, so building before `controls`
+      // exists is safe.
+      const playerPos = (): { x: number; z: number } => {
+        const p = controls?.getPlayerPosition();
+        return { x: p?.x ?? 0, z: p?.z ?? 0 };
+      };
+      positionalSfx = createPositionalSfx({
+        sfx: audio().sfx,
+        listener: {
+          getPosition: playerPos,
+          getFacingRad: () => controls?.getYaw() ?? 0,
+          getRoom: () => {
+            const p = controls?.getPlayerPosition();
+            return p ? roomAt(p.x, p.z) : null;
+          },
+        },
+      });
+    }
+    // WS6 (D-53/AC-20..22): interaction points + needs. Registry is
+    // pure data; effects flow through the standard game actions.
+    registerBuiltinInteractionPoints();
+    setFaultReadout((id) => game.get().equipment?.[id] === "faulted");
+    onActionCompleted((action) => {
+      if (action.effect === "caffeine") {
+        if (action.actorId === "player") {
+          game.dispatch({ type: "add-stat", stat: "caffeine", delta: 15 });
+        } else {
+          const needs = npcNeeds[action.actorId as NpcId];
+          if (needs) npcNeeds[action.actorId as NpcId] = { ...needs, caffeine: 100 };
+        }
+      }
+      // Closure verdict High 3: when a PURPOSEFUL NPC trip's use
+      // completes, release the override WE own so the drinker walks
+      // back to their desk (the events layer's pins are untouched).
+      if (action.actorId !== "player" && tripOverrides.get(action.actorId as NpcId) === action.pointId) {
+        tripOverrides.delete(action.actorId as NpcId);
+        sceneObjects?.npcController.setOverride(action.actorId as NpcId, null);
+      }
+    });
+    interruptAll(); // release stale reservations from a previous mount
     const built = buildOfficeScene(
       engine.scene,
       () => game.get().timeOfDay,
       () => game.get().day,
       isLunchActive,
+      positionalSfx,
+      // C-78 REVISE v1: NPC-NPC deep conversations read the LIVE social
+      // matrix + flags, and settle their one bounded reaction per run
+      // through the standard reducer action (D-50).
+      {
+        getRelationship: (a, b) => game.get().social?.relationships[pairKey(a, b)] ?? 50,
+        getFlags: () => game.get().flags,
+        onConversationReaction: (pair, bucket) =>
+          game.dispatch({ type: "apply-social-reaction", pair, bucket }),
+      },
     );
     sceneObjects = built;
     // C-61 fix: hand the REAL engine camera to the bubble system. DOM
     // bubbles project with it every frame - the sprite renderer ignored
     // cameras, so nothing needed this wiring before.
     built.npcController.setBubblesCamera(engine.camera);
+    // WS1: greeting steering, gated by the ?jev= URL mode (D-55):
+    // "off" never constructs the wrapper; "shadow" requests+logs but
+    // never installs the hook; default is live when access is
+    // configured, invisible legacy otherwise (AC-10). A FRESH wrapper
+    // is built on every office mount and immediately prefetches the
+    // current day — the day-2 guard below only dedupes the store
+    // subscription within one mount (re-verdict major 1).
+    greetingWrapper?.uninstall();
+    greetingWrapper = buildGreetingWrapper();
+    greetingWrapper?.install();
+    // WS3: a fresh office session starts a fresh steerer memo.
+    dialogueSteerer?.resetSession();
+    dialogueSteerer = buildDialogueSteerer();
+    // WS4: a fresh world-tick scheduler per office mount. install() is a
+    // no-op while Jev is unconfigured, so the game plays legacy (TAC-01).
+    worldTick?.uninstall();
+    worldTick = buildWorldTick();
+    worldTick?.install();
+    worldTickFiredEvents = [];
+    prefetchGreetingsNow();
     // L-2026-08-30-01: register the NPC controller with the events
     // dispatcher so every period transition can roll a random
     // destination (kitchen, toilet, meeting, training) and install
@@ -437,7 +814,11 @@ function startOffice(playIntro = false): void {
     // the shared bubble layer; registered with the WebMCP tool surface so
     // the agent_* tools have something behind them.
     {
-      const obstacles = [...OBSTACLES, ...WORLD_COLLISION_WALLS];
+      // WS9a: the companion routes with the FULL NPC obstacle set (static
+      // furniture + walls), matching getNpcObstacles() — the old inline
+      // list omitted the furniture AABBs, so the robot walked through
+      // desks (Lucas's bug, Beads sacs-xtma.16).
+      const obstacles = getNpcObstacles();
       const edges = buildWaypointEdges(CORRIDOR_WAYPOINTS, obstacles, DEFAULT_MAX_EDGE_LENGTH);
       const companion = createAgentCompanion({
         scene: engine.scene,
@@ -707,6 +1088,39 @@ function startOffice(playIntro = false): void {
   );
   questLog = mountQuestLog(uiRoot);
   helpModal = mountHelpModal(uiRoot);
+  // WS1: the "AI decisions (Jev)" settings section lives at the bottom
+  // of the help modal (the game's settings surface). Late activation:
+  // setting a key re-installs the steered wrapper and prefetches
+  // without a reload (AC-14); clearing it returns to invisible legacy.
+  const helpControls = uiRoot.querySelector<HTMLElement>(".help-controls");
+  if (helpControls) {
+    mountJevSettings(helpControls, {
+      onConfigured: () => {
+        // CR fix: late activation installs EVERY wrapper — greetings,
+        // dialogue steerer, and the world-tick ambient hooks (a no-key
+        // mount left the hooks uninstalled and the counters lied).
+        greetingWrapper?.uninstall();
+        greetingWrapper = buildGreetingWrapper();
+        greetingWrapper?.install();
+        dialogueSteerer?.resetSession();
+        dialogueSteerer = buildDialogueSteerer();
+        worldTick?.uninstall();
+        worldTick = buildWorldTick();
+        worldTick?.install();
+        prefetchGreetingsNow();
+      },
+      onCleared: () => {
+        greetingWrapper?.uninstall();
+        greetingWrapper = buildGreetingWrapper();
+        greetingWrapper?.install();
+        dialogueSteerer?.resetSession();
+        dialogueSteerer = buildDialogueSteerer();
+        worldTick?.uninstall();
+        worldTick = buildWorldTick();
+        worldTick?.install();
+      },
+    });
+  }
   // Dialogue buttons and the Help modal both ask for this via a DOM event,
   // so the dialogue layer never imports the modal directly.
   window.addEventListener("stack-underflow:open-modal", (event) => {
@@ -776,6 +1190,12 @@ function startOffice(playIntro = false): void {
     prevCash = cur.cash;
     prevPatience = cur.stats.patience;
     prevCredibility = cur.stats.credibility;
+    // WS1: pre-decide the morning greetings once per in-game day (D-48)
+    // when the day flips mid-mount (end-day flow). Office mounts
+    // prefetch directly via prefetchGreetingsNow().
+    if (greetingWrapper && cur.day !== lastGreetingPrefetchDay) {
+      prefetchGreetingsNow();
+    }
   });
   if (hud) renderHud(hud, game.get());
 
@@ -791,7 +1211,10 @@ function startOffice(playIntro = false): void {
   // entry to avoid stacking with the intro toast.
   if (game.get().flags["_seen-intro-toast"]) {
     setTimeout(() => {
-      runPeriodEvent(hud, "morning");
+      const fired = runPeriodEvent(hud, "morning");
+      // WS4: day-start event rides the projection; pre-decision round.
+      if (fired && !worldTickFiredEvents.includes(fired.id)) worldTickFiredEvents.push(fired.id);
+      worldTick?.onPeriodTransition();
     }, 1200);
   }
 }
@@ -909,6 +1332,10 @@ async function playIntroCinematic(): Promise<void> {
 function refreshRoster(): void {
   if (!roster) return;
   const state = game.get();
+  // Closure verdict High 2: the contract unlocks the computer
+  // mid-session (Bartek's contract dialogue); refreshRoster runs on
+  // game updates AND at ~2 Hz, so the button follows the flag.
+  roster.setComputerUnlocked(state.flags["got-acme-contract"] === true);
   // C-46: the roster tells the truth. Read each NPC's LIVE state from
   // the controller-maintained userData (the same source the debug
   // inspector uses) and map it to a real location label via the pure
@@ -1016,6 +1443,9 @@ function updateHoverLabel(): void {
 
 function endDay(dayAlreadyAdvanced = false): void {
   if (screen !== "office") return;
+  // WS6 verdict fix: needs reset daily (AC: morning ok -> evening craving
+  // -> fresh tomorrow).
+  npcNeeds = createNeedsTable(NPCS.map((npc) => npc.id));
   // Close any open dialogue first. showDailySummary will clear uiRoot.innerHTML
   // which would otherwise orphan the dialogue DOM but leave the controller's
   // `state` set, and the next openDialogueWith() call would early-return as
@@ -1023,6 +1453,12 @@ function endDay(dayAlreadyAdvanced = false): void {
   if (dialogue?.isOpen()) {
     dialogue.close();
   }
+  // Closure verdict Critical 1: the SAME orphaning applies to an open
+  // mission - the summary removes its DOM while `wrap` stays non-null,
+  // `isOpen()` stays true, and the clock gate (missionOpen) plus the
+  // computer entry guard block the ENTIRE next day. Close it here so
+  // the runtime + DOM go down together no matter how the day ends.
+  missionUi?.close();
   // C-52: ending the day must END the day. Advance the calendar to the
   // next morning (skipping the remaining periods - their random events
   // are not fired, the day is over) before running the tick, so the
@@ -1179,6 +1615,31 @@ function openDialogueWith(npc: NPC): void {
     sceneObjects?.npcController.setTalkingToPlayer(npc.id);
     dialogueNpcId = npc.id;
   }
+  // WS3 (C-77): NPCs with authored v2 pools run the conversation-turn
+  // flow; everyone else keeps their legacy tree. Both paths work, and the
+  // WebMCP snapshot/pickOption surface covers v2 conversations too.
+  // Wave-2 verdict CRITICAL fix: the onboarding flags (renata-tut-finished,
+  // got-acme-contract) are set ONLY by the legacy trees — so Renata and
+  // Bartek stay on their onboarding trees until those flags are earned,
+  // then graduate to the v2 pools. A fresh player can never skip the
+  // tutorial or the contract quest.
+  const onboardingGate: Partial<Record<NpcId, string>> = {
+    renata: "renata-tut-finished",
+    bartek: "got-acme-contract",
+    // Dawid: the FULL arc (first-meeting -> give-task -> performance-
+    // review -> fireside) runs in legacy trees before v2 opens. The
+    // v2 pool is the post-arc free-conversation layer.
+    dawid: "ceo-reviewed",
+  };
+  const requiredFlag = onboardingGate[npc.id];
+  const v2Allowed =
+    requiredFlag === undefined || game.get().flags[requiredFlag] === true;
+  if (dialoguePoolFor(npc.id) !== undefined && v2Allowed) {
+    audio().sfx.play("sfx_dialogue_open");
+    roster?.setFocus(npc.id);
+    panel.openV2(npc, dialogueSteerer);
+    return;
+  }
   const state = game.get();
   let treeKey = "default";
   if (npc.id === "bartek") {
@@ -1214,6 +1675,34 @@ function openDialogueWith(npc: NPC): void {
 }
 
 function openDebugMinigame(): void {
+  // WS7 (C-77): the computer is the mission entry once the ACME contract
+  // is signed — the conference speech IS the client training. Replays are
+  // flavor-only (the runtime/UI guard the double payout).
+  if (
+    game.get().flags["got-acme-contract"] === true &&
+    !missionUi?.isOpen()
+  ) {
+    if (missionUi === null) {
+      missionUi = mountMissionUi(uiRoot, {
+        steerer: buildMissionSteerer(),
+        isCompleted: (mission) =>
+          game.get().flags[mission.completionFlag] === true,
+        applyResult: (mission, result) => {
+          if (!result.payoutApplied) return;
+          // CR fix: ONE atomic dispatch — flag + rewards land in a single
+          // save (closure-verdict medium 7).
+          game.dispatch({
+            type: "mission-complete",
+            completionFlag: mission.completionFlag,
+            cash: result.cashReward,
+            credibilityDelta: result.credibilityDelta,
+          });
+        },
+      });
+    }
+    missionUi.open("conference-acme-training");
+    return;
+  }
   if (!debugGame) {
     debugGame = mountDebugScript(uiRoot, (result) => {
       if (result.won) {
@@ -1307,11 +1796,21 @@ function advanceOfficePeriods(periodCount: number): void {
   const prevDay = game.get().day;
   for (let i = 0; i < periodCount; i++) {
     game.dispatch({ type: "advance-time" });
-    if (game.get().day === prevDay) runPeriodEvent(hud, game.get().timeOfDay);
-    else break;
+    if (game.get().day === prevDay) {
+      const fired = runPeriodEvent(hud, game.get().timeOfDay);
+      // WS4: feed the fired event slug into the tick projection.
+      if (fired && !worldTickFiredEvents.includes(fired.id)) worldTickFiredEvents.push(fired.id);
+      // WS4 (D-48): transition trigger — pre-decides this period's
+      // chatter and prefetches NEXT period's destinations.
+      worldTick?.onPeriodTransition();
+    } else break;
   }
   if (game.get().day !== prevDay) {
     currentPeriodElapsed = 0;
+    worldTickFiredEvents = []; // WS4: a new day, a fresh event list
+    // C-78 REVISE: nightly 10% regression toward archetype seeds — the
+    // social matrix breathes with the story instead of freezing.
+    game.dispatch({ type: "regress-social-nightly" });
     // The rollover already moved the calendar; endDay must not advance
     // it a second time (C-52).
     endDay(true);
@@ -1440,6 +1939,33 @@ function frame(): void {
   const rawFrameMs = now - lastTime;
   const dt = Math.min(0.1, rawFrameMs / 1000);
   lastTime = now;
+  // WS6 (AC-20..22): advance interaction lifecycles + the repair hold,
+  // decay runtime needs (in-game minutes = real seconds at 1x), and
+  // show the use/repair prompt for the nearest point.
+  if (screen === "office") {
+    updateInteractionPoints(dt);
+    const repairProgressNow = updateRepair(heldE ? dt : 0);
+    // WS6: updateRepair auto-completes (returns 1) and flips its
+    // transient bit; the PERSISTED bit is cleared here, exactly once,
+    // on the completion frame.
+    if (repairProgressNow === 1 && lastRepairProgress > 0 && lastRepairProgress < 1) {
+      game.dispatch({ type: "set-equipment-fault", id: "printer", faulted: false });
+    }
+    lastRepairProgress = repairProgressNow;
+    if (hud) {
+      const nearest = nearestInteractionPoint();
+      if (nearest) {
+        if (isFaulted(nearest.id)) {
+          const pct = Math.round(lastRepairProgress * 100);
+          showPrompt(hud, pct > 0 ? `Repairing ${nearest.label}… ${pct}%` : `Hold E to repair ${nearest.label}`);
+        } else {
+          showPrompt(hud, `Press E to use ${nearest.label}`);
+        }
+      } else {
+        showPrompt(hud, null);
+      }
+    }
+  }
   // C-65: the meter reads the RAW frame time, never the clamped `dt`.
   // `dt` is capped at 0.1 s so a stalled tab cannot teleport the
   // simulation - which means a `dt`-based readout would bottom out at a
@@ -1613,11 +2139,113 @@ function frame(): void {
     cinematicPlaying,
     helpOpen: helpModal?.isOpen() ?? false,
     endDayModalOpen: endDayModal?.isOpen() ?? false,
+    missionOpen: missionUi?.isOpen() ?? false,
   })) {
     const advanced = advancePeriodElapsed(game.get().timeOfDay, currentPeriodElapsed, dt);
     currentPeriodElapsed = advanced.elapsedInPeriod;
     if (advanced.periodsAdvanced > 0) advanceOfficePeriods(advanced.periodsAdvanced);
+    // WS4 (D-48): the tick cadence counts UNPAUSED simulation seconds —
+    // exactly the frames that feed the C-67 clock. Blocking overlays
+    // freeze chatter/destination pre-decisions with everything else.
+    worldTick?.update(dt);
+    // WS6 (CR fix): needs decay inside the same gate — a paused clock
+    // (dialogue, mission, help) must not drain NPCs' caffeine/social.
+    for (const id of Object.keys(npcNeeds)) {
+      // dt (real seconds) IS in-game minutes at 1x — the /60 slowed
+      // decay 60x (a 600 s day drained ~1.3 points, not 80).
+      npcNeeds[id as NpcId] = decayNeeds(npcNeeds[id as NpcId]!, dt);
+    }
+    // AC-22 (CR): a craving NPC heads for the coffee machine on its own.
+    purposefulCooldown -= dt;
+    if (purposefulCooldown <= 0) {
+      purposefulCooldown = PURPOSE_CHECK_S;
+      // Closure verdict High 3 (Jev action surface): the world-tick
+      // layer DECIDES the purposeful action (needs + context steered);
+      // the orchestrator only executes walk/use/return. The legacy
+      // craving scan stays as the deterministic fallback when the memo
+      // carries no steered action (?jev=off, breaker open, low
+      // confidence, or plain no-coffee judgments).
+      const needIds = Object.keys(npcNeeds) as NpcId[];
+      // Verdict re-round: a steered "stay" is a DECISION - honor it for
+      // this check (the craving fallback must not override a fresh
+      // judgment into coffee against the NPC's just-expressed choice).
+      const steeredStay = new Set<NpcId>();
+      let craving: NpcId | undefined;
+      for (const id of needIds) {
+        if (id === lastPurposefulId) continue;
+        const memo = worldTick?.getActionMemo(id) ?? null;
+        if (memo === "coffee-machine" &&
+            sceneObjects?.npcController.hasArrived(id) === true) {
+          craving = id;
+          break;
+        }
+        if (memo === "stay") steeredStay.add(id);
+      }
+      if (craving === undefined) {
+        craving = needIds.find(
+          (id) =>
+            id !== lastPurposefulId &&
+            !steeredStay.has(id) &&
+            caffeineBand(npcNeeds[id]?.caffeine ?? 100) === "craving" &&
+            sceneObjects?.npcController.hasArrived(id),
+        );
+      }
+      if (craving !== undefined) {
+        const trip = suggestNpcUse(craving, "coffee-machine");
+        if (trip) {
+          sceneObjects?.npcController.setOverride(craving, trip.destination);
+          pendingNpcTrips.set(craving, "coffee-machine");
+          tripOverrides.set(craving, "coffee-machine");
+          lastPurposefulId = craving;
+        }
+      }
+      // AC-22 (CR): arrival detection — when a tripped NPC reaches the
+      // point, reserve + activate + the positional-audio sfx fire; the
+      // caffeine refill settles through onActionCompleted.
+      // Closure verdict High 3: a BUSY point no longer loses the trip -
+      // the NPC waits beside the machine and retries until the current
+      // user finishes (bounded, then gives up and goes home). A
+      // COMPLETED use releases the override we own, so the drinker
+      // walks back to their desk instead of standing at the machine
+      // until the period ends.
+      for (const [npcId, pointId] of pendingNpcTrips) {
+        const npcObject = sceneObjects?.npcObjects?.[npcId];
+        const def = INTERACTION_POINT_DEFS.find((d) => d.id === pointId);
+        if (!npcObject || !def || !npcObject.visible) {
+          pendingNpcTrips.delete(npcId);
+          tripOverrides.delete(npcId);
+          continue;
+        }
+        const dist = Math.hypot(
+          npcObject.position.x - def.position.x,
+          npcObject.position.z - def.position.z,
+        );
+        if (dist < 1.4) {
+          const used = usePoint(pointId, npcId);
+          if (used.ok) {
+            activateAction(used.actionId);
+            playInteractionSfx(pointId);
+            pendingNpcTrips.delete(npcId);
+            continue;
+          }
+          // Busy: retry on the next purposeful checks (this loop runs
+          // inside the 45 s PURPOSE gate, so 2 waits ~= 90 s), then
+          // release the override so the NPC re-plans home instead of
+          // camping at the machine all period.
+          tripWaits.set(npcId, (tripWaits.get(npcId) ?? 0) + 1);
+          if (tripWaits.get(npcId)! > 2) {
+            tripWaits.delete(npcId);
+            pendingNpcTrips.delete(npcId);
+            if (tripOverrides.get(npcId) === pointId) {
+              tripOverrides.delete(npcId);
+              sceneObjects?.npcController.setOverride(npcId, null);
+            }
+          }
+        }
+      }
+    }
   }
+  jevStrictCheck();
   if (hud && screen === "office") {
     renderHudClock(hud, game.get().timeOfDay, currentPeriodElapsed);
   }
@@ -1639,6 +2267,23 @@ declare global {
       setSensitivity: (radPerPixel: number) => void;
       getSensitivity: () => number;
       getSceneObjects: () => { keys: string[]; hasPlayerGroup: boolean } | null;
+      /** C-78 REVISE v1 QA hook: authored deep conversations in flight. */
+      getDeepConversations: () => readonly {
+        a: string; b: string; scriptId: string; phase: string;
+        lineIndex: number; totalCount: number;
+      }[];
+      /** C-46 chatter views, for the same QA surface. */
+      getChatter: () => readonly { a: string; b: string; responseIn: number; starterLine: string }[];
+      getDeepDebug: () => { gateSeen: number; quiet: number; due: number; attempts: number; blocked: string } | null;
+      /** QA: walk an NPC to (x, z) through the real controller. */
+      debugMoveNpc: (npcId: string, x: number, z: number) => void;
+      /** WebMCP QA: the real tool implementations via the real bridge. */
+      webmcpCall: (name: string, args?: Record<string, unknown>) => Promise<{
+        content: ReadonlyArray<{ type: "text"; text: string }>;
+        isError?: boolean;
+      }>;
+      /** C-78 v1.1 QA: advance the NPC controller by simulated seconds. */
+      debugTick: (seconds: number) => void;
       inspectNpcs: () => Array<{
         npcId: string;
         position: { x: number; z: number };
@@ -1673,6 +2318,20 @@ declare global {
         world: { x: number; y: number; z: number } | null;
         childCount: number;
       } | null;
+      /** WS9a: the static obstacle AABBs (furniture + walls) the walking
+       *  actors route with, so an e2e can assert no sampled position
+       *  sits inside one. */
+      inspectObstacles: () => Array<{ minX: number; maxX: number; minZ: number; maxZ: number }>;
+      /** Wave-4 (TAC-11): the decision-log counters, readable headlessly. */
+      jevCounters: () => {
+        requested: number;
+        applied: number;
+        legacy: number;
+        rejected: number;
+        stale: number;
+        skipped: number;
+        shadow: number;
+      };
     };
   }
 }
@@ -1709,6 +2368,11 @@ window.__aitrainer = {
     return { keys: Object.keys(sceneObjects), hasPlayerGroup: false };
   },
   getScreen: () => screen,
+  // C-78 REVISE v1 QA hook: the authored deep conversations in flight
+  // (plain data - no three.js objects cross the console boundary).
+  getDeepConversations: () => sceneObjects?.npcController.getActiveDeepConversations() ?? [],
+  getDeepDebug: () => sceneObjects?.npcController.getDeepDebug() ?? null,
+  getChatter: () => sceneObjects?.npcController.getActiveConversations() ?? [],
   setSensitivity: (radPerPixel: number): void => {
     setMouseSensitivity(radPerPixel);
     // eslint-disable-next-line no-console
@@ -1722,6 +2386,41 @@ window.__aitrainer = {
   teleport: (x: number, z: number, yaw: number): void => {
     if (!controls) return;
     controls.setPlayerPose(x, z, yaw);
+  },
+  // WebMCP QA surface (closure verdict Medium 9): invoke the REAL
+  // registered tool implementations through the same bridge conversion
+  // the host uses. The E2Es drive the game through this - no shimmed
+  // document.modelContext anywhere in tests/.
+  webmcpCall: async (name: string, args: Record<string, unknown> = {}) => {
+    return toToolResponse(await callTool({ name, parameters: args }));
+  },
+  // QA: send an NPC to (x, z) through the REAL controller override -
+  // full path planning, collision and avoidance, exactly like the
+  // coffee trips. The reroute E2E drives traversals with this so the
+  // detour proof is deterministic instead of sampling luck.
+  debugMoveNpc: (npcId: string, x: number, z: number): void => {
+    sceneObjects?.npcController.setOverride(npcId as NpcId, {
+      position: { x, y: 0, z },
+      face: 0,
+      state: "at-desk",
+    });
+  },
+  // C-78 v1.1 QA accelerator: advance ONLY the NPC controller by
+  // `seconds` of simulated time (30 Hz steps) - chatter, deep
+  // conversations and rendezvous staging without waiting on the
+  // throttled headless frame clock. Mirrors debugSkipPeriod.
+  debugTick: (seconds: number): void => {
+    const controller = sceneObjects?.npcController;
+    if (!controller) return;
+    const steps = Math.round(seconds * 30);
+    for (let i = 0; i < steps; i += 1) {
+      const dt = 1 / 30;
+      controller.update(dt);
+      // The companion robot steps on the same frame loop as the NPCs;
+      // a headless E2E browser throttles rAF to near-zero, so the QA
+      // accelerator advances BOTH - the simulation, not the wall clock.
+      if (agentCompanion?.isActive() === true) agentCompanion.update(dt);
+    }
   },
   // Debug helper: returns the gender + child-mesh kinds of every
   // NPC group in the scene. Used by the gender-bug triage script
@@ -1781,7 +2480,9 @@ window.__aitrainer = {
     });
     return out;
   },
+  inspectObstacles: () => getNpcObstacles().map((b) => ({ ...b })),
   inspectRobots: () => sceneObjects?.robotFleet.inspect() ?? null,
+  jevCounters: () => ({ ...jevCounters() }),
   toggleFps: (): boolean => {
     fpsMeter?.toggle();
     return fpsMeter?.isVisible() ?? false;

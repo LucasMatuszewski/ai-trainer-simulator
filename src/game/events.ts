@@ -25,10 +25,26 @@ import {
   type RandomEventEffect,
 } from "../content/events";
 import {
-  pickRandomDestination,
   type ScheduleEntry,
 } from "../content/npc-schedule";
 import type { GameState, NpcId } from "../types";
+import {
+  createDefaultDecisionHooks,
+  jevDecisionHooks,
+} from "../engine/npc-controller";
+
+/**
+ * WS0 seam: the legacy destination pickers pre-bound to the same
+ * rng/day sources the direct call below used, so the steered path
+ * (jevDecisionHooks.pickRandomDestination, populated by a later Jev
+ * wave) falls back to byte-identical behavior. Built once; `game.get()`
+ * is read at call time, matching the `state.day` this function used to
+ * capture per invocation.
+ */
+const destinationHooks = createDefaultDecisionHooks({
+  rng: Math.random,
+  getDay: () => game.get().day,
+});
 
 /**
  * The NPC controller, if mounted. When set, the dispatcher will roll
@@ -56,7 +72,6 @@ export function registerNpcController(
 /** Apply a random destination to every NPC for the current period. */
 function rollRandomNpcDestinations(period: Period): void {
   if (!npcControllerHooks) return;
-  const state = game.get();
   // Roll per-NPC. PickRandomDestination returns null when the NPC
   // should stay at the desk (70% of the time on average).
   for (const npcId of npcControllerHooks.getNpcIds()) {
@@ -64,7 +79,16 @@ function rollRandomNpcDestinations(period: Period): void {
     // roll - they head for their desk when they arrive. Overriding
     // them here would pull them into the office ahead of their time.
     if (!npcControllerHooks.hasArrived(npcId)) continue;
-    const dest = pickRandomDestination(npcId, Math.random, state.day, period);
+    // WS0 seam: steered destination when a Jev wave installs the hook,
+    // else the pre-bound legacy default (same rng stream and day
+    // source as the direct call this replaces). Presence-first check: a
+    // steered `null` ("stay at desk") is a decision, not an absent
+    // hook, so it must NOT fall through to the legacy roll.
+    const steered = jevDecisionHooks.pickRandomDestination?.(npcId, period);
+    const dest =
+      steered !== undefined
+        ? steered
+        : destinationHooks.pickRandomDestination(npcId, period);
     npcControllerHooks.setOverride(npcId, dest);
   }
 }

@@ -66,3 +66,8 @@ tests/**/*.js.map
 # caveat it used to carry - the rules above already cover every
 # screenshot directory.
 /*.png
+.vercel
+.env*
+
+# Agent playtest artifacts (screenshots, logs) — Lucas 2026-09-28: keep in repo dir, never commit
+playtests/

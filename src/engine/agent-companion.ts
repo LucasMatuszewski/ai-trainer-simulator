@@ -8,7 +8,7 @@
  * assuming a fixed cast - every one of them covered by tests encoding that
  * assumption. Injecting a runtime-created, externally-driven character into
  * it would touch all of them. Instead this composes the pure functions those
- * systems are built from: planNpcPath, advanceAlongPath, updateWalkCycle,
+ * systems are built from: planRobotPath, advanceAlongPath, updateWalkCycle,
  * createNpcMesh, and the shared bubble layer.
  *
  * What we give up: the companion has no schedule, joins no chatter pairing,
@@ -19,10 +19,10 @@
 
 import * as THREE from "three";
 import { advanceAlongPath } from "./npc-controller";
-import { planNpcPath } from "./npc-path";
+import { planRobotPath, traceRobotStep } from "../webmcp/robot-collision";
 import { createNpcMesh } from "./npc-mesh";
 import { updateWalkCycle, DEFAULT_WALK_SPEED_MPS, type WalkCycleState } from "./npc-walk-cycle";
-import { applyWithCollision, type AABB, type XZ } from "./collision";
+import { type AABB, type XZ } from "./collision";
 import type { Waypoint } from "../content/corridor-waypoints";
 
 /** Bubble text cap. The layer is one line of DOM text; longer strings
@@ -35,6 +35,83 @@ export const ARRIVAL_RADIUS = 1.1;
 
 /** Body radius, matching the NPC bodies so collision reads the same. */
 export const COMPANION_RADIUS = 0.3;
+/** WS9a: the robot never ends a movement frame inside this radius of a
+ *  person's center (third-verdict overlap fix). */
+export const COMPANION_PERSONAL_RADIUS = 0.45;
+/** WS9a: how long the robot holds before dodging a person on its route. */
+export const COMPANION_DODGE_AFTER_S = 0.4;
+/** WS9a: how far the dodge waypoint stands off the person. */
+const DODGE_STANDOFF = 0.8;
+
+/**
+ * WS9a: build a two-leg dodge around `person` from `from` toward the
+ * path's next target: one perpendicular standoff waypoint, then the
+ * original target. The side is chosen away from the person relative to
+ * the robot and must be furniture-free (both sides tried, then the
+ * straight line — which the caller's hold already rejects — is NOT
+ * returned: null means "keep holding", never "walk through").
+ */
+function planDodgeAround(
+  from: XZ,
+  path: THREE.Vector3[] | null,
+  segmentIndex: number,
+  person: XZ,
+  obstacles: ReadonlyArray<AABB>,
+  standoff = DODGE_STANDOFF,
+): XZ[] | null {
+  const target = path !== null && segmentIndex + 1 < path.length
+    ? path[path.length - 1]!
+    : null;
+  if (target === null) return null;
+  const dirx = target.x - from.x;
+  const dirz = target.z - from.z;
+  const len = Math.hypot(dirx, dirz);
+  if (len < 1e-4) return null;
+  const nx = dirx / len;
+  const nz = dirz / len;
+  // Perpendicular pointing away from the person relative to the route.
+  let px = -nz;
+  let pz = nx;
+  const cross = (person.x - from.x) * pz + (person.z - from.z) * (-px);
+  if (cross > 0) {
+    px = -px;
+    pz = -pz;
+  }
+  const candidates: XZ[] = [
+    { x: person.x + px * standoff, z: person.z + pz * standoff },
+    { x: person.x - px * standoff, z: person.z - pz * standoff },
+  ];
+  // Segment-vs-box with BODY clearance (sixth verdict): the raw boxes
+  // are inflated by the robot radius (a center line skimming an AABB
+  // still clips the body) and sampled finely enough that a thin wall
+  // cannot fall between samples.
+  const inflated = obstacles.map((box) => ({
+    minX: box.minX - COMPANION_RADIUS,
+    maxX: box.maxX + COMPANION_RADIUS,
+    minZ: box.minZ - COMPANION_RADIUS,
+    maxZ: box.maxZ + COMPANION_RADIUS,
+  }));
+  const legBlocked = (a: XZ, b: XZ): boolean =>
+    inflated.some((box) => {
+      const steps = Math.max(8, Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.1));
+      for (let i = 0; i <= steps; i += 1) {
+        const t = i / steps;
+        const sx = a.x + (b.x - a.x) * t;
+        const sz = a.z + (b.z - a.z) * t;
+        if (sx >= box.minX && sx <= box.maxX && sz >= box.minZ && sz <= box.maxZ) return true;
+      }
+      return false;
+    });
+  for (const dodge of candidates) {
+    // BOTH legs must be furniture-clear: robot→dodge AND dodge→target
+    // (fourth verdict: returning the original destination unchecked let
+    // the post-dodge leg clip straight through a desk).
+    if (!legBlocked(from, dodge) && !legBlocked(dodge, target)) {
+      return [dodge, { x: target.x, z: target.z }];
+    }
+  }
+  return null;
+}
 
 /**
  * Facing the companion spawns with, in radians.
@@ -315,11 +392,17 @@ export interface AgentCompanion {
  * order, which was fragile: an index-based guess put the visor on whichever
  * part happened to come first.
  */
+/** C-79: the companion's palette, exported so the dialogue portrait
+ *  draws the robot from the SAME colors (portrait <-> model match). */
+export const COMPANION_ROBOT_COLORS = {
+  CHASSIS: 0x9aa7b4,   // brushed metal body
+  FACEPLATE: 0x2b3138, // dark faceplate, so the visor reads
+  VISOR: 0x2ce8ff,     // emissive cyan
+  TRIM: 0x596570,
+} as const;
+
 function applyRobotSkin(group: THREE.Group): void {
-  const CHASSIS = 0x9aa7b4;   // brushed metal body
-  const FACEPLATE = 0x2b3138; // dark faceplate, so the visor reads
-  const VISOR = 0x2ce8ff;     // emissive cyan
-  const TRIM = 0x596570;
+  const { CHASSIS, FACEPLATE, VISOR, TRIM } = COMPANION_ROBOT_COLORS;
 
   group.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
@@ -379,6 +462,12 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
   let arrivalResolver: ((result: { arrived: boolean; reason?: string }) => void) | null = null;
 
   let trackedNpc: { id: string; position: XZ; replans: number } | null = null;
+  // WS9a: consecutive seconds the advance has held for a person on the
+  // route; past COMPANION_DODGE_AFTER_S the robot dodges around them.
+  let personHoldElapsed = 0;
+  // WS9a: dodges that failed to clear the blocker; two in a row
+  // escalate to a full route replan with the person as an obstacle.
+  let personDodgeStalls = 0;
   let retargetElapsed = 0;
 
   function stopWalk(result: { arrived: boolean; reason?: string }): void {
@@ -429,7 +518,9 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
           destination.z < deps.bounds.minZ + clearance || destination.z > deps.bounds.maxZ - clearance) continue;
       if (obstacles.some((o) => destination.x >= o.minX && destination.x <= o.maxX &&
           destination.z >= o.minZ && destination.z <= o.maxZ)) continue;
-      const planned = planNpcPath(position, destination, deps.waypoints, deps.edges, obstacles);
+      const planned = planRobotPath(
+        position, destination, deps.waypoints, deps.edges, deps.obstacles, clearance,
+      );
       if (planned !== null) return planned;
     }
     }
@@ -466,6 +557,54 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       displayName = clampSpokenLine(name) || "Rusty";
       persona = personaText.replace(/\s+/g, " ").trim().slice(0, MAX_PERSONA_LENGTH);
       position.set(deps.spawn.x, 0, deps.spawn.z);
+      // WS9a (sixth+seventh verdict): the fixed spawn must never
+      // materialize the robot inside an NPC. Wide ring search first;
+      // if EVERY candidate is occupied (crowded doorway), take the
+      // candidate with the largest distance to the nearest NPC — the
+      // least-bad placement — instead of silently overlapping.
+      {
+        const npcs = deps.listNpcs();
+        const nearestDist = (x: number, z: number): number =>
+          npcs.reduce(
+            (min, npc) => Math.min(min, Math.hypot(npc.position.x - x, npc.position.z - z)),
+            Number.POSITIVE_INFINITY,
+          );
+        if (nearestDist(position.x, position.z) < COMPANION_PERSONAL_RADIUS) {
+          // Furniture-aware: a candidate inside an inflated obstacle or
+          // out of bounds is as bad as an NPC overlap (eighth verdict).
+          const inFurniture = (x: number, z: number): boolean =>
+            deps.obstacles.some(
+              (b) =>
+                x >= b.minX - COMPANION_RADIUS && x <= b.maxX + COMPANION_RADIUS &&
+                z >= b.minZ - COMPANION_RADIUS && z <= b.maxZ + COMPANION_RADIUS,
+            );
+          const inBounds = (x: number, z: number): boolean =>
+            x >= deps.bounds.minX + 0.3 && x <= deps.bounds.maxX - 0.3 &&
+            z >= deps.bounds.minZ + 0.3 && z <= deps.bounds.maxZ - 0.3;
+          const viable = (x: number, z: number): boolean =>
+            nearestDist(x, z) >= COMPANION_PERSONAL_RADIUS && !inFurniture(x, z) && inBounds(x, z);
+          let clear: { x: number; z: number } | null = null;
+          let fallback: { x: number; z: number; d: number } | null = null;
+          ringLoop: for (let ring = 1; ring <= 8; ring += 1) {
+            for (let spoke = 0; spoke < 8; spoke += 1) {
+              const angle = (spoke * Math.PI) / 4 + ring * 0.3;
+              const candX = deps.spawn.x + Math.sin(angle) * 0.3 * ring;
+              const candZ = deps.spawn.z + Math.cos(angle) * 0.3 * ring;
+              if (viable(candX, candZ)) {
+                clear = { x: candX, z: candZ };
+                break ringLoop;
+              }
+              const d = nearestDist(candX, candZ);
+              if (!inFurniture(candX, candZ) && inBounds(candX, candZ) &&
+                  (fallback === null || d > fallback.d)) {
+                fallback = { x: candX, z: candZ, d };
+              }
+            }
+          }
+          const chosen = clear ?? fallback;
+          if (chosen !== null) position.set(chosen.x, 0, chosen.z);
+        }
+      }
       facing = SPAWN_FACING;
       path = null;
       movingTo = null;
@@ -531,7 +670,10 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       const destination = new THREE.Vector3(resolved.target.position.x, 0, resolved.target.position.z);
       const planned = resolved.target.kind === "npc"
         ? planApproach(resolved.target.position, NPC_CONVERSATION_DISTANCE)
-        : planNpcPath(position, destination, deps.waypoints, deps.edges, deps.obstacles);
+        : planRobotPath(
+            position, destination, deps.waypoints, deps.edges, deps.obstacles,
+            COMPANION_RADIUS + 0.001,
+          );
       if (planned === null) {
         return {
           ok: false,
@@ -575,16 +717,46 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       const before = { x: position.x, z: position.z };
       // Resolve the destination against collision FIRST, so the reported
       // distance is honest, then WALK there rather than jumping.
-      const after = applyWithCollision(
+      // WS9a: trace the step as collision-tested axis legs so a clear
+      // endpoint cannot tunnel through a narrow obstacle (applyWithCollision
+      // only ever checked the step's end).
+      const stepPoints = traceRobotStep(
         before,
-        COMPANION_RADIUS,
         Math.sin(heading) * distance,
         Math.cos(heading) * distance,
+        COMPANION_RADIUS,
         deps.bounds,
         deps.obstacles,
       );
-
-      const moved = Math.hypot(after.x - before.x, after.z - before.z);
+      let after = stepPoints[stepPoints.length - 1]!;
+      // WS9a (third verdict): manual steps yield to people exactly like
+      // path advance does — traceRobotStep only knows static obstacles,
+      // so without this check a step could end inside an NPC's personal
+      // space. Trim the traced legs to the last point that keeps the
+      // personal radius; a fully blocked step goes nowhere.
+      const PERSONAL_RADIUS = COMPANION_PERSONAL_RADIUS;
+      let trimmed = 0;
+      for (let i = stepPoints.length - 1; i >= 1; i -= 1) {
+        const p = stepPoints[i]!;
+        const tooClose = deps.listNpcs().some((npc) => {
+          const nextDist = Math.hypot(npc.position.x - p.x, npc.position.z - p.z);
+          if (nextDist >= PERSONAL_RADIUS) return false;
+          const curDist = Math.hypot(npc.position.x - before.x, npc.position.z - before.z);
+          return nextDist < curDist;
+        });
+        if (!tooClose) {
+          after = p;
+          trimmed = i;
+          break;
+        }
+      }
+      const moved = stepPoints
+        .slice(1, trimmed + 1)
+        .reduce(
+          (sum, end, index) =>
+            sum + Math.hypot(end.x - stepPoints[index]!.x, end.z - stepPoints[index]!.z),
+          0,
+        );
 
       // A step is a short WALK, not a displacement. Setting the destination
       // as a two-point path hands it to the same per-frame advance and walk
@@ -593,7 +765,14 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       // first - teleported it (Lucas: "works like a teleport or walks crazy
       // fast"), because the whole distance landed in a single frame.
       if (moved > 0.01) {
-        path = [position.clone(), new THREE.Vector3(after.x, position.y, after.z)];
+        // A step is a short WALK, not a displacement: hand the traced legs
+        // (trimmed to the person-yield point) to the same per-frame advance
+        // and walk cycle everything else uses, so the robot covers the
+        // ground at 1.2 m/s and follows the collision-safe polyline
+        // instead of cutting through furniture.
+        path = stepPoints
+          .slice(0, trimmed + 1)
+          .map((p) => new THREE.Vector3(p.x, position.y, p.z));
         segmentIndex = 0;
         distanceInSegment = 0;
         movingTo = null;
@@ -716,6 +895,9 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
       }
 
       let movedThisFrame = 0;
+      // WS9a: true when the person-yield held this frame — the advance
+      // result was rejected and its `finished` flag must be ignored.
+      let heldThisFrame = false;
       if (path !== null) {
         const result = advanceAlongPath(
           position,
@@ -725,14 +907,135 @@ export function createAgentCompanion(deps: CompanionDeps): AgentCompanion {
           DEFAULT_WALK_SPEED_MPS,
           dt,
         );
-        movedThisFrame = position.distanceTo(result.position);
-        position.copy(result.position);
-        segmentIndex = result.segmentIndex;
-        distanceInSegment = result.distanceInSegment;
-        group.rotation.y = result.face;
-        facing = result.face;
+        // WS9a (third verdict): the robot YIELDS to people. The NPC
+        // controller keeps walkers out of the robot's footprint, but a
+        // MOVING robot could still step into someone's space. When the
+        // next frame's position would land inside a person's personal
+        // radius the robot holds — and after a short hold it DODGES:
+        // the remaining path is rebuilt through a perpendicular waypoint
+        // around the person (furniture-checked, both sides tried), so a
+        // person standing on the route can never deadlock it.
+        const npcsLive = deps.listNpcs();
+        const blocker = npcsLive.find((npc) => {
+          const nextDist = Math.hypot(
+            npc.position.x - result.position.x, npc.position.z - result.position.z,
+          );
+          if (nextDist >= COMPANION_PERSONAL_RADIUS) return false;
+          const curDist = Math.hypot(
+            npc.position.x - position.x, npc.position.z - position.z,
+          );
+          // Escape rule: only a step that goes STRICTLY deeper into
+          // the person's radius is blocked; equal-distance steps (the
+          // degenerate already-at-the-ring case) and outward steps are
+          // always allowed — the yield must never trap the robot.
+          if (nextDist < curDist) return true;
+          // EXCEPT: equal-distance endpoints can still CROSS the
+          // person's centre mid-frame (eighth verdict) — but only when
+          // the segment's closest approach is INTERIOR (0 < t < 1). An
+          // escape whose closest point is its own start (t = 0) is
+          // moving AWAY and must never be held: at high refresh rates
+          // the per-frame tolerance otherwise trapped outward steps
+          // (ninth verdict, 200 Hz probe).
+          {
+            const abx = result.position.x - position.x;
+            const abz = result.position.z - position.z;
+            const lenSq = abx * abx + abz * abz;
+            const t = lenSq === 0 ? 0 : Math.max(0, Math.min(1,
+              ((npc.position.x - position.x) * abx + (npc.position.z - position.z) * abz) / lenSq));
+            const interior = t > 0 && t < 1;
+            if (interior) {
+              const segDist = Math.hypot(
+                npc.position.x - (position.x + t * abx),
+                npc.position.z - (position.z + t * abz),
+              );
+              if (segDist < 0.2 && nextDist <= curDist + 0.01) return true;
+            }
+          }
+          return false;
+        });
+        if (blocker !== undefined) {
+          personHoldElapsed += dt;
+          const dodgeReady = personHoldElapsed >= COMPANION_DODGE_AFTER_S;
+          if (dodgeReady) {
+            // Escalating standoff (sixth-verdict blocker): EVERY dodge
+            // counts as a stall until the robot moves freely again — a
+            // geometrically-valid dodge that the same person re-blocks
+            // must still escalate, or the replan is unreachable and a
+            // stationary blocker traps the robot forever. Each stall
+            // stands the next dodge further off; two stalls trigger a
+            // FULL route replan with the person as an obstacle.
+            const standoff = DODGE_STANDOFF * (1 + personDodgeStalls * 0.75);
+            const dodge = planDodgeAround(
+              position, path, segmentIndex, blocker.position, deps.obstacles, standoff,
+            );
+            personDodgeStalls += 1;
+            personHoldElapsed = 0;
+            if (dodge !== null) {
+              path = [position.clone(), ...dodge.map((p) => new THREE.Vector3(p.x, position.y, p.z))];
+              segmentIndex = 0;
+              distanceInSegment = 0;
+            }
+            if (personDodgeStalls >= 2) {
+              personDodgeStalls = 0;
+              const target = path![path!.length - 1]!;
+              const personBox: AABB = {
+                minX: blocker.position.x - 0.5,
+                maxX: blocker.position.x + 0.5,
+                minZ: blocker.position.z - 0.5,
+                maxZ: blocker.position.z + 0.5,
+              };
+              const personObstacles = [...deps.obstacles, personBox];
+              let replanned = planRobotPath(
+                position, target, deps.waypoints, deps.edges,
+                personObstacles, COMPANION_RADIUS + 0.001,
+              );
+              if (replanned === null) {
+                // Seventh-verdict blocker: the destination itself can
+                // sit inside the person's box (they occupy the room
+                // centre), making every replan null and the walk
+                // endless. Fall back to the nearest reachable point:
+                // aim just short of the person, on this side.
+                const standoffTarget = {
+                  x: position.x + (target.x - position.x) * 0.75,
+                  z: position.z + (target.z - position.z) * 0.75,
+                };
+                replanned = planRobotPath(
+                  position,
+                  new THREE.Vector3(standoffTarget.x, 0, standoffTarget.z),
+                  deps.waypoints, deps.edges,
+                  personObstacles, COMPANION_RADIUS + 0.001,
+                );
+              }
+              if (replanned !== null) {
+                path = replanned;
+                segmentIndex = 0;
+                distanceInSegment = 0;
+              } else {
+                // Nothing reachable at all: end the trip honestly
+                // instead of walking in place forever.
+                stopWalk({ arrived: false, reason: "destination is occupied" });
+              }
+            }
+          }
+          movedThisFrame = 0;
+          // Ninth verdict (blocker): the frame was HELD — the rejected
+          // advance's `finished` flag must not resolve the walk as
+          // arrived. The robot keeps holding/dodging until it can
+          // actually reach the spot (or the occupied-destination
+          // fallback ends the trip honestly).
+          heldThisFrame = true;
+        } else {
+          personHoldElapsed = 0;
+          personDodgeStalls = 0;
+          movedThisFrame = position.distanceTo(result.position);
+          position.copy(result.position);
+          segmentIndex = result.segmentIndex;
+          distanceInSegment = result.distanceInSegment;
+          group.rotation.y = result.face;
+          facing = result.face;
+        }
 
-        if (result.finished) {
+        if (!heldThisFrame && result.finished) {
           const npc = trackedNpc === null ? undefined : deps.listNpcs().find((npc) => npc.id === trackedNpc!.id);
           if (trackedNpc !== null && npc === undefined) {
             stopWalk({ arrived: false, reason: "target person is no longer present" });
