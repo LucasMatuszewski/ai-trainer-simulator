@@ -716,9 +716,13 @@ export function createNpcController(
     // that path calls releaseArrival, which mid-transition would
     // re-run C-51 walk-ins for NPCs already in the building).
     for (const id of [run.aId, run.bId]) {
-      if (!stagedByRendezvous.has(id)) continue;
-      stagedByRendezvous.delete(id);
-      if (!overrides.has(id)) continue;
+      // Release only the EXACT override the staging stored: a mid-run
+      // replacement (public setOverride stores a different object)
+      // belongs to its replacing system and must survive settlement.
+      const owned = stagedOverrideRefs.get(id);
+      if (owned === undefined) continue;
+      stagedOverrideRefs.delete(id);
+      if (overrides.get(id) !== owned) continue;
       overrides.delete(id);
       validatedDestinations.delete(id);
       planForEntry(id, scheduleFor(id, ensureCurrentPeriod()));
@@ -785,8 +789,11 @@ export function createNpcController(
   // Verdict finding 6: staging OWNS the overrides it sets. Settlement
   // releases ONLY these - a dice-fired deep run between two NPCs pinned
   // by another system (events layer, tests) must leave their overrides
-  // untouched.
-  const stagedByRendezvous = new Set<NpcId>();
+  // untouched. Re-check hardening: ownership is the EXACT override
+  // object staged; if another system replaced the pin mid-run (public
+  // setOverride stores a different object), settlement leaves the
+  // replacement alone instead of trusting the id marker.
+  const stagedOverrideRefs = new Map<NpcId, ScheduleEntry>();
   // C-78 v1.1 QA counters (why-didnt-it-stage visibility for
   // Playwright/WebMCP; plain data, read via getDeepDebug()).
   const deepDebug = { gateSeen: 0, quiet: 0, due: 0, attempts: 0, blocked: "" };
@@ -810,6 +817,7 @@ export function createNpcController(
     );
     if (validated === null) return false;
     overrides.set(npcId, validated);
+    stagedOverrideRefs.set(npcId, validated);
     startPath(npcId, validated, deepRandom() * 0.3);
     return true;
   };
@@ -855,10 +863,10 @@ export function createNpcController(
       if (!stageMeetingSpot(bId, partnerSpot.x, partnerSpot.z)) continue;
       if (!stageMeetingSpot(aId, anchor.x, anchor.z)) {
         overrides.delete(bId);
+        stagedOverrideRefs.delete(bId);
         continue;
       }
-      stagedByRendezvous.add(aId);
-      stagedByRendezvous.add(bId);
+
       return true;
     }
     return false;
@@ -1368,7 +1376,7 @@ export function createNpcController(
     // Verdict re-round: transitions wipe the overrides the staging
     // owned - the ownership markers must die WITH them, or a later
     // coffee-trip pin on the same NPC gets erased by a stale release.
-    stagedByRendezvous.clear();
+    stagedOverrideRefs.clear();
 
     // C-62/C-64 (Lucas: "Zosia's meeting with who?"): 1-2 colleagues
     // join whichever period currently contains Zosia's meeting. Reading
@@ -1429,7 +1437,7 @@ export function createNpcController(
     // Verdict re-round: transitions wipe the overrides the staging
     // owned - the ownership markers must die WITH them, or a later
     // coffee-trip pin on the same NPC gets erased by a stale release.
-    stagedByRendezvous.clear();
+    stagedOverrideRefs.clear();
     pendingArrivals.clear();
     const plan = planMorningArrivals(npcs.map((npc) => npc.id), getDay(), rng);
     // C-56: build the staggered-greeting order for the already-in
@@ -1500,7 +1508,7 @@ export function createNpcController(
     conversations.clear();
     // Verdict re-round: markers die with the override wipe (see
     // synchronizePeriod).
-    stagedByRendezvous.clear();
+    stagedOverrideRefs.clear();
         const leavers: NpcId[] = [];
     for (const npc of npcs) {
       const entry = scheduleFor(npc.id, period);

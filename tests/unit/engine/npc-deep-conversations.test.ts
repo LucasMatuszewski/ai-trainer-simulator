@@ -400,3 +400,50 @@ describe("NPC-NPC deep conversations (verdict re-round)", () => {
     ).toBeLessThan(4);
   });
 });
+
+describe("NPC-NPC deep conversations (re-check hardening)", () => {
+  it("settlement preserves a pin an external system replaced mid-run", () => {
+    // The re-check's own repro: staging owns Pawel's pin, the staged run
+    // is ACTIVE, another system replaces his pin mid-run (a coffee trip
+    // south). Settlement must leave the replacement alone - he walks
+    // SOUTH to the replacement target, not home to his desk.
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ["kasia", "pawel"] as NpcId[]) objects[id] = makeObject(id);
+    const controller = createNpcController(
+      (["kasia", "pawel"] as NpcId[]).map((id) => npc(id)),
+      objects,
+      () => "morning",
+      () => 1,
+      lcg(41), // the re-check's repro seed
+      () => false,
+      { arrivals: false, getRelationship: () => 50 },
+    );
+    controller.update(0);
+    placeAt({ controller, objects }, "kasia", 0, 0);
+    placeAt({ controller, objects }, "pawel", 10, 0);
+    for (let step = 0; step < 24; step += 1) controller.update(0.25);
+    controller.setOverride("kasia", null);
+    controller.setOverride("pawel", null);
+
+    // Wait for the staged run to be ACTIVE.
+    let sawRun = false;
+    for (let step = 0; step < 240 * 3 && !sawRun; step += 1) {
+      controller.update(0.25);
+      if (controller.getActiveDeepConversations().length > 0) sawRun = true;
+    }
+    expect(sawRun, "staged run never became active").toBe(true);
+
+    // Mid-run replacement: Pawel is re-pinned deep south (a "coffee
+    // trip" style walk). The drive loop abandons the run (his path is
+    // now non-null) and settles it.
+    controller.setOverride("pawel", { position: { x: 0, y: 0, z: -7 }, face: 0, state: "at-desk" });
+
+    // Give settlement + the walk south time to play out.
+    for (let step = 0; step < 240; step += 1) controller.update(0.25);
+
+    expect(
+      objects.pawel!.position.z,
+      `pawel ended at z=${objects.pawel!.position.z.toFixed(2)} - the replacement pin was erased and he walked home`,
+    ).toBeLessThan(-4);
+  });
+});
