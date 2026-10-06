@@ -87,6 +87,9 @@ export const WORLD_TICK_BREAKER_COOLDOWN_S = 60;
 export const CHATTER_MIN_CONFIDENCE = 0.3;
 /** D-60 destination row: consequential, conservative confidence >= 0.5. */
 export const DESTINATION_MIN_CONFIDENCE = 0.5;
+/** Purposeful actions are low-stakes (a walk to the machine) — same
+ *  cosmetic bar as chatter: a wrong coffee is cheap. */
+export const ACTION_MIN_CONFIDENCE = 0.3;
 
 /** The period each period's destination prefetch is FOR. Evening rolls
  *  over into the next day's morning. */
@@ -112,6 +115,11 @@ export interface WorldTickProviders {
   getFiredEvents?: () => readonly string[];
   /** Pair relationship bands keyed by `pairs.<a>_<b>` projection keys. */
   getRelationshipBands?: () => Readonly<Record<string, string>>;
+  /** Live need levels per NPC id (0-100) — projected as named bands. */
+  getNpcNeeds?: () => Readonly<Record<string, { caffeine: number; social: number }>>;
+  /** NPCs due a purposeful-action decision this tick (arrived, at desk,
+   *  idle — the same gate the legacy craving scan applies). */
+  getActionCandidates?: () => readonly string[];
 }
 
 /**
@@ -147,6 +155,7 @@ export interface WorldTickOptions {
   /** D-60 threshold overrides (tests). */
   minChatterConfidence?: number;
   minDestinationConfidence?: number;
+  minActionConfidence?: number;
   /** Injectable clock (tests). */
   now?: () => number;
   /** Legacy fallback pickers (see WorldTickLegacyHooks). */
@@ -159,6 +168,12 @@ export interface WorldTickHandle {
   update(dtRealSeconds: number): void;
   /** Pre-decide immediately at a period transition. */
   onPeriodTransition(): void;
+  /**
+   * The steered purposeful action for this NPC NOW ("coffee-machine" or
+   * "stay"), consuming the memo; null when unsteered or stale (the
+   * orchestrator then falls back to its deterministic craving scan).
+   */
+  getActionMemo(npcId: string): "coffee-machine" | "stay" | null;
   /** Install the steered WS0 hooks. No-op unless live + configured. */
   install(): void;
   /** Remove the steered hooks (restores any pre-existing ones). */
@@ -185,6 +200,15 @@ interface DestMemo {
   period: Period;
   /** Steered entry, or null = stay at desk (a decision, not an absence). */
   entry: ScheduleEntry | null;
+}
+
+/** The purposeful action an NPC takes THIS period ("stay" = keep working). */
+type SteeredAction = "coffee-machine" | "stay";
+
+interface ActionMemo {
+  day: number;
+  period: Period;
+  action: SteeredAction;
 }
 
 /**
@@ -230,6 +254,7 @@ export function createWorldTickWrapper(options: WorldTickOptions): WorldTickHand
     (options.breakerCooldownSeconds ?? WORLD_TICK_BREAKER_COOLDOWN_S) * 1000;
   const minChatter = options.minChatterConfidence ?? CHATTER_MIN_CONFIDENCE;
   const minDestination = options.minDestinationConfidence ?? DESTINATION_MIN_CONFIDENCE;
+  const minAction = options.minActionConfidence ?? ACTION_MIN_CONFIDENCE;
   const now = options.now ?? (() => Date.now());
 
   const legacy: Required<WorldTickLegacyHooks> = {
@@ -243,6 +268,7 @@ export function createWorldTickWrapper(options: WorldTickOptions): WorldTickHand
 
   const chatMemos = new Map<string, ChatMemo>();
   const destMemos = new Map<string, DestMemo>();
+  const actionMemos = new Map<string, ActionMemo>();
   let installed = false;
   let previousHooks: Pick<
     DecisionHooks,
@@ -286,7 +312,21 @@ export function createWorldTickWrapper(options: WorldTickOptions): WorldTickHand
 
     const pairs = tryProvider(() => providers.getChatCandidates?.(), [] as readonly ChatterPair[]);
     const destNpcs = tryProvider(() => providers.getDestinationNpcs?.(), [] as readonly string[]);
-    if (pairs.length === 0 && destNpcs.length === 0) return;
+    const actionNpcs = tryProvider(
+      () =>
+        providers.getActionCandidates?.().filter((npcId) => {
+          // One decision per NPC per period: a fresh memo skips the
+          // re-judge (same freshness rule as the destinations).
+          const memo = actionMemos.get(npcId);
+          return !(
+            memo !== undefined &&
+            memo.day === providers.getDay() &&
+            memo.period === providers.getPeriod()
+          );
+        }),
+      [] as readonly string[],
+    );
+    if (pairs.length === 0 && destNpcs.length === 0 && actionNpcs.length === 0) return;
 
     // A broken day/period getter aborts the tick: every downstream key
     // (generation, freshness, pool choice) would be fabricated.
@@ -320,6 +360,20 @@ export function createWorldTickWrapper(options: WorldTickOptions): WorldTickHand
         roster.push(npcFact(id));
       }
     }
+    for (const id of actionNpcs) {
+      if (!rosterIds.has(id)) {
+        rosterIds.add(id);
+        roster.push(npcFact(id));
+      }
+    }
+    const needs = tryProvider(
+      () => providers.getNpcNeeds?.(),
+      {} as Record<string, { caffeine: number; social: number }>,
+    );
+    for (const rosterEntry of roster) {
+      const npcNeeds = needs[rosterEntry.id];
+      if (npcNeeds !== undefined) rosterEntry.needs = npcNeeds;
+    }
     const projection = buildWorldTickProjection({
       day,
       period,
@@ -340,6 +394,7 @@ export function createWorldTickWrapper(options: WorldTickOptions): WorldTickHand
       eligible: readonly ChatterExchange[];
     }[] = [];
     const plannedDests: string[] = [];
+    const plannedActions: string[] = [];
     const questions: JevQuestion[] = [];
     for (const pair of pairs) {
       const key = chatterPairKey(pair.a, pair.b);
@@ -415,6 +470,34 @@ export function createWorldTickWrapper(options: WorldTickOptions): WorldTickHand
         ],
       });
     }
+    for (const npcId of actionNpcs) {
+      const fact = npcFact(npcId);
+      const need = needs[npcId];
+      const caffeine = need?.caffeine ?? 100;
+      plannedActions.push(npcId);
+      questions.push({
+        id: `action:${npcId}`,
+        type: "choice",
+        subjectId: npcId,
+        prompt:
+          `Coworker ${npcId} (${fact.name}, ${fact.role}) has a free moment in ` +
+          `the ${period} office. Caffeine ${caffeine}/100 ` +
+          `(craving < 25), social ${need?.social ?? 100}/100. ` +
+          `Pick what they do: a quick coffee break, or keep working.`,
+        candidates: [
+          {
+            id: "action:coffee-machine",
+            description: "walk to the coffee machine and take a short break",
+            priority: caffeine < 25 ? 2 : 0,
+          },
+          {
+            id: "action:stay",
+            description: "keep working at the desk",
+            priority: 1,
+          },
+        ],
+      });
+    }
     if (questions.length === 0) return;
 
     inFlight = true;
@@ -457,6 +540,17 @@ export function createWorldTickWrapper(options: WorldTickOptions): WorldTickHand
             time: now(),
             subject: npcId,
             surface: "destination",
+            outcome: "legacy",
+            latencyMs,
+            fallback: true,
+            fallbackReason: `provider-${result.reason}`,
+          });
+        }
+        for (const npcId of plannedActions) {
+          logDecision({
+            time: now(),
+            subject: npcId,
+            surface: "purposeful-action",
             outcome: "legacy",
             latencyMs,
             fallback: true,
@@ -586,6 +680,47 @@ export function createWorldTickWrapper(options: WorldTickOptions): WorldTickHand
         });
         if (shadow || !valid) continue;
         destMemos.set(npcId, { day, period: next, entry: dest });
+      }
+
+      // ── purposeful-action answers (closure verdict: the world-tick
+      // layer owns the walk/use/return DECISION; the orchestrator only
+      // executes it). One choice per NPC per period; "stay" is a
+      // decision too (a memo, not an absence).
+      for (const npcId of plannedActions) {
+        const entry = { time: now(), subject: npcId, latencyMs };
+        const answer = result.answers.find(
+          (candidate) => candidate.questionId === `action:${npcId}`,
+        );
+        let action: SteeredAction | null = null;
+        let chosenId: string | undefined;
+        let confidence: number | undefined;
+        let fallbackReason: string;
+        if (answer === undefined) {
+          fallbackReason = "missing-answer";
+        } else if (answer.type !== "choice") {
+          fallbackReason = "malformed-answer";
+        } else if (answer.id !== "action:coffee-machine" && answer.id !== "action:stay") {
+          // EXACT membership: never parse an unknown id into an action.
+          fallbackReason = "unknown-candidate";
+        } else if (!Number.isFinite(answer.confidence) || answer.confidence < minAction) {
+          fallbackReason = "low-confidence";
+        } else {
+          action = answer.id === "action:coffee-machine" ? "coffee-machine" : "stay";
+          chosenId = answer.id;
+          confidence = answer.confidence;
+          fallbackReason = "";
+        }
+        const valid = fallbackReason === "";
+        logDecision({
+          ...entry,
+          surface: "purposeful-action",
+          outcome: valid ? (shadow ? "shadow" : "applied") : "rejected",
+          fallback: !valid,
+          ...(valid ? { chosenId, confidence } : { fallbackReason }),
+        });
+        if (shadow || !valid) continue;
+        if (action === null) continue;
+        actionMemos.set(npcId, { day, period, action });
       }
     } finally {
       inFlight = false;
@@ -752,5 +887,16 @@ export function createWorldTickWrapper(options: WorldTickOptions): WorldTickHand
     isInstalled: () => installed,
     isBreakerOpen: breakerOpen,
     isInFlight: () => inFlight,
+    getActionMemo: (npcId: string): "coffee-machine" | "stay" | null => {
+      const memo = actionMemos.get(npcId);
+      if (memo === undefined) return null;
+      // Consume-on-read: one steered action per memo, and only while
+      // fresh (a stale action must never fire the next period).
+      actionMemos.delete(npcId);
+      if (memo.day === providers.getDay() && memo.period === providers.getPeriod()) {
+        return memo.action;
+      }
+      return null;
+    },
   };
 }

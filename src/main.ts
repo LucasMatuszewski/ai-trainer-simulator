@@ -296,6 +296,15 @@ function buildWorldTick(): WorldTickHandle | null {
       getFiredEvents: () => worldTickFiredEvents,
       // WS-note: pair relationship bands arrive when the WS-social pair
       // matrix is exposed; until then the projection omits them.
+      // Closure verdict High 3 (action surface): live needs project as
+      // named bands, and idle arrived NPCs are the action candidates.
+      getNpcNeeds: () => npcNeeds,
+      getActionCandidates: () =>
+        (Object.keys(npcNeeds) as NpcId[]).filter(
+          (id) =>
+            id !== lastPurposefulId &&
+            sceneObjects?.npcController.hasArrived(id) === true,
+        ),
       getRelationshipBands: () => {
         // REVISE step 0 (C-78): real bands from the live social matrix +
         // the player map, so NPC-NPC chatter/branch picks see actual
@@ -2150,12 +2159,30 @@ function frame(): void {
     purposefulCooldown -= dt;
     if (purposefulCooldown <= 0) {
       purposefulCooldown = PURPOSE_CHECK_S;
-      const craving = (Object.keys(npcNeeds) as NpcId[]).find(
-        (id) =>
-          id !== lastPurposefulId &&
-          caffeineBand(npcNeeds[id]?.caffeine ?? 100) === "craving" &&
-          sceneObjects?.npcController.hasArrived(id),
-      );
+      // Closure verdict High 3 (Jev action surface): the world-tick
+      // layer DECIDES the purposeful action (needs + context steered);
+      // the orchestrator only executes walk/use/return. The legacy
+      // craving scan stays as the deterministic fallback when the memo
+      // carries no steered action (?jev=off, breaker open, low
+      // confidence, or plain no-coffee judgments).
+      const needIds = Object.keys(npcNeeds) as NpcId[];
+      let craving: NpcId | undefined;
+      for (const id of needIds) {
+        if (id === lastPurposefulId) continue;
+        if (worldTick?.getActionMemo(id) === "coffee-machine" &&
+            sceneObjects?.npcController.hasArrived(id) === true) {
+          craving = id;
+          break;
+        }
+      }
+      if (craving === undefined) {
+        craving = needIds.find(
+          (id) =>
+            id !== lastPurposefulId &&
+            caffeineBand(npcNeeds[id]?.caffeine ?? 100) === "craving" &&
+            sceneObjects?.npcController.hasArrived(id),
+        );
+      }
       if (craving !== undefined) {
         const trip = suggestNpcUse(craving, "coffee-machine");
         if (trip) {

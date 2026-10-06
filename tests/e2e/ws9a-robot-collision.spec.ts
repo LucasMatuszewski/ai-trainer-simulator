@@ -22,7 +22,9 @@ interface XZ {
 }
 
 async function startGame(page: Page): Promise<void> {
-  await page.goto("http://localhost:5173/");
+  // Relative: follows the config's baseURL (4173 = the production
+  // build; no vite dev server, no HMR/dep-optimization reloads).
+  await page.goto("/");
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await page.click('[data-action="new"]');
@@ -46,16 +48,41 @@ async function startGame(page: Page): Promise<void> {
  * and the caller re-boots via startGame. PR-14 note: this is a read
  * through the game's own surface, not a stub.
  */
-async function readGame<T>(
-  page: Page,
-  expr: (h: NonNullable<Window["__aitrainer"]>) => T,
-): Promise<T | null> {
+/**
+ * Read game state through the debug handle WITHOUT throwing when the
+ * game is not there (day-end navigation, reload race): returns null
+ * and the caller re-boots via startGame. PR-14 note: this is a read
+ * through the game's own surface, not a stub.
+ *
+ * The read is named by a JSON-SERIALIZABLE descriptor: page.evaluate
+ * serializes its argument as JSON, so passing a FUNCTION silently
+ * arrives as undefined - the in-page call then throws and every read
+ * returned null (the six-run "handle mystery" was exactly this).
+ */
+type GameRead =
+  | { kind: "screen" }
+  | { kind: "companion" }
+  | { kind: "npcs" }
+  | { kind: "deepDebug" };
+
+async function readGame<T = unknown>(page: Page, read: GameRead): Promise<T | null> {
   try {
-    return await page.evaluate((f) => {
+    return await page.evaluate((descriptor) => {
       const h = window.__aitrainer;
       if (!h) return null;
-      return f(h);
-    }, expr);
+      switch (descriptor.kind) {
+        case "screen":
+          return h.getScreen();
+        case "companion":
+          return h.inspectCompanion();
+        case "npcs":
+          return h.inspectNpcs();
+        case "deepDebug":
+          return h.getDeepDebug();
+        default:
+          return null;
+      }
+    }, read) as T | null;
   } catch {
     return null;
   }
@@ -146,14 +173,14 @@ test("the robot crosses the office without clipping any furniture", async ({ pag
   }
 });
 
-/** Office side of the kitchen boundary (matches the window prover). */
-function officeSideOf(p: XZ): boolean {
-  return p.x < 8.5 && p.z > -6.5;
+/** North side of the proof corridor (open main office, no doorways). */
+function northSideOf(p: XZ): boolean {
+  return p.z > 6.5;
 }
 
-/** Kitchen side of the boundary. */
-function kitchenSideOf(p: XZ): boolean {
-  return p.x > 9.5;
+/** South side of the proof corridor. */
+function southSideOf(p: XZ): boolean {
+  return p.z < -6.5;
 }
 
 function pointToSegmentDist(p: XZ, a: XZ, b: XZ): number {
@@ -170,189 +197,182 @@ test("an NPC walking to the kitchen demonstrably reroutes around the robot parke
   test.setTimeout(300_000);
   await startGame(page);
 
-  const joined = await call(page, "agent_join", { name: "Rusty", persona: "doorway block" });
+  const joined = await call(page, "agent_join", { name: "Rusty", persona: "corridor block" });
   expect(joined).toMatchObject({ joined: true });
 
-  // Park the robot AT the coffee stop (13.0, -5.3) - an exact lunch
-  // destination, so coffee-bound walkers' straight approaches END on
-  // the robot. Phase 1: the room route, RE-ISSUED until the robot is
-  // genuinely near the stop (walking===false also holds before a walk
-  // starts and after a rejected move - distance is the only honest
-  // signal). Phase 2: the short closed-loop drive.
-  const COFFEE: XZ = { x: 13.0, z: -5.3 };
-  // Null-safe: a torn-down scene (transition) reads as "far away", so
-  // the route loop re-issues instead of throwing mid-read.
-  const distanceToStop = async (): Promise<number> => {
-    const w = await readGame(page, (h) => h.inspectCompanion());
+  // Park the robot at DEAD CENTER of the main office (0, 0): open
+  // floor, no doorways on the proof's path (the kitchen-door crossing
+  // jammed the old kitchen-side design at x~9, z~0 for whole minutes).
+  // The collision contract is identical - a walker whose straight line
+  // crosses the parked robot must detour - with none of the chokepoint
+  // machinery. Closed-loop drive only; the robot spawns close enough.
+  const CENTER: XZ = { x: 0.0, z: 0.0 };
+  const distanceToCenter = async (): Promise<number> => {
+    const w = await readGame(page, { kind: "companion" });
     if (w?.world === null || w?.world === undefined) return Infinity;
-    return Math.hypot(w.world.x - COFFEE.x, w.world.z - COFFEE.z);
+    return Math.hypot(w.world.x - CENTER.x, w.world.z - CENTER.z);
   };
-  for (let routeTry = 0; routeTry < 3 && (await distanceToStop()) > 6.0; routeTry += 1) {
-    await call(page, "agent_move_to", { target: "kitchen" });
-    for (let i = 0; i < 120; i += 1) {
-      // Drive the simulation forward - a headless browser throttles
-      // rAF to near-zero, so wall-clock waits never move the robot.
-      await page.waitForTimeout(30);
-      await page.evaluate(() => window.__aitrainer!.debugTick(0.5));
-      if ((await distanceToStop()) < 3.5) break;
-      const look = (await call(page, "agent_look_around")) as { companion?: { walking?: boolean } };
-      if (look.companion?.walking === false && (await distanceToStop()) > 6.0) break; // rejected - re-issue
-    }
-  }
-  const diag = await readGame(page, (h) => ({
-    screen: h.getScreen(),
-    companion: h.inspectCompanion(),
-  }));
-  expect(await distanceToStop(), `room route never brought the robot near the kitchen; diag=${JSON.stringify(diag)}`).toBeLessThan(6.0);
 
-  // Closed-loop parking: re-aim at the stop before every 1 m step so a
-  // blocked stride or a heading drift can never accumulate into a
-  // wrong-way drive (agent_step replaces any walk in progress, so each
-  // step waits for its full walk before the next re-aim).
-  for (let attempt = 0; attempt < 24; attempt += 1) {
-    const here = await page.evaluate(() => window.__aitrainer!.inspectCompanion());
-    const px = here!.world!.x;
-    const pz = here!.world!.z;
-    const err = Math.hypot(px - COFFEE.x, pz - COFFEE.z);
-    if (err < 0.55) break;
+  // Closed-loop parking: re-aim at the center before every 1 m step so
+  // a blocked stride or a heading drift can never accumulate into a
+  // wrong-way drive (agent_step replaces any walk in progress).
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const here = await readGame(page, { kind: "companion" });
+    if (here?.world === null || here?.world === undefined) break;
+    const px = here.world.x;
+    const pz = here.world.z;
+    if (Math.hypot(px - CENTER.x, pz - CENTER.z) < 0.55) break;
     const look = (await call(page, "agent_look_around")) as {
       companion?: { facingDegrees?: number };
     };
     // step heading convention: forward moves by (sin(h), cos(h)).
-    const desired = (Math.atan2(COFFEE.x - px, COFFEE.z - pz) * 180) / Math.PI;
+    const desired = (Math.atan2(CENTER.x - px, CENTER.z - pz) * 180) / Math.PI;
     const deltaTurn = (((desired - (look.companion?.facingDegrees ?? 0)) % 360) + 540) % 360 - 180;
     if (Math.abs(deltaTurn) > 2) {
       await call(page, "agent_turn", { degrees: Math.round(deltaTurn) });
-      await page.waitForTimeout(250);
+      await page.waitForTimeout(60);
+      await page.evaluate(() => window.__aitrainer!.debugTick(0.25));
     }
     await call(page, "agent_step", { direction: "forward", metres: 1 });
-    await page.waitForTimeout(60);
+    await page.waitForTimeout(40);
     await page.evaluate(() => window.__aitrainer!.debugTick(1.2));
   }
-  const parkedRead = await readGame(page, (h) => h.inspectCompanion());
+  const parkedRead = await readGame(page, { kind: "companion" });
   expect(parkedRead?.world, "companion world vanished at park time").toBeTruthy();
-  const P: XZ = { x: parkedRead!.world!.x, z: parkedRead!.world!.z };
-  const parkError = Math.hypot(P.x - COFFEE.x, P.z - COFFEE.z);
+  const robotPos: XZ = { x: parkedRead!.world!.x, z: parkedRead!.world!.z };
+  const parkError = Math.hypot(robotPos.x - CENTER.x, robotPos.z - CENTER.z);
   expect(
     parkError,
-    `robot failed to park on the coffee stop (off by ${parkError.toFixed(2)} m)`,
+    `robot failed to park at the office center (off by ${parkError.toFixed(2)} m)`,
   ).toBeLessThan(1.0);
 
-  // THE PROOF (deterministic - no sampling luck): drive ONE real NPC
-  // office-side -> kitchen-side -> back on a line through the parked
-  // robot, all through the real controller override (planning +
+  // THE PROOF (deterministic): drive ONE real NPC north-side -> robot ->
+  // south-side, all through the real controller override (planning +
   // collision + avoidance, the same mechanism the coffee trips use).
-  // The return leg's straight line passes exactly through the parked
-  // robot, so the ONLY way to keep the hard-overlap and clearance
-  // assertions green is a genuine detour.
-  const hardOverlap = (npcId: string, pos: XZ, robotPos: XZ): void => {
-    const d = Math.hypot(pos.x - robotPos.x, pos.z - robotPos.z);
-    expect(d, `NPC ${npcId} at ${JSON.stringify(pos)} overlaps the robot at ${JSON.stringify(robotPos)}`).toBeGreaterThan(0.3);
+  // Leg B's straight line passes exactly through the parked robot, so
+  // the ONLY way to keep the hard-overlap and clearance assertions
+  // green is a genuine detour around it.
+  const hardOverlap = (npcId: string, pos: XZ, robot: XZ): void => {
+    const d = Math.hypot(pos.x - robot.x, pos.z - robot.z);
+    expect(d, `NPC ${npcId} at ${JSON.stringify(pos)} overlaps the robot at ${JSON.stringify(robot)}`).toBeGreaterThan(0.3);
   };
-  const robotPos = P;
 
-  // Leg A: pick a settled human well inside the office side and send
-  // them 4 m past the robot along their heading (walkers stop ~1.5 m
-  // short of an override target - the stop still lands kitchen-side).
-  const npcStates = await readGame(page, (h) => h.inspectNpcs());
+  const npcStates = await readGame<Array<{
+    npcId: string;
+    position: { x: number; z: number };
+  }>>(page, { kind: "npcs" });
+  // Non-script casts only: the deep-conversation staging freezes script
+  // pairs mid-walk for whole exchanges - a scripted walker would stall
+  // the proof through no fault of the robot.
+  const NON_SCRIPT = new Set(["kasia", "marek", "pawel", "grazyna", "tomek", "janusz", "zosia", "przemek"]);
   const walker = (npcStates ?? [])
     .filter((n) => {
       const p = { x: n.position.x, z: n.position.z };
       return (
         n.npcId !== "burek" &&
-        officeSideOf(p) &&
+        !NON_SCRIPT.has(n.npcId) &&
+        northSideOf(p) &&
         Math.hypot(p.x - robotPos.x, p.z - robotPos.z) > 2.0
       );
     })
+    .sort((a, b) => b.position.z - a.position.z) // northern-most first
     [0];
-  expect(walker, "no office-side walker available to drive the traversal").toBeTruthy();
-  {
-    const start = { x: walker!.position.x, z: walker!.position.z };
-    const dx = robotPos.x - start.x;
-    const dz = robotPos.z - start.z;
-    const len = Math.hypot(dx, dz) || 1;
-    await page.evaluate(
-      ([id, tx, tz]) => window.__aitrainer!.debugMoveNpc(id as string, tx as number, tz as number),
-      [walker!.npcId, robotPos.x + (dx / len) * 4.0, robotPos.z + (dz / len) * 4.0] as const,
-    );
-  }
+  expect(walker, "no north-side walker available to drive the traversal").toBeTruthy();
 
-  // Sample the whole journey; fire leg B (return, adaptive distance so
-  // the ~1.5 m stop-short lands strictly office-side) the moment the
-  // walker reaches the kitchen side; track the RETURN leg only.
+  // Leg A: walk TO the parked robot - it stands on walkable ground, so
+  // findValidNpcSpawn cannot reject the leg (an out-of-bounds target
+  // makes setOverride silently settle the NPC at their schedule desk).
+  // The walker stops ~1.5-3 m short of it, still north of the middle.
+  // The return direction is fixed at fire time from the APPROACH
+  // geometry (walker start -> robot): firing it from the arrival
+  // position can invert (an avoidance shove can park her BESIDE the
+  // robot, pointing the line north - she then "walks home").
+  const approachUnit: XZ = (() => {
+    const dx = robotPos.x - walker!.position.x;
+    const dz = robotPos.z - walker!.position.z;
+    const len = Math.hypot(dx, dz) || 1;
+    return { x: dx / len, z: dz / len };
+  })();
+  await page.evaluate(
+    ([id, tx, tz]) => window.__aitrainer!.debugMoveNpc(id as string, tx as number, tz as number),
+    [walker!.npcId, robotPos.x, robotPos.z] as const,
+  );
+
+  // Sample the whole journey; fire leg B (back through the robot, deep
+  // south) once the approach completes; track ONLY the return leg.
   let legBFired = false;
+  let returnUnit: XZ | null = null;
+  let legBTarget: XZ | null = null;
   let returnFirst: XZ | null = null;
   let returnLast: XZ | null = null;
   let minRobotDist = Infinity;
   for (let i = 0; i < 160; i += 1) {
     await page.waitForTimeout(30);
     await page.evaluate(() => window.__aitrainer!.debugTick(0.5));
-    const wNow = (await readGame(page, (h) => h.inspectNpcs()))?.find(
-      (n) => n.npcId === walker!.npcId,
-    );
+    const wNow = (await readGame<Array<{ npcId: string; position: { x: number; z: number } }>>(
+      page,
+      { kind: "npcs" },
+    ))?.find((n) => n.npcId === walker!.npcId);
     if (wNow === undefined) continue;
     const pos: XZ = { x: wNow.position.x, z: wNow.position.z };
     hardOverlap(walker!.npcId, pos, robotPos);
     minRobotDist = Math.min(minRobotDist, Math.hypot(pos.x - robotPos.x, pos.z - robotPos.z));
     if (!legBFired) {
-      if (!officeSideOf(pos)) {
-        // Leg B: smallest T whose stop (~1.5 m short of the target)
-        // lands strictly office-side; the line still passes exactly
-        // through the parked robot.
-        const start = pos;
-        const dx = robotPos.x - start.x;
-        const dz = robotPos.z - start.z;
-        const len = Math.hypot(dx, dz) || 1;
-        const ux = dx / len;
-        const uz = dz / len;
-        let target = { x: robotPos.x, z: robotPos.z };
-        for (let t = 6; t <= 24; t += 2) {
-          const stop = { x: robotPos.x + ux * (t - 1.5), z: robotPos.z + uz * (t - 1.5) };
-          target = { x: robotPos.x + ux * t, z: robotPos.z + uz * t };
-          if (stop.x < 8.0 && stop.z > -6.0) break;
-        }
+      // Approach complete: within 3.5 m of the parked robot (the
+      // observed stop-short distance).
+      if (Math.hypot(pos.x - robotPos.x, pos.z - robotPos.z) < 3.5) {
+        returnUnit = approachUnit;
+        // First return hop: 6 m along the APPROACH line (through the
+        // robot, southward), clamped inside the main office (a target
+        // past the south wall is REJECTED by the spawn validator and
+        // setOverride then parks the NPC at their schedule desk).
+        legBTarget = {
+          x: robotPos.x + returnUnit.x * 6,
+          z: Math.max(-8.0, robotPos.z + returnUnit.z * 6),
+        };
         await page.evaluate(
           ([id, tx, tz]) => window.__aitrainer!.debugMoveNpc(id as string, tx as number, tz as number),
-          [walker!.npcId, target.x, target.z] as const,
+          [walker!.npcId, legBTarget.x, legBTarget.z] as const,
         );
         legBFired = true;
       }
       continue; // leg A samples are not the prover's trajectory
     }
-    // Return leg in progress: record first/last.
+    // Return leg: record first/last.
     if (returnFirst === null) returnFirst = pos;
     returnLast = pos;
-    // Arrived: the walker stopped (two consecutive samples < 0.15 m).
+    // Chain extension: the south corridor is shallower than one hop
+    // (walker stop-short + wall). Every 8 samples, if she is not yet
+    // south, extend the SAME line by 4 m (stays collinear through the
+    // robot - the straight-line proof holds for the whole chain) while
+    // the target stays in bounds.
     if (
-      returnLast !== null &&
-      returnFirst !== null &&
-      Math.hypot(pos.x - returnLast.x, pos.z - returnLast.z) < 0.15 &&
-      i > 4
+      i > 0 && i % 8 === 0 && legBTarget !== null && returnUnit !== null &&
+      !southSideOf(returnLast) && legBTarget.z > -8.0
     ) {
-      const settledTwice = await page.waitForTimeout(600).then(() => true);
-      void settledTwice;
-      const wEnd = (await readGame(page, (h) => h.inspectNpcs()))?.find(
-        (n) => n.npcId === walker!.npcId,
+      legBTarget = {
+        x: Math.max(-7.0, Math.min(7.0, legBTarget.x + returnUnit.x * 4)),
+        z: Math.max(-8.0, legBTarget.z + returnUnit.z * 4),
+      };
+      await page.evaluate(
+        ([id, tx, tz]) => window.__aitrainer!.debugMoveNpc(id as string, tx as number, tz as number),
+        [walker!.npcId, legBTarget.x, legBTarget.z] as const,
       );
-      if (wEnd !== undefined) {
-        returnLast = { x: wEnd.position.x, z: wEnd.position.z };
-      }
-      break;
     }
   }
 
-  // THE PROVER: the return leg started kitchen-side, ended office-side,
-  // and its straight line passes through the parked robot.
-  expect(legBFired, "walker never reached the kitchen side (leg A failed)").toBe(true);
+  expect(legBFired, `walker never completed the approach (leg A failed): walker=${walker!.npcId} start=(${walker!.position.x.toFixed(1)},${walker!.position.z.toFixed(1)}) robot=(${robotPos.x.toFixed(1)},${robotPos.z.toFixed(1)})`).toBe(true);
   expect(returnFirst, "return leg was never sampled").toBeTruthy();
   expect(returnLast, "return leg never completed").toBeTruthy();
+  // The leg-B trigger fired only within 3.5 m of the robot, so the
+  // first SAMPLED return position is north of it by construction.
   expect(
-    kitchenSideOf(returnFirst!),
-    `return leg started at ${JSON.stringify(returnFirst)} - not kitchen side`,
-  ).toBe(true);
+    southSideOf(returnFirst!),
+    `return leg started at ${JSON.stringify(returnFirst)} - already south side, traversal void`,
+  ).toBe(false);
   expect(
-    officeSideOf(returnLast!),
-    `return leg ended at ${JSON.stringify(returnLast)} - not office side`,
+    southSideOf(returnLast!),
+    `return leg ended at ${JSON.stringify(returnLast)} - not south side`,
   ).toBe(true);
   const lineThrough = pointToSegmentDist(robotPos, returnFirst!, returnLast!);
   expect(

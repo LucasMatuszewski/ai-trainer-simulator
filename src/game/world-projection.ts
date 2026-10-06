@@ -26,12 +26,29 @@
 
 import { CHATTER_RADIUS } from "../engine/chatter";
 
+/** Banded need state projected to the judge (named bands, never floats). */
+export type NeedBand = "craving" | "low" | "ok";
+
+/** Mirror of the caffeine thresholds (npc-needs.ts) — the projector
+ *  stays dependency-free, the numbers are pinned by tests on BOTH sides. */
+export function projectedNeedBand(value: number): NeedBand {
+  if (!Number.isFinite(value)) return "ok";
+  if (value < 25) return "craving";
+  if (value < 60) return "low";
+  return "ok";
+}
+
 /** One judged NPC: authored identity plus the named place fact. */
 export interface ProjectionNpcFact {
   /** Stable fictional actor id (D-59) — never player-entered text. */
   id: string;
   name: string;
   role: string;
+  /**
+   * Live need levels (0-100). Projected as named bands
+   * (`needs.caffeine: "craving"`), never as raw numbers.
+   */
+  needs?: { caffeine: number; social: number };
   /**
    * Live position. Consumed by the CALLER (pairing, distances) before
    * projection; deliberately NOT projected raw — the room name below is
@@ -106,6 +123,14 @@ export function buildWorldTickProjection(
       name: npc.name,
       role: npc.role,
       ...(npc.room !== undefined ? { room: npc.room } : {}),
+      ...(npc.needs !== undefined
+        ? {
+            needs: {
+              caffeine: projectedNeedBand(npc.needs.caffeine),
+              social: projectedNeedBand(npc.needs.social),
+            },
+          }
+        : {}),
     };
   }
   for (const pair of input.pairs) {

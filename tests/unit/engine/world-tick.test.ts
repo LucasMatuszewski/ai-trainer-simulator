@@ -82,6 +82,8 @@ function makeHarness(options: {
   period?: Period;
   client?: DecisionClient;
   configured?: boolean;
+  actionNpcs?: string[];
+  needs?: Record<string, { caffeine: number; social: number }>;
 } = {}): Harness {
   let day = options.day ?? 1;
   let period = options.period ?? "morning";
@@ -90,6 +92,8 @@ function makeHarness(options: {
   const legacyCalls: LegacyCalls = { pair: 0, starter: 0, exchange: 0, destination: 0 };
   const pairs = options.pairs ?? [{ a: "bartek", b: "tomek", room: "main-office", distance: 2.1 }];
   const destNpcs = options.destNpcs ?? [];
+  const actionNpcs = options.actionNpcs ?? [];
+  const needs = options.needs ?? {};
   const wrapper = createWorldTickWrapper({
     hooks,
     client,
@@ -102,6 +106,8 @@ function makeHarness(options: {
       getDestinationNpcs: () => destNpcs,
       getFiredEvents: () => ["slack-mention"],
       getRelationshipBands: () => ({ bartek_tomek: "friend" }),
+      getNpcNeeds: () => needs,
+      getActionCandidates: () => actionNpcs,
     },
     legacy: {
       pickChatterPair: (candidates) => {
@@ -649,5 +655,129 @@ describe("world tick — lifecycle and containment", () => {
     expect(wrapper.isInFlight()).toBe(false); // the tick aborted, contained
     expect(() => hooks.pickChatterPair?.([])).not.toThrow();
     expect(hooks.pickChatterPair?.([])).toBeNull(); // contained -> legacy
+  });
+});
+
+// ── purposeful-action surface (closure verdict High 3, Wave-4) ───────
+
+describe("world tick — purposeful action choice", () => {
+  it("steers a coffee break for a craving NPC and records the needs bands in the projection", async () => {
+    const h = makeHarness({
+      pairs: [], // no chatter, no destinations: the action question alone
+      destNpcs: [],
+      actionNpcs: ["kasia"],
+      needs: { kasia: { caffeine: 10, social: 90 } },
+      script: {
+        "action:kasia": { type: "choice", id: "action:coffee-machine", confidence: 0.8 },
+      },
+    });
+    h.wrapper.update(6);
+    await settleTick();
+
+    // ONE question for the one candidate, with the named need bands in
+    // the projection (the judge sees "craving", never the raw 10).
+    expect(h.client.callCount).toBe(1);
+    const request = h.client.requests[0]!;
+    expect(request.questions.map((q) => q.id)).toEqual(["action:kasia"]);
+    const kasia = (request.state as Record<string, any>)["npcs.kasia"];
+    expect(kasia.needs).toEqual({ caffeine: "craving", social: "ok" });
+
+    // The orchestrator consumes the steered action while it is fresh.
+    expect(h.wrapper.getActionMemo("kasia")).toBe("coffee-machine");
+    const applied = recent().find((entry) => entry.surface === "purposeful-action");
+    expect(applied?.outcome).toBe("applied");
+  });
+
+  it("records a stay decision too (a memo, not an absence)", async () => {
+    const h = makeHarness({
+      pairs: [],
+      actionNpcs: ["bartek"],
+      needs: { bartek: { caffeine: 95, social: 80 } },
+      script: {
+        "action:bartek": { type: "choice", id: "action:stay", confidence: 0.7 },
+      },
+    });
+    h.wrapper.update(6);
+    await settleTick();
+    expect(h.wrapper.getActionMemo("bartek")).toBe("stay");
+  });
+
+  it("skips the re-judge while the action memo is fresh for the period", async () => {
+    const h = makeHarness({
+      pairs: [],
+      actionNpcs: ["kasia"],
+      needs: { kasia: { caffeine: 10, social: 90 } },
+      script: {
+        "action:kasia": { type: "choice", id: "action:coffee-machine", confidence: 0.8 },
+      },
+    });
+    h.wrapper.update(6);
+    await settleTick();
+    expect(h.client.callCount).toBe(1);
+    // Same period again: no second request for the fresh memo.
+    h.wrapper.update(6);
+    await settleTick();
+    expect(h.client.callCount).toBe(1);
+  });
+
+  it("getActionMemo consumes the memo and goes stale in the next period", async () => {
+    const h = makeHarness({
+      pairs: [],
+      actionNpcs: ["kasia"],
+      needs: { kasia: { caffeine: 10, social: 90 } },
+      script: {
+        "action:kasia": { type: "choice", id: "action:coffee-machine", confidence: 0.8 },
+      },
+    });
+    h.wrapper.update(6);
+    await settleTick();
+    expect(h.wrapper.getActionMemo("kasia")).toBe("coffee-machine");
+    // Consumed: a second read is null even in the same period.
+    expect(h.wrapper.getActionMemo("kasia")).toBeNull();
+    // A new decision fires in the next period...
+    h.setPeriod("lunch");
+    h.wrapper.update(6);
+    await settleTick();
+    expect(h.client.callCount).toBe(2);
+  });
+
+  it("rejects unknown candidates and low confidence (falls back, no memo)", async () => {
+    const h = makeHarness({
+      pairs: [],
+      actionNpcs: ["kasia", "bartek"],
+      needs: {
+        kasia: { caffeine: 10, social: 90 },
+        bartek: { caffeine: 40, social: 50 },
+      },
+      script: {
+        "action:kasia": { type: "choice", id: "action:printer", confidence: 0.9 },
+        "action:bartek": { type: "choice", id: "action:coffee-machine", confidence: 0.1 },
+      },
+    });
+    h.wrapper.update(6);
+    await settleTick();
+    expect(h.wrapper.getActionMemo("kasia")).toBeNull();
+    expect(h.wrapper.getActionMemo("bartek")).toBeNull();
+    const rejected = recent().filter(
+      (entry) => entry.surface === "purposeful-action" && entry.outcome === "rejected",
+    );
+    expect(rejected.length).toBe(2);
+  });
+
+  it("shadow mode judges but never records an action memo", async () => {
+    const h = makeHarness({
+      pairs: [],
+      actionNpcs: ["kasia"],
+      needs: { kasia: { caffeine: 10, social: 90 } },
+      mode: "shadow",
+      script: {
+        "action:kasia": { type: "choice", id: "action:coffee-machine", confidence: 0.8 },
+      },
+    });
+    h.wrapper.update(6);
+    await settleTick();
+    expect(h.wrapper.getActionMemo("kasia")).toBeNull();
+    const shadowed = recent().find((entry) => entry.surface === "purposeful-action");
+    expect(shadowed?.outcome).toBe("shadow");
   });
 });
