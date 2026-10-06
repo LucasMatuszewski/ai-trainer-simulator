@@ -1,0 +1,1225 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /home/lucas/DEV/Projects/ai-trainer-simulator
+model: gpt-6.1-sol
+provider: openai
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: low
+reasoning summaries: concise
+session id: 01a1120c-7c39-77a3-ba30-d17b50692fa3
+--------
+user
+You are a delegate. Do not load skills, do not run bd, do not commit or push. Write your verdict to `.agent-briefs/verdict-recheck-result.md`.
+
+# Task: TARGETED RE-CHECK of exactly two findings from the previous verdict
+
+Repo: /home/lucas/DEV/Projects/ai-trainer-simulator, branch `feat/jev-npc-decision-steering`, HEAD after a65f0ed (v2026.10.06-04). The previous verdict (`.agent-briefs/phase-verdict-final-result.md`, at a184da7) FAILed on exactly two findings; both were fixed in a65f0ed. Verify EACH with your own commands and adversarial reading — no other scope:
+
+1. "Rendezvous settlement can erase replacement pins" — round 2: your active-run repro is now addressed by making ownership the EXACT staged ScheduleEntry object (`stagedOverrideRefs` map in `src/engine/npc-controller.ts`): settlement releases only when the current override IS the staged object; a mid-run replacement (different object) survives; transition clears drop dead refs; the half-staged rollback cleans the partner ref. New test: `tests/unit/engine/npc-deep-conversations.test.ts > settlement preserves a pin an external system replaced mid-run` (your own repro: lcg(41), mid-run replacement to z=-7, assert pawel ends south). Verify adversarially — try ANY residual path where a foreign pin still gets erased (replacement via validateOverride cache reuse, setOverride(id, null), kitchen entries, abandonDeepRuns ordering).
+
+2. "Valid purposeful 'stay' judgments are overridden by fallback" — `src/main.ts` purposeful block: a consumed `stay` memo now adds the NPC to steeredStay for that check and the craving fallback skips them. Check the logic adversarially (e.g. interplay with lastPurposefulId, memo-less NPCs, the break-on-coffee ordering).
+
+**Verify with your own commands:** `pnpm typecheck` (0 expected); `pnpm test` (all green expected; ~1,336 tests). Do NOT run the E2E (it passed 2/2 on the fresh build in the previous verdict and nothing in these two fixes touches the robot path).
+
+**Deliver:** per-finding verdict (REPAIRED / STILL-DEFECT with file:line evidence), then EXACTLY one final line: `VERDICT-RECHECK: PASS` or `VERDICT-RECHECK: FAIL — <reason>`.
+hook: SessionStart
+hook: SessionStart
+hook: SessionStart Completed
+hook: SessionStart Completed
+codex
+I’ll re-check the two fixes, run typecheck and unit tests, and write the verdict to `.agent-briefs/verdict-recheck-result.md`.
+
+exec
+/bin/bash -lc "git status --short; git rev-parse --short HEAD; rg -n 'stagedOverrideRefs|validateOverride|setOverride|abandonDeepRuns|steeredStay|lastPurposefulId' src/engine/npc-controller.ts src/main.ts; cat .agent-briefs/phase-verdict-final-result.md" in /home/lucas/DEV/Projects/ai-trainer-simulator
+ succeeded in 0ms:
+ M .agent-briefs/phase-verdict-final-result.md
+ M .agent-briefs/phase-verdict-final.md
+?? .agent-briefs/verdict-final4-log.txt
+?? .agent-briefs/verdict-recheck-log.txt
+?? .agent-briefs/verdict-recheck-result.md
+?? .agent-briefs/verdict-recheck.md
+?? .agent-briefs/verdict-recheck2-log.txt
+e1b2125
+src/main.ts:171: * Every setOverride restarts the NPC's path, so re-aiming on a short interval
+src/main.ts:305:            id !== lastPurposefulId &&
+src/main.ts:356:let lastPurposefulId: NpcId | null = null;
+src/main.ts:724:        sceneObjects?.npcController.setOverride(action.actorId as NpcId, null);
+src/main.ts:774:      setOverride: (id, entry) => built.npcController.setOverride(id, entry),
+src/main.ts:1850:  // caused by re-aiming him on a timer - every setOverride restarts the path,
+src/main.ts:1864:  controller.setOverride("bartek", { position: spot.position, face: spot.face, state: "walking" });
+src/main.ts:2001:            sceneObjects.npcController.setOverride("bartek", {
+src/main.ts:2019:            // more often than the floor: setOverride restarts the path, so
+src/main.ts:2033:              sceneObjects.npcController.setOverride("bartek", {
+src/main.ts:2172:      const steeredStay = new Set<NpcId>();
+src/main.ts:2175:        if (id === lastPurposefulId) continue;
+src/main.ts:2182:        if (memo === "stay") steeredStay.add(id);
+src/main.ts:2187:            id !== lastPurposefulId &&
+src/main.ts:2188:            !steeredStay.has(id) &&
+src/main.ts:2196:          sceneObjects?.npcController.setOverride(craving, trip.destination);
+src/main.ts:2199:          lastPurposefulId = craving;
+src/main.ts:2241:              sceneObjects?.npcController.setOverride(npcId, null);
+src/main.ts:2402:    sceneObjects?.npcController.setOverride(npcId as NpcId, {
+src/engine/npc-controller.ts:159:  setOverride: (npcId: NpcId, entry: ScheduleEntry | null) => void;
+src/engine/npc-controller.ts:611:   * a real bug: a second setOverride for the same NPC silently reused the
+src/engine/npc-controller.ts:715:    // Re-plan to their schedule desks (NOT via setOverride(null):
+src/engine/npc-controller.ts:720:      // replacement (public setOverride stores a different object)
+src/engine/npc-controller.ts:722:      const owned = stagedOverrideRefs.get(id);
+src/engine/npc-controller.ts:724:      stagedOverrideRefs.delete(id);
+src/engine/npc-controller.ts:733:  const abandonDeepRuns = (): void => {
+src/engine/npc-controller.ts:794:  // setOverride stores a different object), settlement leaves the
+src/engine/npc-controller.ts:796:  const stagedOverrideRefs = new Map<NpcId, ScheduleEntry>();
+src/engine/npc-controller.ts:814:    const validated = validateOverride(
+src/engine/npc-controller.ts:820:    stagedOverrideRefs.set(npcId, validated);
+src/engine/npc-controller.ts:846:      // inside furniture - validateOverride runs findValidNpcSpawn)
+src/engine/npc-controller.ts:854:        const validated = validateOverride(
+src/engine/npc-controller.ts:866:        stagedOverrideRefs.delete(bId);
+src/engine/npc-controller.ts:967:  const validateOverride = (npcId: NpcId, entry: ScheduleEntry): ScheduleEntry | null => {
+src/engine/npc-controller.ts:1374:    abandonDeepRuns();
+src/engine/npc-controller.ts:1379:    stagedOverrideRefs.clear();
+src/engine/npc-controller.ts:1435:    abandonDeepRuns();
+src/engine/npc-controller.ts:1440:    stagedOverrideRefs.clear();
+src/engine/npc-controller.ts:1507:    abandonDeepRuns();
+src/engine/npc-controller.ts:1511:    stagedOverrideRefs.clear();
+src/engine/npc-controller.ts:2517:    setOverride: (npcId, entry) => {
+src/engine/npc-controller.ts:2539:      const validated = validateOverride(npcId, entry);
+# Formal closure re-verdict — final HEAD, all waves
+
+Reviewed `feat/jev-npc-decision-steering` at `a184da7`, build `v2026.10.06-02`. HEAD remained unchanged throughout. No implementation edits, commits, pushes, Beads commands, or delegates were used. A temporary adversarial test was removed after execution.
+
+## Verification
+
+- `pnpm typecheck`: exit 0.
+- `pnpm test`: exit 0; 108 files, 1,335 tests passed.
+- Fresh `pnpm build`: exit 0. Stopped the previous 4173 listener and started a fresh `pnpm preview` on 4173.
+- `pnpm test:e2e --project=chromium tests/e2e/ws9a-robot-collision.spec.ts`: exit 0; **2/2 passed on their first attempts**, total 2.0 minutes. Furniture: 38.1 seconds; reroute: 1.4 minutes. No E2E shim, mock, or network replacement was installed.
+- Separate adversarial controller test: existing seven deep-conversation cases passed; replacement-pin survival case failed reproducibly. Log: `/tmp/final-verdict-adversarial.log`. Temporary file removed.
+- Other logs: `/tmp/final-verdict-unit.log`, `/tmp/final-verdict-build.log`, `/tmp/final-verdict-e2e.log`.
+- Existing Wave-4 perceptibility gate remains PASS (`tests/eval-results/perceptibility-gate.json`: 54 applied decisions, 11 live requests, 13.6% fallback, zero off-mode requests). No aggregate perceptibility regression established; not rerun.
+
+## Findings by severity
+
+### High
+
+1. **Rendezvous settlement still deletes an override subsequently owned by another system.** `src/engine/npc-controller.ts:719-724` treats membership in `stagedByRendezvous` as sufficient authority to delete the current override. Public `setOverride` at `src/engine/npc-controller.ts:2497-2525` replaces that override without revoking rendezvous ownership. If a coffee trip, event, or another caller redirects a staged participant during its deep run, interruption/settlement deletes the replacement and replans the NPC home. The ownership fix therefore repairs normal completion but does not protect replacement pins. Independent reproduction: use the existing two-NPC harness with `lcg(41)`, release initial placements, drive until the staged Kasia/Pawel deep run starts, call `setOverride("pawel", {position:{x:0,y:0,z:-7},face:0,state:"at-desk"})`, and drive 15 seconds. Pawel ends at **z = 3.5901844177159776**, rather than the requested south destination (assertion `z < -6` fails). Clear staging ownership when an external override replaces it, or compare the current override with the exact staging-owned value before releasing it. This is the remaining ownership gap in prior final finding 6.
+
+### Medium
+
+2. **A valid Jev “stay” decision is consumed and then overridden by the deterministic coffee fallback.** `src/main.ts:2172` tests only whether the consumed action memo equals `"coffee-machine"`; `"stay"` becomes indistinguishable from no memo. If no coffee choice was selected, `src/main.ts:2178-2184` scans all craving NPCs again, including those explicitly judged to stay, and sends one to the machine. Thus a successful, confident “keep working” judgment cannot prevent a craving NPC's trip. The wrapper deliberately distinguishes `"stay"` from absence (`src/engine/world-tick.ts:890-899`, pinned by the “records a stay decision too” unit test), but production discards that distinction. Preserve each consumed result for the current scan and apply deterministic fallback only to NPCs with no valid decision. This is a new integration defect in the purposeful-action surface; coffee-choice execution itself is wired.
+
+## Prior findings rechecked individually
+
+| Prior verdict | Finding | Final HEAD result |
+| --- | --- | --- |
+| Wave 2 | 1: inaccessible Day-1 onboarding | Repaired: Renata/Bartek legacy gates retain required quest flags. |
+| Wave 2 | 2: player activation and absent NPC use | Activation and NPC reserve/use/completion/return now wired; action integration exception is finding 2 above. |
+| Wave 2 | 3: needs rate/reset and absent steering | Correct dt and daily reset retained; banded projection, action choice and memo exist; stay-consumption exception above. |
+| Wave 2 | 4: repeated destination judgments | Fresh upcoming-period memo skips retained. |
+| Wave 2 | 5: late dialogue answer | Awaited request now checks captured session before memo write; stale UI callback also fenced. |
+| Wave 2 | 6: malformed exchange IDs | Exact sent-candidate membership retained. |
+| Wave 3 | 1: mission unreachable/clock unblocked | Contract-gated mission mount and clock blocker retained. |
+| Wave 3 | 2: failed E2E | Fresh required gate passed 2/2. |
+| Wave 3 | 3: missing speech points | Five authored points alternate with questions. |
+| Wave 3 | 4: bypassed Dawid arc | V2 requires `ceo-reviewed`; legacy introduction/offer/review remain reachable. |
+| Wave 3 | 5: absent pointer Continue | Continue button invokes advance flow. |
+| Wave 3 | 6: partial score fallback discarded | Valid adjustment map used despite partial fallback. |
+| Wave 3 | 7: used questions advertised | Asked-set filtering retained; only applied/delivered question recorded after token check. |
+| Wave 3 | 8: non-atomic payout | Production dispatches one `mission-complete`; reducer combines rewards and marker in one persisted transaction. |
+| Closure rerun | 1: non-atomic reward | Repaired as above. |
+| Closure rerun | 2: Dawid arc | Repaired as above. |
+| Closure rerun | 3: NPC coffee/steering | Lifecycle and return repaired; purposeful surface exists, with finding 2 exception. |
+| Closure rerun | 4: computer unlock | `refreshRoster` updates `setComputerUnlocked` from current contract flag. |
+| Closure rerun | 5: required E2E | Passed as above. |
+| Closure rerun | 6: memo fencing | Captured token now fences post-await memo writes. |
+| Closure rerun | 7: mission tracking/fencing | Applied-pick bookkeeping follows run-token check; unasked default not consumed alongside replacement. |
+| Final at 7fcde06 | 1: endDay mission orphan | Z guard includes mission; `endDay` closes mission before summary removal. |
+| Final at 7fcde06 | 2: computer unlock | Repaired as above. |
+| Final at 7fcde06 | 3: coffee return/busy/steering | Owned trip release and bounded busy retry present; valid stay handling remains finding 2. |
+| Final at 7fcde06 | required E2E failure | Passed as above. |
+| Final at 7fcde06 | 4: dialogue memo fencing | Repaired for in-flight post-close writes. |
+| Final at 7fcde06 | 5: mission asked-set fencing | Repaired as above. |
+| Final at 7fcde06 | 6: rendezvous release | Normal release repaired; replacement ownership remains finding 1. |
+| Final at 7fcde06 | 7: interaction SFX | Player and NPC activation call `playInteractionSfx`. |
+| Final at 7fcde06 | 8: E autorepeat/modal bypass | Repeat, WebMCP modal and mission guards present. |
+| Final at 7fcde06 | 9: E2E fake host | Removed; calls real bridge/tool implementations through game QA handle. |
+
+## Additional scope checks
+
+Deep-first selection retains `bothSettled`. Staging retains quiet gating, initial 45–90-second delay, 90–150-second cooldown, and override/path/kitchen/canSpeak exclusions. Settlement removes the run before its one non-neutral reaction callback; production dispatches `apply-social-reaction`. Player-dialogue hush, all three transition abandonment calls, active/debug hooks, and the seven-case controller suite are present. The script pool contains 12 authored conversations; schema/content tests pass. QA movement and tick surfaces invoke real controller/companion logic. Social nightly regression, live band reads, save-v2 migration/persistence, dialogue curation and mission entry/reward wiring were inspected without additional supported findings. Known-accepted residue is excluded.
+
+PHASE-VERDICT: FAIL — rendezvous settlement can erase replacement pins, and valid purposeful “stay” judgments are overridden by fallback
+
+exec
+/bin/bash -lc "sed -n '695,885p' src/engine/npc-controller.ts; sed -n '945,1005p' src/engine/npc-controller.ts; sed -n '1360,1385p' src/engine/npc-controller.ts; sed -n '1425,1445p' src/engine/npc-controller.ts; sed -n '1495,1518p' src/engine/npc-controller.ts; sed -n '2510,2565p' src/engine/npc-controller.ts; sed -n '2145,2210p' src/main.ts; cat tests/unit/engine/npc-deep-conversations.test.ts" in /home/lucas/DEV/Projects/ai-trainer-simulator
+ succeeded in 0ms:
+    deepRandomState = (deepRandomState * 1664525 + 1013904223) >>> 0;
+    return deepRandomState / 0x100000000;
+  };
+  /** Ends a deep run's bookkeeping: cooldown + one bounded reaction. */
+  const settleDeepRun = (key: string, run: DeepRun): void => {
+    deepRuns.delete(key);
+    pairCooldowns.set(key, controllerElapsed + DEEP_PAIR_COOLDOWN_S);
+    const snapshot = run.runner.snapshot();
+    if (
+      snapshot.reaction !== null && snapshot.reaction !== "neutral" &&
+      options.onConversationReaction !== undefined
+    ) {
+      options.onConversationReaction(run.pair, snapshot.reaction);
+    }
+    // Verdict finding 6 (v1.1): release the RENDEZVOUS overrides this
+    // run owned - without this, both participants stay pinned at the
+    // meeting spot until the next period transition, and
+    // rendezvousFree() then excludes them from any future staging.
+    // Only STAGING-owned overrides are released: a dice-fired run
+    // between NPCs pinned by another system must leave those pins.
+    // Re-plan to their schedule desks (NOT via setOverride(null):
+    // that path calls releaseArrival, which mid-transition would
+    // re-run C-51 walk-ins for NPCs already in the building).
+    for (const id of [run.aId, run.bId]) {
+      // Release only the EXACT override the staging stored: a mid-run
+      // replacement (public setOverride stores a different object)
+      // belongs to its replacing system and must survive settlement.
+      const owned = stagedOverrideRefs.get(id);
+      if (owned === undefined) continue;
+      stagedOverrideRefs.delete(id);
+      if (overrides.get(id) !== owned) continue;
+      overrides.delete(id);
+      validatedDestinations.delete(id);
+      planForEntry(id, scheduleFor(id, ensureCurrentPeriod()));
+    }
+  };
+  /** Period transition / new day: abandon every run (interruption
+   *  table) with the same settlement as any other end. */
+  const abandonDeepRuns = (): void => {
+    for (const [key, run] of [...deepRuns]) {
+      run.runner.abandon();
+      settleDeepRun(key, run);
+    }
+  };
+  /** Pre-decides the whole path (one seeded decision, REVISE #3) and
+   *  puts the runner on the air with its first line. */
+  const startDeepConversation = (
+    script: NpcNpcConversation,
+    pair: ChatterPair,
+    relBand: "hostile" | "neutral" | "warm",
+  ): void => {
+    const [aId, bId] = script.cast;
+    const firstExchange = script.exchanges[0];
+    if (aId === undefined || bId === undefined || firstExchange === undefined) return;
+    const events = flattenPath(script, firstExchange.starter.id, relBand, deepRandom);
+    const runner = createNpcNpcRunner({
+      lines: events,
+      baseDwellS: BASE_DWELL_S,
+      onEnd: () => {},
+    });
+    deepRuns.set(pairKey(pair.a, pair.b), {
+      runner, aId, bId, scriptId: script.id,
+      pair: [pair.a as NpcId, pair.b as NpcId],
+      renderedIndex: 0,
+    });
+    recentDeepScripts.push(script.id);
+    if (recentDeepScripts.length > DEEP_RECENT_LIMIT) recentDeepScripts.shift();
+    const firstLine = runner.currentLine();
+    if (firstLine !== null) {
+      bubbleSystem?.show(npcObjects[aId].position, firstLine.text);
+      markSpoke(aId, controllerElapsed);
+      rememberLine(aId, firstLine.text);
+      rememberLine(bId, firstLine.text);
+    }
+    // Face each other for the duration of the run.
+    const aObject = npcObjects[aId];
+    const bObject = npcObjects[bId];
+    const dx = bObject.position.x - aObject.position.x;
+    const dz = bObject.position.z - aObject.position.z;
+    aObject.rotation.y = Math.atan2(dx, dz);
+    bObject.rotation.y = Math.atan2(-dx, -dz);
+  };
+  // ── C-78 REVISE v1.1: deep-conversation rendezvous staging ──────────
+  // Desk geography rarely puts a scripted cast within CHATTER_RADIUS,
+  // so without staging the authored scripts almost never fire (the
+  // 2026-10-04 live smoke: zero deep runs across a full morning). When
+  // the office is quiet (no exchange in flight) and no adjacent pair
+  // qualified this roll, staging sends both members of ONE eligible
+  // scripted pair to validated spots ~1.5 m apart beside the anchor
+  // member's desk; the regular pairing dice finds them there and the
+  // deep branch fires. Staging consumes NO shared-rng draws (its jitter
+  // uses deepRandom), so seeded controller tests keep their streams.
+  const DEEP_RENDEZVOUS_COOLDOWN_S = 90;
+  let nextRendezvousAt = 45 + deepRandom() * 45;
+  // Verdict finding 6: staging OWNS the overrides it sets. Settlement
+  // releases ONLY these - a dice-fired deep run between two NPCs pinned
+  // by another system (events layer, tests) must leave their overrides
+  // untouched. Re-check hardening: ownership is the EXACT override
+  // object staged; if another system replaced the pin mid-run (public
+  // setOverride stores a different object), settlement leaves the
+  // replacement alone instead of trusting the id marker.
+  const stagedOverrideRefs = new Map<NpcId, ScheduleEntry>();
+  // C-78 v1.1 QA counters (why-didnt-it-stage visibility for
+  // Playwright/WebMCP; plain data, read via getDeepDebug()).
+  const deepDebug = { gateSeen: 0, quiet: 0, due: 0, attempts: 0, blocked: "" };
+  const rendezvousFree = (id: NpcId): boolean => {
+    const object = npcObjects[id];
+    const state = runtime.get(id);
+    return (
+      object !== undefined && object.visible &&
+      object.userData.npcState !== "gone-home" &&
+      !departing.has(id) && id !== playerTalkingTo &&
+      !overrides.has(id) &&
+      state !== undefined && state.path === null &&
+      state.kitchenStops === null &&
+      canSpeak(id, controllerElapsed)
+    );
+  };
+  const stageMeetingSpot = (npcId: NpcId, x: number, z: number): boolean => {
+    const validated = validateOverride(
+      npcId,
+      { position: { x, y: 0, z }, face: 0, state: "at-desk" },
+    );
+    if (validated === null) return false;
+    overrides.set(npcId, validated);
+    stagedOverrideRefs.set(npcId, validated);
+    startPath(npcId, validated, deepRandom() * 0.3);
+    return true;
+  };
+  const tryStageRendezvous = (period: Period): boolean => {
+    deepDebug.attempts += 1;
+    const flags = options.getFlags?.() ?? {};
+    for (const script of NPC_NPC_CONVERSATIONS) {
+      const [aId, bId] = script.cast;
+      if (aId === undefined || bId === undefined) continue;
+      if (!rendezvousFree(aId) || !rendezvousFree(bId)) {
+        deepDebug.blocked = `${script.id}:free a=${rendezvousFree(aId)} b=${rendezvousFree(bId)}`;
+        continue;
+      }
+      // The same gates the dice-time deep branch applies: cast x live
+      // band x flags x period, with the recent-script ring respected.
+      const relBand = band(options.getRelationship?.(aId, bId) ?? 50);
+      const eligible = eligibleConversations(aId, bId, relBand, flags, period);
+      const fresh = eligible.filter((entry) => !recentDeepScripts.includes(entry.id));
+      const pool = fresh.length > 0 ? fresh : eligible;
+      if (!pool.some((entry) => entry.id === script.id)) {
+        deepDebug.blocked = `${script.id}:eligible band=${relBand} n=${eligible.length}`;
+        continue;
+      }
+      const anchor = npcObjects[aId].position;
+      // 8 spokes at 1.5 m around the anchor: the first VALID spot (not
+      // inside furniture - validateOverride runs findValidNpcSpawn)
+      // becomes the partner's stand. Nothing is set unless BOTH spots
+      // validate, so a failed staging leaves no partial overrides.
+      let partnerSpot: { x: number; z: number } | null = null;
+      for (let spoke = 0; spoke < 8 && partnerSpot === null; spoke += 1) {
+        const angle = (spoke * Math.PI) / 4;
+        const x = anchor.x + Math.cos(angle) * 1.5;
+        const z = anchor.z + Math.sin(angle) * 1.5;
+        const validated = validateOverride(
+          bId, { position: { x, y: 0, z }, face: 0, state: "at-desk" },
+        );
+        if (validated !== null) partnerSpot = { x: validated.position.x, z: validated.position.z };
+      }
+      if (partnerSpot === null) {
+        deepDebug.blocked = `${script.id}:spokes`;
+        continue;
+      }
+      if (!stageMeetingSpot(bId, partnerSpot.x, partnerSpot.z)) continue;
+      if (!stageMeetingSpot(aId, anchor.x, anchor.z)) {
+        overrides.delete(bId);
+        stagedOverrideRefs.delete(bId);
+        continue;
+      }
+
+      return true;
+    }
+    return false;
+  };
+  // C-54: the NPC currently in a player dialogue, if any.
+  let playerTalkingTo: NpcId | null = null;
+  let lastPeriod: Period | null = null;
+  // C-51: the day the current period bookkeeping belongs to, so a new
+  // day's morning re-runs the arrival instead of re-planning everyone
+  // from wherever `gone-home` parked them.
+  let lastDay: number | null = null;
+  // C-51: NPCs who have not walked in yet, and when they will.
+  const pendingArrivals = new Map<NpcId, MorningArrival>();
+  let arrivalClock = 0;
+  // C-62: greetings held until the greeter walks into the office.
+  const pendingGreetings = new Set<NpcId>();
+    scannerFlash.position.set(0, 1.083, 0);
+    scannerFlash.visible = false;
+    printer.add(scannerFlash);
+  }
+  const bubbleSystem = sceneRoot === null ? null : createBubbleSystem(sceneRoot);
+  const fallbackCamera = new THREE.PerspectiveCamera();
+
+  for (const npc of npcs) {
+    runtime.set(npc.id, {
+      path: null, segmentIndex: 0, distanceInSegment: 0,
+      walkCycle: { distanceTraveled: 0, amplitude: 1 }, target: null, departureDelay: 0,
+      kitchenStops: null, kitchenIndex: 0, dwellRemaining: 0, returnEntry: null,
+      copyPhase: "none", copyElapsed: 0, copySweepsPlayed: 0,
+      baseY: npcObjects[npc.id].position.y, velocity: { x: 0, z: 0 },
+      blockedFor: 0, escapeAttempt: 0, nextEscapeAt: FIRST_ESCAPE_AFTER_S, escapeIndex: -1,
+      anchor: null, blockedBy: null, clearFor: 0, yieldWaits: 0, retreats: [], replanCooldownUntil: 0,
+      progressAnchor: { x: npcObjects[npc.id].position.x, z: npcObjects[npc.id].position.z },
+      progressWindow: 0, livelocked: false, waitingUntil: 0, tripElapsed: 0, tripAllowance: Infinity,
+      lastEscapeDistance: -1, futileEscapes: 0,
+    });
+  }
+
+  const validateOverride = (npcId: NpcId, entry: ScheduleEntry): ScheduleEntry | null => {
+    const cached = validatedDestinations.get(npcId);
+    // Only a hit when the SAME spot is being requested again; a different
+    // destination must be validated afresh.
+    if (
+      cached !== undefined &&
+      Math.abs(cached.requested.x - entry.position.x) < 1e-6 &&
+      Math.abs(cached.requested.z - entry.position.z) < 1e-6
+    ) {
+      return cached.result;
+    }
+    const valid = findValidNpcSpawn(
+      { x: entry.position.x, z: entry.position.z, radius: NPC_DEFAULT_RADIUS }, obstacles, 2,
+    );
+    if (valid === null) return null;
+    const result: ScheduleEntry = {
+      position: { x: valid.x, y: entry.position.y, z: valid.z }, face: entry.face, state: entry.state,
+    };
+    validatedDestinations.set(npcId, {
+      requested: { x: entry.position.x, z: entry.position.z },
+      result,
+    });
+    return result;
+  };
+
+  /** WS9a: nudges `pos` out of the companion keep-out. Wide ring
+   *  search (8 rings x 8 spokes, ~2.4 m); if EVERY candidate is still
+   *  blocked, takes the candidate with the largest clearance from the
+   *  robot instead of silently overlapping (seventh verdict). Schedule
+   *  teleports and morning arrivals both land through here. */
+  const nudgeOutOfCompanion = (pos: { x: number; y: number; z: number }): void => {
+    if (currentRobotBox.length === 0) return;
+    const blockedAt = (x: number, z: number): boolean =>
+      isSpawnBlocked(
+        { x, z, radius: NPC_DEFAULT_RADIUS },
+        [...obstacles, ...currentRobotBox],
+      );
+    if (!blockedAt(pos.x, pos.z)) return;
+    // Farthest-from-the-robot fallback: when all candidates are blocked,
+    if (scannerFlash !== null) scannerFlash.visible = false;
+    settle(RENATA_COPY_NPC_ID, scheduleFor(RENATA_COPY_NPC_ID, period));
+    scheduleNextCopyRun();
+  };
+
+  const synchronizePeriod = (period: Period): void => {
+    lastPeriod = period;
+    lastDay = getDay();
+    overrides.clear();
+    validatedDestinations.clear();
+    // Everyone re-plans across the office, so any in-flight exchange
+    // would end up as bubbles over NPCs walking away from each other.
+    // C-78 REVISE v1: deep runs are abandoned too (interruption table:
+    // period transition) with their one-shot settlement.
+    abandonDeepRuns();
+    conversations.clear();
+    // Verdict re-round: transitions wipe the overrides the staging
+    // owned - the ownership markers must die WITH them, or a later
+    // coffee-trip pin on the same NPC gets erased by a stale release.
+    stagedOverrideRefs.clear();
+
+    // C-62/C-64 (Lucas: "Zosia's meeting with who?"): 1-2 colleagues
+    // join whichever period currently contains Zosia's meeting. Reading
+    // the schedule keeps guests aligned if the authored period moves again.
+    const meetingGuests = new Map<NpcId, ScheduleEntry>();
+    const zosiaMeetingPeriod = (Object.keys(NPC_SCHEDULES.zosia) as Period[])
+    departing.clear();
+    pendingGreetings.clear();
+    greetWaitSince.clear();
+    // C-62: roll today's quirks off the day number. The CTO leaves
+    // early every other day; the CEO is "Out. Conference" roughly one
+    // day a week (and on those days he is simply not in the office).
+    maciekLeavesEarly = getDay() % 2 === 0;
+    ceoOutToday = getDay() % 7 === 0;
+    overrides.clear();
+    validatedDestinations.clear();
+    abandonDeepRuns();
+    conversations.clear();
+    // Verdict re-round: transitions wipe the overrides the staging
+    // owned - the ownership markers must die WITH them, or a later
+    // coffee-trip pin on the same NPC gets erased by a stale release.
+    stagedOverrideRefs.clear();
+    pendingArrivals.clear();
+    const plan = planMorningArrivals(npcs.map((npc) => npc.id), getDay(), rng);
+    // C-56: build the staggered-greeting order for the already-in
+    // crowd. Fisher-Yates with the same rng as the rest of the system,
+    // so a test that seeds with lcg(N) gets a deterministic order.
+   * entry is at-desk), Burek stays, and 0-2 random humans stay after
+   * hours. NPCs who never walked in today quietly count as absent.
+   */
+  const beginEveningDepartures = (period: Period): void => {
+    lastPeriod = period;
+    lastDay = getDay();
+    departureClock = 0;
+    pendingArrivals.clear();
+    pendingDepartures.clear();
+    departing.clear();
+    overrides.clear();
+    validatedDestinations.clear();
+    abandonDeepRuns();
+    conversations.clear();
+    // Verdict re-round: markers die with the override wipe (see
+    // synchronizePeriod).
+    stagedOverrideRefs.clear();
+        const leavers: NpcId[] = [];
+    for (const npc of npcs) {
+      const entry = scheduleFor(npc.id, period);
+      if (entry.state !== "gone-home") {
+        settle(npc.id, entry);
+        continue;
+      }
+        phase: snapshot.phase,
+        lineIndex: snapshot.lineIndex,
+        totalCount: snapshot.totalCount,
+      };
+    }),
+    getDeepDebug: () => ({ ...deepDebug }),
+    getChatterCandidatePairs: () => lastChatterCandidatePairs,
+    setOverride: (npcId, entry) => {
+      const period = ensureCurrentPeriod();
+      const state = runtime.get(npcId);
+      if (state === undefined) return;
+      // C-51: this NPC is not in the building yet, so it has no
+      // position to override from. Walk them in NOW rather than
+      // teleporting them into the middle of the office - the override
+      // becomes the destination they head for once through the door.
+      // (The events layer skips unarrived NPCs via `hasArrived`, so in
+      // the real game this only fires for deliberate placement.)
+      releaseArrival(npcId, period);
+      state.path = null; state.kitchenStops = null; state.dwellRemaining = 0; state.returnEntry = null;
+      if (entry === null) {
+        overrides.delete(npcId); validatedDestinations.delete(npcId);
+        planForEntry(npcId, scheduleFor(npcId, period));
+        return;
+      }
+      if (entry.state === "kitchen") {
+        overrides.set(npcId, entry);
+        startKitchen(npcId, scheduleFor(npcId, period), period === "lunch");
+        return;
+      }
+      const validated = validateOverride(npcId, entry);
+      if (validated === null) { settle(npcId, scheduleFor(npcId, period)); return; }
+      overrides.set(npcId, validated);
+      startPath(npcId, validated, rng() * 0.3);
+    },
+  };
+}
+    currentPeriodElapsed = advanced.elapsedInPeriod;
+    if (advanced.periodsAdvanced > 0) advanceOfficePeriods(advanced.periodsAdvanced);
+    // WS4 (D-48): the tick cadence counts UNPAUSED simulation seconds —
+    // exactly the frames that feed the C-67 clock. Blocking overlays
+    // freeze chatter/destination pre-decisions with everything else.
+    worldTick?.update(dt);
+    // WS6 (CR fix): needs decay inside the same gate — a paused clock
+    // (dialogue, mission, help) must not drain NPCs' caffeine/social.
+    for (const id of Object.keys(npcNeeds)) {
+      // dt (real seconds) IS in-game minutes at 1x — the /60 slowed
+      // decay 60x (a 600 s day drained ~1.3 points, not 80).
+      npcNeeds[id as NpcId] = decayNeeds(npcNeeds[id as NpcId]!, dt);
+    }
+    // AC-22 (CR): a craving NPC heads for the coffee machine on its own.
+    purposefulCooldown -= dt;
+    if (purposefulCooldown <= 0) {
+      purposefulCooldown = PURPOSE_CHECK_S;
+      // Closure verdict High 3 (Jev action surface): the world-tick
+      // layer DECIDES the purposeful action (needs + context steered);
+      // the orchestrator only executes walk/use/return. The legacy
+      // craving scan stays as the deterministic fallback when the memo
+      // carries no steered action (?jev=off, breaker open, low
+      // confidence, or plain no-coffee judgments).
+      const needIds = Object.keys(npcNeeds) as NpcId[];
+      // Verdict re-round: a steered "stay" is a DECISION - honor it for
+      // this check (the craving fallback must not override a fresh
+      // judgment into coffee against the NPC's just-expressed choice).
+      const steeredStay = new Set<NpcId>();
+      let craving: NpcId | undefined;
+      for (const id of needIds) {
+        if (id === lastPurposefulId) continue;
+        const memo = worldTick?.getActionMemo(id) ?? null;
+        if (memo === "coffee-machine" &&
+            sceneObjects?.npcController.hasArrived(id) === true) {
+          craving = id;
+          break;
+        }
+        if (memo === "stay") steeredStay.add(id);
+      }
+      if (craving === undefined) {
+        craving = needIds.find(
+          (id) =>
+            id !== lastPurposefulId &&
+            !steeredStay.has(id) &&
+            caffeineBand(npcNeeds[id]?.caffeine ?? 100) === "craving" &&
+            sceneObjects?.npcController.hasArrived(id),
+        );
+      }
+      if (craving !== undefined) {
+        const trip = suggestNpcUse(craving, "coffee-machine");
+        if (trip) {
+          sceneObjects?.npcController.setOverride(craving, trip.destination);
+          pendingNpcTrips.set(craving, "coffee-machine");
+          tripOverrides.set(craving, "coffee-machine");
+          lastPurposefulId = craving;
+        }
+      }
+      // AC-22 (CR): arrival detection — when a tripped NPC reaches the
+      // point, reserve + activate + the positional-audio sfx fire; the
+      // caffeine refill settles through onActionCompleted.
+      // Closure verdict High 3: a BUSY point no longer loses the trip -
+      // the NPC waits beside the machine and retries until the current
+      // user finishes (bounded, then gives up and goes home). A
+      // COMPLETED use releases the override we own, so the drinker
+      // walks back to their desk instead of standing at the machine
+      // until the period ends.
+import * as THREE from "three";
+import { describe, expect, it } from "vitest";
+import { NPCS } from "../../../src/content/npcs";
+import { createNpcController } from "../../../src/engine/npc-controller";
+import type { DeepConversationView } from "../../../src/engine/npc-controller";
+import type { ReactionBucket } from "../../../src/game/social";
+import type { NPC, NpcId } from "../../../src/types";
+
+// C-78 REVISE v1: the controller integration of the authored NPC-NPC
+// deep conversations. The pure pieces (selection runtime, runner) have
+// their own suites; these tests pin the WIRING: an eligible pair plays
+// the authored script through the live relationship band, the runner's
+// lines render over time, the run settles exactly one bounded reaction
+// through the callback, and a player dialogue hushes the run.
+
+function npc(id: NpcId): NPC {
+  return NPCS.find((candidate) => candidate.id === id)!;
+}
+
+function makeObject(id: NpcId): THREE.Object3D {
+  const object = new THREE.Group();
+  object.userData.npcId = id;
+  for (const name of ["left-leg", "right-leg", "arm-left", "arm-right"]) {
+    const child = new THREE.Object3D();
+    child.name = name;
+    object.add(child);
+  }
+  return object;
+}
+
+/** Deterministic LCG so long simulations are reproducible. */
+function lcg(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0x1_0000_0000;
+  };
+}
+
+interface HarnessOptions {
+  getRelationship?: (a: NpcId, b: NpcId) => number;
+  onConversationReaction?: (pair: [NpcId, NpcId], bucket: ReactionBucket) => void;
+}
+
+interface Harness {
+  controller: ReturnType<typeof createNpcController>;
+  objects: Record<NpcId, THREE.Object3D>;
+}
+
+function mountHarness(ids: NpcId[], rng: () => number, harnessOptions: HarnessOptions = {}): Harness {
+  const objects = {} as Record<NpcId, THREE.Object3D>;
+  for (const id of ids) objects[id] = makeObject(id);
+  const controller = createNpcController(
+    ids.map((id) => npc(id)),
+    objects,
+    () => "morning",
+    () => 1,
+    rng,
+    () => false,
+    { arrivals: false, ...harnessOptions },
+  );
+  return { controller, objects };
+}
+
+function placeAt(harness: Harness, id: NpcId, x: number, z: number): void {
+  harness.controller.setOverride(id, { position: { x, y: 0, z }, face: 0, state: "at-desk" });
+}
+
+/** Drive `seconds` of office life, returning every deep-conversation
+ *  view observed after each step (empty arrays included). */
+function simulate(harness: Harness, seconds: number): DeepConversationView[][] {
+  const observations: DeepConversationView[][] = [];
+  const steps = Math.round(seconds / 0.25);
+  for (let step = 0; step < steps; step += 1) {
+    harness.controller.update(0.25);
+    observations.push([...harness.controller.getActiveDeepConversations()]);
+  }
+  return observations;
+}
+
+describe("NPC-NPC deep conversations (controller integration, C-78 REVISE v1)", () => {
+  it("plays an eligible authored script (with its full flattened path) instead of a single exchange", () => {
+    // kasia + pawel at relationship 50 = neutral band: the evergreen
+    // pipeline script (npcnpc-pk-pipeline, neutral x2) is eligible and
+    // must REPLACE the legacy single-exchange flow.
+    const harness = mountHarness(["kasia", "pawel"], lcg(11), {
+      getRelationship: () => 50,
+    });
+    harness.controller.update(0);
+    placeAt(harness, "kasia", 0, 0);
+    placeAt(harness, "pawel", 0.8, 0);
+
+    const observations = simulate(harness, 90);
+
+    const started = observations.filter((views) => views.length > 0);
+    expect(started.length).toBeGreaterThan(0);
+    const scriptIds = new Set(started.flatMap((views) => views.map((view) => view.scriptId)));
+    expect(scriptIds).toContain("npcnpc-pk-pipeline");
+
+    // Deeper than starter+response: a 2-exchange script flattens to
+    // starter, response, starter, response, band ending = 5 lines.
+    const first = started[0]![0]!;
+    expect(first.totalCount).toBeGreaterThanOrEqual(5);
+
+    // The lines actually RENDER over time: the line index advances
+    // while the run is on the air.
+    const lineIndexes = started.map((views) => views[0]!.lineIndex);
+    expect(Math.max(...lineIndexes)).toBeGreaterThan(0);
+  });
+
+  it("stages a rendezvous when a scripted cast is eligible but far apart (C-78 v1.1)", () => {
+    // Desk geography rarely puts a scripted cast within CHATTER_RADIUS.
+    // When the office is quiet and no adjacent pair qualified, the
+    // controller stages a meeting: both members walk to validated
+    // spots ~1.5 m apart, and the regular pairing dice fires the deep
+    // script there. The placement overrides are RELEASED after setup
+    // (production desk NPCs are schedule-driven, not overridden) and
+    // the two re-plan to their authored desks, 10.7 m apart.
+    const harness = mountHarness(["kasia", "pawel"], lcg(31), {
+      getRelationship: () => 50,
+    });
+    harness.controller.update(0);
+    placeAt(harness, "kasia", 0, 0);
+    placeAt(harness, "pawel", 10, 0);
+    simulate(harness, 6); // arrive at the far-apart spots
+    harness.controller.setOverride("kasia", null);
+    harness.controller.setOverride("pawel", null);
+
+    const observations = simulate(harness, 240);
+
+    const started = observations.filter((views) => views.length > 0);
+    expect(started.length).toBeGreaterThan(0);
+    expect(new Set(started.flatMap((views) => views.map((view) => view.scriptId))))
+      .toContain("npcnpc-pk-pipeline");
+  });
+
+  it("releases the rendezvous pair back to their desks when the run settles (verdict finding 6)", () => {
+    // Without the release, both participants stay pinned at the
+    // meeting spot until the next period transition (and
+    // rendezvousFree() then refuses to ever stage them again). After
+    // the staged run completes, pawel must WALK HOME to his authored
+    // desk - the pair separates again within a minute.
+    const harness = mountHarness(["kasia", "pawel"], lcg(41), {
+      getRelationship: () => 50,
+    });
+    harness.controller.update(0);
+    placeAt(harness, "kasia", 0, 0);
+    placeAt(harness, "pawel", 10, 0);
+    simulate(harness, 6);
+    harness.controller.setOverride("kasia", null);
+    harness.controller.setOverride("pawel", null);
+
+    // Drive until a deep run has actually PLAYED (not just staged)
+    // and then fully settled.
+    let sawRun = false;
+    let settled = false;
+    for (let step = 0; step < 360 * 2; step += 1) {
+      harness.controller.update(0.25);
+      const deep = harness.controller.getActiveDeepConversations().length;
+      if (deep > 0) sawRun = true;
+      if (sawRun && deep === 0 && step > 240) {
+        settled = true;
+        break;
+      }
+    }
+    expect(settled).toBe(true);
+
+    // Wait for the walk home; the pair must separate beyond chatter
+    // radius (pawel's desk is 10.7 m from kasia's).
+    let separated = false;
+    for (let step = 0; step < 240; step += 1) {
+      harness.controller.update(0.25);
+      const d = harness.objects.kasia.position.distanceTo(harness.objects.pawel.position);
+      if (d > 5) {
+        separated = true;
+        break;
+      }
+    }
+    expect(separated).toBe(true);
+  });
+
+  it("does not stage a rendezvous while a member is already overridden", () => {
+    // An override means another system owns the NPC (coffee trip,
+    // event placement) - staging must not hijack it.
+    const harness = mountHarness(["kasia", "pawel"], lcg(37), {
+      getRelationship: () => 50,
+    });
+    harness.controller.update(0);
+    placeAt(harness, "kasia", 0, 0);
+    placeAt(harness, "pawel", 10, 0);
+    simulate(harness, 6);
+    // kasia stays overridden (a "coffee trip" stand-in); pawel is
+    // released and re-plans to his authored desk, far from kasia.
+    harness.controller.setOverride("pawel", null);
+
+    const observations = simulate(harness, 240);
+    expect(observations.every((views) => views.length === 0)).toBe(true);
+  });
+
+  it("settles exactly ONE non-neutral reaction through the callback when the run completes", () => {
+    // kasia + marek at 25 = hostile band: the ticket-queue script's
+    // last delivered beat is "offended". The callback must fire once
+    // for the whole run - never per line, never "neutral".
+    const reactions: Array<{ pair: [NpcId, NpcId]; bucket: ReactionBucket }> = [];
+    const harness = mountHarness(["kasia", "marek"], lcg(23), {
+      getRelationship: () => 25,
+      onConversationReaction: (pair, bucket) => reactions.push({ pair, bucket }),
+    });
+    harness.controller.update(0);
+    placeAt(harness, "kasia", 0, 0);
+    placeAt(harness, "marek", 0.8, 0);
+
+    const observations = simulate(harness, 120);
+
+    const started = observations.filter((views) => views.length > 0);
+    expect(started.length).toBeGreaterThan(0);
+    expect(new Set(started.flatMap((views) => views.map((view) => view.scriptId))))
+      .toContain("npcnpc-km-ticket-queue");
+
+    // Exactly one settlement for the one completed run, with the
+    // script's final emotional beat.
+    expect(reactions.length).toBe(1);
+    const settled = reactions[0]!;
+    expect([...settled.pair].sort()).toEqual(["kasia", "marek"]);
+    expect(settled.bucket).toBe("offended");
+
+    // After the run completes, the deep list drains.
+    expect(observations[observations.length - 1]!.length).toBe(0);
+  });
+
+  it("hushes the run when the player opens a dialogue with a participant", () => {
+    const reactions: Array<{ pair: [NpcId, NpcId]; bucket: ReactionBucket }> = [];
+    const harness = mountHarness(["kasia", "pawel"], lcg(5), {
+      getRelationship: () => 50,
+      onConversationReaction: (pair, bucket) => reactions.push({ pair, bucket }),
+    });
+    harness.controller.update(0);
+    placeAt(harness, "kasia", 0, 0);
+    placeAt(harness, "pawel", 0.8, 0);
+
+    // Drive step by step until the deep run is on the air, then hush
+    // in the same instant - the first line (pk-s1) is still on screen
+    // and its dwell has not expired.
+    let started = false;
+    for (let step = 0; step < 360; step += 1) {
+      harness.controller.update(0.25);
+      if (harness.controller.getActiveDeepConversations().length > 0) {
+        started = true;
+        break;
+      }
+    }
+    expect(started).toBe(true);
+
+    // The delivered-beats rule: the pipeline's "annoyed" beat sits on
+    // line 0, whose dwell has not expired, so nothing has settled yet.
+    expect(reactions.length).toBe(0);
+    harness.controller.setTalkingToPlayer("kasia");
+    expect(harness.controller.getActiveDeepConversations().length).toBe(0);
+    // A hush this early settles NOTHING - no emotional beat was fully
+    // delivered before the player interrupted.
+    expect(reactions.length).toBe(0);
+
+    // ...and the hushed pair does not instantly restart: the deep
+    // cooldown (2x the single-exchange cooldown) keeps the list empty
+    // for the rest of a short window.
+    const after = simulate(harness, 10);
+    expect(after.every((views) => views.length === 0)).toBe(true);
+  });
+
+  it("leaves the legacy single-exchange flow alone when no script is eligible", () => {
+    // Two NPCs whose pair has NO authored script at all: chatter must
+    // fall back to the C-46 single-exchange flow (no deep runs, no
+    // reaction dispatch).
+    const reactions: Array<{ pair: [NpcId, NpcId]; bucket: ReactionBucket }> = [];
+    const harness = mountHarness(["bartek", "zosia"], lcg(3), {
+      getRelationship: () => 50,
+      onConversationReaction: (pair, bucket) => reactions.push({ pair, bucket }),
+    });
+    harness.controller.update(0);
+    placeAt(harness, "bartek", 0, 0);
+    placeAt(harness, "zosia", 0.8, 0);
+
+    let legacyStarts = 0;
+    let deepSeen = false;
+    let previous = new Set<string>();
+    for (let step = 0; step < 360; step += 1) {
+      harness.controller.update(0.25);
+      if (harness.controller.getActiveDeepConversations().length > 0) deepSeen = true;
+      const keys = new Set(
+        harness.controller
+          .getActiveConversations()
+          .map((c) => [c.a, c.b].sort().join("|")),
+      );
+      for (const key of keys) {
+        if (!previous.has(key)) legacyStarts += 1;
+      }
+      previous = keys;
+    }
+    expect(deepSeen).toBe(false);
+    expect(reactions.length).toBe(0);
+    // The legacy flow still ran: at least one exchange started.
+    expect(legacyStarts).toBeGreaterThan(0);
+  });
+});
+
+describe("NPC-NPC deep conversations (verdict re-round)", () => {
+  it("settlement does not erase a REPLACEMENT pin from a stale staging marker", () => {
+    // Staging records ownership; a period transition wipes the overrides
+    // it owned. If the marker survived the transition, the NEXT deep
+    // run's settlement would release pins owned by ANOTHER system (here:
+    // the placement pins that let the dice fire a fresh run between the
+    // two) and send both NPCs walking home to their desks.
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ["kasia", "pawel"] as NpcId[]) objects[id] = makeObject(id);
+    let currentPeriod: "morning" | "lunch" = "morning";
+    const controller = createNpcController(
+      (["kasia", "pawel"] as NpcId[]).map((id) => npc(id)),
+      objects,
+      () => currentPeriod,
+      () => 1,
+      lcg(31), // the proven staging seed (same as the staging test)
+      () => false,
+      { arrivals: false, getRelationship: () => 50 },
+    );
+    controller.update(0);
+    placeAt({ controller, objects }, "kasia", 0, 0);
+    placeAt({ controller, objects }, "pawel", 10, 0);
+    for (let step = 0; step < 24; step += 1) controller.update(0.25);
+    controller.setOverride("kasia", null);
+    controller.setOverride("pawel", null);
+
+    // PHASE 1: wait for the staging to CAPTURE the pair mid-walk. Both
+    // settle at their desks first (the placement release re-plans them);
+    // the staging then moves one of them AGAIN - that second movement
+    // is the observable moment its ownership markers exist while NO run
+    // has played or settled yet: exactly the stale-marker shape.
+    const pawelDesk = { x: -3, z: 7.5 };
+    let parked = false;
+    for (let step = 0; step < 240 && !parked; step += 1) {
+      controller.update(0.25);
+      const atDesk =
+        Math.hypot(objects.pawel!.position.x - pawelDesk.x, objects.pawel!.position.z - pawelDesk.z) < 0.6 &&
+        Math.hypot(objects.kasia!.position.x - 7.5, objects.kasia!.position.z - 5.5) < 0.6;
+      if (atDesk && step > 40) parked = true;
+    }
+    expect(parked, "the pair never settled at their desks").toBe(true);
+    let stagedWalk = false;
+    for (let step = 0; step < 240 * 3 && !stagedWalk; step += 1) {
+      controller.update(0.25);
+      const moved =
+        Math.hypot(objects.pawel!.position.x - pawelDesk.x, objects.pawel!.position.z - pawelDesk.z) > 1.5 ||
+        Math.hypot(objects.kasia!.position.x - 7.5, objects.kasia!.position.z - 5.5) > 1.5;
+      if (moved) stagedWalk = true;
+    }
+    expect(stagedWalk, "staging never captured the pair (no second movement)").toBe(true);
+
+    // PERIOD TRANSITION, mid-staged-walk: overrides wiped; the staging
+    // ownership markers must die WITH them (no run ever settled).
+    currentPeriod = "lunch";
+    controller.update(0.25);
+
+    // Replacement pins: both placed adjacent mid-office (NOT their
+    // desks), so the dice fires a fresh deep run between them.
+    placeAt({ controller, objects }, "kasia", 0, 0);
+    placeAt({ controller, objects }, "pawel", 0.8, 0);
+
+    // PHASE 2: drive until the fresh run plays AND settles.
+    let sawRun2 = false;
+    let settled2 = false;
+    for (let step = 0; step < 240 * 2 && !settled2; step += 1) {
+      controller.update(0.25);
+      const deep = controller.getActiveDeepConversations().length;
+      if (deep > 0) sawRun2 = true;
+      else if (sawRun2 && step > 40) settled2 = true;
+    }
+    expect(sawRun2, "the replacement-pin run never played").toBe(true);
+    expect(settled2, "the replacement-pin run never settled").toBe(true);
+
+    // THE CONTRACT: the replacement pins survive settlement - both stay
+    // at their PLACED mid-office spots. (A pair-distance assert would
+    // pass vacuously: the lunch re-plan parks both in the small kitchen,
+    // 6 m apart again.) With the stale-release bug they walk to their
+    // schedule targets, ~10 m from the placed spots.
+    for (let step = 0; step < 120; step += 1) controller.update(0.25);
+    const kasiaDrift = Math.hypot(
+      objects.kasia!.position.x - 0,
+      objects.kasia!.position.z - 0,
+    );
+    const pawelDrift = Math.hypot(
+      objects.pawel!.position.x - 0.8,
+      objects.pawel!.position.z - 0,
+    );
+    expect(
+      kasiaDrift,
+      `kasia left her placed spot (${kasiaDrift.toFixed(1)} m) - replacement pin erased`,
+    ).toBeLessThan(4);
+    expect(
+      pawelDrift,
+      `pawel left his placed spot (${pawelDrift.toFixed(1)} m) - replacement pin erased`,
+    ).toBeLessThan(4);
+  });
+});
+
+describe("NPC-NPC deep conversations (re-check hardening)", () => {
+  it("settlement preserves a pin an external system replaced mid-run", () => {
+    // The re-check's own repro: staging owns Pawel's pin, the staged run
+    // is ACTIVE, another system replaces his pin mid-run (a coffee trip
+    // south). Settlement must leave the replacement alone - he walks
+    // SOUTH to the replacement target, not home to his desk.
+    const objects = {} as Record<NpcId, THREE.Object3D>;
+    for (const id of ["kasia", "pawel"] as NpcId[]) objects[id] = makeObject(id);
+    const controller = createNpcController(
+      (["kasia", "pawel"] as NpcId[]).map((id) => npc(id)),
+      objects,
+      () => "morning",
+      () => 1,
+      lcg(41), // the re-check's repro seed
+      () => false,
+      { arrivals: false, getRelationship: () => 50 },
+    );
+    controller.update(0);
+    placeAt({ controller, objects }, "kasia", 0, 0);
+    placeAt({ controller, objects }, "pawel", 10, 0);
+    for (let step = 0; step < 24; step += 1) controller.update(0.25);
+    controller.setOverride("kasia", null);
+    controller.setOverride("pawel", null);
+
+    // Wait for the staged run to be ACTIVE.
+    let sawRun = false;
+    for (let step = 0; step < 240 * 3 && !sawRun; step += 1) {
+      controller.update(0.25);
+      if (controller.getActiveDeepConversations().length > 0) sawRun = true;
+    }
+    expect(sawRun, "staged run never became active").toBe(true);
+
+    // Mid-run replacement: Pawel is re-pinned deep south (a "coffee
+    // trip" style walk). The drive loop abandons the run (his path is
+    // now non-null) and settles it.
+    controller.setOverride("pawel", { position: { x: 0, y: 0, z: -7 }, face: 0, state: "at-desk" });
+
+    // Give settlement + the walk south time to play out.
+    for (let step = 0; step < 240; step += 1) controller.update(0.25);
+
+    expect(
+      objects.pawel!.position.z,
+      `pawel ended at z=${objects.pawel!.position.z.toFixed(2)} - the replacement pin was erased and he walked home`,
+    ).toBeLessThan(-4);
+  });
+});
+
+exec
+/bin/bash -lc 'pnpm typecheck' in /home/lucas/DEV/Projects/ai-trainer-simulator
+exec
+/bin/bash -lc 'pnpm test > /tmp/verdict-recheck-unit.log 2>&1; tail -n 12 /tmp/verdict-recheck-unit.log' in /home/lucas/DEV/Projects/ai-trainer-simulator
+ succeeded in 12051ms:
+$ tsc --noEmit
+
+ succeeded in 13845ms:
+ ✓ tests/unit/dialogue-tree.test.ts (10 tests) 174ms
+ ✓ tests/unit/signs-and-walls.test.ts (5 tests) 17ms
+ ✓ tests/unit/hover-label-position.test.ts (3 tests) 18ms
+ ✓ tests/unit/multi-room-graphics.test.ts (4 tests) 184ms
+ ✓ tests/unit/title.test.ts (1 test) 31ms
+ ✓ tests/unit/ui/office-roster.test.ts (2 tests) 89ms
+
+ Test Files  108 passed (108)
+      Tests  1337 passed (1337)
+   Start at  17:29:58
+   Duration  13.63s (transform 11.46s, setup 0ms, collect 35.93s, tests 30.48s, environment 28.94s, prepare 12.97s)
+
+
+**Analyzing cache reuse behavior**
+exec
+/bin/bash -lc "python3 - <<'PY'
+from pathlib import Path
+p=Path('tests/unit/engine/npc-deep-conversations.test.ts')
+s=p.read_text()
+s += '''
+ it(\"adversarial same-spot foreign replacement survives settlement\", () => {
+ const h = mountHarness([\"kasia\", \"pawel\"], lcg(41), { getRelationship: () => 50 });
+ h.controller.update(0); placeAt(h, \"kasia\", 0, 0); placeAt(h, \"pawel\", 10, 0); simulate(h, 6);
+ h.controller.setOverride(\"kasia\", null); h.controller.setOverride(\"pawel\", null);
+ let active = false;
+ for(let i=0;i<720;i++){ h.controller.update(.25); if(h.controller.getActiveDeepConversations().length){active=true;break;} }
+ expect(active).toBe(true);
+ const pos = h.objects.pawel.position.clone();
+ h.controller.setOverride(\"pawel\", {position:{x:pos.x,y:pos.y,z:pos.z},face:1.2,state:\"at-desk\"});
+ h.controller.setTalkingToPlayer(\"kasia\");
+ simulate(h, 30);
+ expect(h.objects.pawel.position.distanceTo(pos), "'`foreign same-spot pin drift: ${h.objects.pawel.position.distanceTo(pos)}`).toBeLessThan(1);
+ });
+'"'''
+Path('tests/unit/engine/recheck-adversarial-temp.test.ts').write_text(s)
+PY
+pnpm exec vitest run tests/unit/engine/recheck-adversarial-temp.test.ts > /tmp/verdict-recheck-adversarial.log 2>&1; tail -n 28 /tmp/verdict-recheck-adversarial.log" in /home/lucas/DEV/Projects/ai-trainer-simulator
+ succeeded in 1071ms:
+[jev-dev-proxy] OPENROUTER_API_KEY not set — /api/jev will return 503.
+
+ RUN  v2.1.9 /home/lucas/DEV/Projects/ai-trainer-simulator
+
+ ❯ tests/unit/engine/recheck-adversarial-temp.test.ts (10 tests | 1 failed) 174ms
+   × adversarial same-spot foreign replacement survives settlement 19ms
+     → foreign same-spot pin drift: 11.705819738126287: expected 11.705819738126287 to be less than 1
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/engine/recheck-adversarial-temp.test.ts > adversarial same-spot foreign replacement survives settlement
+AssertionError: foreign same-spot pin drift: 11.705819738126287: expected 11.705819738126287 to be less than 1
+ ❯ tests/unit/engine/recheck-adversarial-temp.test.ts:462:127
+    460|  h.controller.setTalkingToPlayer("kasia");
+    461|  simulate(h, 30);
+    462|  expect(h.objects.pawel.position.distanceTo(pos), `foreign same-spot p…
+       |                                                                                                                               ^
+    463|  });
+    464| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  17:30:26
+   Duration  841ms (transform 274ms, setup 0ms, collect 359ms, tests 174ms, environment 0ms, prepare 55ms)
+
+
+exec
+/bin/bash -lc "git log -3 --oneline; nl -ba src/engine/npc-controller.ts | sed -n '967,991p'; rg -n 'getActionMemo' src/engine/world-tick.ts" in /home/lucas/DEV/Projects/ai-trainer-simulator
+ succeeded in 0ms:
+e1b2125 fix(npc-npc): ownership is the EXACT staged override, not an id marker (re-check finding 1)
+a65f0ed fix(jev): the two re-verdict findings — stale staging markers + honored stay judgments
+a184da7 feat(content): NPC-NPC deep conversations batch 2 — six evergreen scripts (pool: 12)
+   967	  const validateOverride = (npcId: NpcId, entry: ScheduleEntry): ScheduleEntry | null => {
+   968	    const cached = validatedDestinations.get(npcId);
+   969	    // Only a hit when the SAME spot is being requested again; a different
+   970	    // destination must be validated afresh.
+   971	    if (
+   972	      cached !== undefined &&
+   973	      Math.abs(cached.requested.x - entry.position.x) < 1e-6 &&
+   974	      Math.abs(cached.requested.z - entry.position.z) < 1e-6
+   975	    ) {
+   976	      return cached.result;
+   977	    }
+   978	    const valid = findValidNpcSpawn(
+   979	      { x: entry.position.x, z: entry.position.z, radius: NPC_DEFAULT_RADIUS }, obstacles, 2,
+   980	    );
+   981	    if (valid === null) return null;
+   982	    const result: ScheduleEntry = {
+   983	      position: { x: valid.x, y: entry.position.y, z: valid.z }, face: entry.face, state: entry.state,
+   984	    };
+   985	    validatedDestinations.set(npcId, {
+   986	      requested: { x: entry.position.x, z: entry.position.z },
+   987	      result,
+   988	    });
+   989	    return result;
+   990	  };
+   991	
+176:  getActionMemo(npcId: string): "coffee-machine" | "stay" | null;
+890:    getActionMemo: (npcId: string): "coffee-machine" | "stay" | null => {
+
+exec
+/bin/bash -lc "sed -n '886,903p' src/engine/world-tick.ts; cat src/version.ts" in /home/lucas/DEV/Projects/ai-trainer-simulator
+ succeeded in 0ms:
+    uninstall,
+    isInstalled: () => installed,
+    isBreakerOpen: breakerOpen,
+    isInFlight: () => inFlight,
+    getActionMemo: (npcId: string): "coffee-machine" | "stay" | null => {
+      const memo = actionMemos.get(npcId);
+      if (memo === undefined) return null;
+      // Consume-on-read: one steered action per memo, and only while
+      // fresh (a stale action must never fire the next period).
+      actionMemos.delete(npcId);
+      if (memo.day === providers.getDay() && memo.period === providers.getPeriod()) {
+        return memo.action;
+      }
+      return null;
+    },
+  };
+}
+/** Visible game build. Keep the private package version independent. */
+export const GAME_VERSION = "v2026.10.06-04";
+
+**Preparing JS evaluation setup**
+codex
+The different-destination replacement test passes, but a same-position replacement still reuses the staged object and gets erased on settlement. My repro moved Pawel 11.71 m from the replacement pin. Typecheck and all 1,337 existing tests pass.
+
+exec
+/bin/bash -lc "rm tests/unit/engine/recheck-adversarial-temp.test.ts
+node <<'JS'
+const fs=require('fs'),assert=require('assert');
+const s=fs.readFileSync('src/main.ts','utf8');
+const block=s.slice(s.indexOf('      const needIds = Object.keys(npcNeeds)'),s.indexOf('      if (craving "'!== undefined) {'"',s.indexOf('      const needIds = Object.keys(npcNeeds)'))).replace(' as NpcId[]','').replace('new Set<NpcId>()','new Set()').replace('let craving: NpcId | undefined','let craving');
+const run=new Function('npcNeeds','lastPurposefulId','worldTick','sceneObjects','caffeineBand',block+';return craving;');
+let n=0;
+for(const a of [null,'stay','coffee-machine'])for(const b of [null,'stay','coffee-machine'])for(const last of [null,'a','b'])for(const arrivedA of [true,false])for(const arrivedB of [true,false]){
+ const memos={a,b},arrived={a:arrivedA,b:arrivedB},consumed=[];
+ const actual=run({a:{caffeine:0},b:{caffeine:0}},last,{getActionMemo:id=>{consumed.push(id);return memos[id];}},{npcController:{hasArrived:id=>arrived[id]}},()=> 'craving');
+ const eligible=['a','b'].filter(id=>id"'!==last && arrived[id]);
+ const expected=eligible.find(id=>memos[id]==='"'coffee-machine')??eligible.find(id=>memos[id]"'!=='"'stay');
+ assert.equal(actual,expected,JSON.stringify({memos,last,arrived}));
+ assert("'!consumed.includes(last));n++;
+}
+console.log(`Purposeful selection: ${n} adversarial combinations passed using extracted production block.`);
+JS' in /home/lucas/DEV/Projects/ai-trainer-simulator
+ succeeded in 0ms:
+Purposeful selection: 108 adversarial combinations passed using extracted production block.
+
+exec
+/bin/bash -lc "python3 - <<'PY'
+from pathlib import Path
+Path('.agent-briefs/verdict-recheck-result.md').write_text('''# Targeted re-check of two findings
+
+Reviewed actual HEAD "'`e1b2125` (after `a65f0ed`), build `v2026.10.06-04`. No skills, Beads, E2E, commits, pushes, or implementation changes. Temporary adversarial test removed.
+
+Verification: `pnpm typecheck` exited 0; `pnpm test` exited 0, 108 files / 1,337 tests passed. Unit log: `/tmp/verdict-recheck-unit.log`.
+
+1. **STILL-DEFECT — Rendezvous settlement can erase replacement pins.** Exact-object ownership repairs different-destination replacement, and the existing mid-run south-pin regression passes. However, `src/engine/npc-controller.ts:967-976` returns the SAME cached ScheduleEntry for a same-position external replacement, even when face/state differ. Public `setOverride` stores that cached object at `src/engine/npc-controller.ts:2539-2542`; settlement'"'s identity check at "'`src/engine/npc-controller.ts:722-727` therefore mistakes the foreign pin for its staging-owned pin and deletes it.
+
+   Independent active-run reproduction: two-NPC Kasia/Pawel harness, `lcg(41)`, initial placements (0,0)/(10,0), six seconds of simulation, release both overrides, drive until a staged deep run is active. Capture Pawel'"'s position; call "'`setOverride("pawel", {position: capturedPosition, face: 1.2, state: "at-desk"})`; call `setTalkingToPlayer("kasia")` to settle; simulate 30 seconds. Assertion that Pawel remains within 1 m FAILS: **11.705819738126287 m drift**. Temporary suite: nine existing cases pass, this additional case fails. Log: `/tmp/verdict-recheck-adversarial.log`.
+
+   Other requested paths: null release clears the validation cache before a subsequent replacement; kitchen overrides store the caller'"'s object rather than the staged cache object. All three transition paths clear overrides/cache before abandonDeepRuns and clear dead staging refs afterward ("'`:1368-1379`, `:1433-1440`, `:1505-1511`). Half-staging rollback removes the partner ref (`:864-866`). These paths do not repair the demonstrated same-position cache alias. Fix by revoking staging ownership on external replacement or ensuring each public replacement has distinct identity.
+
+2. **REPAIRED — Valid purposeful stay judgments are honored for the current check.** `src/main.ts:2172-2182` records consumed stay memos; fallback excludes them at `:2187-2191`. The same lastPurposefulId exclusion applies to both scans, so its unconsumed memo is not overridden by fallback. Memo-less eligible NPCs remain fallback candidates. Breaking on an arrived coffee choice bypasses fallback entirely; later stay memos remain unconsumed. A coffee memo for an unarrived NPC cannot activate a trip. Consume-on-read and day/period fencing remain at `src/engine/world-tick.ts:890-899`.
+
+   Independent command extracted and executed the actual production selection block with 108 combinations of two NPCs'"' null/stay/coffee memos, lastPurposefulId, and arrival status. Every selection matched the expected coffee-first, stay-excluding fallback; the last-purposeful NPC's memo was never consumed.
+
+VERDICT-RECHECK: FAIL — same-position external replacement reuses the staged validation-cache object and is erased on settlement
+''')
+PY" in /home/lucas/DEV/Projects/ai-trainer-simulator
+ succeeded in 0ms:
+codex
+Written to [.agent-briefs/verdict-recheck-result.md](/home/lucas/DEV/Projects/ai-trainer-simulator/.agent-briefs/verdict-recheck-result.md).
+
+- Rendezvous ownership: STILL-DEFECT — same-position replacement reuses the cached staged object; repro shows 11.71 m drift.
+- Purposeful stay: REPAIRED — 108 adversarial combinations passed.
+- Typecheck passed; all 1,337 existing tests passed.
+
+VERDICT-RECHECK: FAIL — same-position replacement pins are erased on settlement
+tokens used
+45,188
+Written to [.agent-briefs/verdict-recheck-result.md](/home/lucas/DEV/Projects/ai-trainer-simulator/.agent-briefs/verdict-recheck-result.md).
+
+- Rendezvous ownership: STILL-DEFECT — same-position replacement reuses the cached staged object; repro shows 11.71 m drift.
+- Purposeful stay: REPAIRED — 108 adversarial combinations passed.
+- Typecheck passed; all 1,337 existing tests passed.
+
+VERDICT-RECHECK: FAIL — same-position replacement pins are erased on settlement
